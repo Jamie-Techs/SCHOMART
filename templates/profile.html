@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.username }}'s Profile - YourApp</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Your existing CSS for profile page, modals, etc. */
+        :root {
+            --primary-color: #006B3C;
+            --primary-green: #006B3C;
+            --secondary-color: #6c757d;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #343a40;
+            --link-color: #006B3C;
+            --hover-color: #FDB813;
+            --error-color: #dc3545;
+            --success-color: #006B3C;
+            --warning-color: #006B3C;
+            --info-color: #FDB813;
+            --header-bg: #f8f9fa; /* Light background for headers */
+            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --border-radius: 0.5rem;
+            --padding-medium: 1rem;
+            --padding-large: 1.5rem;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .profile-wrapper {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+
+        .top-nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--padding-medium);
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background-color: #006B3C;
+        }
+
+        .cover-photo {
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            position: relative;
+        }
+
+        .cover-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .profile-header-area {
+            display: flex;
+            align-items: flex-end;
+            margin-top: -70px; /* Pull profile picture over cover photo */
+            padding: 0 var(--padding-large) var(--padding-medium);
+            position: relative;
+            z-index: 2; /* Ensure profile content is above cover photo */
+        }
+
+        .profile-picture-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid var(--card-background);
+            background-color: #f0f0f0;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: var(--box-shadow);
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-content {
+            flex-grow: 1;
+            padding-left: var(--padding-medium);
+            color: var(--text-color);
+        }
+
+        .profile-content h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+
+        .profile-content p {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .profile-content strong {
+            color: var(--secondary-color);
+        }
+
+        .referral-section {
+            padding: var(--padding-large);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .referral-section h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .referral-container {
+            display: flex;
+            max-width: 500px;
+            margin: 0.5rem auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .referral-container input[type="text"] {
+            flex-grow: 1;
+            border: none;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            background-color: var(--background-color);
+        }
+
+        .referral-container .copy-btn {
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 1rem;
+        }
+
+        .referral-container .copy-btn:hover {
+            background-color: #218838;
+        }
+
+
+        .sections-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--padding-medium);
+            padding: var(--padding-large);
+        }
+
+        .section-box {
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: var(--padding-medium);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05); /* subtle inner shadow */
+        }
+
+        .section-box h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-box p,
+        .section-box ul {
+            margin: 0.5rem 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .section-box a {
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .section-box a:hover {
+            color: #006B3C;
+            text-decoration: underline;
+        }
+
+        .section-box i {
+            margin-right: 0.5rem;
+            color: var(--primary-color); /* Icon color */
+        }
+
+        .section-box .location {
+            cursor: pointer;
+            color: var(--link-color);
+            text-decoration: underline;
+        }
+
+        .section-box .location:hover {
+            color: #006B3C;
+        }
+
+
+        .option-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--padding-medium);
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: var(--box-shadow);
+        }
+
+        .option-box:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-3px);
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+        }
+
+        .option-box i {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .option-box span {
+            font-size: 0.9rem;
+        }
+
+        .logout-box i {
+            color: var(--error-color); /* Make logout icon red */
+        }
+
+        .admin-button {
+            border: 2px dashed var(--primary-green); /* Dotted border for admin buttons */
+        }
+        .admin-button i {
+            color: var(--primary-green); /* Admin icon color */
+        }
+
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+            animation-name: animatemodal;
+            animation-duration: 0.4s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 15px;
+            border-radius: var(--border-radius);
+        }
+
+        .close-modal-x {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal-x:hover,
+        .close-modal-x:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .close-modal-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .close-modal-btn:hover {
+            background-color: #006B3C;
+        }
+
+        /* Animation for modal */
+        @keyframes animatemodal {
+            from {transform: scale(0.7); opacity: 0}
+            to {transform: scale(1); opacity: 1}
+        }
+
+        .floating-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-green);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            z-index: 500;
+        }
+
+        .floating-help:hover {
+            background-color: #218838;
+            transform: translateY(-3px);
+        }
+
+        /* Flash message styling */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+        .alert-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .alert-error, .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header-area {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                margin-top: -60px;
+            }
+
+            .profile-picture-container {
+                width: 120px;
+                height: 120px;
+                margin-bottom: 10px;
+            }
+
+            .profile-content {
+                padding-left: 0;
+            }
+
+            .profile-content h1 {
+                font-size: 1.5rem;
+            }
+
+            .sections-container {
+                grid-template-columns: 1fr; /* Stack sections on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    {# Display Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <span class="alert-icon">
+                    {% if category == 'error' %} <i class="fas fa-times-circle"></i>
+                    {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                    {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                    {% else %} <i class="fas fa-info-circle"></i>
+                    {% endif %}
+                </span>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="profile-wrapper">
+        <header class="top-nav-buttons">
+            <button onclick="history.back()" class="nav-button" title="Go back to previous page">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <a href="{{ url_for('home') }}" class="nav-button" title="Go to Home Page">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </header>
+
+        <div class="cover-photo">
+            <a href="#" onclick="showImageModal('{{ user.cover_photo_url }}')" title="View Full Cover Photo">
+                <img src="{{ user.cover_photo_url }}" alt="Cover Photo" onerror="this.onerror=null;this.src='https://placehold.co/1000x220/e0e0e0/777777?text=No+Cover+Photo';" />
+            </a>
+        </div>
+
+        <div class="profile-header-area">
+            <div class="profile-picture-container">
+                <a href="#" onclick="showImageModal('{{ user.profile_picture_url }}')" title="View Full Profile Picture">
+                    <img src="{{ user.profile_picture_url }}" alt="Profile Picture" class="profile-picture" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';" />
+                </a>
+            </div>
+
+            <div class="profile-content">
+                <h1>{{ user.username }}'s Profile</h1>
+                <p><strong>Member Since:</strong> {{ user.created_at }}</p>
+                <p><strong>Last Active:</strong> {{ user.last_active }}</p>
+            </div>
+        </div>
+
+        <section class="referral-section">
+            <h3>Your Referral Link</h3>
+            <div class="referral-container">
+                <input type="text" id="referralLink" value="{{ referral_link }}" readonly>
+                <button onclick="copyReferral()" class="copy-btn" title="Copy Referral Link"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+            
+        </section>
+
+        <main class="sections-container">
+            <div class="section-box">
+                <h3>Basic Info</h3>
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Business Name:</strong> {{ user.businessname or 'N/A' }}</p>
+                <p><strong>First Name:</strong> {{ user.first_name or 'N/A' }}</p>
+                <p><strong>Last Name:</strong> {{ user.last_name or 'N/A' }}</p>
+                <p><strong>Location:</strong> <span class="location" onclick="window.location.href='{{ url_for('personal_details') }}'">{{ full_location }}</span></p>
+                <p><strong>Birthday:</strong> {{ user.birthday if user.birthday else 'N/A' }}</p>
+                <p><strong>Sex:</strong> {{ user.sex or 'N/A' }}</p>
+                <p><a href="{{ url_for('personal_details') }}"><i class="fas fa-edit"></i> Edit Personal Details</a></p>
+            </div>
+
+            <div class="section-box">
+                <h3>Contact & Security</h3>
+                <p><strong>Email:</strong> {{ user.email }} (Verified: {{ 'Yes' if user.is_verified else 'No' }})</p>
+                <p><a href="{{ url_for('change_email') }}"><i class="fas fa-envelope"></i> Change Email</a></p>
+                <p><strong>Phone:</strong> {{ user.phone_number or 'None' }} </p>
+                <p><a href="{{ url_for('change_phone') }}"><i class="fas fa-phone-alt"></i> Change Phone Number</a></p>
+                <p><a href="{{ url_for('change_password') }}"><i class="fas fa-key"></i> Change Password</a></p>
+                <p><a href="{{ url_for('delete_account') }}" style="color: var(--error-color);"><i class="fas fa-trash-alt"></i> Delete Account</a></p>
+            </div>
+
+            <div class="section-box">
+                <h3>Business & Social</h3>
+                {% if user.social_links %}
+                    <h4>Social Links</h4>
+                    <ul>
+                    {% for platform, link in user.social_links.items() %}
+                        <li><strong>{{ platform | title }}:</strong> <a href="{{ link }}" target="_blank" rel="noopener noreferrer">{{ link }} <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></li>
+                    {% endfor %}
+                    </ul>
+                {% else %}<p>No social links set.</p>{% endif %}
+
+                {% if user.working_days %}
+                    <h4>Working Hours</h4>
+                    <ul>
+                    {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                        {# Safely access working_times, handling cases where day or time might be missing #}
+                        <li>{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No working hours set.</p>
+                {% endif %}
+
+                <h4>Delivery Methods</h4>
+                {% if user.delivery_methods %}
+                    <ul>
+                        {% for method in user.delivery_methods %}
+                            <li><i class="fas fa-check-square" style="color: var(--primary-green); margin-right: 5px;"></i> {{ method }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No delivery methods set.</p>
+                {% endif %}
+
+                <p><a href="{{ url_for('personal_details') }}"><i class="fas fa-briefcase"></i> Edit Business & Social</a></p>
+            </div>
+        </main>
+
+        <section class="sections-container options-grid">
+            <a href="{{ url_for('list_adverts') }}" class="option-box">
+                <i class="fas fa-bullhorn"></i>
+                <span>My Adverts</span>
+            </a>
+            <a href="{{ url_for('sell') }}" class="option-box" title="Sell an item or service">
+                <i class="fas fa-tag"></i>
+                <span>Sell</span>
+            </a>
+            <a href="{{ url_for('user_notifications') }}" class="option-box">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </a>
+            <a href="{{ url_for('followers') }}" class="option-box">
+                <i class="fas fa-users"></i>
+                <span>Followers</span>
+            </a>
+            <a href="{{ url_for('settings') }}" class="option-box">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="{{ url_for('faq') }}" class="option-box">
+                <i class="fas fa-question-circle"></i>
+                <span>FAQs</span>
+            </a>
+            <a href="{{ url_for('create_post') }}" class="option-box">
+                <i class="fas fa-pencil-alt"></i>
+                <span>Create School Gist</span>
+            </a>
+
+            {# Admin Buttons #}
+            {% if user and user.is_admin %}
+            <a href="{{ url_for('admin_post_airtime') }}" class="option-box admin-button">
+                <i class="fas fa-mobile-alt"></i>
+                <span>Post Airtime</span>
+            </a>
+            <a href="{{ url_for('reported_adverts_admin') }}" class="option-box admin-button">
+                <i class="fas fa-flag"></i>
+                <span>Reported Adverts</span>
+            </a>
+            <a href="{{ url_for('admin_adverts_review') }}" class="option-box admin-button">
+                <i class="fas fa-check-double"></i>
+                <span>Review Adverts</span>
+            </a>
+            <a href="{{ url_for('confirm_bank_transfer') }}" class="option-box admin-button">
+                <i class="fas fa-money-check-alt"></i>
+                <span>Confirm Transfers</span>
+            </a>
+            <a href="{{ url_for('create_post') }}" class="option-box admin-button">
+                <i class="fas fa-newspaper"></i>
+                <span>Create School News</span>
+            </a>
+            <a href="{{ url_for('admin_inbox') }}" class="option-box admin-button">
+                <i class="fas fa-inbox"></i>
+                <span>Admin Inbox</span>
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('logout') }}" class="option-box logout-box">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </section>
+    </div>
+
+    {# Image Viewer Modal - Reusable component for profile and cover photos #}
+    <div id="imageViewerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-x" onclick="closeImageModal()">&times;</span>
+            <img id="fullSizeImage" src="" alt="Full Size Image" />
+            <button class="close-modal-btn" onclick="closeImageModal()">Close</button>
+        </div>
+    </div>
+
+    <div class="floating-help" onclick="window.location.href='{{ url_for('live_admins_list') }}'">
+        <i class="fas fa-comments"></i>
+    </div>
+
+    <script>
+        function showImageModal(imageUrl) {
+            const modal = document.getElementById('imageViewerModal');
+            const fullSizeImage = document.getElementById('fullSizeImage');
+            fullSizeImage.src = imageUrl;
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageViewerModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                document.getElementById('fullSizeImage').src = '';
+            }, 300);
+        }
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('imageViewerModal');
+            if (event.target === modal) {
+                closeImageModal();
+            }
+        });
+
+        function copyReferral() {
+            const referralLinkInput = document.getElementById('referralLink');
+            referralLinkInput.select();
+            referralLinkInput.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            // Replaced alert with a custom toast or message box in a real application
+            // This is kept here for demonstration as the environment has no custom toast UI.
+            alert("Referral link copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
