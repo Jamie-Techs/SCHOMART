@@ -65,6 +65,9 @@ from botocore.exceptions import ClientError
 import boto3
 import re
 
+from google.cloud import firestore as gcp_firestore
+from google.oauth2 import service_account
+
 # Load environment variables
 load_dotenv()
 
@@ -79,14 +82,17 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 oauth = OAuth(app)
 
-# 🔐 Secure Firebase initialization from environment variable
+# 🔐 Secure Firebase Admin initialization
 cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"])
 cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
+initialize_app(cred)
 
-# Initialize Firestore
-db = firestore.client()
+# Firebase Admin Firestore client
+admin_db = admin_firestore.client()
 
+# Google Cloud Firestore client (using same credentials)
+gcp_credentials = service_account.Credentials.from_service_account_info(cred_dict)
+gcp_db = gcp_firestore.Client(credentials=gcp_credentials)
 # Logging
 logger = logging.getLogger(__name__)
 
@@ -8402,6 +8408,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
