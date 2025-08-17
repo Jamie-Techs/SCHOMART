@@ -65,20 +65,32 @@ from botocore.exceptions import ClientError
 import boto3
 import re
 
+# Load environment variables
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 
+# Initialize extensions
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 oauth = OAuth(app)
 
-db = firestore.Client()
+# 🔐 Secure Firebase initialization from environment variable
+cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"])
+cred = credentials.Certificate(cred_dict)
+firebase_admin.initialize_app(cred)
+
+# Initialize Firestore
+db = firestore.client()
+
+# Logging
 logger = logging.getLogger(__name__)
 
+# SES Configuration
 app.config['SES_REGION'] = os.getenv('SES_REGION', 'us-east-1')
 app.config['SES_SOURCE_EMAIL'] = os.getenv('SES_SOURCE_EMAIL')
 
@@ -8390,5 +8402,6 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
