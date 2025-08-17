@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Benefits - Futo Jiji</title>
+    <!-- Link to Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Link to Google Fonts (Poppins) for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --text-dark: #212529;
+            --text-medium: #495057;
+            --text-light: #6c757d;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border-color: #e9ecef;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            line-height: 1.6;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 900px; /* Increased from 800px for consistency with other pages */
+            margin: 20px auto;
+            background: var(--bg-white);
+            padding: 30px; /* Increased padding */
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 8px 25px var(--shadow-medium);
+            position: relative; /* Needed for absolute positioning of the back button */
+            display: flex; /* Use flexbox for vertical layout */
+            flex-direction: column;
+            gap: 30px; /* Space between major sections */
+        }
+        
+        /* Styles for the top-left back button */
+        .back-button-top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--primary-color); /* Primary green */
+            color: var(--secondary-color); /* Gold text */
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px var(--shadow-light);
+            z-index: 10; /* Ensure button is above other content */
+        }
+
+        .back-button-top-left:hover {
+            background-color: var(--secondary-color); /* Gold on hover */
+            color: var(--primary-color); /* Green text on hover */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transform: translateY(-2px); /* Slight lift */
+        }
+        .back-button-top-left i {
+            font-size: 1.1em; /* Adjust icon size */
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 700;
+            display: flex; /* For icon alignment */
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        h2 i {
+            font-size: 1.1em;
+            color: var(--secondary-color); /* Icon color */
+        }
+
+        .section-card {
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px var(--shadow-light);
+        }
+
+        .current-status {
+            background-color: #e0f7fa; /* Light blue info background */
+            border: 1px solid #b2ebf2; /* Lighter blue border */
+            color: var(--text-dark);
+        }
+        .benefit-tiers {
+            background-color: var(--bg-light); /* Light grey background for tiers */
+            border: 1px solid var(--border-color);
+            color: var(--text-dark);
+        }
+
+        .section-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-card h3 i {
+            font-size: 1.1em;
+        }
+
+        .current-status p {
+            margin-bottom: 15px;
+            font-size: 1.05em;
+            color: var(--text-medium);
+        }
+
+        .current-status ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 15px;
+        }
+        .current-status li {
+            margin-bottom: 8px;
+            color: var(--text-dark);
+            padding-left: 28px; /* Space for icon */
+            position: relative;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+        }
+        .current-status li::before {
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            content: "\f00c"; /* Check-circle icon */
+            color: var(--success-color);
+            position: absolute;
+            left: 0;
+            top: 2px;
+            font-size: 1.1em;
+        }
+
+        .no-benefit-info {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff3cd; /* Warning light yellow */
+            border: 1px solid #ffeeba;
+            color: #856404;
+            border-radius: 8px;
+            font-size: 1.05em;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+        }
+        
+        .benefit-tiers ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .benefit-tiers li {
+            background-color: var(--bg-white);
+            border: 1px solid var(--border-color);
+            margin-bottom: 0; /* Gap handled by parent flex */
+            padding: 18px;
+            border-radius: 8px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping content */
+            gap: 10px; /* Space between details and badge */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .benefit-tiers li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .benefit-tiers li.achieved {
+            background-color: #d4edda; /* Success green */
+            border-color: #c3e6cb;
+        }
+        .benefit-tiers li.next-target {
+            background-color: #ffeeba; /* Warning yellow */
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .benefit-details {
+            flex-grow: 1;
+            color: var(--text-dark);
+            font-size: 1em;
+        }
+        .benefit-details strong {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .benefit-tiers li.next-target .benefit-details strong {
+            color: #856404; /* Keep text color for next target consistent */
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 50px; /* Pill shape */
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0; /* Prevent shrinking on smaller screens */
+        }
+        .status-badge.achieved {
+            background-color: var(--success-color);
+            color: var(--white-color);
+        }
+        .status-badge.pending {
+            background-color: var(--warning-color);
+            color: var(--text-dark); /* Keep dark text for readability on yellow */
+        }
+        
+        .call-to-action-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--secondary-color); /* Gold button */
+            color: var(--primary-color); /* Green text */
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .call-to-action-link:hover {
+            background-color: var(--primary-color); /* Green on hover */
+            color: var(--secondary-color); /* Gold text on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .call-to-action-link i {
+            font-size: 1.1em;
+        }
+
+        /* Flash Messages */
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .flashes li {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .flashes .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flashes .error, .flashes .danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .flashes .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .flashes .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 15px auto;
+                gap: 25px;
+            }
+            .back-button-top-left {
+                top: 15px;
+                left: 15px;
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+            h2 {
+                font-size: 1.8em;
+                gap: 10px;
+            }
+            .section-card {
+                padding: 20px;
+            }
+            .section-card h3 {
+                font-size: 1.4em;
+                flex-direction: column; /* Stack icon and text */
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .benefit-tiers li {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+            .benefit-details {
+                margin-bottom: 10px;
+            }
+            .status-badge {
+                width: fit-content; /* Adjust width for stacked layout */
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                margin: 10px auto;
+                border-radius: 8px;
+                gap: 20px;
+            }
+            .back-button-top-left {
+                top: 10px;
+                left: 10px;
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+            h2 {
+                font-size: 1.6em;
+            }
+            .section-card {
+                padding: 15px;
+            }
+            .section-card h3 {
+                font-size: 1.2em;
+            }
+            .current-status p, .no-benefit-info p {
+                font-size: 0.95em;
+            }
+            .benefit-tiers li {
+                padding: 12px;
+                font-size: 0.9em;
+            }
+            .status-badge {
+                padding: 4px 10px;
+                font-size: 0.8em;
+            }
+            .call-to-action-link {
+                padding: 10px 18px;
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a onclick="history.back()" class="back-button-top-left" title="Go back to previous page">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+
+        <h2><i class="fas fa-handshake"></i> Your Referral Benefits</h2>
+
+        {# Flash Messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">
+                            <span class="alert-icon">
+                                {% if category == 'danger' %} <i class="fas fa-times-circle"></i>
+                                {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                                {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                                {% else %} <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                            </span>
+                            {{ message }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {# End Flash Messages #}
+
+        <div class="section-card current-status">
+            <h3><i class="fas fa-info-circle"></i> Your Current Referral Status</h3>
+            <p>You currently have **{{ user_referral_count }}** successful referrals.</p>
+
+            {% if current_benefit %}
+                <p>Based on your referrals, you qualify for the "**{{ current_benefit.plan_name }}**" benefit!</p>
+                <ul>
+                    <li>You can post **{{ current_benefit.max_adverts }}** free advert(s).</li>
+                    <li>Your adverts will run for **{{ current_benefit.advert_duration_days }} days**.</li>
+                </ul>
+                <p style="text-align: center;">
+                    <a href="{{ url_for('sell') }}" class="call-to-action-link">
+                        <i class="fas fa-bullhorn"></i> Post Advert Now!
+                    </a>
+                </p>
+            {% else %}
+                <div class="no-benefit-info">
+                    <p>You haven't unlocked any referral benefits yet.</p>
+                </div>
+            {% endif %}
+
+            {% if next_benefit %}
+                <p>Just **{{ next_benefit.referral_count - user_referral_count }}** more referrals to unlock your next benefit: **{{ next_benefit.plan_name }}**!</p>
+            {% else %}
+                <p>You've unlocked all available referral benefits! Keep referring to see if more tiers are added.</p>
+            {% endif %}
+        </div>
+
+        <div class="section-card benefit-tiers">
+            <h3><i class="fas fa-trophy"></i> All Referral Benefit Tiers</h3>
+            {% if referral_benefits_list %}
+                <ul>
+                    {% for benefit in referral_benefits_list %}
+                        <li class="{% if user_referral_count >= benefit.referral_count %}achieved{% elif benefit == next_benefit %}next-target{% endif %}">
+                            <div class="benefit-details">
+                                **{{ benefit.referral_count }} referrals**: Unlock the **{{ benefit.plan_name }}** plan ({{ benefit.max_adverts }} advert(s) for {{ benefit.advert_duration_days }} days)
+                            </div>
+                            <div class="status-badge {% if user_referral_count >= benefit.referral_count %}achieved{% else %}pending{% endif %}">
+                                {% if user_referral_count >= benefit.referral_count %}Achieved{% else %}Pending{% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No referral benefit tiers are currently defined.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
