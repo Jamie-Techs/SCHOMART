@@ -267,7 +267,7 @@ def record_behavioral_log(user_id, action, additional_info=None):
     
     try:
         # Use add() to create a new document with an auto-generated ID
-        db.collection('behavioral_logs').add(log_entry)
+        admin_db.collection('behavioral_logs').add(log_entry)
     except Exception as e:
         logging.error(f"Error saving behavioral log to Firestore: {e}")
 
@@ -281,7 +281,7 @@ def is_suspicious_behavior(user_id, ip_address, device_hash):
     try:
         # Rule 1: Too many failed login attempts from this IP recently
         time_limit = datetime.now(UTC) - timedelta(minutes=10)
-        failed_attempts_query = db.collection('behavioral_logs').where(
+        failed_attempts_query = admim_db.collection('behavioral_logs').where(
             'ip_address', '==', ip_address
         ).where(
             'action', '==', 'login_failed'
@@ -296,7 +296,7 @@ def is_suspicious_behavior(user_id, ip_address, device_hash):
 
         # Rule 2: Multiple registrations from the same IP very recently
         time_limit = datetime.now(UTC) - timedelta(hours=1)
-        recent_registrations_query = db.collection('behavioral_logs').where(
+        recent_registrations_query = admin_db.collection('behavioral_logs').where(
             'ip_address', '==', ip_address
         ).where(
             'action', '==', 'registration_success'
@@ -399,7 +399,7 @@ class User:
         if not user_id:
             return None
         try:
-            user_ref = db.collection('users').document(str(user_id))
+            user_ref = admin_db.collection('users').document(str(user_id))
             user_doc = user_ref.get()
             if user_doc.exists:
                 user_data = user_doc.to_dict()
@@ -413,7 +413,7 @@ class User:
     @staticmethod
     def update_online_status(user_id, status):
         try:
-            user_ref = db.collection('users').document(str(user_id))
+            user_ref = admin_db.collection('users').document(str(user_id))
             user_ref.update({
                 'is_online': status,
                 'last_online': firestore.SERVER_TIMESTAMP
@@ -432,7 +432,7 @@ class User(UserMixin):
     def get(user_id):
         # This is a mock user retrieval function
         # In a real app, you would retrieve the user from the database
-        user_doc = db.collection('users').document(user_id).get()
+        user_doc = admin_db.collection('users').document(user_id).get()
         if user_doc.exists:
             user_data = user_doc.to_dict()
             return User(id=user_id, is_verified=user_data.get('is_verified', False))
@@ -618,7 +618,7 @@ def signup():
 
         try:
             # Check if user already exists
-            user_doc = db.collection('users').document(email).get()
+            user_doc = admin_db.collection('users').document(email).get()
             if user_doc.exists:
                 flash("An account with this email already exists.", "error")
                 return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=os.getenv('RECAPTCHA_SITE_KEY'))
@@ -627,7 +627,7 @@ def signup():
             activation_token = os.urandom(24).hex()
             token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
 
-            user_ref = db.collection('users').document(email)
+            user_ref = admin_db.collection('users').document(email)
             user_ref.set({
                 'username': username,
                 'email': email,
@@ -647,7 +647,6 @@ def signup():
             flash("Signup failed due to a server error. Please try again.", "error")
 
     return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=os.getenv('RECAPTCHA_SITE_KEY'))
-
 
 
 
@@ -674,7 +673,7 @@ def google_authorized():
         email = user_info['email'].lower()
         name = user_info.get('name', 'GoogleUser')
 
-        user_ref = db.collection('users').document(email)
+        user_ref = gcp_db.collection('users').document(email)
         user_doc = user_ref.get()
 
         if not user_doc.exists:
@@ -722,7 +721,7 @@ def login():
         password = request.form.get('password', '').strip()
 
         try:
-            user_doc = db.collection('users').document(username_or_email).get()
+            user_doc = admin_db.collection('users').document(username_or_email).get()
             if user_doc.exists:
                 user_data = user_doc.to_dict()
 
@@ -751,7 +750,7 @@ def login():
 def activate_account(token):
     """Activates a user's account with a verification token."""
     try:
-        users_ref = db.collection('users')
+        users_ref = admin_db.collection('users')
         query = users_ref.where('activation_token', '==', token).limit(1).stream()
         user_doc_stream = next(query, None)
         
@@ -2010,11 +2009,11 @@ def home():
     try:
         # --- Fetching Static Data: Locations and Categories ---
         # The equivalent of `SELECT name FROM location ORDER BY name ASC`
-        locations_ref = db.collection('locations').order_by('name').stream()
+        locations_ref = admin_db.collection('locations').order_by('name').stream()
         locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
 
         # The equivalent of `get_all_categories_with_subcategories`
-        categories_ref = db.collection('categories').stream()
+        categories_ref = admin_db.collection('categories').stream()
         categories_data = [doc.to_dict() for doc in categories_ref]
 
         # --- Adverts Logic ---
@@ -2041,7 +2040,7 @@ def home():
         }
 
         # Query for all published and non-expired adverts
-        adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
+        adverts_ref = admin_db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
 
@@ -2053,7 +2052,7 @@ def home():
                 advert_data['id'] = advert_doc.id # Add document ID
                 
                 # Fetch user data for each advert to get username and role
-                poster_user_ref = db.collection('users').document(advert_data['user_id'])
+                poster_user_ref = admin_db.collection('users').document(advert_data['user_id'])
                 poster_user_doc = poster_user_ref.get()
                 if poster_user_doc.exists:
                     poster_user_data = poster_user_doc.to_dict()
@@ -8408,6 +8407,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
