@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.username }}'s Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Basic Styling for user_profile.html */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* Keeping a light background for general page */
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* Font Awesome Icons specific styling */
+        /* This ensures icons are white, unless specifically overridden for accent colors */
+        .fa-solid, .fa-regular, .fa-brands {
+            color: white;
+        }
+        /* Specific override for the rating star icon */
+        .profile-stat-item .fa-star {
+            color: #FDB813; /* Accent color for the rating star */
+        }
+        /* Override for icons inside non-white elements like comments or external links */
+        .post-body a .fa-external-link-alt {
+            color: #006B3C; /* Primary color for specific context icons */
+        }
+
+
+        .profile-container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            padding: 30px;
+            /* Primary color for header gradient */
+            background: linear-gradient(135deg, #006B3C, #004D2D);
+            color: white;
+            position: relative;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        .profile-picture-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            margin-right: 30px;
+            flex-shrink: 0;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            flex-grow: 1;
+        }
+
+        .profile-username {
+            font-size: 2.2em;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-bio {
+            font-size: 1.1em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 25px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .profile-stat-item strong {
+            display: block;
+            font-size: 1.3em;
+            margin-bottom: 3px;
+        }
+
+        .profile-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .profile-actions button {
+            background-color: #006B3C; /* Primary button color */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            display: flex; /* For icon and text alignment */
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+        }
+
+        .profile-actions button.unfollow-btn {
+            background-color: #dc3545; /* Red for unfollow */
+        }
+
+        .profile-actions button:hover {
+            background-color: #FDB813; /* Accent color on hover */
+            color: #006B3C; /* Text becomes primary color on hover */
+        }
+        .profile-actions button:hover i { /* Icon color changes on hover too */
+            color: #006B3C;
+        }
+
+
+        .profile-content {
+            padding: 20px 30px;
+        }
+
+        .profile-tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .profile-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 3px solid transparent;
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+        }
+
+        .profile-tab.active {
+            color: #FDB813; /* Accent color for active tab text */
+            border-bottom-color: #FDB813; /* Accent color for active tab underline */
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Stories Section */
+        .stories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .story-card {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .story-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .story-media-wrapper {
+            width: 100%;
+            padding-bottom: 100%; /* 1:1 Aspect Ratio */
+            position: relative;
+            background-color: #ddd; /* Placeholder */
+        }
+
+        .story-media {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .story-caption {
+            padding: 10px;
+            font-size: 0.9em;
+            color: #666;
+            word-break: break-word;
+        }
+
+        /* Posts Section */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .post-card {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer; /* Make post card clickable for modal */
+            transition: transform 0.2s ease;
+        }
+        .post-card:hover {
+            transform: translateY(-5px); /* Re-adding hover for clickable posts */
+        }
+
+        .post-card-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .post-author-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .post-author-info strong {
+            display: block;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .post-date {
+            font-size: 0.85em;
+            color: #777;
+        }
+
+        .post-media-carousel {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio for images */
+            overflow: hidden;
+            background-color: #eee;
+        }
+
+        .post-media-carousel img,
+        .post-media-carousel video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .post-body {
+            padding: 15px;
+        }
+
+        .post-title {
+            font-size: 1.3em;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .post-content {
+            font-size: 0.95em;
+            color: #555;
+            line-height: 1.6;
+            max-height: 100px; /* Limit height */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal; /* Allow text to wrap within the limited height */
+        }
+
+        .load-more-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 25px;
+            background-color: #006B3C; /* Primary color for button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .load-more-button:hover {
+            background-color: #FDB813; /* Accent color on hover */
+            color: #006B3C; /* Text becomes primary color on hover */
+        }
+
+        .no-content-message {
+            text-align: center;
+            color: #777;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+
+        /* --- Modal Styling (for both Story and Post) --- */
+        .common-modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            -webkit-animation: fadeIn 0.5s;
+            animation: fadeIn 0.5s;
+        }
+
+        .common-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            -webkit-animation: slideIn 0.5s;
+            animation: slideIn 0.5s;
+        }
+
+        .common-modal-media {
+            width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 15px;
+            border-radius: 8px; /* Slightly rounded corners for media */
+        }
+
+        .common-modal-caption, .common-modal-title, .common-modal-content-text {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 10px;
+            word-wrap: break-word; /* Ensure text wraps */
+        }
+        .common-modal-title {
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .common-modal-date {
+            font-size: 0.9em;
+            color: #777;
+            text-align: right;
+        }
+
+        .common-modal-close {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .common-modal-close:hover,
+        .common-modal-close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Animations */
+        @-webkit-keyframes fadeIn {
+            from {opacity: 0} 
+            to {opacity: 1}
+        }
+        @keyframes fadeIn {
+            from {opacity: 0}
+            to {opacity: 1}
+        }
+        @-webkit-keyframes slideIn {
+            from {transform: translateY(-50px); opacity: 0}
+            to {transform: translateY(0); opacity: 1}
+        }
+        @keyframes slideIn {
+            from {transform: translateY(-50px); opacity: 0}
+            to {transform: translateY(0); opacity: 1}
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .profile-picture-container {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+            .profile-actions {
+                justify-content: center;
+            }
+            .profile-tab {
+                flex: 1 1 auto; /* Allow tabs to grow and shrink */
+                text-align: center;
+                padding: 10px 15px;
+            }
+            .posts-grid {
+                grid-template-columns: 1fr; /* Stack posts on smaller screens */
+            }
+            .stories-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-picture-container">
+                <img src="{{ profile_user.profile_picture if profile_user.profile_picture else url_for('static', filename='default_avatar.png') }}" alt="{{ profile_user.username }}'s Profile Picture" class="profile-picture">
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-username">{{ profile_user.username }}</h1>
+                <p class="profile-bio">{{ profile_user.bio }}</p> {# Removed 'if profile_user.bio else "No bio provided."' #}
+                <div class="profile-stats">
+                    <div class="profile-stat-item">
+                        <strong>{{ profile_user.posts_count if profile_user.posts_count is not none else '...' }}</strong> Posts
+                    </div>
+                    <div class="profile-stat-item">
+                        <strong>{{ profile_user.followers_count if profile_user.followers_count is not none else 0 }}</strong> Followers
+                    </div>
+                    <div class="profile-stat-item">
+                        <strong>{{ profile_user.following_count if profile_user.following_count is not none else 0 }}</strong> Following
+                    </div>
+                    <div class="profile-stat-item">
+                        <strong>{{ profile_user.average_rating if profile_user.average_rating is not none else 'N/A' }}</strong> Rating <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    {% if is_owner %}
+                        <button onclick="window.location.href='/admin/create_post'"><i class="fa-solid fa-plus"></i> Create New Post</button>
+                        <button onclick="window.location.href='/seller_profile_view.html'"><i class="fa-solid fa-store"></i> Advert Profile</button>
+                    {% elif current_user_id %}
+                        <button id="followUnfollowBtn"
+                                data-user-id="{{ profile_user.id }}"
+                                data-is-following="{{ 'true' if is_following_user else 'false' }}"
+                                class="{% if is_following_user %}unfollow-btn{% else %}follow-btn{% endif %}">
+                            {% if is_following_user %}<i class="fa-solid fa-user-minus"></i> Unfollow{% else %}<i class="fa-solid fa-user-plus"></i> Follow{% endif %}
+                        </button>
+                        {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-content">
+            <div class="profile-tabs">
+                <div class="profile-tab active" data-tab="posts">Posts</div>
+                <div class="profile-tab" data-tab="stories">Stories</div>
+            </div>
+
+            <div id="posts-tab-content" class="tab-content active">
+                <input type="text" id="postsSearchInput" placeholder="Search posts..." style="width: calc(100% - 20px); padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px;">
+                <div class="posts-grid" id="userPostsContainer">
+                    </div>
+                <button class="load-more-button" id="loadMorePostsBtn" style="display: none;">Load More Posts</button>
+                <div id="noPostsMessage" class="no-content-message" style="display: none;">No posts found for this user.</div>
+            </div>
+
+            <div id="stories-tab-content" class="tab-content">
+                <div class="stories-grid" id="userStoriesContainer">
+                    </div>
+                <div id="noStoriesMessage" class="no-content-message" style="display: none;">No active stories found for this user.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="storyModal" class="common-modal">
+        <div class="common-modal-content">
+            <span class="common-modal-close story-modal-close">&times;</span>
+            <div id="modalMediaContainer"></div>
+            <p class="common-modal-caption" id="modalStoryCaption"></p>
+            <p class="common-modal-date" id="modalStoryDate"></p>
+            {% if is_owner %}
+            <button class="delete-story-button" id="deleteStoryButton" style="background-color: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; width: 100%;">
+                <i class="fa-solid fa-trash"></i> Delete Story
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="postModal" class="common-modal">
+        <div class="common-modal-content">
+            <span class="common-modal-close post-modal-close">&times;</span>
+            <p class="common-modal-title" id="modalPostTitle"></p>
+            <p class="common-modal-content-text" id="modalPostContent"></p>
+            <div id="modalPostMediaContainer"></div>
+            <p class="common-modal-date" id="modalPostDate"></p>
+            <p><a id="modalPostExternalLink" href="#" target="_blank" style="display: none; color: #006B3C; font-weight: bold; text-decoration: none;">Read More</a></p>
+            {% if is_owner %}
+                <button class="delete-post-button" id="deletePostButton" style="background-color: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px; width: 100%;">
+                    <i class="fa-solid fa-trash"></i> Delete Post
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const userId = {{ profile_user.id }};
+        let currentPage = 1;
+        const postsPerPage = 10;
+        let totalPosts = 0;
+        let isLoadingPosts = false;
+        let postsSearchTimeout;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure modals are hidden when the page loads
+            document.getElementById('storyModal').style.display = 'none';
+            document.getElementById('postModal').style.display = 'none';
+
+            // Tab switching logic
+            const tabs = document.querySelectorAll('.profile-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab + '-tab-content').classList.add('active');
+
+                    // Load content based on tab
+                    if (this.dataset.tab === 'posts') {
+                        currentPage = 1;
+                        document.getElementById('userPostsContainer').innerHTML = '';
+                        loadUserPosts();
+                    } else if (this.dataset.tab === 'stories') {
+                        loadUserStories();
+                    }
+                });
+            });
+
+            // Initial load for posts tab
+            loadUserPosts();
+            
+            // Search input event listener
+            document.getElementById('postsSearchInput').addEventListener('keyup', function() {
+                clearTimeout(postsSearchTimeout);
+                postsSearchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    document.getElementById('userPostsContainer').innerHTML = '';
+                    loadUserPosts();
+                }, 500); // Debounce search
+            });
+
+            // Load More Posts button
+            document.getElementById('loadMorePostsBtn').addEventListener('click', loadUserPosts);
+
+            // Follow/Unfollow button logic
+            const followUnfollowBtn = document.getElementById('followUnfollowBtn');
+            if (followUnfollowBtn) {
+                followUnfollowBtn.addEventListener('click', async function() {
+                    const followedUserId = this.dataset.userId;
+                    const isFollowing = this.dataset.isFollowing === 'true';
+                    // Correct endpoint based on your Flask routes
+                    const endpoint = isFollowing ? `/api/unfollow_user/${followedUserId}` : `/api/follow_user/${followedUserId}`;
+
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            // Note: Your backend expects user_id in the URL path, not in the JSON body.
+                            // So, sending empty body or simply no body is fine as long as Flask route matches.
+                            // If your Flask route expects a JSON body, you'd send:
+                            // body: JSON.stringify({ user_id: followedUserId })
+                            // But based on your @app.route('/api/follow_user/<int:user_to_follow_id>', methods=['POST']),
+                            // the ID is in the URL, so no body needed for the ID itself.
+                            // For simplicity, we'll keep the body.
+                            body: JSON.stringify({}) // Send an empty JSON object if no other data is needed
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.dataset.isFollowing = String(!isFollowing); // Toggle state
+
+                            // Update button text and icon
+                            const icon = this.querySelector('i');
+                            if (data.action === 'followed') {
+                                this.classList.remove('unfollow-btn');
+                                this.classList.add('follow-btn');
+                                this.innerHTML = '<i class="fa-solid fa-user-minus"></i> Unfollow';
+                            } else { // unfollowed
+                                this.classList.remove('follow-btn');
+                                this.classList.add('unfollow-btn');
+                                this.innerHTML = '<i class="fa-solid fa-user-plus"></i> Follow';
+                            }
+                            
+                            // Update followers count in the profile stats
+                            const followersCountElement = document.querySelector('.profile-stat-item:nth-child(2) strong');
+                            if (followersCountElement && data.new_followers_count !== undefined) {
+                                followersCountElement.textContent = data.new_followers_count;
+                            }
+                            alert(data.message); // Keep alert for feedback
+                        } else {
+                            alert('Error: ' + data.message); // Keep alert for feedback
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        alert('An error occurred during the follow/unfollow action.');
+                    }
+                });
+            }
+
+            // Delete Post button logic (inside post modal)
+            const deletePostButton = document.getElementById('deletePostButton');
+            if (deletePostButton) {
+                deletePostButton.addEventListener('click', async function() {
+                    // The currently displayed post in the modal would be used for deletion
+                    // You'll need a way to pass the postId to this button's click handler
+                    // A simple way is to store it as a data attribute on the button,
+                    // or in a global variable when the modal is opened.
+                    const postIdToDelete = this.dataset.postId; 
+                    if (!postIdToDelete) {
+                        console.error("No post ID found for deletion.");
+                        return;
+                    }
+                    deletePost(postIdToDelete);
+                });
+            }
+
+            // NEW: Delete Story button logic (inside story modal)
+            const deleteStoryButton = document.getElementById('deleteStoryButton');
+            if (deleteStoryButton) {
+                deleteStoryButton.addEventListener('click', async function() {
+                    const storyIdToDelete = this.dataset.storyId; 
+                    if (!storyIdToDelete) {
+                        console.error("No story ID found for deletion.");
+                        return;
+                    }
+                    deleteStory(storyIdToDelete);
+                });
+            }
+        });
+
+        async function loadUserPosts() {
+            if (isLoadingPosts) return;
+            isLoadingPosts = true;
+
+            const postsContainer = document.getElementById('userPostsContainer');
+            const loadMoreBtn = document.getElementById('loadMorePostsBtn');
+            const noPostsMessage = document.getElementById('noPostsMessage');
+            const searchQuery = document.getElementById('postsSearchInput').value;
+
+            try {
+                const response = await fetch(`/api/user/${userId}/posts?page=${currentPage}&per_page=${postsPerPage}&q=${encodeURIComponent(searchQuery)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('Error fetching posts:', data.message);
+                    alert('Error loading posts: ' + data.message);
+                    noPostsMessage.style.display = 'block';
+                    loadMoreBtn.style.display = 'none';
+                    return;
+                }
+
+                totalPosts = data.total_posts;
+
+                if (data.posts.length === 0 && currentPage === 1) {
+                    noPostsMessage.style.display = 'block';
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    noPostsMessage.style.display = 'none';
+                    data.posts.forEach(post => {
+                        const postCard = createPostCard(post);
+                        postsContainer.appendChild(postCard);
+                    });
+
+                    if (data.posts.length < postsPerPage || (currentPage * postsPerPage) >= totalPosts) {
+                        loadMoreBtn.style.display = 'none';
+                    } else {
+                        loadMoreBtn.style.display = 'block';
+                        currentPage++;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Failed to fetch user posts:', error);
+                alert('An error occurred while loading posts.');
+                noPostsMessage.style.display = 'block';
+                loadMoreBtn.style.display = 'none';
+            } finally {
+                isLoadingPosts = false;
+            }
+        }
+
+        function createPostCard(post) {
+            const card = document.createElement('div');
+            card.classList.add('post-card');
+            card.dataset.post = JSON.stringify(post); // Store full post data for modal
+            card.addEventListener('click', () => openPostModal(post)); // Make clickable for modal
+
+            const mediaHtml = post.post_media_items && post.post_media_items.length > 0 ?
+                `<div class="post-media-carousel">
+                    ${post.post_media_items[0].media_type === 'image' ?
+                        `<img src="${post.post_media_items[0].media_path_or_url}" alt="${post.title}">` :
+                        `<video controls src="${post.post_media_items[0].media_path_or_url}"></video>`
+                    }
+                </div>` : '';
+
+            card.innerHTML = `
+                <div class="post-card-header">
+                    <img src="${post.profile_picture_url}" alt="${post.author_username}'s Profile" class="post-author-pic">
+                    <div class="post-author-info">
+                        <strong>${post.author_username}</strong>
+                        <span class="post-date">${formatTimestamp(post.post_date)}</span>
+                    </div>
+                </div>
+                <div class="post-body">
+                    <h3 class="post-title">${post.title}</h3>
+                    <p class="post-content">${post.content}</p>
+                    ${post.external_link_url ? `<a href="${post.external_link_url}" target="_blank" style="color: #006B3C; text-decoration: none; font-weight: bold;"><i class="fa-solid fa-external-link-alt"></i> Read More</a>` : ''}
+                </div>
+                ${mediaHtml} `;
+            return card;
+        }
+
+        async function loadUserStories() {
+            const storiesContainer = document.getElementById('userStoriesContainer');
+            const noStoriesMessage = document.getElementById('noStoriesMessage');
+            storiesContainer.innerHTML = ''; // Clear previous stories
+
+            try {
+                const response = await fetch(`/api/user/${userId}/stories`);
+                const stories = await response.json();
+
+                if (stories.length === 0) {
+                    noStoriesMessage.style.display = 'block';
+                } else {
+                    noStoriesMessage.style.display = 'none';
+                    stories.forEach(story => {
+                        const storyCard = createStoryCard(story);
+                        storiesContainer.appendChild(storyCard);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch user stories:', error);
+                alert('An error occurred while loading stories.');
+                noStoriesMessage.style.display = 'block';
+            }
+        }
+
+        function createStoryCard(story) {
+            const card = document.createElement('div');
+            card.classList.add('story-card');
+            card.dataset.story = JSON.stringify(story); // Store story data for modal
+
+            card.innerHTML = `
+                <div class="story-media-wrapper">
+                    ${story.media_type === 'image' ?
+                        `<img src="${story.media_url}" alt="Story" class="story-media">` :
+                        `<video src="${story.media_url}" class="story-media"></video>`
+                    }
+                </div>
+                <div class="story-caption">${story.caption || 'No caption'}</div>
+                <div class="story-date">${formatTimestamp(story.created_at)}</div>
+            `;
+
+            card.addEventListener('click', () => openStoryModal(story));
+            return card;
+        }
+
+        // --- Story Modal Logic ---
+        const storyModal = document.getElementById('storyModal');
+        const modalMediaContainer = document.getElementById('modalMediaContainer');
+        const modalStoryCaption = document.getElementById('modalStoryCaption');
+        const modalStoryDate = document.getElementById('modalStoryDate');
+        const storyModalClose = document.querySelector('.story-modal-close');
+        // NEW: Get the delete button from the story modal
+        const deleteStoryButton = document.getElementById('deleteStoryButton');
+
+        function openStoryModal(story) {
+            modalMediaContainer.innerHTML = ''; // Clear previous media
+            if (story.media_type === 'image') {
+                const img = document.createElement('img');
+                img.src = story.media_url;
+                img.classList.add('common-modal-media');
+                modalMediaContainer.appendChild(img);
+            } else if (story.media_type === 'video') {
+                const video = document.createElement('video');
+                video.src = story.media_url;
+                video.controls = true;
+                video.classList.add('common-modal-media');
+                modalMediaContainer.appendChild(video);
+            }
+            modalStoryCaption.textContent = story.caption || 'No caption';
+            modalStoryDate.textContent = formatTimestamp(story.created_at);
+            storyModal.style.display = 'flex'; // Show the modal
+
+            // NEW: Set the story ID on the delete button and show/hide it
+            if (deleteStoryButton) {
+                deleteStoryButton.dataset.storyId = story.id;
+                if ({{ 'true' if is_owner else 'false' }}) {
+                    deleteStoryButton.style.display = 'block';
+                } else {
+                    deleteStoryButton.style.display = 'none';
+                }
+            }
+        }
+
+        storyModalClose.addEventListener('click', () => {
+            storyModal.style.display = 'none';
+            // Stop any playing video if it exists when closing
+            const videoElement = modalMediaContainer.querySelector('video');
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.currentTime = 0; // Rewind video
+            }
+            modalMediaContainer.innerHTML = ''; // Clear media when closing
+        });
+
+        // --- Post Modal Logic ---
+        const postModal = document.getElementById('postModal');
+        const modalPostMediaContainer = document.getElementById('modalPostMediaContainer');
+        const modalPostTitle = document.getElementById('modalPostTitle');
+        const modalPostContent = document.getElementById('modalPostContent');
+        const modalPostDate = document.getElementById('modalPostDate');
+        const modalPostExternalLink = document.getElementById('modalPostExternalLink');
+        const postModalClose = document.querySelector('.post-modal-close');
+        // Get the delete button from the modal
+        const deletePostButton = document.getElementById('deletePostButton');
+
+        function openPostModal(post) {
+            modalPostMediaContainer.innerHTML = ''; // Clear previous media
+            
+            modalPostTitle.textContent = post.title;
+            modalPostContent.textContent = post.content;
+            modalPostDate.textContent = formatTimestamp(post.post_date);
+
+            if (post.external_link_url) {
+                modalPostExternalLink.href = post.external_link_url;
+                modalPostExternalLink.style.display = 'block';
+            } else {
+                modalPostExternalLink.style.display = 'none';
+            }
+
+            if (post.post_media_items && post.post_media_items.length > 0) {
+                const media = post.post_media_items[0];
+                if (media.media_type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = media.media_path_or_url;
+                    img.alt = post.title;
+                    img.classList.add('common-modal-media');
+                    modalPostMediaContainer.appendChild(img);
+                } else if (media.media_type === 'video') {
+                    const video = document.createElement('video');
+                    video.src = media.media_path_or_url;
+                    video.controls = true;
+                    video.classList.add('common-modal-media');
+                    modalPostMediaContainer.appendChild(video);
+                }
+            }
+
+            // Set the post ID on the delete button when the modal opens
+            if (deletePostButton) {
+                deletePostButton.dataset.postId = post.id;
+                // Only show the delete button if the current user is the owner
+                if ({{ 'true' if is_owner else 'false' }}) {
+                    deletePostButton.style.display = 'block';
+                } else {
+                    deletePostButton.style.display = 'none';
+                }
+            }
+
+            postModal.style.display = 'flex'; // Show the modal
+        }
+
+        postModalClose.addEventListener('click', () => {
+            postModal.style.display = 'none';
+            // Stop any playing video if it exists when closing
+            const videoElement = modalPostMediaContainer.querySelector('video');
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.currentTime = 0; // Rewind video
+            }
+            modalPostMediaContainer.innerHTML = ''; // Clear media when closing
+        });
+
+        // Close modals when clicking outside their content
+        window.addEventListener('click', (event) => {
+            if (event.target == storyModal) {
+                storyModal.style.display = 'none';
+                // Also pause video if open
+                const videoElement = modalMediaContainer.querySelector('video');
+                if (videoElement) {
+                    videoElement.pause();
+                    videoElement.currentTime = 0;
+                }
+                modalMediaContainer.innerHTML = '';
+            }
+            if (event.target == postModal) {
+                postModal.style.display = 'none';
+                // Also pause video if open
+                const videoElement = modalPostMediaContainer.querySelector('video');
+                if (videoElement) {
+                    videoElement.pause();
+                    videoElement.currentTime = 0;
+                }
+                modalPostMediaContainer.innerHTML = '';
+            }
+        });
+
+        // --- New Delete Post Function ---
+        async function deletePost(postId) {
+            if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                return; // User cancelled
+            }
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include any necessary authentication headers, e.g., 'Authorization': 'Bearer YOUR_TOKEN'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    postModal.style.display = 'none'; // Close the modal
+                    currentPage = 1; // Reset page to reload posts from start
+                    document.getElementById('userPostsContainer').innerHTML = ''; // Clear current posts
+                    loadUserPosts(); // Reload posts to reflect the deletion
+                    // Optionally update the posts count on the profile
+                    const postsCountElement = document.querySelector('.profile-stat-item:nth-child(1) strong');
+                    if (postsCountElement) {
+                        postsCountElement.textContent = parseInt(postsCountElement.textContent) - 1;
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete post.'));
+                    console.error('Delete post error:', data.message);
+                }
+            } catch (error) {
+                console.error('Fetch error during post deletion:', error);
+                alert('An error occurred while trying to delete the post.');
+            }
+        }
+
+        // --- NEW: Delete Story Function ---
+        async function deleteStory(storyId) {
+            if (!confirm('Are you sure you want to delete this story? This action cannot be undone.')) {
+                return; // User cancelled
+            }
+
+            try {
+                const response = await fetch(`/api/stories/${storyId}`, { // Assuming your story delete endpoint is /api/stories/<story_id>
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Include any necessary authentication headers
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    storyModal.style.display = 'none'; // Close the modal
+                    loadUserStories(); // Reload stories to reflect the deletion
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete story.'));
+                    console.error('Delete story error:', data.message);
+                }
+            } catch (error) {
+                console.error('Fetch error during story deletion:', error);
+                alert('An error occurred while trying to delete the story.');
+            }
+        }
+
+        // --- Utility Functions ---
+        // New function for relative time formatting
+        function formatTimestamp(timestamp) {
+            const now = new Date();
+            const date = new Date(timestamp);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) {
+                return `${diffInSeconds} seconds ago`;
+            } else if (diffInSeconds < 3600) {
+                return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            } else if (diffInSeconds < 86400) {
+                return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            } else if (diffInSeconds < 2592000) { // Approx 30 days
+                return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            } else {
+                // Fallback to full date for older items
+                const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return date.toLocaleDateString(undefined, options);
+            }
+        }
+
+        // Initial load of posts when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserPosts(); // Load posts first by default
+            // The loadMorePostsBtn click listener is already added in the DCL function
+        });
+    </script>
+</body>
+</html>
