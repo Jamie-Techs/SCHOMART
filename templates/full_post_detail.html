@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ post.title or 'Post Detail' }} - School News</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css"> {# Assuming you save your CSS in a separate file now #}
+    <style>
+        /* Embed necessary styles if not linking a main CSS file */
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --accent-color: #00391F; /* Even Darker Green */
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --light-green-background: #EFF7EF;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+            --max-content-width: 900px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: var(--white-text);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+        }
+        .header h1 i {
+            color: var(--secondary-color);
+            font-size: 1em;
+        }
+
+        .home-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .home-button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-50%) scale(1.03);
+        }
+
+        .container {
+            width: 90%;
+            max-width: var(--max-content-width);
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .single-post-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
+        }
+
+        .single-post-card h2 {
+            font-size: 2.2em;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .single-post-meta {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+            font-size: 0.95em;
+            color: #666;
+            flex-wrap: wrap;
+        }
+        .single-post-meta span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .single-post-meta i {
+            color: var(--primary-color);
+        }
+
+        .single-post-content {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            word-wrap: break-word; /* Break long words */
+            color: var(--text-color);
+        }
+
+        .single-post-media {
+            margin-top: 20px;
+            display: grid;
+            gap: 20px;
+        }
+        .single-post-media .media-item {
+            text-align: center;
+            background-color: var(--light-background);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .single-post-media .media-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+            max-height: 500px; /* Max height for media on detail page */
+        }
+        video.media-preview, audio.media-preview {
+            width: 100%;
+            max-height: 400px; /* Ensure videos/audio don't get too tall */
+        }
+        .single-post-media .media-caption {
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .single-post-media .document-link {
+            display: inline-flex;
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .single-post-media .document-link:hover {
+            background-color: var(--accent-color);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+        }
+        .back-button:hover {
+            background-color: #e6a700; /* Slightly darker yellow */
+            transform: translateY(-2px);
+            color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .back-button i {
+            color: var(--primary-color);
+        }
+
+        /* Responsive adjustments for single post */
+        @media (max-width: 768px) {
+            .single-post-card {
+                padding: 20px;
+            }
+            .single-post-card h2 {
+                font-size: 1.8em;
+            }
+            .single-post-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .single-post-content {
+                font-size: 1em;
+            }
+        }
+        @media (max-width: 480px) {
+            .single-post-card {
+                padding: 15px;
+            }
+            .single-post-card h2 {
+                font-size: 1.5em;
+            }
+            .single-post-media .media-preview {
+                max-height: 300px;
+            }
+            video.media-preview, audio.media-preview {
+                max-height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="home-button"><i class="fas fa-home"></i> Home</a>
+        <h1><i class="fas fa-newspaper"></i> School News</h1>
+    </div>
+
+    <div class="container">
+        <div class="single-post-card">
+            <h2>{{ post.title }}</h2>
+
+            <div class="single-post-meta">
+                <span><i class="fas fa-user"></i> By {{ post.author_username or 'Anonymous' }}</span>
+                <span><i class="fas fa-calendar-alt"></i> {{ post.post_date_formatted }}</span>
+                {% if post.reactions_count is not none %}
+                    <span><i class="fas fa-heart"></i> {{ post.reactions_count }} Reactions</span>
+                {% endif %}
+                {% if post.comments_count is not none %}
+                    <span><i class="fas fa-comment"></i> {{ post.comments_count }} Comments</span>
+                {% endif %}
+            </div>
+
+            <div class="single-post-content">
+                {{ post.content }}
+            </div>
+
+            {% if post.post_media_items %}
+                <div class="single-post-media">
+                    <h3><i class="fas fa-photo-video"></i> Media Gallery</h3>
+                    {% for media_item in post.post_media_items %}
+                        <div class="media-item">
+                            {% if media_item.media_type == 'image' %}
+                                <img src="{{ media_item.media_path_or_url }}" alt="{{ media_item.caption or post.title }}" class="media-preview">
+                            {% elif media_item.media_type == 'video' %}
+                                <video controls class="media-preview">
+                                    <source src="{{ media_item.media_path_or_url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% elif media_item.media_type == 'audio' %}
+                                <audio controls class="media-preview">
+                                    <source src="{{ media_item.media_path_or_url }}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            {% elif media_item.media_type == 'document' %}
+                                {% set filename = media_item.media_path_or_url.split('/')[-1] %}
+                                <p><i class="fas fa-file-alt"></i> Document: <a href="{{ media_item.media_path_or_url }}" download class="document-link">{{ filename }} <i class="fas fa-download"></i></a></p>
+                            {% endif %}
+                            {% if media_item.caption %}
+                                <p class="media-caption">{{ media_item.caption }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <a href="/school_news" class="back-button"><i class="fas fa-arrow-left"></i> Back to News</a>
+        </div>
+    </div>
+</body>
+</html>
