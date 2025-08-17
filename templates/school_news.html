@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>School News</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --accent-color: #00391F; /* Even Darker Green */
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --light-green-background: #EFF7EF;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+            --max-content-width: 900px; /* New: Max width for main content */
+        }
+        
+        /* --- Base Styles & Reset --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased; /* Smoother font rendering */
+            scroll-behavior: smooth; /* Smooth scrolling for anchor links */
+        }
+        
+        /* --- Reusable Container --- */
+        .container {
+            width: 90%;
+            max-width: var(--max-content-width);
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        
+        /* --- Header Section --- */
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            color: var(--white-text);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700; /* Make header text bolder */
+        }
+        .header h1 i {
+            color: var(--secondary-color);
+            font-size: 1em;
+        }
+        
+        .home-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border */
+        }
+        .home-button i {
+            color: var(--white-text);
+        }
+        
+        .home-button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-50%) scale(1.03); /* Slight scale for hover */
+            color: var(--white-text);
+        }
+        
+        /* --- Tab Navigation --- */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden; /* Ensures rounded corners apply correctly */
+        }
+        
+        .tab-nav a {
+            flex: 1;
+            text-align: center;
+            padding: 15px 20px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all var(--transition-speed);
+            border-bottom: 3px solid transparent; /* Highlight active tab */
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tab-nav a i {
+            color: var(--primary-color);
+        }
+        
+        .tab-nav a:hover {
+            background-color: var(--light-green-background);
+            color: var(--accent-color);
+        }
+        .tab-nav a:hover i {
+            color: var(--accent-color);
+        }
+        
+        .tab-nav a.active {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border-bottom-color: var(--secondary-color);
+            cursor: default;
+            box-shadow: inset 0 -3px 0 var(--secondary-color); /* Stronger active indicator */
+        }
+        .tab-nav a.active i {
+            color: var(--white-text);
+        }
+        
+        /* --- Search Container --- */
+        .search-container {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center; /* Align items vertically in center */
+        }
+        
+        .search-container input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            max-width: 400px;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        
+        .search-container input[type="text"]:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2);
+            outline: none;
+        }
+        
+        .search-container button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .search-container button i {
+            color: var(--white-text);
+        }
+        
+        .search-container button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* More prominent shadow on hover */
+        }
+        
+        /* --- Posts Styling --- */
+        #postsContainer {
+            display: grid;
+            gap: 25px;
+        }
+        
+        .post {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        
+        .post:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12); /* Slightly larger shadow on hover */
+        }
+        
+        .post h3 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700; /* Bolder post titles */
+        }
+        .post h3 i {
+            color: var(--primary-color);
+        }
+        
+        .post h3 a {
+            text-decoration: none;
+            color: inherit;
+            transition: color var(--transition-speed);
+        }
+        
+        .post h3 a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .post p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .post p .read-more-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+            transition: color var(--transition-speed);
+        }
+        .post p .read-more-link:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        
+        /* --- Media Specific Styles --- */
+        .media-item {
+            margin-top: 15px; /* Space above each media item */
+            margin-bottom: 20px; /* Space below each media item */
+            text-align: center;
+            background-color: var(--light-background); /* Slight background for media item */
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        
+        .media-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            display: block;
+            margin: 0 auto; /* Center image/video */
+            object-fit: contain; /* Ensure media fits without cropping */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        video.media-preview, audio.media-preview {
+            width: 100%;
+            max-height: 350px; /* Slightly increased max-height for videos/audio */
+        }
+        
+        .media-caption {
+            font-style: italic;
+            color: #666;
+            margin-top: 10px;
+            font-size: 0.9em;
+            padding: 0 5px; /* Little padding for caption */
+        }
+        
+        /* Style for download link for documents */
+        .document-link {
+            display: inline-flex; /* Changed to inline-flex for better alignment */
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .document-link i {
+            color: var(--white-text);
+        }
+        .document-link:hover {
+            background-color: var(--accent-color);
+            color: var(--white-text);
+            transform: translateY(-1px);
+        }
+        
+        .post small {
+            display: block;
+            margin-bottom: 15px;
+            color: #777;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px dashed var(--border-color); /* Subtle separator */
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .post small i {
+            color: #777;
+        }
+        
+        
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        
+        .actions button, .actions a.button button { /* Corrected selector for anchor wrapping button */
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border: 1px solid var(--primary-color);
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .actions button i, .actions a.button button i {
+            color: var(--white-text);
+        }
+        
+        .actions button:hover, .actions a.button button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-1px);
+            color: var(--white-text);
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .actions a.button { /* Ensure the anchor itself doesn't have default styling */
+            text-decoration: none;
+        }
+        
+        
+        /* --- Pagination Styling --- */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 10px;
+            padding: 15px;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .pagination button {
+            padding: 10px 15px;
+            border: 1px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pagination button i {
+            color: var(--white-text);
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background-color: var(--accent-color);
+            color: var(--white-text);
+            border-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+        .pagination button:hover:not(:disabled) i {
+            color: var(--white-text);
+        }
+        
+        .pagination button:disabled {
+            background-color: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+            border-color: #ccc;
+        }
+        .pagination button:disabled i {
+            color: #999;
+        }
+        
+        .pagination span {
+            padding: 10px 15px;
+            color: var(--text-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Flash Messages */
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative; /* Changed from absolute to relative, so it pushes content down */
+            width: 100%;
+            z-index: 999; /* Ensure it's above normal content but below fixed notifications */
+        }
+        .flashes li {
+            padding: 12px 20px; /* Slightly more padding */
+            margin-bottom: 0; /* No margin-bottom for a continuous bar */
+            border-radius: 0;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
+            border-left: 5px solid; /* Stronger left border for emphasis */
+            font-size: 0.95em;
+        }
+        .flashes li.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545; /* Specific border color */
+        }
+        .flashes li.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+        }
+        .flashes li.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+        .flashes li.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-color: #17a2b8;
+        }
+        .flashes li i {
+            font-size: 1.2em;
+            margin-right: 5px; /* Space between icon and text */
+        }
+        
+        /* Custom Notification Styles */
+        .custom-notification {
+            position: fixed;
+            bottom: 20px; /* Changed from top to bottom */
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(120%); /* Changed for bottom entry */
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s ease-out; /* Bouncier entry */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 5px solid; /* Added for consistency with flashes */
+        }
+        
+        .custom-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .custom-notification.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #28a745;
+        }
+        
+        .custom-notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+        }
+        
+        .custom-notification.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+        
+        .custom-notification.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-color: #17a2b8;
+        }
+        
+        .notification-icon i {
+            font-size: 1.5em;
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+        
+        
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 0;
+            }
+            .header h1 {
+                font-size: 2em;
+                gap: 8px;
+            }
+            .home-button {
+                left: 10px;
+                padding: 8px 12px;
+                font-size: 0.9em;
+                gap: 4px;
+            }
+            .tab-nav a {
+                font-size: 0.95em;
+                padding: 10px 12px;
+                gap: 5px;
+            }
+            .search-container {
+                flex-direction: column;
+                align-items: stretch; /* Stretch input and button */
+            }
+            .search-container input[type="text"] {
+                max-width: 100%;
+            }
+            .search-container button {
+                width: 100%; /* Full width button on smaller screens */
+            }
+            #postsContainer {
+                gap: 20px;
+            }
+            .post {
+                padding: 18px;
+            }
+            .post h3 {
+                font-size: 1.3em;
+            }
+            .post p {
+                font-size: 0.95em;
+            }
+            .actions {
+                flex-direction: column; /* Stack buttons on smaller screens */
+                align-items: stretch; /* Make them full width */
+            }
+            .actions button, .actions a.button button {
+                width: 100%;
+            }
+            .pagination {
+                flex-wrap: wrap; /* Allow pagination buttons to wrap */
+                padding: 10px;
+            }
+            .pagination button, .pagination span {
+                flex-basis: calc(50% - 5px); /* Two items per row */
+                text-align: center;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                width: 95%;
+                padding: 0 10px;
+            }
+            .header h1 {
+                font-size: 1.6em;
+                gap: 6px;
+                padding-right: 60px; /* Make space for home button if it wraps */
+                padding-left: 60px;
+            }
+            .home-button {
+                position: static; /* Position normally within flow */
+                transform: none;
+                margin: 10px auto 0; /* Center it below header */
+                display: block;
+                width: fit-content; /* Only take necessary width */
+            }
+            .header {
+                flex-direction: column; /* Stack header elements */
+                padding-bottom: 10px;
+            }
+            .tab-nav {
+                flex-direction: column;
+                border-radius: var(--border-radius);
+            }
+            .tab-nav a {
+                border-bottom: 1px solid var(--border-color);
+                border-right: none;
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            .tab-nav a:last-child {
+                border-bottom: none;
+            }
+            .post h3 {
+                font-size: 1.15em;
+            }
+            .post p {
+                font-size: 0.88em;
+            }
+            .post small {
+                font-size: 0.8em;
+            }
+            .custom-notification {
+                top: auto; /* Remove top property */
+                bottom: 10px; /* Position at the bottom */
+                right: 10px;
+                left: 10px; /* Occupy full width on small screens */
+                width: auto;
+                padding: 10px 15px;
+            }
+        }
+        
+        /* Styles for the post content toggle */
+        .post-content-preview, .post-content-full {
+            margin-bottom: 10px;
+        }
+        
+        .read-more-link, .read-less-link, .post-title-link {
+            color: var(--primary-color); /* Use primary color for links */
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold; /* Make them bold */
+        }
+        
+        .read-more-link:hover, .read-less-link:hover, .post-title-link:hover {
+            text-decoration: underline;
+            color: var(--secondary-color); /* Change color on hover */
+        }
+        
+        .view-all-media-btn {
+            background-color: var(--primary-color); /* Use primary color for view all media */
+            color: var(--white-text);
+            border: 1px solid var(--primary-color);
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .view-all-media-btn:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .download-button {
+            background-color: var(--primary-color); /* Consistent primary color */
+            color: var(--white-text);
+            border: 1px solid var(--primary-color);
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            margin-left: 10px; /* Space from other buttons */
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .download-button:hover {
+            background-color: var(--accent-color); /* Consistent hover color */
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    {# Display Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">
+                    {% if category == 'error' %}<i class="fas fa-times-circle"></i>
+                    {% elif category == 'success' %}<i class="fas fa-check-circle"></i>
+                    {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+                    {% else %}<i class="fas fa-info-circle"></i>
+                    {% endif %}
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
+    <div class="header">
+        <a href="/" class="home-button"><i class="fas fa-home"></i> Home</a>
+        <h1><i class="fas fa-newspaper"></i> School News</h1>
+    </div>
+
+    <div class="container">
+        <div class="tab-nav">
+            <a href="/school_gist"><i class="fas fa-graduation-cap"></i> School Gist</a>
+            <a href="/school_news" class="active"><i class="fas fa-newspaper"></i> School News</a>
+            <a href="/study_hub"><i class="fas fa-book-open"></i> Study Material</a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search news...">
+            <button id="searchButton"><i class="fas fa-search"></i> Search</button>
+        </div>
+
+        <div id="postsContainer"></div>
+
+        <div class="pagination">
+            <button id="prevPage" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+            <span id="currentPage">Page 1</span>
+            <button id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('postsContainer');
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const currentPageSpan = document.getElementById('currentPage');
+
+            let currentPage = 1;
+            let totalPages = 1;
+            const postsPerPage = 10;
+
+            async function fetchAndRenderPosts(query = '', page = 1) {
+                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
+
+                const url = new URL('/api/school_news', window.location.origin);
+                url.searchParams.append('page', page);
+                url.searchParams.append('per_page', postsPerPage);
+                if (query) {
+                    url.searchParams.append('q', query);
+                }
+
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
+                        container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
+                        return;
+                    }
+                    const data = await res.json();
+                    renderPosts(data.posts);
+                    updatePagination(data.total_pages, data.page);
+                } catch (error) {
+                    console.error('Error fetching school news:', error);
+                    container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
+                }
+            }
+
+            function renderPosts(postsToRender) {
+                container.innerHTML = ''; // Clear existing posts
+
+                if (!postsToRender || postsToRender.length === 0) {
+                    container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
+                    return;
+                }
+
+                postsToRender.forEach(post => {
+                    const div = document.createElement('div');
+                    div.className = 'post';
+                    div.setAttribute('data-post-id', post.id);
+
+                    let mediaHTML = '';
+                    const previewMediaCount = 2; // Show up to 2 media items in the preview
+                    if (post.post_media_items && post.post_media_items.length > 0) {
+                        post.post_media_items.slice(0, previewMediaCount).forEach(mediaItem => {
+                            const url = mediaItem.media_path_or_url;
+                            const type = mediaItem.media_type;
+                            const caption = mediaItem.caption || '';
+
+                            if (type === 'image') {
+                                mediaHTML += `<div class="media-item">
+                                        <img src="${url}" alt="${caption}" class="media-preview">
+                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                    </div>`;
+                            } else if (type === 'video') {
+                                mediaHTML += `<div class="media-item">
+                                        <video class="media-preview" controls>
+                                            <source src="${url}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                    </div>`;
+                            } else if (type === 'audio') {
+                                mediaHTML += `<div class="media-item">
+                                        <audio controls class="media-preview">
+                                            <source src="${url}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                    </div>`;
+                            } else if (type === 'document') {
+                                const filename = url.split('/').pop();
+                                mediaHTML += `<div class="media-item">
+                                        <p><i class="fas fa-file-alt"></i> Document: <a href="${url}" download class="document-link">${filename} <i class="fas fa-download"></i></a></p>
+                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                    </div>`;
+                            }
+                        });
+                    }
+
+                    const maxContentLength = 200;
+                    const isContentLong = post.content && post.content.length > maxContentLength;
+                    const postContentPreview = isContentLong ? post.content.substring(0, maxContentLength) + '...' : post.content || '';
+
+                    const readMoreLink = isContentLong ? `<span class="read-more-link" data-post-id="${post.id}">Read More</span>` : '';
+                    const fullContent = isContentLong ? `<span class="post-content-full" style="display:none;">${post.content || ''} <span class="read-less-link" data-post-id="${post.id}">Read Less</span></span>` : '';
+
+                    div.innerHTML = `
+                        <h3><a href="#" class="post-title-link" data-post-id="${post.id}"><i class="fas fa-bullhorn"></i> ${post.title}</a></h3>
+                        <small><i class="fas fa-calendar-alt"></i> ${new Date(post.created_at).toLocaleDateString()} by <i class="fas fa-user-edit"></i> ${post.author || 'Admin'}</small>
+                        <p class="post-content-preview">${postContentPreview} ${readMoreLink}</p>
+                        ${fullContent}
+                        ${mediaHTML}
+                        ${post.post_media_items && post.post_media_items.length > previewMediaCount ? 
+                            `<button class="view-all-media-btn" data-post-id="${post.id}"><i class="fas fa-images"></i> View All Media (${post.post_media_items.length})</button>` : ''}
+                        <div class="actions">
+                            <button class="share-button" data-post-title="${post.title}" data-post-url="${window.location.origin}/school_news/${post.id}"><i class="fas fa-share-alt"></i> Share</button>
+                            <button class="download-post-button" data-post-id="${post.id}"><i class="fas fa-download"></i> Download Post</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+
+                document.querySelectorAll('.read-more-link').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const postId = event.target.dataset.postId;
+                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+                        const preview = postElement.querySelector('.post-content-preview');
+                        const full = postElement.querySelector('.post-content-full');
+
+                        preview.style.display = 'none';
+                        full.style.display = 'inline'; // Use inline to keep it flowing with text
+                    });
+                });
+
+                document.querySelectorAll('.read-less-link').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const postId = event.target.dataset.postId;
+                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+                        const preview = postElement.querySelector('.post-content-preview');
+                        const full = postElement.querySelector('.post-content-full');
+
+                        preview.style.display = 'inline';
+                        full.style.display = 'none';
+                    });
+                });
+
+                document.querySelectorAll('.post-title-link').forEach(link => {
+                    link.addEventListener('click', (event) => {
+                        event.preventDefault(); // Prevent default link behavior
+                        const postId = event.target.dataset.postId;
+                        // You could expand the post content or navigate to a detail page here
+                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+                        const preview = postElement.querySelector('.post-content-preview');
+                        const full = postElement.querySelector('.post-content-full');
+
+                        if (full && full.style.display === 'none') {
+                            preview.style.display = 'none';
+                            full.style.display = 'inline';
+                        } else if (full) {
+                            preview.style.display = 'inline';
+                            full.style.display = 'none';
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.share-button').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const postTitle = event.target.dataset.postTitle;
+                        const postUrl = event.target.dataset.postUrl;
+                        if (navigator.share) {
+                            navigator.share({
+                                title: postTitle,
+                                url: postUrl,
+                            }).then(() => {
+                                showNotification('Post shared successfully!', 'success');
+                            }).catch(console.error);
+                        } else {
+                            // Fallback for browsers that do not support the Web Share API
+                            copyToClipboard(postUrl);
+                            showNotification('Link copied to clipboard!', 'info');
+                        }
+                    });
+                });
+
+                // Event listener for the new "Download Post" button
+                document.querySelectorAll('.download-post-button').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const postId = event.target.dataset.postId;
+                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
+                        const postTitle = postElement.querySelector('h3 a').textContent.trim();
+                        const postContent = postElement.querySelector('.post-content-full') ? 
+                                             postElement.querySelector('.post-content-full').textContent.replace('Read Less', '').trim() :
+                                             postElement.querySelector('.post-content-preview').textContent.replace('Read More', '').trim();
+                        const postDate = postElement.querySelector('small').textContent.trim();
+
+                        downloadPost(postTitle, postContent, postDate);
+                    });
+                });
+
+                document.querySelectorAll('.view-all-media-btn').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const postId = event.target.dataset.postId;
+                        // In a real application, you'd fetch all media for this post
+                        // For this example, we'll just alert that more media exist
+                        showNotification(`Fetching all media for post ID: ${postId} (Feature to be implemented)`, 'info');
+                    });
+                });
+            }
+
+            // Function to handle post download
+            function downloadPost(title, content, date) {
+                const filename = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+                const textContent = `Title: ${title}\nDate: ${date}\n\n${content}`;
+                
+                const blob = new Blob([textContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Clean up the URL object
+                
+                showNotification('Post downloaded successfully!', 'success');
+            }
+
+            function updatePagination(total_pages, current_page) {
+                totalPages = total_pages;
+                currentPage = current_page;
+                currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            searchButton.addEventListener('click', () => {
+                currentPage = 1; // Reset to first page on new search
+                fetchAndRenderPosts(searchInput.value, currentPage);
+            });
+
+            searchInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    currentPage = 1; // Reset to first page on new search
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            function copyToClipboard(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+            }
+
+            function showNotification(message, type = 'info', duration = 3000) {
+                let notification = document.querySelector('.custom-notification');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.className = 'custom-notification';
+                    document.body.appendChild(notification);
+                }
+
+                notification.className = `custom-notification ${type}`;
+                const icon = type === 'success' ? 'fa-check-circle' :
+                             type === 'error' ? 'fa-times-circle' :
+                             type === 'warning' ? 'fa-exclamation-triangle' :
+                             'fa-info-circle';
+                
+                notification.innerHTML = `<span class="notification-icon"><i class="fas ${icon}"></i></span> ${message}`;
+                
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10); // Small delay to trigger transition
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    // Optional: remove element after transition for cleaner DOM
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 500); 
+                }, duration);
+            }
+
+            // Initial fetch of posts when the page loads
+            fetchAndRenderPosts();
+        });
+    </script>
+</body>
+</html>
