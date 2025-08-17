@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Search - Futo Jiji</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .header-buttons {
+            background-color: #006B3C;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-buttons .nav-button {
+            background-color: #FDB813;
+            color: #006B3C;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .header-buttons .nav-button:hover {
+            background-color: #e0a300;
+        }
+
+        h2 {
+            color: #006B3C;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: auto;
+        }
+        /* Arrange filters in 3 columns using CSS Grid */
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #006B3C;
+        }
+        select, input[type=number] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        .price-range {
+            display: flex;
+            gap: 8px;
+        }
+        #search-top {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #search-top input[type=text] {
+            flex-grow: 1;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        #search-top button {
+            padding: 8px 16px;
+            background-color: #006B3C;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #search-top button:hover {
+            background-color: #005349;
+        }
+        button[type="submit"] {
+            background-color: #006B3C;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        button[type="submit"]:hover {
+            background-color: #005349;
+        }
+        /* Style for the search results grid */
+        .results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Heading for results */
+        .results h3 {
+            width: 100%;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #006B3C;
+        }
+        /* Ad card styling */
+        .ad-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 10px;
+            width: calc(25% - 20px);
+            box-sizing: border-box;
+            text-align: center;
+            text-decoration: none; /* Ensure link styling is removed */
+            color: inherit; /* Inherit color from parent */
+            display: flex; /* Use flexbox for vertical alignment */
+            flex-direction: column;
+            justify-content: space-between; /* Distribute space vertically */
+        }
+        .ad-card img {
+            max-width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px; /* Space below image */
+        }
+        .ad-card h4 {
+            margin: 5px 0;
+            color: #333;
+        }
+        .ad-card .price {
+            color: #FDB813;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .ad-card p {
+            font-size: 0.9em;
+            color: #555;
+            margin: 2px 0;
+        }
+    
+
+        /* Responsive styles */
+    @media(max-width: 768px){
+        .filters { /* Adjust grid columns for smaller screens */
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .ad-card {
+            width: calc(50% - 20px);
+        }
+        #search-top {
+            flex-direction: column; /* Stack input and button vertically */
+            align-items: stretch;
+        }
+        #search-top input[type=text] {
+            width: 100%;
+        }
+        #search-top button {
+            width: 100%;
+            margin-left: 0;
+            margin-top: 10px;
+        }
+    }
+    @media(max-width: 480px){
+        .filters { /* Adjust grid columns for smallest screens */
+            grid-template-columns: 1fr;
+        }
+        .ad-card {
+            width: 100%;
+        }
+    }
+        .no-results {
+            text-align: center;
+            width: 100%;
+            margin-top: 50px;
+            font-size: 1.2em;
+            color: #888;
+        }
+
+        /* Styles for the custom searchable dropdown */
+        .custom-dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+        .dropdown-search-input {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .dropdown-options {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            list-style: none;
+            padding: 0;
+            margin-top: 5px;
+        }
+        .dropdown-options li {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+        }
+        .dropdown-options li:hover, .dropdown-options li.selected {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-buttons">
+        <a href="/" class="nav-button">Home</a>
+        <button onclick="history.back()" class="nav-button">Back</button>
+    </div>
+    
+    <h2>Filter Your Search</h2>
+    
+    <form id="searchForm" method="GET" action="/search">
+        <div id="search-top">
+            <label for="search_query" style="font-weight: bold;">Search</label>
+            <input type="text" id="search_query" name="search_query" placeholder="Search..." value="{{ search_query | default('') }}">
+            <button type="submit">Search</button>
+        </div>
+    
+        <div class="filters">
+            <div class="filter-group">
+                <label for="category">Category</label>
+                <select id="category" name="category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.name }}" {% if cat.name == selected_category %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sub_category">Sub-category</label>
+                <select id="sub_category" name="sub_category">
+                    <option value="">All Subcategories</option>
+                    {% if selected_category_subcategories %}
+                        {% for sub in selected_category_subcategories %}
+                            <option value="{{ sub }}" {% if sub == selected_sub_category %}selected{% endif %}>{{ sub }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+    
+            {# UPDATED LOCATION DROPDOWNS - Using standard <select> elements #}
+            <div class="filter-group">
+                <label for="state-dropdown">State:</label>
+                <select id="state-dropdown" name="state_id">
+                    <option value="">All States</option>
+                    {% for state in states %}
+                        <option value="{{ state.id }}" {% if state.id == selected_state_id %}selected{% endif %}>{{ state.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="filter-group">
+                <label for="location-dropdown">University:</label>
+                <select id="location-dropdown" name="location_id">
+                    <option value="">All Universities</option>
+                    {# Locations will be populated dynamically by JS #}
+                </select>
+            </div>
+    
+            <div class="filter-group">
+                <label for="sublocation-dropdown">Sublocation:</label>
+                <select id="sublocation-dropdown" name="sublocation_id"> {# Corrected name attribute to 'sublocation_id' #}
+                    <option value="">All Sublocations</option>
+                    {# Sublocations will be populated dynamically by JS #}
+                </select>
+            </div>
+            {# END UPDATED LOCATION DROPDOWNS #}
+    
+            <div class="filter-group">
+                <label>Price Range (₦)</label>
+                <div class="price-range">
+                    <input type="number" name="price_min" placeholder="Min" value="{{ selected_price_min | default('') }}">
+                    <input type="number" name="price_max" placeholder="Max" value="{{ selected_price_max | default('') }}">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="condition">Condition</label>
+                <select id="condition" name="condition">
+                    <option value="">Any</option>
+                    <option value="New" {% if selected_condition == 'New' %}selected{% endif %}>New</option>
+                    <option value="Used" {% if selected_condition == 'Used' %}selected{% endif %}>Used</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="negotiation">Negotiation</label>
+                <select id="negotiation" name="negotiation">
+                    <option value="">Any</option>
+                    <option value="yes" {% if selected_negotiation == 'yes' %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if selected_negotiation == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+        </div>
+    </form>
+    
+    <div class="results">
+        {% if adverts %}
+            <h3>Found {{ adverts|length }} Adverts</h3>
+            {% for advert in adverts %}
+                <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="ad-card">
+                    {# Conditional display for main image or video #}
+                    {% if advert.main_image %}
+                        <img src="{{ url_for('static', filename='media/' + advert.main_image) }}" alt="{{ advert.title }}">
+                    {% elif advert.video %}
+                        <video controls>
+                            <source src="{{ url_for('static', filename='media/' + advert.video) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% else %}
+                        {# Placeholder if no image or video is available. Ensure 'placeholder.png' exists in static/media #}
+                        <img src="{{ url_for('static', filename='media/placeholder.png') }}" alt="No media available">
+                    {% endif %}
+                    <h4>{{ advert.title }}</h4>
+                    <p class="price">₦{{ "{:,.2f}".format(advert.price) }}</p>
+                    <p>
+                        {% if advert.location_name %}{{ advert.location_name }}{% endif %}
+                        {% if advert.location_name and advert.sub_location_name %}, {% endif %}
+                        {% if advert.sub_location_name %}{{ advert.sub_location_name }}{% endif %}
+                    </p>
+                    <p>Poster: {{ advert.poster_username }} </p>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p class="no-results">No adverts found matching your criteria.</p>
+        {% endif %}
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Category/Subcategory Logic ---
+            const categorySelect = document.getElementById('category');
+            const subCategorySelect = document.getElementById('sub_category');
+            const initialSelectedCategory = categorySelect.value;
+            const initialSelectedSubCategory = "{{ selected_sub_category | default('') }}";
+    
+            function updateSubcategories(selectedCategory, selectedSub = '') {
+                subCategorySelect.innerHTML = '<option value="">All Subcategories</option>';
+                if (selectedCategory) {
+                    fetch(`/get_subcategories/${selectedCategory}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(subcategories => {
+                            subcategories.forEach(sub => {
+                                const option = document.createElement('option');
+                                option.value = sub;
+                                option.textContent = sub;
+                                if (sub === selectedSub) {
+                                    option.selected = true;
+                                }
+                                subCategorySelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Error fetching subcategories:', error);
+                        });
+                }
+            }
+    
+            if (initialSelectedCategory) {
+                updateSubcategories(initialSelectedCategory, initialSelectedSubCategory);
+            }
+    
+            categorySelect.addEventListener('change', function() {
+                updateSubcategories(this.value);
+            });
+    
+            // --- Location Dropdown Logic (State, Location, Sublocation) ---
+            const stateDropdown = document.getElementById('state-dropdown');
+            const locationDropdown = document.getElementById('location-dropdown');
+            const sublocationDropdown = document.getElementById('sublocation-dropdown');
+    
+            const initialSelectedStateId = "{{ selected_state_id | default('') }}";
+            const initialSelectedLocationId = "{{ selected_location_id | default('') }}";
+            const initialSelectedSublocationId = "{{ selected_sublocation_id | default('') }}";
+    
+            // Function to populate a dropdown
+            async function populateDropdown(dropdownElement, url, selectedValue = '') {
+                dropdownElement.innerHTML = ''; // Clear existing options
+                let defaultOptionText = '';
+                if (dropdownElement.id === 'state-dropdown') defaultOptionText = 'All States';
+                else if (dropdownElement.id === 'location-dropdown') defaultOptionText = 'All Universities';
+                else if (dropdownElement.id === 'sublocation-dropdown') defaultOptionText = 'All Sublocations';
+    
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = defaultOptionText;
+                dropdownElement.appendChild(defaultOption);
+    
+                if (!url) {
+                    // If no URL (e.g., no state selected for locations), just add default option and disable
+                    dropdownElement.disabled = true;
+                    return;
+                }
+    
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+    
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        if (String(item.id) === String(selectedValue)) {
+                            option.selected = true;
+                        }
+                        dropdownElement.appendChild(option);
+                    });
+                    dropdownElement.disabled = false; // Enable if data is loaded
+                } catch (error) {
+                    console.error(`Error fetching data for ${dropdownElement.id}:`, error);
+                    dropdownElement.disabled = true; // Disable on error
+                }
+            }
+    
+            // Event listener for State dropdown change
+            stateDropdown.addEventListener('change', function() {
+                const stateId = this.value;
+                // When state changes, clear and repopulate Location and Sublocation
+                locationDropdown.value = ''; // Reset location dropdown
+                sublocationDropdown.value = ''; // Reset sublocation dropdown
+                populateDropdown(locationDropdown, stateId ? `/api/locations_by_state/${stateId}` : null);
+                populateDropdown(sublocationDropdown, null); // Clear sublocations as well
+            });
+    
+            // Event listener for Location dropdown change
+            locationDropdown.addEventListener('change', function() {
+                const locationId = this.value;
+                // When location changes, clear and repopulate Sublocation
+                sublocationDropdown.value = ''; // Reset sublocation dropdown
+                populateDropdown(sublocationDropdown, locationId ? `/api/sublocations/${locationId}` : null);
+            });
+    
+            // Initial population on page load
+            // Populate locations based on initially selected state
+            if (initialSelectedStateId) {
+                populateDropdown(locationDropdown, `/api/locations_by_state/${initialSelectedStateId}`, initialSelectedLocationId)
+                    .then(() => {
+                        // After locations are populated, populate sublocations if an initial location was selected
+                        if (initialSelectedLocationId) {
+                            populateDropdown(sublocationDropdown, `/api/sublocations/${initialSelectedLocationId}`, initialSelectedSublocationId);
+                        } else {
+                            // If no initial location, disable sublocation dropdown
+                            sublocationDropdown.disabled = true;
+                        }
+                    });
+            } else {
+                // If no initial state, disable both location and sublocation dropdowns
+                locationDropdown.disabled = true;
+                sublocationDropdown.disabled = true;
+            }
+        });
+    </script>
+    </body>
+    </html>
