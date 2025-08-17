@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Personal Details</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        /* Your existing CSS can go here or be linked from an external file */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .header-title {
+            margin: 0;
+            color: #006B3C;
+            font-size: 1.8em;
+        }
+        .back-to-profile {
+            color: #006B3C;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .back-to-profile i {
+            margin-right: 8px;
+        }
+        .back-to-profile:hover {
+            background-color: #e9ecef;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .cover-section {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            position: relative;
+            margin-top: -60px;
+            margin-left: 30px;
+            object-fit: cover;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .form-area {
+            padding: 30px;
+        }
+        .section-title {
+            color: #006B3C;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+        }
+        .section-title i {
+            margin-right: 10px;
+            color: #006B3C;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="url"],
+        .form-group input[type="date"],
+        .form-group input[type="time"],
+        .form-group select {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="url"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group input[type="time"]:focus,
+        .form-group select:focus {
+            border-color: #006B3C;
+            outline: none;
+        }
+        .form-group input[type="file"] {
+            padding: 10px 0;
+        }
+        .form-group p {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .char-count {
+            font-size: 0.85em;
+            color: #777;
+            text-align: right;
+            margin-top: 5px;
+        }
+        .checkbox-group label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .social-link-group .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .social-link-group .form-group label {
+            width: 100px;
+            margin-bottom: 0;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+        }
+        .social-link-group .form-group label i {
+            margin-right: 8px;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+        .social-link-group .form-group input {
+            flex-grow: 1;
+            width: auto;
+        }
+        .action-buttons {
+            text-align: right;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            margin-top: 30px;
+        }
+        .save-btn {
+            background-color: #006B3C;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+        }
+        .save-btn i {
+            margin-right: 8px;
+        }
+        .save-btn:hover {
+            background-color: #006B3C;
+            transform: translateY(-2px);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex; /* Show when active */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            text-align: center;
+        }
+        .close-x {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+        }
+        .close-x:hover,
+        .close-x:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-content h3 {
+            color: #006B3C;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content h3 i {
+            margin-right: 10px;
+            color: #dc3545;
+        }
+        .modal-content p {
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .confirm-btn, .cancel-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .confirm-btn {
+            background-color: #006B3C;
+            color: white;
+        }
+        .confirm-btn:hover {
+            background-color: #006B3C;
+        }
+        .cancel-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Flash Messages */
+        .flash-messages-container {
+            max-width: 900px;
+            margin: 20px auto 0 auto;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .alert-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #006B3C;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Working Times - new styles */
+        .working-day-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #fcfcfc;
+        }
+        .working-day-item label {
+            margin-bottom: 0;
+            font-weight: normal;
+            flex-basis: 100px; /* Fixed width for day label */
+            text-align: left;
+            margin-right: 15px;
+        }
+        .working-day-item input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.2); /* Make checkbox slightly larger */
+        }
+        .working-day-item .time-inputs {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .working-day-item .time-inputs label {
+            flex-basis: auto; /* Reset flex-basis for time labels */
+            margin-right: 5px;
+            font-weight: normal;
+            color: #666;
+        }
+        .working-day-item .time-inputs input[type="time"] {
+            width: auto; /* Allow time inputs to size naturally */
+            flex-grow: 1; /* Allow them to take available space */
+            max-width: 120px; /* Max width for time input */
+        }
+        .working-day-item.disabled-day .time-inputs input {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        {# Back Button - Moved to Header #}
+        <a href="{{ url_for('profile') }}" class="back-to-profile" title="Back to Profile">
+            <i class="fas fa-arrow-left"></i> Back to Profile
+        </a>
+        <h1 class="header-title">Edit Personal Details</h1>
+    </div>
+    {# Display Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages-container">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <span class="alert-icon">
+                        {% if category == 'danger' %} <i class="fas fa-times-circle"></i>
+                        {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                        {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                        {% else %} <i class="fas fa-info-circle"></i>
+                        {% endif %}
+                    </span>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <div class="cover-section" style="background-image: url('{{ user.cover_photo_url }}');"></div>
+        <img src="{{ user.profile_picture_url }}" alt="Profile" class="profile-picture" />
+
+        <div class="form-area">
+            <form id="editProfileForm" method="POST" action="{{ url_for('personal_details') }}" enctype="multipart/form-data">
+                <section>
+                    <h2 class="section-title"><i class="fas fa-images"></i> Profile & Cover Photos</h2>
+                    <div class="form-group">
+                        <label for="profile_picture">Change Profile Picture</label>
+                        <input type="file" name="profile_picture" id="profile_picture" accept="image/*" />
+                        {% if user.profile_picture %}
+                            <p>Current: <img src="{{ user.profile_picture_url }}" alt="Current Profile" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-left: 10px;"></p>
+                        {% else %}
+                            <p>No profile picture set. Please upload one.</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="cover_photo">Change Cover Photo</label>
+                        <input type="file" name="cover_photo" id="cover_photo" accept="image/*" />
+                        {% if user.cover_photo %}
+                            <p>Current: <img src="{{ user.cover_photo_url }}" alt="Current Cover" style="width: 100px; height: 50px; object-fit: cover; vertical-align: middle; margin-left: 10px;"></p>
+                        {% else %}
+                            <p>No cover photo set. Please upload one.</p>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title"><i class="fas fa-user-alt"></i> Personal Information</h2>
+                    <div class="form-group">
+                        <label for="first_name">First Name*</label>
+                        <input type="text" name="first_name" id="first_name" maxlength="20" value="{{ user.first_name or '' }}" onkeyup="updateCharCount('first_name', 20)" />
+                        <div class="char-count" id="first_name_char_count">{{ user.first_name|length if user.first_name else 0 }} / 20</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Last Name*</label>
+                        <input type="text" name="last_name" id="last_name" maxlength="20" value="{{ user.last_name or '' }}" onkeyup="updateCharCount('last_name', 20)" />
+                        <div class="char-count" id="last_name_char_count">{{ user.last_name|length if user.last_name else 0 }} / 20</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessname">Business Name</label>
+                        <input type="text" name="businessname" id="businessname" value="{{ user.businessname or '' }}" />
+                    </div>
+
+                    {# LOCATION DROPDOWNS #}
+                    <div class="form-group">
+                        <label for="state_select">Select State*</label>
+                        <select id="state_select" class="location-select" name="state_id">
+                            <option value="">-- Select State --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="location_select">Select Location (University)*</label>
+                        <select id="location_select" class="location-select" name="location_id" disabled>
+                            <option value="">-- Select Location --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sublocation_select">Select Sub-location (Area)</label>
+                        <select name="sublocation_id" id="sublocation_select" class="location-select" disabled>
+                            <option value="">-- Select Sub-location (Optional) --</option>
+                        </select>
+                    </div>
+                    {# END LOCATION DROPDOWNS #}
+
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" name="birthday" id="birthday" value="{{ user.birthday if user.birthday else '' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sex">Sex</label>
+                        <select name="sex" id="sex">
+                            <option value="">Do not specify</option>
+                            <option value="male" {% if user.sex == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if user.sex == 'female' %}selected{% endif %}>Female</option>
+                            <option value="other" {% if user.sex == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title"><i class="far fa-clock"></i> Working Days & Hours</h2>
+                    <div id="working-days-container">
+                        {% for day in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}
+                            <div class="working-day-item" id="day-item-{{day}}">
+                                <input type="checkbox" id="checkbox-{{day}}" name="working_days" value="{{day}}"
+                                    {% if day in user.working_days %}checked{% endif %} onchange="toggleTimeInputs('{{day}}')">
+                                <label for="checkbox-{{day}}"><strong>{{day}}</strong></label>
+                                <div class="time-inputs">
+                                    <label for="{{day}}_open">Open:</label>
+                                    <input type="time" name="{{day}}_open" id="{{day}}_open" value="{{ user.working_times.get(day, {}).get('open', '09:00') or '' }}"
+                                        {% if day not in user.working_days %}disabled{% endif %}>
+                                    <label for="{{day}}_close">Close:</label>
+                                    <input type="time" name="{{day}}_close" id="{{day}}_close" value="{{ user.working_times.get(day, {}).get('close', '17:00') or '' }}"
+                                        {% if day not in user.working_days %}disabled{% endif %}>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title"><i class="fas fa-truck"></i> Delivery Methods</h2>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="pickup" name="delivery_methods" value="Pickup" {% if 'Pickup' in user.delivery_methods %}checked{% endif %}> Pickup</label>
+                            <label><input type="checkbox" id="shipping" name="delivery_methods" value="Shipping" {% if 'Shipping' in user.delivery_methods %}checked{% endif %}> Shipping</label>
+                            <label><input type="checkbox" id="delivery_service" name="delivery_methods" value="Delivery Service" {% if 'Delivery Service' in user.delivery_methods %}checked{% endif %}> Delivery Service</label>
+                        </div>
+                    </div>
+                </section>
+                
+                <section>
+                    <h2 class="section-title"><i class="fas fa-share-alt"></i> Social Media Links</h2>
+                    <div class="social-link-group">
+                        <div class="form-group">
+                            <label for="website"><i class="fas fa-globe"></i> Website</label>
+                            <input type="url" name="social_links[website]" id="website" maxlength="255" value="{{ user.social_links.get('website', '') }}" placeholder="https://yourwebsite.com" />
+                        </div>
+                        <div class="form-group">
+                            <label for="instagram"><i class="fab fa-instagram"></i> Instagram</label>
+                            <input type="url" name="social_links[instagram]" id="instagram" maxlength="255" value="{{ user.social_links.get('instagram', '') }}" placeholder="https://instagram.com/yourprofile" />
+                        </div>
+                        <div class="form-group">
+                            <label for="facebook"><i class="fab fa-facebook"></i> Facebook</label>
+                            <input type="url" name="social_links[facebook]" id="facebook" maxlength="255" value="{{ user.social_links.get('facebook', '') }}" placeholder="https://facebook.com/yourprofile" />
+                        </div>
+                        <div class="form-group">
+                            <label for="linkedin"><i class="fab fa-linkedin"></i> LinkedIn</label>
+                            <input type="url" name="social_links[linkedin]" id="linkedin" maxlength="255" value="{{ user.social_links.get('linkedin', '') }}" placeholder="https://linkedin.com/in/yourprofile" />
+                        </div>
+                        <div class="form-group">
+                            <label for="twitter"><i class="fab fa-twitter"></i> Twitter</label>
+                            <input type="url" name="social_links[twitter]" id="twitter" maxlength="255" value="{{ user.social_links.get('twitter', '') }}" placeholder="https://twitter.com/yourprofile" />
+                        </div>
+                    </div>
+                </section>
+
+                <div class="action-buttons">
+                    <button type="button" class="save-btn" onclick="showConfirmModal()">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Confirmation Modal #}
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeConfirmModal()">&times;</span>
+            <h3><i class="fas fa-exclamation-circle"></i> Confirm Changes</h3>
+            <p>Are you sure you want to save these changes to your profile?</p>
+            <div class="modal-buttons">
+                <button class="confirm-btn" onclick="document.getElementById('editProfileForm').submit()">Yes, Save Changes</button>
+                <button class="cancel-btn" onclick="closeConfirmModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const stateSelect = document.getElementById('state_select');
+        const locationSelect = document.getElementById('location_select');
+        const sublocationSelect = document.getElementById('sublocation_select');
+
+        // Capture the current user's saved location IDs for pre-selection
+        const currentUserStateId = "{{ user.state_id | default('') }}"; // Assuming user object now has state_id
+        const currentUserLocationId = "{{ user.location_id | default('') }}"; // Assuming user object now has location_id
+        const currentUserSublocationId = "{{ user.sublocation_id | default('') }}"; // Assuming user object now has sublocation_id
+
+        // Utility function to fetch data from API
+        async function fetchData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                // Optionally display a user-friendly error message on the page
+                return [];
+            }
+        }
+
+        // Populate States dropdown
+        async function populateStates(preselectStateId = null) {
+            const states = await fetchData('/api/locations/states');
+            stateSelect.innerHTML = '<option value="">-- Select State --</option>'; // Clear and add default
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state.id;
+                option.textContent = state.name;
+                if (preselectStateId && state.id == preselectStateId) {
+                    option.selected = true;
+                }
+                stateSelect.appendChild(option);
+            });
+        }
+
+        // Populate Locations dropdown based on selected State ID
+        async function populateLocations(stateId, preselectLocationId = null) {
+            locationSelect.innerHTML = '<option value="">-- Select Location --</option>'; // Clear and add default
+            sublocationSelect.innerHTML = '<option value="">-- Select Sub-location (Optional) --</option>'; // Also clear sublocations
+            locationSelect.disabled = true;
+            sublocationSelect.disabled = true;
+
+            if (stateId) {
+                const locations = await fetchData(`/api/locations/state/${stateId}/locations`);
+                locations.forEach(loc => {
+                    const option = document.createElement('option');
+                    option.value = loc.id;
+                    option.textContent = loc.name + (loc.acronym ? ` (${loc.acronym})` : '');
+                    if (preselectLocationId && loc.id == preselectLocationId) {
+                        option.selected = true;
+                    }
+                    locationSelect.appendChild(option);
+                });
+                locationSelect.disabled = false;
+
+                // If a location was pre-selected, populate its sublocations
+                if (preselectLocationId) {
+                    await populateSublocations(preselectLocationId, currentUserSublocationId);
+                }
+            }
+        }
+
+        // Populate Sub-locations dropdown based on selected Location ID
+        async function populateSublocations(locationId, preselectSublocationId = null) {
+            sublocationSelect.innerHTML = '<option value="">-- Select Sub-location (Optional) --</option>'; // Clear and add default
+            sublocationSelect.disabled = true;
+
+            if (locationId) {
+                const sublocations = await fetchData(`/api/locations/location/${locationId}/sublocations`);
+                sublocations.forEach(subloc => {
+                    const option = document.createElement('option');
+                    option.value = subloc.id;
+                    option.textContent = subloc.name;
+                    if (preselectSublocationId && subloc.id == preselectSublocationId) {
+                        option.selected = true;
+                    }
+                    sublocationSelect.appendChild(option);
+                });
+                sublocationSelect.disabled = false;
+            }
+        }
+
+        // Event Listeners for cascading dropdowns
+        stateSelect.addEventListener('change', (event) => {
+            populateLocations(event.target.value);
+        });
+
+        locationSelect.addEventListener('change', (event) => {
+            populateSublocations(event.target.value);
+        });
+
+        // Function to enable/disable time inputs based on checkbox
+        function toggleTimeInputs(day) {
+            const checkbox = document.getElementById(`checkbox-${day}`);
+            const openTimeInput = document.getElementById(`${day}_open`);
+            const closeTimeInput = document.getElementById(`${day}_close`);
+            const dayItem = document.getElementById(`day-item-${day}`);
+
+            if (checkbox.checked) {
+                openTimeInput.disabled = false;
+                closeTimeInput.disabled = false;
+                dayItem.classList.remove('disabled-day');
+            } else {
+                openTimeInput.disabled = true;
+                closeTimeInput.disabled = true;
+                dayItem.classList.add('disabled-day');
+                // Optionally clear values if unchecked
+                openTimeInput.value = '';
+                closeTimeInput.value = '';
+            }
+        }
+
+        // Update character count for text inputs
+        function updateCharCount(id, max) {
+            const input = document.getElementById(id);
+            const countDisplay = document.getElementById(id + '_char_count');
+            if (input && countDisplay) {
+                countDisplay.textContent = `${input.value.length} / ${max}`;
+            }
+        }
+
+        // Modal functions
+        function showConfirmModal() {
+            document.getElementById('confirmModal').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            document.body.style.overflow = ''; // Restore background scrolling
+        }
+
+        // Close modal if clicked outside content
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeConfirmModal();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize character counts
+            updateCharCount('first_name', 20);
+            updateCharCount('last_name', 20);
+
+            // Populate states and then attempt to pre-select the user's saved location
+            await populateStates(currentUserStateId);
+            if (currentUserStateId) {
+                await populateLocations(currentUserStateId, currentUserLocationId);
+            }
+            if (currentUserLocationId) {
+                await populateSublocations(currentUserLocationId, currentUserSublocationId);
+            }
+
+            // Initialize working days/hours display based on saved user data
+            const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            allDays.forEach(day => {
+                toggleTimeInputs(day); // This will enable/disable based on initial checkbox state
+            });
+
+            // Auto-hide flash messages
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500);
+                }, 5000); // Alert disappears after 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>
