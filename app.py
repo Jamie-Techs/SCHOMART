@@ -67,7 +67,7 @@ import re
 
 from google.cloud import firestore as gcp_firestore
 from google.oauth2 import service_account
-
+from firebase_admin import credentials, firestore as admin_firestore, initialize_app
 # Load environment variables
 load_dotenv()
 
@@ -8408,6 +8408,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
