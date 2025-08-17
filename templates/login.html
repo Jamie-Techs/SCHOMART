@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Futo Jiji</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 80px auto;
+            background-color: #fff;
+            border: 2px solid #006B3C;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-container h2 {
+            text-align: center;
+            color: #006B3C;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00391F;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #006B3C;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background-color: #004d2a;
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .signup-link a {
+            color: #FDB813;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Flash message styling (harmonized with previous base.html) */
+        .alert {
+            padding: 15px 20px;
+            margin: 20px auto; /* Centered */
+            width: 90%;
+            max-width: 500px; /* Aligned with container width */
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .alert.error {
+            background-color: #f8d7da; /* Lighter red */
+            color: #721c24; /* Darker red text */
+            border: 1px solid #f5c6cb;
+        }
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .alert.warning { /* Added warning style */
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .alert-icon {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert {{ category}}">
+        <span class="alert-icon">
+          {% if category == 'error' %} <i class="fas fa-times-circle"></i>
+          {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+          {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+          {% else %} <i class="fas fa-info-circle"></i>
+          {% endif %}
+        </span>
+        {{ message}}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="login-container">
+  <h2>Login to Futo Jiji</h2>
+  <form method="POST" action="/login">
+    <div class="form-group">
+      <label>Email or Username</label>
+      <input type="text" name="username_or_email" placeholder="you@example.com" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    </div>
+    <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
+    <input type="hidden" name="recaptcha_token" id="recaptcha_token">
+    <button type="submit" class="btn">Login</button>
+  </form>
+
+  <div class="signup-link">
+    Don't have an account? <a href="/signup">Sign up here</a>
+  </div>
+
+  <div class="signup-link" style="margin-top: 10px;">
+    <a href="{{ url_for('google_login')}}" class="btn" style="background-color: #DB4437;">
+      <i class="fab fa-google"></i> Sign in with Google
+    </a>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key}}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fingerprintInputField = document.getElementById('deviceFingerprintData');
+            if (fingerprintInputField) {
+                const fpPromise = FingerprintJS.load();
+                fpPromise
+                    .then(fp => fp.get())
+                    .then(result => {
+                        const components = result.components;
+                        const fingerprintData = {
+                            userAgent: components.userAgent.value,
+                            screenResolution: components.screenResolution.value,
+                            canvas: components.canvas.value,
+                            webgl: components.webgl.value,
+                            fonts: components.fonts.value,
+                            timezone: components.timezone.value,
+                            platform: components.platform.value,
+                        };
+                        fingerprintInputField.value = JSON.stringify(fingerprintData);
+                        console.log('Device Fingerprint captured for login.');
+                    })
+                    .catch(error => {
+                        console.error('Error loading or getting FingerprintJS:', error);
+                    });
+            }
+
+            // Optional: Fade out flash messages after a few seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500); // Remove after fade out
+                }, 5000); // 5 seconds
+            });
+        });
+    </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const fingerprintInputField = document.getElementById('deviceFingerprintData');
+      if (fingerprintInputField) {
+        FingerprintJS.load().then(fp => fp.get()).then(result => {
+          fingerprintInputField.value = JSON.stringify(result.components);
+});
+}
+
+      grecaptcha.ready(function() {
+        grecaptcha.execute('{{ recaptcha_site_key}}', {action: 'login'}).then(function(token) {
+          document.getElementById('recaptcha_token').value = token;
+});
+});
+
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.style.opacity = '0';
+          setTimeout(() => alert.remove(), 500);
+}, 5000);
+});
+});
+  </script>
+</body>
+</html>
