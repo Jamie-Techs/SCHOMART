@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Settings - Futo Jiji</title>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f0f2f5; /* Light grey background */
+            margin: 0;
+            padding-top: 80px; /* Space for the fixed header */
+            color: #333;
+        }
+
+        /* Fixed Header Styles (re-used from notifications.html) */
+        .header-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #006B3C; /* Primary color */
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Ensure it stays on top */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-fixed h1 {
+            margin: 0;
+            font-size: 1.8em;
+            color: white;
+            text-align: left;
+            flex-grow: 1; /* Allow title to take available space */
+        }
+        .header-nav {
+            display: flex;
+            gap: 15px; /* Space between nav buttons */
+        }
+        .header-nav .nav-button {
+            background-color: #FDB813; /* Secondary color */
+            color: #006B3C; /* Text color for buttons */
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600; /* Semi-bold */
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-decoration: none; /* For anchor tags acting as buttons */
+            display: inline-flex;
+            align-items: center;
+            gap: 5px; /* Space between icon and text */
+        }
+        .header-nav .nav-button:hover {
+            background-color: #e6a700; /* Slightly darker yellow on hover */
+            transform: translateY(-1px);
+        }
+        .header-nav .nav-button i {
+            font-size: 1em;
+        }
+
+        .container {
+            max-width: 800px; /* Adjusted max-width for better consistency */
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Stronger shadow */
+        }
+
+        h2 {
+            color: #2c3e50; /* Darker grey for main headings */
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2em; /* Larger heading */
+        }
+
+        .flash-messages {
+            list-style: none;
+            padding: 10px 0;
+            margin: 0 0 20px 0;
+        }
+        .flash-messages li {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .flash-messages li.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-messages li.danger, .flash-messages li.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-messages li.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .settings-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            background-color: #f9f9f9;
+            margin: 10px 0;
+            padding: 15px 20px; /* Increased padding */
+            border-radius: 10px; /* More rounded corners */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Softer shadow */
+            cursor: pointer;
+            text-decoration: none;
+            color: #006B3C; /* Primary color for text */
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+        }
+
+        .settings-item:hover {
+            background-color: #e0f5e6; /* Lighter green on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        .icon-container { /* Renamed from icon-circle for clarity with Font Awesome */
+            width: 45px; /* Slightly larger */
+            height: 45px;
+            border-radius: 50%;
+            background-color: #006B3C; /* Primary color for icon background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 18px; /* More space */
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+
+        .icon-container i {
+            font-size: 1.5em; /* Larger icon size */
+            color: #FDB813; /* Secondary color for icons */
+        }
+
+        .settings-text {
+            font-size: 1.1em; /* Slightly larger font */
+            font-weight: 600; /* Semi-bold */
+            color: #333; /* Darker text for readability */
+        }
+
+        .main-footer {
+            background-color: #00391F; /* Darker green for footer */
+            color: white;
+            text-align: center;
+            padding: 25px; /* More padding */
+            margin-top: 40px;
+            border-top-left-radius: 12px; /* Rounded corners for footer */
+            border-top-right-radius: 12px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header-fixed {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .header-fixed h1 {
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            .header-nav {
+                width: 100%;
+                justify-content: space-around;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-nav .nav-button {
+                flex-grow: 1;
+                text-align: center;
+            }
+            .container {
+                padding: 15px;
+                margin: 15px auto;
+            }
+            .settings-item {
+                padding: 12px 15px;
+            }
+            .icon-container {
+                width: 40px;
+                height: 40px;
+                margin-right: 12px;
+            }
+            .icon-container i {
+                font-size: 1.3em;
+            }
+            .settings-text {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-fixed">
+        <h1>Settings</h1>
+        <div class="header-nav">
+            <a href="javascript:history.back()" class="nav-button"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="{{ url_for('home') }}" class="nav-button"><i class="fas fa-home"></i> Home</a>
+            {# Assuming current_user_id is available in the template context if user is logged in #}
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('seller_profile_view', seller_id=session.get('user_id')) }}" class="nav-button"><i class="fas fa-user"></i> Profile</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="container">
+        {# Flash messages block for consistency #}
+        <ul class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </ul>
+
+        <h2>Account Settings</h2>
+        <ul class="settings-list">
+            <li class="settings-item" onclick="window.location.href='{{ url_for('personal_details') }}'">
+                <div class="icon-container"><i class="fas fa-user-circle"></i></div>
+                <span class="settings-text">Personal Details</span>
+            </li>
+            
+            <li class="settings-item" onclick="window.location.href='{{ url_for('change_phone') }}'">
+                <div class="icon-container"><i class="fas fa-phone"></i></div>
+                <span class="settings-text">Change Phone Number</span>
+            </li>
+            <li class="settings-item" onclick="window.location.href='{{ url_for('change_email') }}'">
+                <div class="icon-container"><i class="fas fa-envelope"></i></div>
+                <span class="settings-text">Change Email</span>
+            </li>
+            
+            <li class="settings-item" onclick="window.location.href='{{ url_for('notification_settings') }}'">
+                <div class="icon-container"><i class="fas fa-bell"></i></div>
+                <span class="settings-text">Manage Notifications</span>
+            </li>
+            <li class="settings-item" onclick="window.location.href='{{ url_for('change_password') }}'">
+                <div class="icon-container"><i class="fas fa-lock"></i></div>
+                <span class="settings-text">Change Password</span>
+            </li>
+            <li class="settings-item" onclick="window.location.href='{{ url_for('delete_account') }}'">
+                <div class="icon-container"><i class="fas fa-trash-alt"></i></div>
+                <span class="settings-text">Delete My Account Permanently</span>
+            </li>
+            <li class="settings-item" onclick="window.location.href='{{ url_for('logout') }}'">
+                <div class="icon-container"><i class="fas fa-sign-out-alt"></i></div>
+                <span class="settings-text">Log Out</span>
+            </li>
+        </ul>
+    </div>
+
+    <footer class="main-footer">
+        <p>&copy; 2024 Futo Jiji. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
