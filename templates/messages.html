@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Messaging Interface</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    /* Variables for easier theme management */
+    :root {
+        --primary-green: #006B3C; /* Your primary green */
+        --accent-yellow: #FDB813; /* Your accent yellow */
+        --light-green: #e6f7ef; /* A lighter shade of green for message sent BG */
+        --dark-green-text: #003F23; /* A darker green for text elements */
+        
+        /* Derived colors based on your palette */
+        --sidebar-bg: var(--primary-green);
+        --sidebar-header-bg: var(--primary-green); /* Use primary for consistent look */
+        --sidebar-text: #ecf0f1; /* Off-white for readability on dark green */
+        
+        --chat-header-bg: var(--primary-green); /* Use primary green for chat header */
+        --chat-bg: #f8f9fa; /* Very light gray for chat background */
+        
+        --message-sent-bg: var(--light-green); /* Lighter green for sent messages */
+        --message-received-bg: #ffffff; /* White for received messages */
+        
+        --input-bg: #f0f2f5;
+        --border-color: #e0e0e0;
+        --shadow-light: rgba(0, 0, 0, 0.08); /* Softer shadow */
+        --shadow-medium: rgba(0, 0, 0, 0.15); /* Slightly stronger shadow for depth */
+        --font-family: 'Inter', sans-serif;
+
+        /* Status dot colors */
+        --online-color: #28a745; /* Green for online */
+        --offline-color: #6c757d; /* Gray for offline */
+    }
+
+    /* Base styles */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: var(--font-family);
+        background-color: #e0e7ee; /* Lighter background */
+        height: 100vh;
+        display: flex;
+        overflow: hidden; /* Prevent body scroll */
+        color: #333; /* Default text color */
+    }
+
+    /* Main container */
+    .container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        border-radius: 15px; /* Rounded corners for the whole app */
+        overflow: hidden; /* Ensures content respects border-radius */
+        box-shadow: 0 10px 30px var(--shadow-light); /* Soft shadow for depth */
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+        background-color: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        width: 320px; /* Slightly wider sidebar */
+        max-width: 320px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition (Material Design curve) */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-right: 1px solid rgba(0, 0, 0, 0.1); /* Subtle separator */
+        flex-shrink: 0; /* Prevent sidebar from shrinking */
+    }
+
+    /* Collapsed sidebar (for future use or specific designs) */
+    .sidebar.collapsed {
+        width: 70px; /* Slightly larger collapsed width */
+    }
+
+    /* Sidebar header */
+    .sidebar-header {
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--sidebar-header-bg);
+        box-shadow: 0 2px 4px var(--shadow-light); /* Softer header shadow */
+        z-index: 1; /* Ensure header is above chat list scroll */
+    }
+
+    .sidebar-header h3 {
+        font-size: 1.3em;
+        font-weight: 600;
+        color: var(--sidebar-text);
+    }
+
+    /* Toggle button for sidebar */
+    .toggle-sidebar {
+        background: none;
+        border: none;
+        color: var(--sidebar-text);
+        font-size: 1.8em; /* Larger icon */
+        cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        padding: 5px; /* Add padding for easier tap target */
+    }
+
+    .toggle-sidebar:hover {
+        transform: rotate(90deg); /* Simple rotation effect */
+        opacity: 0.8;
+    }
+
+    /* Chat list items */
+    .chat-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 5px 0; /* Add some vertical padding */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: #555 #333; /* Firefox */
+    }
+    .chat-list::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-list::-webkit-scrollbar-track {
+        background: var(--sidebar-bg);
+    }
+    .chat-list::-webkit-scrollbar-thumb {
+        background-color: var(--accent-yellow); /* Yellow scrollbar */
+        border-radius: 10px;
+        border: 2px solid var(--sidebar-bg);
+    }
+
+    .chat-user {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px; /* More padding */
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease; /* Smooth hover */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Separator */
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0); /* Remove tap highlight on mobile */
+    }
+
+    .chat-user:hover {
+        background-color: #005F34; /* Slightly darker green on hover */
+        transform: translateX(5px); /* Subtle slide effect */
+    }
+    /* Add active state for mobile touch */
+    .chat-user:active {
+        background-color: #004D28;
+    }
+
+    .chat-user.active { /* Style for active chat */
+        background-color: #004D28; /* Even darker green for active chat */
+        box-shadow: inset 3px 0 0 var(--accent-yellow); /* Accent border */
+    }
+
+    .chat-user img {
+        width: 48px; /* Slightly smaller profile pics */
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 15px;
+        border: 2px solid var(--sidebar-text); /* White border */
+        box-shadow: 0 0 8px var(--shadow-light); /* Softer shadow */
+    }
+
+    .chat-info {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-grow: 1; /* Allow info to take available space */
+    }
+
+    .chat-info strong {
+        font-size: 1.05em;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--sidebar-text);
+    }
+
+    .chat-info small {
+        font-size: 0.8em;
+        color: #bdc3c7; /* Lighter gray */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    /* Unread count badge in sidebar */
+    .chat-user .unread-count {
+        background-color: var(--accent-yellow);
+        color: var(--primary-green);
+        font-size: 0.75em;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 15px;
+        min-width: 25px; /* Ensure circular shape for single digits */
+        text-align: center;
+        margin-left: 10px;
+    }
+
+    /* Main chat area */
+    .main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: #fff;
+        position: relative; /* For proper positioning of elements within */
+    }
+
+    /* Chat header */
+    .chat-header {
+        padding: 15px 20px;
+        background: var(--chat-header-bg);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px var(--shadow-light); /* Softer header shadow */
+        z-index: 1;
+    }
+
+    /* Chat title (with back button on mobile) */
+    .chat-title {
+        font-size: 1.3em;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        color: #fff; /* Ensure title color is white */
+        flex-grow: 1; /* Allow title to take available space */
+    }
+    .chat-title img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Small shadow for avatar */
+    }
+    .chat-status {
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.8);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: var(--offline-color);
+        transition: background-color 0.3s ease;
+    }
+    .status-dot.online {
+        background-color: var(--online-color);
+    }
+    #typingIndicator {
+        font-size: 0.75em;
+        color: rgba(255, 255, 255, 0.7);
+        margin-left: 55px; /* Align with username, accounting for avatar */
+        margin-top: -5px; /* Pull it up a bit */
+        display: none;
+        animation: pulseText 1.5s infinite; /* Pulsing effect for typing */
+    }
+    @keyframes pulseText {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+
+    /* Chat body */
+    .chat-body {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: var(--chat-bg); /* Very light gray */
+        display: flex; /* Use flex for message alignment */
+        flex-direction: column;
+        gap: 10px; /* Space between messages */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: #ccc var(--chat-bg); /* Firefox */
+    }
+    .chat-body::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-body::-webkit-scrollbar-track {
+        background: var(--chat-bg);
+    }
+    .chat-body::-webkit-scrollbar-thumb {
+        background-color: var(--accent-yellow); /* Yellow scrollbar */
+        border-radius: 10px;
+        border: 2px solid var(--chat-bg);
+    }
+    
+
+    /* Messages */
+    .message {
+        max-width: 75%; /* Slightly wider messages */
+        padding: 12px 18px; /* More padding */
+        border-radius: 20px; /* More rounded */
+        position: relative;
+        word-wrap: break-word;
+        font-size: 0.95em;
+        line-height: 1.4;
+        box-shadow: 0 1px 2px var(--shadow-light); /* Softer shadow for messages */
+        transition: transform 0.1s ease-out; /* Subtle transform on hover/active */
+    }
+    .message:active {
+        transform: scale(0.99); /* Slight press effect */
+    }
+    .sent {
+        background-color: var(--message-sent-bg); /* Lighter green for sent */
+        align-self: flex-end;
+        margin-left: auto; /* Push to right */
+        border-bottom-right-radius: 5px; /* Pointed corner */
+        color: var(--dark-green-text); /* Dark green text for contrast */
+    }
+    .received {
+        background-color: var(--message-received-bg); /* White for received */
+        align-self: flex-start;
+        margin-right: auto; /* Push to left */
+        border-bottom-left-radius: 5px; /* Pointed corner */
+        color: #333; /* Default text color */
+    }
+
+    /* Message content */
+    .message p {
+        margin: 0;
+        color: inherit; /* Inherit color from parent (.sent or .received) */
+    }
+
+    /* Timestamp and Status */
+    .message-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end; /* Align to the right */
+        gap: 5px; /* Space between timestamp and status icon */
+        margin-top: 5px;
+        font-size: 0.7em;
+        color: #777;
+        opacity: 0.8;
+    }
+
+    .timestamp {
+        white-space: nowrap; /* Prevent timestamp from breaking */
+    }
+
+    .message-status .fas {
+        font-size: 0.8em; /* Slightly smaller icon */
+        color: #777; /* Default status icon color */
+    }
+    .message-status.delivered .fa-check-double {
+        color: #007bff; /* Blue for delivered */
+    }
+    .message-status.read .fa-check-double {
+        color: var(--primary-green); /* Green for read, matching your brand */
+    }
+
+
+    /* Chat input area */
+    .chat-input-area {
+        display: flex;
+        align-items: center; /* Align items vertically */
+        padding: 15px 20px;
+        border-top: 1px solid var(--border-color);
+        background-color: #ffffff;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.03); /* Softer shadow at the top */
+    }
+
+    /* Input field */
+    #messageInput {
+        flex: 1;
+        padding: 12px 20px; /* More padding */
+        border-radius: 25px; /* Fully rounded */
+        border: 1px solid #ddd;
+        outline: none;
+        font-size: 1em;
+        background-color: var(--input-bg); /* Light gray background */
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        -webkit-appearance: none; /* Remove default iOS input styles */
+    }
+    #messageInput:focus {
+        border-color: var(--accent-yellow); /* Yellow border on focus */
+        box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2); /* Soft yellow shadow */
+    }
+
+    /* File input button */
+    .file-attach-btn {
+        background: none;
+        border: none;
+        font-size: 1.8em; /* Larger icon */
+        cursor: pointer;
+        color: #777;
+        margin-right: 10px;
+        transition: color 0.2s ease, transform 0.1s ease;
+        padding: 8px; /* Increase tap target */
+        border-radius: 50%; /* Make it round */
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    .file-attach-btn:hover {
+        color: var(--accent-yellow); /* Yellow on hover */
+    }
+    .file-attach-btn:active {
+        transform: scale(0.9);
+    }
+
+    /* Send button */
+    #sendBtn {
+        padding: 12px 25px; /* More padding */
+        margin-left: 10px;
+        border: none;
+        border-radius: 25px; /* Fully rounded */
+        background-color: var(--primary-green); /* Green send button */
+        color: #fff;
+        font-weight: 600; /* Bolder text */
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        box-shadow: 0 2px 5px var(--shadow-medium);
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+
+    #sendBtn:hover:enabled {
+        background-color: #005F34; /* Darker green on hover */
+        transform: translateY(-1px); /* Subtle lift effect */
+        box-shadow: 0 4px 8px var(--shadow-medium);
+    }
+    #sendBtn:disabled {
+        background-color: #b0b0b0; /* Gray when disabled */
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    #sendBtn:active:enabled {
+        transform: translateY(0);
+        box-shadow: 0 1px 3px var(--shadow-medium);
+    }
+
+    /* Flash Messages */
+    .flashes {
+        list-style: none;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2001;
+        padding: 12px 25px; /* Slightly more padding */
+        border-radius: 10px; /* More rounded */
+        font-weight: 500;
+        opacity: 0.98; /* Slightly more opaque */
+        box-shadow: 0 4px 12px var(--shadow-medium); /* Stronger, softer shadow */
+        animation: fadeInDown 0.3s ease-out; /* Add entry animation */
+    }
+    .flashes li {
+        margin-bottom: 5px;
+    }
+    .flashes li:last-child {
+        margin-bottom: 0;
+    }
+    /* Adjusted flash colors for better contrast */
+    .flashes .success {
+        background-color: #d4edda; /* Light green */
+        color: var(--primary-green);
+        border: 1px solid var(--primary-green);
+    }
+    .flashes .error {
+        background-color: #f8d7da; /* Light red */
+        color: #721c24; /* Dark red */
+        border: 1px solid #f5c6cb;
+    }
+    .flashes .warning {
+        background-color: #fff3cd; /* Light yellow */
+        color: #856404; /* Dark yellow/brown */
+        border: 1px solid #ffeeba;
+    }
+    .flashes .info {
+        background-color: #d1ecf1; /* Light blue */
+        color: #0c5460; /* Dark blue */
+        border: 1px solid #bee5eb;
+    }
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -20px);
+        }
+        to {
+            opacity: 0.98;
+            transform: translate(-50%, 0);
+        }
+    }
+
+    /* Styles for attached file display (e.g., image, video, audio) */
+    .message-file {
+        max-width: 100%; /* Ensure files don't overflow message bubble */
+        display: block; /* Ensures proper spacing */
+        margin-top: 5px; /* Space between text and file if both exist */
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .message-file img {
+        max-width: 100%;
+        height: auto;
+        display: block; /* Remove extra space below image */
+        border-radius: 8px; /* Slightly rounded corners for media */
+    }
+
+    .message-file .audio-container {
+        display: flex;
+        align-items: center;
+        background-color: #f0f0f0; /* Lighter background for received audio */
+        border-radius: 20px;
+        padding: 6px 10px; /* Reduced padding */
+        max-width: 250px; /* Slightly smaller max width */
+        min-width: 150px;
+        position: relative;
+    }
+    
+    /* Hide native controls, style audio bar separately if needed */
+    .message-file audio {
+        width: 100%; /* Make audio element fill container */
+        height: 25px; /* Reduced height for audio player */
+        background: none;
+        outline: none;
+        border: none;
+        padding: 0;
+        margin-right: 8px; /* Slightly reduced margin */
+    }
+    
+    /* Duration aligned to the right, like WhatsApp */
+    .message-file .audio-duration {
+        font-size: 0.7em; /* Slightly smaller font size */
+        color: #555;
+        margin-left: auto;
+        padding-left: 8px; /* Slightly reduced padding */
+        white-space: nowrap;
+    }
+
+    .message-file a {
+        color: var(--primary-green); /* Link color for documents */
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .message-file a:hover {
+        text-decoration: underline;
+    }
+
+    /* Attachment preview area */
+    #attachmentPreview {
+        display: flex;
+        align-items: center;
+        background-color: #e9ecef;
+        padding: 8px 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ced4da;
+        justify-content: space-between;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+    }
+    #attachmentPreview:not(.active) { /* More semantic way to hide */
+        display: none;
+    }
+    #attachmentPreview .file-info {
+        display: flex;
+        align-items: center;
+    }
+    #attachmentPreview .file-info i {
+        margin-right: 8px;
+        color: #6c757d;
+    }
+    #attachmentPreview .file-info span {
+        font-size: 0.9em;
+        color: #495057;
+    }
+    #attachmentPreview .remove-file {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        color: #dc3545;
+        cursor: pointer;
+        transition: color 0.2s, transform 0.1s ease;
+        padding: 5px; /* Increase tap target */
+        border-radius: 50%;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    #attachmentPreview .remove-file:hover {
+        color: #c82333;
+    }
+    #attachmentPreview .remove-file:active {
+        transform: scale(0.9);
+    }
+
+    /* Voice Record button in chat input */
+    #startVoiceRecord, #stopVoiceRecord {
+        background: none;
+        border: none;
+        font-size: 1.8em;
+        cursor: pointer;
+        color: #777;
+        margin-right: 10px;
+        transition: color 0.2s ease, transform 0.1s ease;
+        padding: 8px; /* Increase tap target */
+        border-radius: 50%;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+    #startVoiceRecord:hover, #stopVoiceRecord:hover {
+        color: var(--accent-yellow);
+    }
+    #startVoiceRecord:active, #stopVoiceRecord:active {
+        transform: scale(0.9);
+    }
+    #stopVoiceRecord {
+        color: #e74c3c; /* Red for stop button */
+        display: none; /* Hidden by default */
+    }
+    #recordingIndicator {
+        color: #e74c3c;
+        font-size: 0.9em;
+        margin-left: 5px;
+        display: none;
+        animation: pulse 1.5s infinite; /* Add a pulse animation */
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    /* Advert Info Section */
+    .advert-info {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        margin-bottom: 20px;
+        margin-top: auto; /* Push to the bottom within its flex container if needed */
+        margin-left: 15px; /* Add some margin from left/right edges */
+        margin-right: 15px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .advert-info:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .advert-info h4 {
+        color: #333;
+        font-size: 1.1em;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .advert-info img {
+        width: 120px; /* Larger image */
+        height: 120px;
+        object-fit: cover; /* Ensure image covers the area */
+        border-radius: 8px; /* Slightly rounded corners for image */
+        margin-bottom: 15px;
+        border: 2px solid #ddd;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .advert-info p {
+        font-size: 0.95em;
+        color: #555;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+
+    .advert-info p strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .advert-info .price {
+        font-size: 1.1em;
+        font-weight: 700;
+        color: var(--primary-green); /* Green for price */
+        margin-top: 10px;
+    }
+
+    /* Back button for chat on mobile */
+    .back-button-chat {
+        background-color: transparent;
+        border: none;
+        color: #fff; /* White color for contrast on green header */
+        font-size: 1.5em;
+        cursor: pointer;
+        padding: 5px 10px;
+        margin-right: 10px;
+        display: none; /* Hidden by default, shown for mobile */
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease, transform 0.1s ease;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+
+    .back-button-chat:hover {
+        color: var(--accent-yellow); /* Accent color on hover */
+    }
+    .back-button-chat:active {
+        transform: scale(0.9);
+    }
+
+    /* Adjust the chat-header layout to accommodate the back button */
+    .chat-header {
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        background: var(--chat-header-bg); /* Use the green */
+        color: #fff; /* Ensure text is white */
+        border-bottom: 1px solid rgba(255,255,255,0.1); /* Lighter border */
+        gap: 10px; /* Space between items */
+    }
+
+    /* Responsive adjustments */
+    @media(max-width: 768px) {
+        body {
+            height: 100vh; /* Ensure full viewport height on mobile */
+        }
+        .container {
+            flex-direction: column;
+            border-radius: 0; /* No rounded corners on small screens */
+            box-shadow: none;
+        }
+
+        .sidebar {
+            position: fixed; /* Use fixed for better mobile sidebar */
+            height: 100%;
+            z-index: 1000; /* Adjusted z-index for better layering */
+            left: 0;
+            top: 0;
+            width: 80%; /* Sidebar takes up 80% width */
+            max-width: 300px; /* Max width for larger phones */
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Match header transition */
+            box-shadow: 2px 0 10px var(--shadow-medium); /* Shadow when open */
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .main-area {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative; /* Ensure it respects its position */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* When sidebar is open, push main content to the right slightly */
+        body.sidebar-open .main-area {
+            transform: translateX(80%); /* Push main area by sidebar width */
+            pointer-events: none; /* Disable interaction with main area */
+        }
+        /* Add an overlay when sidebar is open */
+        body.sidebar-open::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); /* Dark overlay */
+            z-index: 999; /* Below sidebar, above main content */
+            pointer-events: auto; /* Allow clicks on overlay to close sidebar */
+        }
+
+        /* Hide the regular toggle button in desktop sidebar header on mobile */
+        .sidebar-header .toggle-sidebar {
+            display: none;
+        }
+
+        /* Show toggle button in chat header for mobile */
+        .chat-header .toggle-mobile {
+            display: inline-block;
+            background: none;
+            border: none;
+            color: #fff; /* White color for contrast */
+            font-size: 1.4em;
+            cursor: pointer;
+            margin-right: 15px; /* More space */
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            padding: 5px;
+            border-radius: 50%;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+        .chat-header .toggle-mobile:hover {
+            opacity: 0.8;
+        }
+        .chat-header .toggle-mobile:active {
+            transform: scale(0.9);
+        }
+
+        .chat-title {
+            font-size: 1.1em; /* Smaller title */
+        }
+
+        .chat-user img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .message {
+            max-width: 90%; /* Allow messages to take more width on mobile */
+            padding: 10px 15px; /* Slightly less padding */
+            font-size: 0.9em; /* Slightly smaller font */
+        }
+
+        .chat-input-area {
+            padding: 10px 15px; /* Less padding */
+        }
+
+        #messageInput {
+            padding: 10px 15px; /* Smaller input padding */
+        }
+
+        #sendBtn {
+            padding: 10px 20px; /* Smaller send button */
+        }
+
+        .back-button-chat {
+            display: flex; /* Show back button on mobile when a chat is open */
+            order: -1; /* Place it at the beginning of the flex container */
+        }
+
+        /* Hide the sidebar toggle button in the chat header when the back button is shown */
+        .chat-header .toggle-sidebar {
+            display: none; /* Hide the desktop sidebar toggle */
+        }
+
+        .message-file .audio-container {
+            max-width: 200px; /* Further reduce max-width on smaller screens */
+        }
+        .message-file audio {
+            height: 20px; /* Further reduce height on smaller screens */
+        }
+
+        .advert-info {
+            margin-left: 10px; /* Adjust margin for smaller screens */
+            margin-right: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+    }
+
+    /* Button bar (e.g., for navigation) */
+    .button-bar {
+        background-color: var(--accent-yellow); /* Yellow background for buttons */
+        padding: 10px 20px;
+        display: flex;
+        justify-content: flex-start;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 2px 5px var(--shadow-light);
+    }
+
+    .button-bar a {
+        color: var(--primary-green); /* Green text on yellow background */
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+
+    .button-bar a:hover {
+        background-color: #F8CB4D; /* Lighter yellow on hover */
+        color: var(--primary-green); /* Keep green text */
+    }
+    .button-bar a:active {
+        transform: scale(0.98);
+    }
+
+    .button-bar a i {
+        font-size: 1.1em;
+    }
+</style>
+</head>
+<body>
+    {# Display Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <aside class="sidebar" id="sidebar">
+            <div class="button-bar">
+                <a onclick="history.back()" class="back-button" title="Go back to previous page">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{{ url_for('home') }}" class="home-button" title="Go to homepage">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </div>
+
+            <div class="sidebar-header">
+                <h3>Chats</h3>
+                <button class="toggle-sidebar" id="toggleSidebar">☰</button>
+            </div>
+            <div class="chat-list" id="chatList">
+                {% if chat_users %}
+                    {% for chat_user in chat_users %}
+                        <div class="chat-user {% if recipient and chat_user.id == recipient.id and chat_user.advert_id == advert_id %}active{% endif %}"
+                            data-receiver-id="{{ chat_user.id }}"
+                            data-advert-id="{{ chat_user.advert_id }}"
+                            data-receiver-username="{{ chat_user.username }}"
+                            data-chat-id="{{ chat_user.chat_id }}"> {# Add chat_id for dynamic updates #}
+                            <img src="{{ chat_user.profile_picture_url }}" alt="Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';" />
+                            <div class="chat-info">
+                                <strong>{{ chat_user.username }}</strong>
+                                <small id="last-message-{{ chat_user.id }}-{{ chat_user.advert_id }}">{{ chat_user.last_message }}</small>
+                            </div>
+                            {% if chat_user.unread > 0 %}
+                                <span class="unread-count" id="unread-count-{{ chat_user.id }}-{{ chat_user.advert_id }}">{{ chat_user.unread }}</span>
+                            {% else %}
+                                <span class="unread-count" id="unread-count-{{ chat_user.id }}-{{ chat_user.advert_id }}" style="display: none;">0</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: #bdc3c7; padding: 20px;">No chats yet.</p>
+                {% endif %}
+            </div>
+        </aside>
+
+        <main class="main-area">
+            {% if recipient %}
+            <div class="chat-header">
+                <button class="back-button-chat" onclick="history.back()" title="Go back to chat list">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="toggle-mobile" id="toggleMobileSidebar">☰</button>
+                <div class="chat-title">
+                    <img src="{{ recipient.profile_picture_url }}" alt="Recipient Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';" />
+                    <span>{{ recipient.username }}</span>
+                </div>
+                <div class="chat-status">
+                    <span id="recipientStatusDot" class="status-dot"></span>
+                    <span id="recipientStatusText">Offline</span>
+                </div>
+            </div>
+            <div class="chat-body" id="chatBody">
+                {% if advert_details %}
+                <a href="{{ url_for('advert_detail', advert_id=advert_details.id) }}" style="text-decoration: none; color: inherit;">
+                    <div class="advert-info">
+                        <h4>About this Advert:</h4>
+                        {# Corrected to use advert_details.main_image_url #}
+                        <img src="{{ advert_details.main_image_url }}" alt="{{ advert_details.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
+                        <p><strong>Title:</strong> {{ advert_details.title }}</p>
+                        <p><strong>Location:</strong> {{ advert_details.location }}</p>
+                        <p class="price"><strong>Price:</strong> ₦{{ "{:,}".format(advert_details.price) }}</p>
+                    </div>
+                </a>
+                {% endif %}
+                {% for message in messages %}
+                    <div class="message {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
+                        {% if message.content %}
+                            <p>{{ message.content }}</p>
+                        {% endif %}
+                        {% if message.file_path %}
+                            <div class="message-file">
+                                {% set file_extension = message.file_path.split('.')[-1].lower() %}
+                                {% if file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
+                                    <img src="{{ message.file_path }}" alt="Image" />
+                                {% elif file_extension in ['mp4', 'webm', 'ogg'] %}
+                                    <video controls src="{{ message.file_path }}"></video>
+                                {% elif file_extension in ['mp3', 'wav'] %}
+                                    
+                                {% else %}
+                                    <a href="{{ message.file_path }}" target="_blank"><i class="fas fa-file"></i> {{ message.file_path.split('/')[-1] }}</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        <div class="message-footer">
+                            <span class="timestamp">{{ message.timestamp }}</span>
+                            <span class="message-status" data-message-id="{{ message.id }}" data-status="{{ message.status }}">
+                                {% if message.sender_id == current_user.id %}
+                                    {% if message.status == 'read' %}
+                                        <i class="fas fa-check-double" style="color: #28a745;" title="Read"></i>
+                                    {% elif message.status == 'delivered' %}
+                                        <i class="fas fa-check-double" style="color: #007bff;" title="Delivered"></i>
+                                    {% else %}
+                                        <i class="fas fa-check" title="Sent"></i>
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div id="attachmentPreview" class="{% if attachedFilePath %}active{% endif %}">
+                <div class="file-info">
+                    <i class="fas fa-paperclip"></i>
+                    <span id="attachedFileName"></span>
+                </div>
+                <button class="remove-file" id="removeAttachmentBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-input-area">
+                <input type="file" id="fileInput" style="display: none;" accept="image/*, video/*, audio/*, .pdf, .doc, .docx, .txt">
+                <button class="file-attach-btn" id="attachFileBtn" title="Attach File"><i class="fas fa-paperclip"></i></button>
+                <input type="text" id="messageInput" placeholder="Type your message..." />
+                
+                <button id="sendBtn" disabled>Send</button>
+            </div>
+
+            {% else %}
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #777;">
+                <i class="fas fa-comments" style="font-size: 4em; margin-bottom: 20px; color: var(--border-color);"></i>
+                <p style="font-size: 1.2em;">Select a chat from the sidebar or start a new one.</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">Your messages will appear here.</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        const socket = io();
+
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatBody = document.getElementById('chatBody');
+        const fileInput = document.getElementById('fileInput');
+        const attachFileBtn = document.getElementById('attachFileBtn');
+        const attachmentPreview = document.getElementById('attachmentPreview');
+        const attachedFileName = document.getElementById('attachedFileName');
+        const removeAttachmentBtn = document.getElementById('removeAttachmentBtn');
+
+        
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebar = document.getElementById('toggleSidebar');
+        const toggleMobileSidebar = document.getElementById('toggleMobileSidebar');
+        const chatUsers = document.querySelectorAll('.chat-user');
+
+        let attachedFilePath = null;
+        
+        // Get recipient_id and advert_id from the current URL path
+        const pathSegments = window.location.pathname.split('/');
+        const currentReceiverId = parseInt(pathSegments[pathSegments.indexOf('message') + 1]);
+        const currentAdvertId = parseInt(pathSegments[pathSegments.indexOf('message') + 2]);
+
+        // Safely inject current user ID from Jinja
+        const currentUserId = {{ current_user.id | tojson }};
+
+
+        // --- Helper function to append message to chat body ---
+        function appendMessageToChat(data, isSender = false) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.setAttribute('data-message-id', data.id); // Add message ID
+
+            if (isSender) {
+                messageElement.classList.add('sent');
+            } else {
+                messageElement.classList.add('received');
+            }
+
+            if (data.content) {
+                const p = document.createElement('p');
+                p.textContent = data.content;
+                messageElement.appendChild(p);
+            }
+
+            if (data.file_path) {
+                const fileDiv = document.createElement('div');
+                fileDiv.classList.add('message-file');
+                const fileExtension = data.file_path.split('.').pop().toLowerCase();
+                
+                if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                    const img = document.createElement('img');
+                    img.src = data.file_path;
+                    img.alt = 'Attached Image';
+                    fileDiv.appendChild(img);
+                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = data.file_path;
+                    fileDiv.appendChild(video);
+                } else if (['mp3', 'wav'].includes(fileExtension)) {
+                    const audioContainer = document.createElement('div');
+                    audioContainer.classList.add('audio-container');
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = data.file_path;
+                    audioContainer.appendChild(audio);
+
+                    const durationSpan = document.createElement('span');
+                    durationSpan.classList.add('audio-duration');
+                    durationSpan.textContent = '00:00'; // Default text until loaded
+                    audioContainer.appendChild(durationSpan);
+
+                    // Event listener to get and display audio duration
+                    audio.addEventListener('loadedmetadata', () => {
+                        durationSpan.textContent = formatDuration(audio.duration);
+                    });
+                    // If audio is already loaded (e.g., from cache), set duration immediately
+                    if (audio.readyState >= 1) { // HAVE_METADATA or greater
+                        durationSpan.textContent = formatDuration(audio.duration);
+                    }
+                    fileDiv.appendChild(audioContainer);
+
+                } else {
+                    const a = document.createElement('a');
+                    a.href = data.file_path;
+                    a.target = '_blank';
+                    a.innerHTML = `<i class="fas fa-file"></i> ${data.file_path.split('/').pop()}`;
+                    fileDiv.appendChild(a);
+                }
+                messageElement.appendChild(fileDiv);
+            }
+
+            const messageFooter = document.createElement('div');
+            messageFooter.classList.add('message-footer');
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('timestamp');
+            timestampSpan.textContent = data.timestamp;
+            messageFooter.appendChild(timestampSpan);
+
+            // Add status indicator for sent messages only
+            if (isSender) {
+                const statusSpan = document.createElement('span');
+                statusSpan.classList.add('message-status');
+                statusSpan.setAttribute('data-message-id', data.id); // Associate with message ID
+                statusSpan.setAttribute('data-status', data.status || 'sent'); // Default to sent
+                
+                let iconClass = 'fas fa-check'; // Sent
+                let titleText = 'Sent';
+
+                if (data.status === 'delivered') {
+                    iconClass = 'fas fa-check-double';
+                    statusSpan.classList.add('delivered');
+                    titleText = 'Delivered';
+                } else if (data.status === 'read') {
+                    iconClass = 'fas fa-check-double';
+                    statusSpan.classList.add('read');
+                    titleText = 'Read';
+                }
+
+                statusSpan.innerHTML = `<i class="${iconClass}" title="${titleText}"></i>`;
+                messageFooter.appendChild(statusSpan);
+            }
+
+            messageElement.appendChild(messageFooter);
+            chatBody.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        // Join room if recipient and advert IDs are present in URL
+        if (currentReceiverId && currentAdvertId) {
+            socket.emit('join_room', { 
+                receiver_id: currentReceiverId, 
+                advert_id: currentAdvertId,
+                // If you can get chat_id from Jinja, pass it here
+                chat_id: document.querySelector('.chat-user.active')?.dataset.chatId || null 
+            });
+        }
+
+        function scrollToBottom() {
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // MODIFIED: Enable send button if text or attachment is present
+        function enableSendButton() {
+            const hasTextInput = messageInput.value.trim() !== '';
+            const hasAttachment = attachedFilePath !== null;
+            sendBtn.disabled = !(hasTextInput || hasAttachment);
+        }
+
+        messageInput.addEventListener('input', enableSendButton);
+
+        sendBtn.addEventListener('click', () => {
+            const messageContent = messageInput.value.trim();
+            if (messageContent !== '' || attachedFilePath !== null) { // Allow sending if either content or file exists
+                const tempMessageId = 'temp_' + Date.now(); // Temporary ID for immediate display
+
+                // Append message to chat immediately for sender
+                appendMessageToChat({
+                    id: tempMessageId,
+                    content: messageContent,
+                    file_path: attachedFilePath,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: 'sent' // Initial status
+                }, true); // isSender = true
+
+                // Send message data to server via Socket.IO
+                const dataToSend = {
+                    receiver_id: currentReceiverId,
+                    advert_id: currentAdvertId,
+                    message: messageContent,
+                    file_path: attachedFilePath,
+                    // advert_details is already available in messages.html if active
+                    advert_details: {{ advert_details | tojson }} // Pass advert_details object
+                };
+                socket.emit('send_message', dataToSend);
+
+                // Reset input fields
+                messageInput.value = '';
+                attachedFilePath = null;
+                attachmentPreview.classList.remove('active');
+                attachedFileName.textContent = ''; // Clear attached file name
+                fileInput.value = ''; // Clear the file input
+                enableSendButton();
+            }
+        });
+
+        // Event for sender to confirm message was saved/sent and get actual message ID
+        socket.on('message_sent', (data) => {
+            // Find the temporary message element and update its ID and status
+            const tempMessageElement = document.querySelector(`[data-message-id="temp_${data.timestamp.replace(':', '')}"]`); // Adjust temp ID logic if needed
+            if (tempMessageElement) {
+                tempMessageElement.setAttribute('data-message-id', data.id);
+                const statusSpan = tempMessageElement.querySelector('.message-status');
+                if (statusSpan) {
+                    statusSpan.setAttribute('data-message-id', data.id); // Update status span ID too
+                    statusSpan.setAttribute('data-status', 'sent'); // Explicitly mark as sent
+                    statusSpan.innerHTML = '<i class="fas fa-check" title="Sent"></i>';
+                }
+            }
+            // Also update the sidebar if needed (e.g. last message preview)
+            const sidebarLastMessage = document.getElementById(`last-message-${currentReceiverId}-${currentAdvertId}`);
+            if (sidebarLastMessage) {
+                sidebarLastMessage.textContent = data.content || data.file_path.split('/').pop() || "[File]";
+            }
+        });
+
+
+        socket.on('receive_message', (data) => {
+            appendMessageToChat(data, false); // isSender = false
+
+            // Emit acknowledgment that message was received by this client
+            socket.emit('message_received_ack', { 
+                message_id: data.id, 
+                chat_id: data.chat_id,
+                sender_id: data.sender_id, // Original sender
+                recipient_id: currentUserId // Current user (recipient)
+            });
+        });
+
+        socket.on('message_status_update', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+            if (messageElement) {
+                const statusSpan = messageElement.querySelector('.message-status');
+                if (statusSpan) {
+                    statusSpan.setAttribute('data-status', data.status);
+                    if (data.status === 'delivered') {
+                        statusSpan.innerHTML = '<i class="fas fa-check-double" style="color: #007bff;" title="Delivered"></i>';
+                        statusSpan.classList.add('delivered');
+                    } else if (data.status === 'read') {
+                        statusSpan.innerHTML = '<i class="fas fa-check-double" style="color: #28a745;" title="Read"></i>';
+                        statusSpan.classList.add('read');
+                    }
+                }
+            }
+        });
+
+        socket.on('message_read', (data) => {
+            // This event is sent to the *sender* when their message is read by the recipient
+            // Or when a user in the chat reads messages from the other person
+            const readerId = data.reader_id;
+            const chatId = data.chat_id;
+
+            // If the reader is the current chat's recipient, mark all their received messages as read
+            if (readerId === currentReceiverId) {
+                const messagesToMarkRead = document.querySelectorAll(`.message.sent .message-status:not(.read)`);
+                messagesToMarkRead.forEach(statusSpan => {
+                    statusSpan.setAttribute('data-status', 'read');
+                    statusSpan.innerHTML = '<i class="fas fa-check-double" style="color: #28a745;" title="Read"></i>';
+                    statusSpan.classList.remove('delivered'); // Remove delivered if it was there
+                    statusSpan.classList.add('read');
+                });
+
+                // Update sidebar unread count for this chat to 0
+                const unreadCountSpan = document.getElementById(`unread-count-${readerId}-${currentAdvertId}`);
+                if (unreadCountSpan) {
+                    unreadCountSpan.textContent = '0';
+                    unreadCountSpan.style.display = 'none';
+                }
+            }
+        });
+
+        socket.on('update_sidebar_unread', (data) => {
+            const targetChatUser = document.querySelector(`.chat-user[data-chat-id="${data.chat_id}"][data-receiver-id="${data.participant_id}"]`);
+            if (targetChatUser) {
+                const unreadCountSpan = document.getElementById(`unread-count-${data.participant_id}-${targetChatUser.dataset.advertId}`);
+                let currentUnread = parseInt(unreadCountSpan.textContent);
+                currentUnread += data.unread_delta;
+                unreadCountSpan.textContent = currentUnread;
+                if (currentUnread > 0) {
+                    unreadCountSpan.style.display = 'inline-block';
+                } else {
+                    unreadCountSpan.style.display = 'none';
+                }
+            }
+        });
+
+
+        messageInput.addEventListener('input', enableSendButton);
+
+        sendBtn.addEventListener('click', () => {
+            const messageContent = messageInput.value.trim();
+            if (messageContent !== '' || attachedFilePath !== null) {
+                const data = {
+                    receiver_id: parseInt(currentReceiverId),
+                    advert_id: parseInt(currentAdvertId),
+                    message: messageContent,
+                    file_path: attachedFilePath,
+                };
+                socket.emit('send_message', data);
+                messageInput.value = '';
+                attachedFilePath = null;
+                attachmentPreview.classList.remove('active');
+                enableSendButton();
+            }
+        });
+
+        socket.on('receive_message', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            if (data.sender_id === currentUserId) {
+                messageElement.classList.add('sent');
+            } else {
+                messageElement.classList.add('received');
+            }
+
+            if (data.content) {
+                const p = document.createElement('p');
+                p.textContent = data.content;
+                messageElement.appendChild(p);
+            }
+
+            if (data.file_path) {
+                const fileDiv = document.createElement('div');
+                fileDiv.classList.add('message-file');
+                const fileExtension = data.file_path.split('.').pop().toLowerCase();
+                
+                if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                    const img = document.createElement('img');
+                    img.src = data.file_path;
+                    img.alt = 'Attached Image';
+                    fileDiv.appendChild(img);
+                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    const video = document.createElement('video');
+                    video.controls = true;
+                    video.src = data.file_path;
+                    fileDiv.appendChild(video);
+                } else if (['mp3', 'wav'].includes(fileExtension)) {
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = data.file_path;
+                    fileDiv.appendChild(audio);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = data.file_path;
+                    a.target = '_blank';
+                    a.innerHTML = `<i class="fas fa-file"></i> ${data.file_path.split('/').pop()}`;
+                    fileDiv.appendChild(a);
+                }
+                messageElement.appendChild(fileDiv);
+            }
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('timestamp');
+            timestampSpan.textContent = data.timestamp;
+            messageElement.appendChild(timestampSpan);
+
+            chatBody.appendChild(messageElement);
+            scrollToBottom();
+        });
+
+        // File attachment handling
+        attachFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files[0];
+            if (file) {
+                attachedFileName.textContent = file.name;
+                attachmentPreview.classList.add('active');
+                enableSendButton();
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('/upload_message_file', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        attachedFilePath = result.filepath;
+                        console.log('File uploaded:', attachedFilePath);
+                        enableSendButton(); // Re-enable send button after successful upload
+                    } else {
+                        alert('Error uploading file: ' + (result.error || 'Unknown error'));
+                        attachedFilePath = null;
+                        attachmentPreview.classList.remove('active');
+                        enableSendButton(); // Re-enable if other content exists, disable if not
+                    }
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    alert('File upload failed due to network or server error.');
+                    attachedFilePath = null;
+                    attachmentPreview.classList.remove('active');
+                    enableSendButton();
+                }
+            }
+        });
+
+        removeAttachmentBtn.addEventListener('click', () => {
+            attachedFilePath = null;
+            fileInput.value = ''; // Clear the selected file in the input
+            attachmentPreview.classList.remove('active');
+            enableSendButton();
+        });
+
+
+        // Sidebar and responsive logic
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+        });
+
+        // Mobile sidebar toggle (shows/hides the sidebar on smaller screens)
+        toggleMobileSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            // Toggle a class on the body to control main-area visibility
+            document.body.classList.toggle('sidebar-open'); 
+        });
+
+        // Event listener for clicking on chat user in sidebar to load chat
+        chatUsers.forEach(userDiv => {
+            userDiv.addEventListener('click', () => {
+                const receiverId = userDiv.dataset.receiverId;
+                const advertId = userDiv.dataset.advertId;
+                if (receiverId && advertId) {
+                    window.location.href = `/message/${receiverId}/${advertId}`;
+                }
+            });
+        });
+
+        // Hide sidebar when clicking outside on mobile (only if sidebar is open)
+        document.addEventListener('click', (event) => {
+            // Check if click is outside sidebar AND not on the mobile toggle button
+            if (window.innerWidth <= 768 && sidebar.classList.contains('open') && 
+                !sidebar.contains(event.target) && 
+                !toggleMobileSidebar.contains(event.target) &&
+                event.target.id !== 'toggleMobileSidebar') { // Ensure it's not the button itself
+                sidebar.classList.remove('open');
+                document.body.classList.remove('sidebar-open');
+            }
+        });
+        
+        // Initial scroll to bottom when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            scrollToBottom();
+            enableSendButton(); // Initial check for send button state
+
+            // Flash message fade out
+            const flashes = document.querySelector('.flashes');
+            if (flashes) {
+                setTimeout(() => {
+                    flashes.style.opacity = '0';
+                    flashes.style.transition = 'opacity 1s ease-out';
+                    setTimeout(() => flashes.remove(), 1000); // Remove after transition
+                }, 5000); // 5 seconds before fading starts
+            }
+            
+            // Initial audio duration load for existing messages on page load
+            document.querySelectorAll('.message-file audio').forEach(audioElement => {
+                const durationSpan = audioElement.closest('.audio-container')?.querySelector('.audio-duration');
+                if (durationSpan && audioElement.readyState >= 1) { // HAVE_METADATA or greater
+                    durationSpan.textContent = formatDuration(audioElement.duration);
+                } else if (durationSpan) {
+                    audioElement.addEventListener('loadedmetadata', () => {
+                        durationSpan.textContent = formatDuration(audioElement.duration);
+                    }, { once: true });
+                }
+            });
+
+            // Set initial online status based on whatever Flask provided (if any)
+            // This assumes Flask sets an 'is_online' or similar property for the recipient
+            {% if recipient and recipient.is_online %}
+                recipientStatusDot.classList.add('online');
+                recipientStatusText.textContent = 'Online';
+            {% endif %}
+        });
+
+    </script>
+</body>
+</html>
