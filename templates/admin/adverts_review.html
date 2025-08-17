@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Admin Advert Review</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px; /* Adjusted for potentially more content */
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .advert-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+            gap: 20px;
+        }
+        .advert-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .advert-item h5 { /* Changed from h3 to h5 to match card-title */
+            margin-top: 0;
+            color: #333;
+        }
+        .advert-item p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+        .advert-item .status {
+            font-weight: bold;
+            /* Colors already handled by Bootstrap badges */
+        }
+        .advert-item .actions button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        /* Flash message styling, adapted from your base.html */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        .alert.error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .alert.success {
+            background-color: #27ae60;
+            color: white;
+        }
+        .alert.info {
+            background-color: #3498db;
+            color: white;
+        }
+        .alert-icon {
+            font-size: 1.2em;
+        }
+        .no-adverts {
+            text-align: center;
+            color: #555;
+            padding: 30px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+        }
+        /* New style for buttons container */
+        .button-group-top {
+            display: flex;
+            justify-content: flex-start; /* Align buttons to the start */
+            gap: 10px; /* Space between buttons */
+            margin-bottom: 20px; /* Space below the buttons */
+        }
+
+        /* Improved Back Button Styling */
+        .btn-back-custom {
+            background-color: #6c757d; /* Slightly darker secondary for emphasis */
+            color: white;
+            border: 1px solid #5a6268;
+            padding: .375rem .75rem; /* Standard Bootstrap button padding */
+            font-size: 1rem; /* Standard Bootstrap button font size */
+            line-height: 1.5; /* Standard Bootstrap button line height */
+            border-radius: .25rem; /* Standard Bootstrap button border-radius */
+            text-decoration: none; /* Ensure it looks like a button, not just a link */
+            display: inline-flex; /* Align icon and text nicely */
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .btn-back-custom:hover {
+            background-color: #545b62; /* Darker on hover */
+            color: white;
+            border-color: #4e555b;
+        }
+        .btn-back-custom:active {
+            background-color: #494f55 !important; /* Even darker on active/click */
+            border-color: #424649 !important;
+            box-shadow: 0 0 0 0.25rem rgba(130, 138, 145, 0.5) !important; /* Add focus ring */
+        }
+        .btn-back-custom i {
+            margin-right: .5rem; /* Space between icon and text */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="button-group-top">
+            <a onclick="history.back()" class="btn-back-custom" title="Go back to previous page">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{{ url_for('home') }}" class="btn btn-info">
+                <i class="fas fa-home me-1"></i> Home
+            </a>
+            <a href="{{ url_for('profile') }}" class="btn btn-primary">
+                <i class="fas fa-user me-1"></i> Profile
+            </a>
+        </div>
+
+        <h2>Adverts Awaiting Review</h2>
+
+        {# Display Flash messages - kept similar to your base.html's flash message handling #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span class="alert-icon">
+                            {% if category == 'error' %} <i class="fas fa-times-circle"></i>
+                            {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                            {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                            {% else %} <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </span>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if adverts %}
+            <div class="row"> {# Using Bootstrap grid classes #}
+                {% for advert in adverts %}
+                <div class="col-md-6 col-lg-4 mb-4"> {# Adjust column sizes as needed #}
+                    <div class="card h-100"> {# Added h-100 for consistent card heights #}
+                        <div class="card-header bg-primary text-white">
+                            Advert ID: {{ advert.id }} - Status: {{ advert.status.replace('_', ' ').title() }}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ advert.title }}</h5>
+                            <p class="card-text">{{ advert.description[:150] }}...</p>
+                            {% if advert.main_image %}
+                                <img src="{{ url_for('static', filename='uploads/' + advert.main_image) }}" class="img-fluid mb-2" alt="Main Image" style="max-height: 200px; object-fit: contain;">
+                            {% endif %}
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Seller:</strong> {{ advert.seller_username }} ({{ advert.seller_email }})</li>
+                                <li class="list-group-item"><strong>Category:</strong> {{ advert.category_name }} / {{ advert.subcategory_name }}</li>
+                                <li class="list-group-item"><strong>Price:</strong> ${{ advert.price }} {% if advert.negotiable %}(Negotiable){% endif %}</li>
+                                <li class="list-group-item"><strong>Condition:</strong> {{ advert.condition }}</li>
+                                <li class="list-group-item"><strong>Location:</strong> {{ advert.location }}</li>
+                                <li class="list-group-item"><strong>Plan:</strong> {{ advert.subscription_plan_name }} (Visibility: {{ advert.visibility_level }})</li>
+                                <li class="list-group-item"><strong>Submitted On:</strong> {{ advert.created_at.strftime('%Y-%m-%d %H:%M') }}</li>
+                                <li class="list-group-item"><strong>Calculated Expiry (if published):</strong> {{ advert.calculated_expiry.strftime('%Y-%m-%d %H:%M') if advert.calculated_expiry else 'N/A' }}</li>
+                                {% if advert.status == 'rejected' and advert.rejected_reason %}
+                                <li class="list-group-item text-danger"><strong>Rejection Reason:</strong> {{ advert.rejected_reason }}</li>
+                                {% endif %}
+                            </ul>
+                            <div class="mt-3">
+                                {% if advert.status == 'pending_review' %}
+                                    <form action="{{ url_for('publish_advert', advert_id=advert.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm">Publish Advert</button>
+                                    </form>
+                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ advert.id }}">Reject Advert</button>
+
+                                    {# Reject Modal #}
+                                    <div class="modal fade" id="rejectModal{{ advert.id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ advert.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="{{ url_for('reject_advert', advert_id=advert.id) }}" method="POST">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="rejectModalLabel{{ advert.id }}">Reject Advert: {{ advert.title }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label for="rejectedReason{{ advert.id }}" class="form-label">Reason for Rejection (Optional but recommended):</label>
+                                                            <textarea class="form-control" id="rejectedReason{{ advert.id }}" name="rejected_reason" rows="3"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% elif advert.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% if advert.rejected_reason %}
+                                        <p class="text-muted small mt-2">Reason: {{ advert.rejected_reason }}</p>
+                                    {% endif %}
+                                    {# Assuming 'repost_advert' route exists and logic is in place #}
+                                    <form action="{{ url_for('repost_advert', advert_id=advert.id) }}" method="GET" class="d-inline mt-2">
+                                        <button type="submit" class="btn btn-warning btn-sm">Repost Advert</button>
+                                    </form>
+                                {% elif advert.status == 'published' %}
+                                    <span class="badge bg-success">Published</span>
+                                {% elif advert.status == 'expired' %}
+                                    <span class="badge bg-secondary">Expired</span>
+                                {% elif advert.status == 'paused' %}
+                                    <span class="badge bg-secondary">Paused</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-adverts">No adverts awaiting review.</p>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        // Optional: Fade out flash messages after a few seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500); // Remove after fade out
+                }, 5000); // 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>
