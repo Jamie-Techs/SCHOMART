@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ post.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/post_detail.css') }}">
+<style>
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        margin: 20px;
+      }
+      #commentsContainer p {
+        border-bottom: 1px solid #eee;
+        padding: 6px 0;
+      }
+      #commentInput {
+        width: 100%;
+        height: 80px;
+        margin-bottom: 10px;
+      }
+      #reactionButtons button {
+        margin-right: 8px;
+        padding: 8px 15px;
+        border: none;
+        background-color: #ddd;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      #reactionButtons button:hover {
+        background-color: #ccc;
+      }
+      
+      /* Modal */
+      .modal {
+        position: fixed;
+        top:0; left:0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #modalImage {
+        border-radius: 8px;
+      }
+    </style>
+</head>
+<body>
+  <h1>{{ post.title }}</h1>
+  <p><em>By {{ post.author }} on {{ post.post_date.strftime('%Y-%m-%d %H:%M:%S') }}</em></p>
+  <div class="content">
+    <p>{{ post.content }}</p>
+
+    {% if post.media_type != 'text' and post.media_url %}
+      <div class="media-preview">
+        {% if post.media_type == 'image' %}
+          <img src="{{ url_for('static', filename=post.media_url.split('static/')[-1]) }}" id="mediaPreview" style="max-width: 500px; cursor:pointer;">
+        {% elif post.media_type == 'video' %}
+          <video controls style="max-width:500px;">
+            <source src="{{ url_for('static', filename=post.media_url.split('static/')[-1]) }}" type="video/mp4" />
+          </video>
+        {% else %}
+          <a href="{{ url_for('download_study_material', post_id=post.id) }}">Download material</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <hr>
+  <h3>Comments</h3>
+  <div id="commentsContainer">
+    {% for c in comments %}
+      <p><b>{{ c.username }}</b> ({{ c.comment_date.strftime('%Y-%m-%d %H:%M') }}): {{ c.comment_text }}</p>
+    {% else %}
+      <p>No comments yet.</p>
+    {% endfor %}
+  </div>
+
+  <textarea id="commentInput" placeholder="Write a comment..."></textarea><br>
+  <button id="submitComment">Submit Comment</button>
+
+  <hr>
+  <h3>Reactions</h3>
+  <div id="reactionButtons">
+    {% for rt in ['like', 'love', 'laugh', 'sad', 'angry'] %}
+      <button class="react-btn" data-reaction="{{ rt }}">{{ rt.capitalize() }} ({{ reactions.get(rt, 0) }})</button>
+    {% endfor %}
+  </div>
+
+  <div id="mediaModal" class="modal" style="display:none;">
+    <span id="closeModal" style="cursor:pointer; font-size: 2rem;">&times;</span>
+    <img id="modalImage" style="max-width:90vw; max-height:90vh;" />
+  </div>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const commentInput = document.getElementById('commentInput');
+        const submitBtn = document.getElementById('submitComment');
+        const commentsContainer = document.getElementById('commentsContainer');
+        const reactionButtons = document.querySelectorAll('.react-btn');
+      
+        // Extract post ID from the URL, assuming it's the last segment
+        const pathParts = window.location.pathname.split('/');
+        const postId = pathParts[pathParts.length - 1]; // This will be the ID
+        const postCategory = pathParts[pathParts.length - 2]; // This will be the category like 'School Gist'
+      
+        // Submit comment
+        submitBtn.addEventListener('click', () => {
+          const text = commentInput.value.trim();
+          if (!text) return alert('Please write a comment.');
+      
+          fetch('/api/comment', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({post_id: postId, comment_text: text})
+          })
+          .then(res => res.json())
+          .then(data => {
+            if(data.success){
+              const p = document.createElement('p');
+              // Get current time for the new comment
+              const now = new Date();
+              const formattedTime = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+              p.innerHTML = `<b>You</b> (${formattedTime}): ${text}`;
+              commentsContainer.appendChild(p);
+              commentInput.value = '';
+            } else {
+              alert('Error posting comment');
+            }
+          })
+          .catch(error => console.error('Error posting comment:', error));
+        });
+      
+        // Reaction buttons
+        reactionButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const reactionType = btn.getAttribute('data-reaction');
+      
+            fetch('/api/react', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({post_id: postId, reaction_type: reactionType})
+            })
+            .then(res => res.json())
+            .then(data => {
+              if(data.success){
+                // Reload page to update counts and reflect the reaction change
+                location.reload();
+              } else {
+                alert('Error submitting reaction');
+              }
+            })
+            .catch(error => console.error('Error submitting reaction:', error));
+          });
+        });
+      
+        // Image modal for media preview
+        const mediaPreview = document.getElementById('mediaPreview');
+        if(mediaPreview){
+          const modal = document.getElementById('mediaModal');
+          const modalImage = document.getElementById('modalImage');
+          const closeModal = document.getElementById('closeModal');
+      
+          mediaPreview.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            modalImage.src = mediaPreview.src;
+          });
+      
+          closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+            modalImage.src = '';
+          });
+      
+          modal.addEventListener('click', (e) => {
+            if(e.target === modal){
+              modal.style.display = 'none';
+              modalImage.src = '';
+            }
+          });
+        }
+      });
+  </script>
+
+</body>
+</html>
