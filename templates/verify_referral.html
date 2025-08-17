@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Referral Verification{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <style>
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+        p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .honeypot-field {
+            /* Hide honeypot fields visually but keep them accessible to bots */
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            height: 1px;
+            width: 1px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 25px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+        }
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+        /* Style for hidden submit button if needed for debugging */
+        #hiddenSubmitBtn {
+            display: none; /* Keep hidden for automatic submission */
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Referral Verification</h1>
+        {% if referrer_user_id %}
+        <p>To finalize your referral and ensure your referrer gets credit, we need to perform a quick device and behavioral check. This helps us prevent automated or fraudulent activities.</p>
+        {% else %}
+        <p>We are performing a quick device and behavioral check to enhance your account security. This helps us prevent automated or fraudulent activities.</p>
+        {% endif %}
+        <p>Please wait a moment while we process the verification. This page will automatically submit.</p>
+
+        <div class="loading-spinner"></div>
+
+        <form id="verificationForm" method="POST" action="{{ url_for('verify_referral') }}">
+            <div class="honeypot-field">
+                <label for="email_address_honeypot">Your Email (Leave blank)</label>
+                <input type="text" id="email_address_honeypot" name="email_address_honeypot" tabindex="-1" autocomplete="off">
+            </div>
+            <div class="honeypot-field">
+                <label for="website_url_honeypot">Your Website (Leave blank)</label>
+                <input type="text" id="website_url_honeypot" name="website_url_honeypot" tabindex="-1" autocomplete="off">
+            </div>
+
+            <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
+            <input type="hidden" name="form_load_time" id="formLoadTime" value="{{ form_load_time if form_load_time else '' }}">
+            <input type="hidden" name="form_submit_time" id="formSubmitTime">
+            
+            <button type="submit" id="hiddenSubmitBtn">Submit Verification</button> {# Hidden, JS will submit #}
+        </form>
+
+        <a href="{{ url_for('profile') }}" class="btn-back">Back to Profile</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('verificationForm');
+            const deviceFingerprintInput = document.getElementById('deviceFingerprintData');
+            const formLoadTimeInput = document.getElementById('formLoadTime');
+            const formSubmitTimeInput = document.getElementById('formSubmitTime');
+
+            // Set form load time as soon as the DOM is ready
+            formLoadTimeInput.value = performance.now() / 1000; // Time in seconds
+
+            // Initialize FingerprintJS
+            FingerprintJS.load()
+                .then(fp => fp.get())
+                .then(result => {
+                    // Convert components to a JSON string for storage
+                    deviceFingerprintInput.value = JSON.stringify(result.components);
+
+                    // Set form submit time just before submission
+                    formSubmitTimeInput.value = performance.now() / 1000;
+
+                    // Automatically submit the form
+                    form.submit();
+                })
+                .catch(error => {
+                    console.error("Error generating device fingerprint:", error);
+                    // Fallback: If fingerprinting fails, still submit the form,
+                    // but notify the user or log the error on the server side.
+                    alert("Could not complete device check. Please ensure JavaScript is enabled and try again.");
+                    // Still submit to allow server to log the attempt, even if fingerprinting failed
+                    formSubmitTimeInput.value = performance.now() / 1000;
+                    form.submit();
+                });
+        });
+    </script>
+{% endblock %}
