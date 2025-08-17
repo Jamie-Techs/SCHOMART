@@ -205,67 +205,63 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-      // 1. Device Fingerprinting with FingerprintJS
-      const fingerprintInputField = document.getElementById('deviceFingerprintData');
-      if (fingerprintInputField) {
-        FingerprintJS.load()
-          .then(fp => fp.get())
-          .then(result => {
-            // Store specific components of the fingerprint
-            const components = result.components;
-            const fingerprintData = {
-              userAgent: components.userAgent.value,
-              screenResolution: components.screenResolution.value,
-              canvas: components.canvas.value,
-              webgl: components.webgl.value,
-              fonts: components.fonts.value,
-              timezone: components.timezone.value,
-              platform: components.platform.value,
-            };
-            fingerprintInputField.value = JSON.stringify(fingerprintData);
-            console.log('Device Fingerprint captured for signup.');
-          })
-          .catch(error => {
-            console.error('Error loading or getting FingerprintJS:', error);
-          });
-      }
-
-      // 2. Fade Out Flash Messages automatically after 5 seconds
-      const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        setTimeout(() => {
-          alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 500); // Remove after fade out
-        }, 5000);
-      });
-
-      // 3. Form Submission Handler with Password Validation and reCAPTCHA v3
-      const form = document.getElementById('signupForm');
-      form.addEventListener('submit', function(event) {
-        event.preventDefault(); // Stop the form from submitting immediately
-
-        // Validate passwords match before proceeding
-        const pw = document.getElementById('password').value;
-        const confirmPw = document.getElementById('confirm_password').value;
-        if (pw !== confirmPw) {
-          alert('Passwords do not match.');
-          return false;
-        }
-
-        // Get a new reCAPTCHA token right before submission
-        grecaptcha.ready(function() {
-  grecaptcha.execute("{{ recaptcha_site_key}}", {action: 'signup'}).then(function(token) {
-    document.getElementById('recaptcha_token').value = token;
-    document.getElementById('loader').style.display = 'block';
-    form.submit();
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. Device Fingerprinting with FingerprintJS
+    const fingerprintInputField = document.getElementById('deviceFingerprintData');
+    if (fingerprintInputField) {
+      FingerprintJS.load()
+.then(fp => fp.get())
+.then(result => {
+          const components = result.components;
+          const fingerprintData = {
+            userAgent: components.userAgent.value,
+            screenResolution: components.screenResolution.value,
+            canvas: components.canvas.value,
+            webgl: components.webgl.value,
+            fonts: components.fonts.value,
+            timezone: components.timezone.value,
+            platform: components.platform.value,
+};
+          fingerprintInputField.value = JSON.stringify(fingerprintData);
+          console.log('Device Fingerprint captured for signup.');
+})
+.catch(error => {
+          console.error('Error loading or getting FingerprintJS:', error);
 });
+}
+
+    // 2. Fade Out Flash Messages automatically after 5 seconds
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      setTimeout(() => {
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 500);
+}, 5000);
 });
 
+    // 3. Form Submission Handler with Password Validation and reCAPTCHA v3
+    const form = document.getElementById('signupForm');
+    form.addEventListener('submit', async function(event) {
+      event.preventDefault();
 
-      });
-    });
-  </script>
+      const pw = document.getElementById('password').value;
+      const confirmPw = document.getElementById('confirm_password').value;
+      if (pw!== confirmPw) {
+        alert('Passwords do not match.');
+        return;
+}
+
+      try {
+        const token = await grecaptcha.execute('{{ recaptcha_site_key}}', {action: 'signup'});
+        document.getElementById('recaptcha_token').value = token;
+        document.getElementById('loader').style.display = 'block';
+        form.submit();
+} catch (error) {
+        alert('Failed to verify CAPTCHA. Please refresh and try again.');
+        console.error('reCAPTCHA error:', error);
+}
+});
+});
+</script>
 </body>
 </html>
