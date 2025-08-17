@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{ user.username }}'s Profile</title>
+<style>
+/* Basic styles, extend or adapt as needed */
+body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:0;}
+.header { position: relative; height:200px; background:url('{{ user.cover_photo_url }}') center/cover no-repeat; }
+.profile-pic { width:120px; height:120px; border-radius:50%; border:4px solid #fff; position:absolute; bottom:-60px; left:50%; transform:translateX(-50%); object-fit:cover; }
+.content { max-width:900px; margin:80px auto 20px; padding:20px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+h2 { text-align:center; margin-top:80px; }
+.section { margin:20px 0; }
+.social-item { display:flex; align-items:center; gap:10px; background:#f0f0f0; padding:8px 12px; border-radius:6px; margin-bottom:10px; }
+.copy-btn { background:#006b3c; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:12px; }
+.adverts { list-style:none; padding:0; }
+.adverts li { background:#f9f9f9; padding:10px; margin-bottom:8px; border-radius:6px; }
+</style>
+</head>
+<body>
+<div class="header"></div>
+<img src="{{ user.profile_picture_url }}" class="profile-pic" />
+<div class="content">
+<h2>{{ user.username }}</h2>
+<p><strong>Location:</strong> {{ user.location or 'Not specified' }}</p>
+<p><strong>Member since:</strong> {{ user.created_at }}</p>
+<p><strong>Last active:</strong> {{ user.last_active }}</p>
+
+<h3>Business Details</h3>
+<p><strong>Working Days:</strong> {{ user.business_days or 'Not specified' }}</p>
+<p><strong>Working Hours:</strong> {{ user.business_hours or 'Not specified' }}</p>
+<p><strong>Delivery Options:</strong> {{ user.delivery_options or 'Not specified' }}</p>
+
+<h3>Social Media Links</h3>
+{% for platform, link in user.social_links.items() %}
+<div class="social-item">
+  <button class="copy-btn" onclick="copyToClipboard('{{ link }}')">Copy</button>
+  <strong>{{ platform|capitalize }}:</strong>
+  <a href="{{ link }}" target="_blank">{{ link }}</a>
+</div>
+{% endfor %}
+
+<h3>Active Adverts</h3>
+{% if user.adverts %}
+<ul class="adverts">
+  {% for advert in user.adverts %}
+  <li>
+    <strong>{{ advert.title }}</strong><br/>
+    {{ advert.description }}<br/>
+    <small>Posted on: {{ advert.created_at }}</small>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No active adverts.</p>
+{% endif %}
+</div>
+<script>
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => { alert('Copied!'); }).catch(() => { alert('Failed to copy.'); }); }
+</script>
+</body>
+</html>
