@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Transfer Instructions{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Complete Your Subscription Payment</h1>
+        <p>Thank you for choosing the **{{ plan_name }}** plan. To activate your subscription, please make a bank transfer using the details below.</p>
+
+        <div class="payment-instructions-card">
+            <h2>Payment Details</h2>
+            <p><strong>Amount to Transfer:</strong> ₦{{ "{:,.2f}".format(amount) }}</p>
+            <p><strong>Payment Reference:</strong> <span class="highlight-ref">{{ payment_reference }}</span></p>
+            <p><strong>Account Name:</strong> {{ account_details.account_name }}</p>
+            <p><strong>Account Number:</strong> {{ account_details.account_number }}</p>
+            <p><strong>Bank Name:</strong> {{ account_details.bank_name }}</p>
+            <p><strong>Currency:</strong> {{ account_details.currency }}</p>
+        </div>
+
+        <div class="important-note">
+            <h3>Important Note:</h3>
+            <ul>
+                <li>Please ensure you include the **Payment Reference** (<code>{{ payment_reference }}</code>) in the narration or description of your bank transfer. This is crucial for us to identify your payment.</li>
+                <li>Your subscription will be activated once we confirm receipt of your transfer. This may take a few minutes to a few hours, depending on your bank.</li>
+                <li>If your subscription is not activated within 24 hours, please contact support with your payment reference and proof of payment.</li>
+            </ul>
+        </div>
+
+        <p class="text-center mt-4">
+            <a href="{{ url_for('profile') }}" class="btn btn-primary">Go to My Profile</a>
+        </p>
+    </div>
+
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .payment-instructions-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-bottom: 30px;
+        }
+        .payment-instructions-card p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        .highlight-ref {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.2em;
+        }
+        .important-note {
+            background-color: #ffeeba;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 30px;
+        }
+        .important-note h3 {
+            color: #856404;
+            margin-top: 0;
+            text-align: center;
+        }
+        .important-note ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            color: #856404;
+        }
+        .important-note li {
+            margin-bottom: 8px;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-4 {
+            margin-top: 2rem;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+{% endblock %}

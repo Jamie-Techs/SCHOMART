@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Inbox - Customer Help Messages</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #006B3C;
+            --secondary-color:rgb(243, 222, 171); /* This seems to be #f3deab from your original, but let's stick to the color code provided previously */
+            --accent-color: #FDB813; /* Gold/Yellow from previous context, used for reply button */
+            --text-color: #333;
+            --light-text-color: #555;
+            --border-color: #ddd;
+            --background-color: #f4f7f6;
+            --white-color: #fff;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px; /* Increased from 800px for a slightly larger feel */
+            margin: 20px auto;
+            background-color: var(--white-color);
+            padding: 30px; /* Increased padding */
+            border-radius: 10px; /* Slightly more rounded */
+            box-shadow: 0 6px 12px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between sections */
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+            gap: 15px; /* Space between title and buttons */
+            margin-bottom: 20px;
+            padding-bottom: 15px; /* Separator from message list */
+            border-bottom: 1px solid var(--border-color); /* Subtle separator */
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin: 0; /* Reset default margin */
+            font-size: 2.2em;
+            flex-grow: 1; /* Allows title to take available space */
+            text-align: left; /* Align title to left */
+        }
+        
+        /* New class for buttons placed at the top */
+        .top-nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--primary-color); /* Green background */
+            color: var(--secondary-color); /* Gold text */
+            text-decoration: none;
+            border-radius: 8px; /* Consistent rounded corners */
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            white-space: nowrap; /* Prevent button text from wrapping */
+            border: 1px solid var(--primary-color); /* Border matches background */
+        }
+
+        .top-nav-button:hover {
+            background-color: var(--secondary-color); /* Gold background on hover */
+            color: var(--primary-color); /* Green text on hover */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow on hover */
+            transform: translateY(-1px); /* Slight lift */
+        }
+
+        .message-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message-item {
+            background-color: var(--secondary-color); /* Light blue background */
+            border-left: 6px solid var(--primary-color); /* Dark green left border */
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .message-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .profile-pic {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex-grow: 1;
+        }
+
+        .message-header {
+            font-size: 0.95em;
+            color: var(--light-text-color);
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .message-sender a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .message-sender a:hover {
+            text-decoration: underline;
+            color: #00562f;
+        }
+
+        .message-timestamp {
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .message-text {
+            white-space: pre-wrap;
+            margin-top: 10px;
+            font-size: 1.05em;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .reply-button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 15px;
+            background-color: var(--accent-color); /* Gold/Yellow for reply */
+            color: var(--white-color);
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .reply-button:hover {
+            background-color: #e6a700; /* Darker gold/yellow on hover */
+        }
+
+        .no-messages {
+            text-align: center;
+            color: var(--light-text-color);
+            padding: 40px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 1.1em;
+            background-color: #fcfcfc;
+            box-shadow: 0 2px 8px var(--shadow-light);
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0; /* Remove default padding */
+            margin-bottom: 20px;
+        }
+
+        .flashes li {
+            padding: 10px 20px; /* Add padding here for individual alerts */
+            margin-bottom: 10px; /* Space between alerts */
+            border-radius: 5px;
+            font-weight: 500;
+            border: 1px solid; /* Generic border for flash messages */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flashes .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flashes .error, .flashes .danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .flashes .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .flashes .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; } /* Added warning color */
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            h1 {
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            .top-nav-button {
+                width: 100%;
+                text-align: center;
+                justify-content: center;
+            }
+            .message-item {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .profile-pic {
+                margin-bottom: 10px;
+            }
+            .message-content {
+                margin-left: 0;
+            }
+            .message-header {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .message-item {
+                padding: 15px;
+            }
+            .profile-pic {
+                width: 50px;
+                height: 50px;
+            }
+            .message-text, .reply-button {
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-content">
+            <h1>Admin Inbox</h1>
+            <a href="{{ url_for('home') }}" class="top-nav-button">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile') }}" class="top-nav-button">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a onclick="history.back()" class="top-nav-button back-button" title="Go back to previous page">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+
+        {# Display Flash messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">
+                        {% if category == 'danger' %} <i class="fas fa-times-circle"></i>
+                        {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                        {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                        {% else %} <i class="fas fa-info-circle"></i>
+                        {% endif %}
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
+
+        {% if received_messages %}
+            <ul class="message-list">
+                {% for message in received_messages %}
+                    <li class="message-item">
+                        <div>
+                            <img src="{{ message.sender_profile_picture if message.sender_profile_picture else url_for('static', filename='default_avatar.png') }}" alt="{{ message.sender_username }}'s profile" class="profile-pic">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">From: <a href="{{ url_for('customer_care_chat', other_user_id=message.sender_id) }}">{{ message.sender_username }}</a></span>
+                                <span class="message-timestamp">{{ message.timestamp }}</span>
+                            </div>
+                            <div class="message-text">
+                                {{ message.message_text }}
+                            </div>
+                            <a href="{{ url_for('customer_care_chat', other_user_id=message.sender_id) }}" class="reply-button">Reply to this user</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-messages">No help messages received from customers yet.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        // Auto-hide flash messages
+        document.addEventListener('DOMContentLoaded', () => {
+            const alerts = document.querySelectorAll('.flashes li'); /* Target individual list items */
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500); /* Remove after fade out */
+                }, 5000); /* Alert disappears after 5 seconds */
+            });
+        });
+    </script>
+</body>
+</html>

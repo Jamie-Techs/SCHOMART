@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Phone Number - Futo Jiji</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --text-dark: #212529;
+            --text-medium: #495057;
+            --text-light: #6c757d;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border-color: #e9ecef;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --error-color: #dc3545;
+            --success-color: #28a745;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .header-section {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 25px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 1.05em;
+            font-weight: 500;
+            padding: 10px 15px;
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-container {
+            background-color: var(--bg-white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px var(--shadow-medium);
+            max-width: 500px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: var(--text-medium);
+            font-size: 1.05em;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-dark);
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        .phone-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #fcfcfc;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .country-code {
+            padding: 12px 15px;
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            font-weight: 600;
+            font-size: 1.1em;
+            border-right: 1px solid var(--border-color);
+            flex-shrink: 0; /* Prevent it from shrinking */
+        }
+
+        #new_phone_number {
+            flex-grow: 1; /* Allow input to take remaining space */
+            padding: 12px 15px;
+            border: none;
+            outline: none;
+            font-size: 1.1em;
+            color: var(--text-dark);
+            background-color: transparent;
+        }
+
+        #new_phone_number::placeholder {
+            color: var(--text-light);
+        }
+
+        button[type='submit'] {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        button[type='submit']:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9em;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            text-align: left;
+            padding-left: 5px; /* Align with input */
+            display: none; /* Hidden by default */
+        }
+
+        /* --- Flash Messages --- */
+        .flashes {
+            list-style: none;
+            padding: 15px 20px;
+            margin: 0 0 25px 0;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .flashes li {
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .flashes .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flashes .error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .flashes .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+        .flashes .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            .form-container, .flashes {
+                padding: 20px;
+                border-radius: 8px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .back-link {
+                padding: 8px 12px;
+                font-size: 0.95em;
+            }
+            .phone-input-group, #new_phone_number {
+                font-size: 1em;
+            }
+            button[type='submit'] {
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+            .flashes li {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <a href="{{ url_for('profile') }}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <h1>Change Phone Number</h1>
+        <p>Current Phone: {{ user.phone_number if user.phone_number else 'N/A' }}</p>
+        
+        <form method="POST" id="phoneChangeForm">
+            <label for="new_phone_number">New Phone Number:</label>
+            <div class="phone-input-group">
+                <span class="country-code">+234</span>
+                <input type="tel" id="new_phone_number" name="new_phone_number" placeholder="Enter 10 digits" maxlength="10" required>
+            </div>
+            <div id="phone-error" class="error-message"></div>
+
+            <button type="submit">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('new_phone_number');
+            const phoneError = document.getElementById('phone-error');
+            const phoneChangeForm = document.getElementById('phoneChangeForm');
+
+            function validatePhoneNumber() {
+                const phoneNumber = phoneInput.value.trim();
+                let isValid = true;
+                let errorMessage = '';
+
+                if (phoneNumber.length === 0) {
+                    errorMessage = 'Phone number cannot be empty.';
+                    isValid = false;
+                } else if (!/^\d+$/.test(phoneNumber)) {
+                    errorMessage = 'Phone number can only contain digits.';
+                    isValid = false;
+                } else if (phoneNumber.length !== 10) {
+                    errorMessage = 'Phone number must be exactly 10 digits long.';
+                    isValid = false;
+                } else if (!/^[789]/.test(phoneNumber)) {
+                    errorMessage = 'The number must start with 7, 8, or 9.';
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    phoneError.style.display = 'none';
+                    phoneError.textContent = '';
+                } else {
+                    phoneError.style.display = 'block';
+                    phoneError.textContent = errorMessage;
+                }
+                return isValid;
+            }
+
+            // Real-time validation as user types
+            phoneInput.addEventListener('input', validatePhoneNumber);
+
+            // Final validation on form submission
+            phoneChangeForm.addEventListener('submit', function(event) {
+                if (!validatePhoneNumber()) {
+                    event.preventDefault(); // Prevent form submission if validation fails
+                }
+            });
+        });
+    </script>
+</body>
+</html>

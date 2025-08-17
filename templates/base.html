@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My App{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fingerprintInputField = document.getElementById('deviceFingerprintData');
+            // Only try to get fingerprint if the input field exists on the page
+            if (fingerprintInputField) {
+                const fpPromise = FingerprintJS.load();
+                fpPromise
+                    .then(fp => fp.get())
+                    .then(result => {
+                        const components = result.components;
+                        // Selectively pick components to reduce payload and focus on stable ones
+                        // You can adjust these based on your needs for fingerprint uniqueness vs. privacy
+                        const fingerprintData = {
+                            userAgent: components.userAgent.value,
+                            screenResolution: components.screenResolution.value,
+                            canvas: components.canvas.value,
+                            webgl: components.webgl.value,
+                            fonts: components.fonts.value,
+                            timezone: components.timezone.value,
+                            platform: components.platform.value,
+                            // Consider adding:
+                            // plugins: components.plugins ? components.plugins.value : undefined,
+                            // cpuClass: components.cpuClass ? components.cpuClass.value : undefined,
+                            // doNotTrack: components.doNotTrack ? components.doNotTrack.value : undefined,
+                            // language: components.language ? components.language.value : undefined,
+                            // webglVendor: components.webglVendor ? components.webglVendor.value : undefined,
+                            // webglRenderer: components.webglRenderer ? components.webglRenderer.value : undefined,
+                        };
+                        fingerprintInputField.value = JSON.stringify(fingerprintData);
+                        console.log('Device Fingerprint captured.');
+                    })
+                    .catch(error => {
+                        console.error('Error loading or getting FingerprintJS:', error);
+                        // You might want to log this server-side or display a warning
+                    });
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333;
+        }
+        .container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        /* Flash message styling */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 1; /* Start opaque */
+            transition: opacity 0.5s ease-out; /* Smooth fade out */
+        }
+        .alert.error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .alert.success {
+            background-color: #27ae60;
+            color: white;
+        }
+        .alert.info {
+            background-color: #3498db;
+            color: white;
+        }
+        .alert-icon {
+            font-size: 1.2em;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .form-section {
+            background-color: #f9fbfd;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 40px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-control-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #c0c0c0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .form-control[readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+        .btn {
+            background-color: #28a745;
+            color: #fff;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-decoration: none; /* For links styled as buttons */
+            display: inline-block;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 40px 0;
+        }
+
+        /* Radio button group specific styling */
+        .radio-group {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .radio-group > div {
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .radio-group > div:last-child {
+            margin-bottom: 0;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.2);
+            accent-color: #4CAF50;
+            cursor: pointer;
+        }
+
+        .radio-group label {
+            cursor: pointer;
+            flex-grow: 1;
+        }
+
+        .radio-group input[type="radio"]:checked + label {
+            font-weight: bold;
+            color: #27ae60;
+        }
+        .radio-group > div:hover {
+            background-color: #e8f5e9;
+            border-color: #a5d6a7;
+        }
+
+        /* Plans Display Grid */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .plan-card {
+            background-color: #fdfefe;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .plan-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .plan-card h3 {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #34495e;
+            font-size: 1.8em;
+        }
+
+        .plan-card .price {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 25px;
+        }
+
+        .plan-card ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .plan-card ul li {
+            margin-bottom: 10px;
+            color: #555;
+            line-height: 1.6;
+            display: flex;
+            align-items: flex-start;
+        }
+        .plan-card ul li:last-child {
+            margin-bottom: 0;
+        }
+        .plan-card ul li::before {
+            content: '✔️';
+            margin-right: 10px;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        /* Honeypot trap for bots */
+        .honeypot-trap {
+            position: absolute;
+            left: -9999px; /* Move far off-screen */
+            height: 1px;
+            overflow: hidden;
+            opacity: 0; /* Make it completely invisible */
+            pointer-events: none; /* Prevent any interaction */
+            width: 1px;
+            z-index: -1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .plan-card h3 {
+                font-size: 1.5em;
+            }
+            .plan-card .price {
+                font-size: 2em;
+            }
+            .form-control, .btn {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {# Display Flash messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        <span class="alert-icon">
+                            {% if category == 'error' %} <i class="fas fa-times-circle"></i>
+                            {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                            {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                            {% else %} <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </span>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // Optional: Fade out flash messages after a few seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => alert.remove(), 500); // Remove after fade out
+                }, 5000); // 5 seconds
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create School News Post</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Your existing CSS styles go here. Copy them exactly from your original file. */
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --accent-color: #00391F; /* Even Darker Green */
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --light-green-background: #EFF7EF;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            color: var(--white-text);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .home-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-button:hover {
+            background-color: #FFD700;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .container-wrapper {
+            width: 90%;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* Flash Messages */
+        #flash-messages div {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .bg-red-100 { background-color: #fee2e2; } .text-red-700 { color: #b91c1c; }
+        .bg-green-100 { background-color: #d1fae5; } .text-green-700 { color: #065f46; }
+        .bg-blue-100 { background-color: #dbeafe; } .text-blue-700 { color: #1e40af; }
+
+
+        .form-container {
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(253, 184, 19, 0.2);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            font-weight: normal;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .radio-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            font-weight: normal;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+        }
+
+        .submit-button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2em;
+            }
+            .home-button {
+                left: 10px;
+                padding: 8px 12px;
+                font-size: 0.9em;
+            }
+            .form-container {
+                padding: 20px;
+            }
+            .form-group label {
+                font-size: 0.95em;
+            }
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 10px;
+                font-size: 0.95em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container-wrapper {
+                width: 95%;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .home-button {
+                position: static;
+                transform: none;
+                margin: 10px auto;
+                display: block;
+                width: fit-content;
+            }
+            .checkbox-group label,
+            .radio-group label {
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="header">
+        <a href="/" class="home-button">Home</a>
+        <h1>Create School News Post</h1>
+    </div>
+
+    <div class="container-wrapper">
+        <div id="flash-messages" class="mb-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-3 mb-2 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="form-container">
+            <form action="{{ url_for('create_news_post') }}" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required value="{{ post_data.title or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="content">Content:</label>
+                    <textarea id="content" name="content" rows="6" placeholder="Enter news content">{{ post_data.content or '' }}</textarea>
+                </div>
+
+                <div class="form-group" id="mediaTypeGroup">
+                    <label>Media Type:</label>
+                    <div class="radio-group flex flex-wrap gap-4">
+                        <label>
+                            <input type="radio" name="media_type" value="text" {% if post_data.media_type == 'text' or not post_data.media_type %}checked{% endif %}> Text
+                        </label>
+                        <label>
+                            <input type="radio" name="media_type" value="image" {% if post_data.media_type == 'image' %}checked{% endif %}> Image
+                        </label>
+                        <label>
+                            <input type="radio" name="media_type" value="video" {% if post_data.media_type == 'video' %}checked{% endif %}> Video
+                        </label>
+                        <label>
+                            <input type="radio" name="media_type" value="audio" {% if post_data.media_type == 'audio' %}checked{% endif %}> Audio
+                        </label>
+                        <label>
+                            <input type="radio" name="media_type" value="document" {% if post_data.media_type == 'document' %}checked{% endif %}> Document
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="media_files">Upload Media/File (Optional):</label>
+                    <input type="file" id="media_files" name="media_files" accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple>
+                    <p class="text-sm text-gray-500 mt-2">Allowed types: images, video, audio, PDF, Word, PowerPoint, Excel documents. You can upload multiple files if needed.</p>
+                </div>
+
+                <button type="submit" class="submit-button">Create News Post</button>
+            </form>
+        </div>
+    </div>
+    </body>
+</html>

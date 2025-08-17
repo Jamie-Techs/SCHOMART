@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ recipient.username }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .chat-container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px; /* Increased max width for advert display */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 600px; /* Ensure a decent height */
+        }
+        .chat-header {
+            background-color: #006B3C;
+            color: white;
+            padding: 15px;
+            font-size: 1.2em;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #e9e9e9;
+            display: flex;
+            flex-direction: column;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .message-bubble.sent {
+            background-color: #006B3C;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .message-bubble.received {
+            background-color: #f0f0f0;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .message-meta {
+            font-size: 0.8em;
+            color: rgba(0, 0, 0, 0.6);
+            margin-top: 5px;
+            text-align: right;
+        }
+        .message-bubble.received .message-meta {
+            text-align: left;
+        }
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+            align-items: center;
+        }
+        .chat-input input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 1em;
+        }
+        .chat-input button {
+            background-color: #006B3C;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .chat-input button:hover {
+            background-color: #005630;
+        }
+        .attachment-preview {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+        }
+        .attachment-preview img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .attachment-details {
+            flex-grow: 1;
+        }
+        .attachment-details h4 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .attachment-details p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .close-attachment {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: #999;
+            cursor: pointer;
+        }
+        .close-attachment:hover {
+            color: #333;
+        }
+        .sidebar {
+            width: 300px; /* Adjust as needed */
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .chat-list-item:hover, .chat-list-item.active {
+            background-color: #e0e0e0;
+        }
+        .chat-list-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+        .chat-list-item-info {
+            flex-grow: 1;
+        }
+        .chat-list-item-info h5 {
+            margin: 0;
+            font-size: 1em;
+        }
+        .chat-list-item-info p {
+            margin: 0;
+            font-size: 0.8em;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-list-item-time {
+            font-size: 0.7em;
+            color: #999;
+            align-self: flex-start;
+        }
+        .chat-list-item-unread {
+            background-color: #006B3C;
+            color: white;
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            {% if recipient %}
+                Chat with {{ recipient.username }} for Advert: {{ advert_id }}
+            {% else %}
+                Messages
+            {% endif %}
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>Chats</h3>
+                {% for chat_user in chat_users %}
+                    <a href="{{ url_for('message', receiver_id=chat_user.id, advert_id=chat_user.advert_id) }}" class="chat-list-item {% if recipient and recipient.id == chat_user.id and advert_id == chat_user.advert_id %}active{% endif %}">
+                        <img src="{{ chat_user.profile_picture }}" alt="{{ chat_user.username }}">
+                        <div class="chat-list-item-info">
+                            <h5>{{ chat_user.username }}</h5>
+                            <p>{{ chat_user.last_message }}</p>
+                            <small class="advert-title-sidebar">({{ chat_user.advert_title }})</small>
+                        </div>
+                        <span class="chat-list-item-time">{{ chat_user.last_message_time }}</span>
+                        {% if chat_user.unread > 0 %}
+                            <span class="chat-list-item-unread">{{ chat_user.unread }}</span>
+                        {% endif %}
+                    </a>
+                {% else %}
+                    <p>No chats yet.</p>
+                {% endfor %}
+            </div>
+
+            <div class="chat-area">
+                <div class="chat-messages" id="chat-messages">
+                    {% for msg in messages %}
+                        <div class="message-bubble {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                            {% if msg.advert_image or msg.advert_title or msg.advert_location %}
+                                <div class="attached-advert-card">
+                                    {% if msg.advert_image %}
+                                        <img src="{{ msg.advert_image }}" alt="Advert Image" class="attached-advert-image">
+                                    {% endif %}
+                                    <div class="attached-advert-details">
+                                        {% if msg.advert_title %}
+                                            <p class="attached-advert-title">{{ msg.advert_title }}</p>
+                                        {% endif %}
+                                        {% if msg.advert_location %}
+                                            <p class="attached-advert-location">{{ msg.advert_location }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if msg.content %}
+                                <p>{{ msg.content }}</p>
+                            {% endif %}
+                            {% if msg.file_path %}
+                                <a href="{{ msg.file_path }}" target="_blank">
+                                    {% if msg.file_path.endswith(('png', 'jpg', 'jpeg', 'gif')) %}
+                                        <img src="{{ msg.file_path }}" alt="Attached Image" style="max-width: 100px; max-height: 100px;">
+                                    {% else %}
+                                        Download File
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                            <div class="message-meta">
+                                {% if msg.sender_id != current_user.id %}
+                                    {{ recipient.username }} at {{ msg.timestamp.strftime('%H:%M') }}
+                                {% else %}
+                                    You at {{ msg.timestamp.strftime('%H:%M') }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="chat-input">
+                    <div id="advert-attachment-display" class="attachment-preview" style="display:none;">
+                        <img id="attached-advert-image" src="" alt="Advert Image">
+                        <div class="attachment-details">
+                            <h4 id="attached-advert-title"></h4>
+                            <p id="attached-advert-location"></p>
+                        </div>
+                        <button class="close-attachment" id="remove-advert-attachment">&times;</button>
+                    </div>
+
+                    <input type="text" id="message-input" placeholder="Type your message...">
+                    <input type="file" id="file-input" style="display: none;">
+                    <button id="send-file-button">📎</button>
+                    <button id="send-button">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const sendFileButton = document.getElementById('send-file-button');
+        const advertAttachmentDisplay = document.getElementById('advert-attachment-display');
+        const attachedAdvertImage = document.getElementById('attached-advert-image');
+        const attachedAdvertTitle = document.getElementById('attached-advert-title');
+        const attachedAdvertLocation = document.getElementById('attached-advert-location');
+        const removeAdvertAttachmentButton = document.getElementById('remove-advert-attachment');
+
+        // Extract values from Jinja2 context
+        const currentUserId = {{ current_user.id }};
+        const recipientId = {{ recipient.id }};
+        const advertId = {{ advert_id }};
+
+        // Variables to hold advert details for attachment
+        let attachedAdvertDetails = {
+            image: "{{ initial_advert_image if initial_advert_image else '' }}",
+            title: "{{ initial_advert_title if initial_advert_title else '' }}",
+            location: "{{ initial_advert_location if initial_advert_location else '' }}"
+        };
+
+        function displayAttachedAdvert() {
+            if (attachedAdvertDetails.image || attachedAdvertDetails.title || attachedAdvertDetails.location) {
+                advertAttachmentDisplay.style.display = 'flex';
+                attachedAdvertImage.src = attachedAdvertDetails.image;
+                attachedAdvertTitle.textContent = attachedAdvertDetails.title;
+                attachedAdvertLocation.textContent = attachedAdvertDetails.location;
+            } else {
+                advertAttachmentDisplay.style.display = 'none';
+            }
+        }
+
+        removeAdvertAttachmentButton.addEventListener('click', () => {
+            attachedAdvertDetails = { image: '', title: '', location: '' };
+            displayAttachedAdvert();
+        });
+
+        // Initialize display on load
+        displayAttachedAdvert();
+
+        // Scroll to bottom of chat messages on load
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket');
+            socket.emit('join_room', { receiver_id: recipientId, advert_id: advertId });
+        });
+
+        socket.on('receive_message', (data) => {
+            appendMessage(data);
+        });
+
+        sendButton.addEventListener('click', () => {
+            sendMessage();
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        sendFileButton.addEventListener('click', () => {
+            fileInput.click(); // Trigger the hidden file input click
+        });
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        });
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload_message_file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.filepath) {
+                    // Send message with file path
+                    const messageData = {
+                        receiver_id: recipientId,
+                        advert_id: advertId,
+                        message: messageInput.value, // Include text if any
+                        file_path: data.filepath,
+                        advert_attachment_image: attachedAdvertDetails.image,
+                        advert_attachment_title: attachedAdvertDetails.title,
+                        advert_attachment_location: attachedAdvertDetails.location
+                    };
+                    socket.emit('send_message', messageData);
+                    appendMessage({
+                        sender_id: currentUserId,
+                        content: messageInput.value,
+                        file_path: data.filepath,
+                        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                        sender_username: 'You', // Or retrieve from current_user object if available
+                        sender_profile_picture: '{{ current_user.profile_picture }}',
+                        advert_image: attachedAdvertDetails.image,
+                        advert_title: attachedAdvertDetails.title,
+                        advert_location: attachedAdvertDetails.location
+                    });
+                    messageInput.value = '';
+                    fileInput.value = ''; // Clear file input
+                    attachedAdvertDetails = { image: '', title: '', location: '' }; // Clear attachment after sending
+                    displayAttachedAdvert();
+                } else {
+                    alert('File upload failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+                alert('An error occurred during file upload.');
+            });
+        }
+
+        function sendMessage() {
+            const messageContent = messageInput.value.trim();
+            if (messageContent === '' && !attachedAdvertDetails.image && !attachedAdvertDetails.title && !attachedAdvertDetails.location) {
+                return; // Don't send empty messages without attachments
+            }
+
+            const messageData = {
+                receiver_id: recipientId,
+                advert_id: advertId,
+                message: messageContent,
+                file_path: null, // No file attached with this send
+                advert_attachment_image: attachedAdvertDetails.image,
+                advert_attachment_title: attachedAdvertDetails.title,
+                advert_attachment_location: attachedAdvertDetails.location
+            };
+
+            socket.emit('send_message', messageData);
+            appendMessage({
+                sender_id: currentUserId,
+                content: messageContent,
+                file_path: null,
+                timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                sender_username: 'You', // Or retrieve from current_user object if available
+                sender_profile_picture: '{{ current_user.profile_picture }}',
+                advert_image: attachedAdvertDetails.image,
+                advert_title: attachedAdvertDetails.title,
+                advert_location: attachedAdvertDetails.location
+            });
+
+            messageInput.value = '';
+            attachedAdvertDetails = { image: '', title: '', location: '' }; // Clear attachment after sending
+            displayAttachedAdvert();
+        }
+
+        function appendMessage(data) {
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble');
+            messageBubble.classList.add(data.sender_id === currentUserId ? 'sent' : 'received');
+
+            if (data.advert_image || data.advert_title || data.advert_location) {
+                const advertCard = document.createElement('div');
+                advertCard.classList.add('attached-advert-card');
+
+                if (data.advert_image) {
+                    const img = document.createElement('img');
+                    img.src = data.advert_image;
+                    img.alt = "Advert Image";
+                    img.classList.add('attached-advert-image');
+                    advertCard.appendChild(img);
+                }
+
+                const detailsDiv = document.createElement('div');
+                detailsDiv.classList.add('attached-advert-details');
+
+                if (data.advert_title) {
+                    const titleP = document.createElement('p');
+                    titleP.classList.add('attached-advert-title');
+                    titleP.textContent = data.advert_title;
+                    detailsDiv.appendChild(titleP);
+                }
+                if (data.advert_location) {
+                    const locationP = document.createElement('p');
+                    locationP.classList.add('attached-advert-location');
+                    locationP.textContent = data.advert_location;
+                    detailsDiv.appendChild(locationP);
+                }
+                advertCard.appendChild(detailsDiv);
+                messageBubble.appendChild(advertCard);
+            }
+
+            if (data.content) {
+                const contentP = document.createElement('p');
+                contentP.textContent = data.content;
+                messageBubble.appendChild(contentP);
+            }
+
+            if (data.file_path) {
+                const fileLink = document.createElement('a');
+                fileLink.href = data.file_path;
+                fileLink.target = '_blank';
+                if (data.file_path.match(/\.(jpeg|jpg|png|gif)$/i)) {
+                    const fileImg = document.createElement('img');
+                    fileImg.src = data.file_path;
+                    fileImg.alt = "Attached Image";
+                    fileImg.style.maxWidth = '100px';
+                    fileImg.style.maxHeight = '100px';
+                    fileLink.appendChild(fileImg);
+                } else {
+                    fileLink.textContent = 'Download File';
+                }
+                messageBubble.appendChild(fileLink);
+            }
+
+            const metaDiv = document.createElement('div');
+            metaDiv.classList.add('message-meta');
+            const senderName = data.sender_id === currentUserId ? 'You' : data.sender_username;
+            metaDiv.textContent = `${senderName} at ${data.timestamp}`;
+            messageBubble.appendChild(metaDiv);
+
+            chatMessages.appendChild(messageBubble);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Dummy WebRTC functions (remain unchanged from your snippet)
+        // These are just placeholders to avoid errors if your original code relies on them.
+        // The core changes are in the message sending logic.
+        socket.on('incoming_call', (data) => { console.log('Incoming Call:', data); });
+        socket.on('call_accepted', (data) => { console.log('Call Accepted:', data); });
+        socket.on('call_rejected', (data) => { console.log('Call Rejected:', data); });
+        socket.on('webrtc_offer', (data) => { console.log('WebRTC Offer:', data); });
+        socket.on('webrtc_answer', (data) => { console.log('WebRTC Answer:', data); });
+        socket.on('webrtc_ice_candidate', (data) => { console.log('WebRTC ICE Candidate:', data); });
+        socket.on('call_ended', (data) => { console.log('Call Ended:', data); });
+        socket.on('call_failed', (data) => { console.log('Call Failed:', data); });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with {{ chat_partner_info.username }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* --- CSS Variables --- */
+        :root {
+            --primary-color: #006B3C;
+            --secondary-color: #FDB813;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --light-text-color: #777;
+            --border-color: #e0e0e0;
+            --hover-light: #f8f8f8;
+            --button-text-color: #ffffff;
+            --online-dot: #2ecc71;
+            --offline-dot: #e74c3c;
+        }
+
+        /* --- Base Styles --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Chat Container Layout --- */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* --- Chat Header --- */
+        .chat-header {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .chat-header img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* --- Back Link in Header --- */
+        .back-link {
+            /* Adjust positioning if needed, or make it part of the flex container */
+            color: var(--button-text-color);
+            text-decoration: none;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 1rem; /* Added space between back link and avatar */
+        }
+
+        .back-link i {
+            font-size: 1.25rem; /* Adjust Font Awesome icon size */
+        }
+
+        /* --- Messages Display Area --- */
+        .messages-display {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background-color: var(--background-color);
+        }
+
+        .no-messages {
+            text-align: center;
+            color: var(--light-text-color);
+            margin-top: auto; /* Push to bottom if no messages */
+            margin-bottom: auto; /* Center vertically if no messages */
+        }
+
+        /* --- Individual Message Styles --- */
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .message.current-user {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .message-bubble.other-user {
+            background-color: var(--card-background);
+            color: var(--text-color);
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .message-bubble.current-user {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message-info {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+            color: var(--light-text-color);
+        }
+
+        .message.current-user .message-info {
+            color: rgba(255, 255, 255, 0.7); /* Lighter text for current user's message info */
+        }
+
+        /* --- Message Input Area --- */
+        .message-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-background);
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end; /* Align items to the bottom */
+        }
+
+        .message-input-area textarea {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: none;
+            font-size: 1rem;
+            line-height: 1.5;
+            min-height: 40px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .message-input-area button {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: flex; /* Make button content flex for icon and text */
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .message-input-area button i {
+            font-size: 1.1rem; /* Adjust icon size within button */
+        }
+
+        .message-input-area button:hover {
+            background-color: #004d2a;
+        }
+
+        /* --- Flash Messages --- */
+        .flash-messages {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1001;
+        }
+        .flash-message {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-align: center;
+            position: relative;
+            animation: fadeOut 5s forwards; /* Animation to fade out */
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; display: none; }
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 0.75rem 1rem;
+            }
+            .chat-header h2 {
+                font-size: 1.25rem;
+            }
+            .messages-display {
+                padding: 1rem;
+            }
+            .message-bubble {
+                max-width: 80%;
+                padding: 0.6rem 0.8rem;
+            }
+            .message-input-area {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+            .message-input-area button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <a href="{{ url_for('live_admins_list') if current_user_role == 'user' else url_for('admin_inbox') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <img src="{{ chat_partner_info.profile_picture or '/static/default_avatar.png' }}" alt="{{ chat_partner_info.username }}" />
+            <h2>{{ chat_partner_info.username }}</h2>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="messages-display" id="messages-display">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message {% if message.sender_id == current_user_id %}current-user{% else %}other-user{% endif %}">
+                        {% if message.sender_id != current_user_id %}
+                            <img src="{{ message.sender_profile_picture or '/static/default_avatar.png' }}" alt="{{ message.sender_username }}" class="message-avatar">
+                        {% endif %}
+                        <div class="message-bubble {% if message.sender_id == current_user_id %}current-user{% else %}other-user{% endif %}">
+                            {{ message.message_text }}
+                            <div class="message-info">
+                                <span>{{ message.timestamp }}</span>
+                            </div>
+                        </div>
+                        {% if message.sender_id == current_user_id %}
+                            <img src="{{ current_user_profile_picture_url or '/static/default_avatar.png' }}" alt="{{ current_username }}" class="message-avatar">
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-messages">No messages yet. Start the conversation!</p>
+            {% endif %}
+        </div>
+
+        <div class="message-input-area">
+            <textarea id="message-input" placeholder="Type your message..." rows="1"></textarea>
+            <button id="send-button">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const messagesDisplay = document.getElementById('messages-display');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Scroll to the bottom of the messages display
+        function scrollToBottom() {
+            messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
+        }
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+        });
+
+        // Function to send a message
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, but allow Shift+Enter for new line
+                e.preventDefault(); // Prevent default Enter behavior (new line)
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText === '') {
+                return; // Don't send empty messages
+            }
+
+            const receiverId = {{ chat_partner_info.id }};
+            const currentUserId = {{ current_user_id }};
+            const currentUsername = "{{ current_username }}";
+            const currentUserProfilePicture = "{{ current_user_profile_picture_url }}";
+
+            fetch('/api/chat/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    receiver_id: receiverId,
+                    message_text: messageText
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add the new message to the UI
+                    const newMessage = data.new_message;
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message', 'current-user');
+                    messageDiv.innerHTML = `
+                        <div class="message-bubble current-user">
+                            ${newMessage.message_text}
+                            <div class="message-info">
+                                <span>${newMessage.timestamp}</span>
+                            </div>
+                        </div>
+                        <img src="${currentUserProfilePicture || '/static/default_avatar.png'}" alt="${currentUsername}" class="message-avatar">
+                    `;
+                    messagesDisplay.appendChild(messageDiv);
+                    messageInput.value = ''; // Clear input
+                    messageInput.style.height = 'auto'; // Reset textarea height
+                    scrollToBottom();
+                } else {
+                    alert('Failed to send message: ' + data.message);
+                    console.error('Failed to send message:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                alert('An error occurred while sending the message.');
+            });
+        }
+
+        // Initial scroll to bottom when page loads
+        document.addEventListener('DOMContentLoaded', scrollToBottom);
+
+        // Optional: Implement periodic message fetching for real-time like experience
+        // setInterval(fetchNewMessages, 5000); // Fetch new messages every 5 seconds
+    </script>
+</body>
+</html>
