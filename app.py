@@ -8387,3 +8387,8 @@ def get_advert_info_from_firestore(advert_id):
         return advert_doc.to_dict()
     return None
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+
