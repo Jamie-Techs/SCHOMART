@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Content</title>
+  <style>
+    /* Same CSS as before (omitted here for brevity) */
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <h2>School Content</h2>
+    <!-- Create Post Button -->
+    <div id="createPostContainer"></div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs" id="tabsNav">
+    <div class="tab active" data-tab="gist">School Gist</div>
+    <div class="tab" data-tab="news">School News</div>
+    <div class="tab" data-tab="study">Study Materials</div>
+  </div>
+
+  <!-- Tabs Content -->
+  <div class="tab-content" id="tabContents">
+    <!-- School Gist -->
+    <div class="tab-pane active" data-tab="gist">
+      <div class="tab-filters">
+        <input type="text" id="gistSearchQuery" placeholder="Search posts by title..." />
+        <select id="gistFilterTime">
+          <option value="all">All Time</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </select>
+        <button id="gistSearchBtn">Search</button>
+      </div>
+      <div id="gistPostsContainer" class="posts-container"></div>
+    </div>
+
+    <!-- School News -->
+    <div class="tab-pane" data-tab="news">
+      <div class="tab-filters">
+        <input type="text" id="newsSearchQuery" placeholder="Search news by title..." />
+        <select id="newsFilterTime">
+          <option value="all">All Time</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </select>
+        <button id="newsSearchBtn">Search</button>
+      </div>
+      <div id="newsPostsContainer" class="posts-container"></div>
+    </div>
+
+    <!-- Study Materials -->
+    <div class="tab-pane" data-tab="study">
+      <div class="tab-filters">
+        <input type="text" id="studySearchQuery" placeholder="Search materials by title..." />
+        <select id="studyFilterTime">
+          <option value="all">All Time</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+        </select>
+        <button id="studySearchBtn">Search</button>
+        <input type="text" id="studySearchYear" placeholder="Year..." />
+        <input type="text" id="studySearchLevel" placeholder="Level..." />
+        <input type="text" id="studySearchCourse" placeholder="Course..." />
+      </div>
+      <div id="studyPostsContainer" class="posts-container"></div>
+    </div>
+  </div>
+
+  <!-- Media Viewer Modal -->
+  <div id="mediaModal">
+    <div id="mediaModalContent"></div>
+  </div>
+
+  <!-- Create Post Modal placeholder -->
+  <div id="createPostModal" style="display:none;"></div>
+
+  <script>
+    const userIsAdmin = true; // Set to false if not admin
+    document.getElementById('createPostContainer').innerHTML = userIsAdmin ? '<button id="createPostBtn">Create Post</button>' : '';
+
+    function showMedia(url, type) {
+      const modal = document.getElementById('mediaModal');
+      const content = document.getElementById('mediaModalContent');
+      content.innerHTML = '';
+      if (type.startsWith('image')) {
+        content.innerHTML = `<img src="${url}" style="max-width:100%; border-radius:8px;">`;
+      } else if (type === 'video') {
+        content.innerHTML = `<video src="${url}" controls style="max-width:100%; border-radius:8px;"></video>`;
+      } else {
+        content.innerHTML = '<p>Cannot preview this media type.</p>';
+      }
+      modal.style.display = 'flex';
+    }
+
+    document.getElementById('mediaModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+
+    const tabs = document.querySelectorAll('.tab');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabs.forEach(t => {
+      t.addEventListener('click', () => {
+        tabs.forEach(t2 => t2.classList.remove('active'));
+        t.classList.add('active');
+        const target = t.getAttribute('data-tab');
+        tabPanes.forEach(p => {
+          p.classList.remove('active');
+          if (p.getAttribute('data-tab') === target) p.classList.add('active');
+        });
+        if (target === 'gist') loadGist();
+        if (target === 'news') loadNews();
+        if (target === 'study') loadStudyMaterials();
+      });
+    });
+
+    let pageGist = 1, gistLoading = false, gistAllLoaded = false;
+    let pageNews = 1, newsLoading = false, newsAllLoaded = false;
+    let pageStudy = 1, studyLoading = false, studyAllLoaded = false;
+
+    function fetchPosts(tab, containerId, apiUrl, params = {}) {
+      if (eval(`${tab}Loading`) || eval(`${tab}AllLoaded`)) return;
+      eval(`${tab}Loading = true`);
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      })
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById(containerId);
+          if (data.length === 0 && eval(`${tab}Page`) === 1) {
+            container.innerHTML = '<p>No content found.</p>';
+            eval(`${tab}AllLoaded = true`);
+          } else if (data.length > 0) {
+            data.forEach(item => {
+              const postHtml = generatePostHtml(tab, item);
+              const div = document.createElement('div');
+              div.className = 'post';
+              div.innerHTML = postHtml;
+              container.appendChild(div);
+            });
+            eval(`${tab}Page++`);
+          } else {
+            eval(`${tab}AllLoaded = true`);
+          }
+          eval(`${tab}Loading = false`);
+        });
+    }
+
+    function generatePostHtml(tab, item) {
+      if (tab === 'gist' || tab === 'news') {
+        return `
+          <div class="post-header">
+            <img src="${item.admin_profile_pic}" class="profile-pic" />
+            <div style="flex:1;">
+              <div class="post-title">${item.title}</div>
+              <div class="post-content">${item.content}</div>
+              <div class="actions">
+                ${['like', 'love', 'haha', 'wow', 'sad', 'angry'].map(r =>
+                  `<button class="action-btn reaction-btn" onclick="reactToPost('${item.id}', '${r}')"><i class="fas fa-${r === 'haha' ? 'laugh' : r === 'wow' ? 'surprised' : r}'></i></button>`
+                ).join('')}
+                <span>Reactions: <span id="reaction-count-${item.id}">${item.reaction_count}</span></span>
+                <button class="action-btn" onclick="shareLink('${item.share_link}')"><i class="fas fa-share"></i></button>
+                <button class="action-btn" onclick="showMedia('${item.media_url}', '${item.media_type}')"><i class="fas fa-eye"></i></button>
+              </div>
+              <div class="comments-toggle" onclick="toggleComments('${item.id}')">Show Comments</div>
+              <div class="comments-section" id="comments-${item.id}">
+                <div class="comments-list" id="comments-list-${item.id}"></div>
+                <div class="comment-input">
+                  <input type="text" placeholder="Add a comment..." />
+                  <button class="action-btn" onclick="addComment('${item.id}', '${tab}')"><i class="fas fa-comment"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (tab === 'study') {
+        return `
+          <div class="post-header">
+            <div style="flex:1;">
+              <div class="post-title">${item.title}</div>
+              <div class="post-content">${item.description || ''}</div>
+              <small style="display:block; margin-top:4px;">Published on ${item.post_date}</small>
+            </div>
+            <div>
+              <button class="action-btn" onclick="downloadStudyMaterial('${item.download_link}')"><i class="fas fa-download"></i></button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function loadGist(reset = false) {
+      if (reset) {
+        document.getElementById('gistPostsContainer').innerHTML = '';
+        pageGist = 1;
+        gistAllLoaded = false;
+      }
+      fetchPosts('gist', 'gistPostsContainer', '/api/latest_gist_posts', {
+        query: document.getElementById('gistSearchQuery').value,
+        filter_time: document.getElementById('gistFilterTime').value
+      });
+    }
+
+    function loadNews(reset = false) {
+      if (reset) {
+        document.getElementById('newsPostsContainer').innerHTML = '';
+        pageNews = 1;
+        newsAllLoaded = false;
+      }
+      fetchPosts('news', 'newsPostsContainer', '/search/news', {
+        query: document.getElementById('newsSearchQuery').value,
+        filter_time: document.getElementById('newsFilterTime').value
+      });
+    }
+
+    function loadStudyMaterials(reset = false) {
+      if (reset) {
+        document.getElementById('studyPostsContainer').innerHTML = '';
+        pageStudy = 1;
+        studyAllLoaded = false;
+      }
+      fetchPosts('study', 'studyPostsContainer', '/search/study_materials', {
+        query: document.getElementById('studySearchQuery').value,
+        filter_time: document.getElementById('studyFilterTime').value,
+        year: document.getElementById('studySearchYear').value,
+        level: document.getElementById('studySearchLevel').value,
+        course: document.getElementById('studySearchCourse').value
+      });
+    }
+
+    function reactToPost(postId, reactionType) {
+      fetch('/api/react_to_post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: postId, post_type: 'gist', reaction_type: reactionType })
+      }).then(res => res.json()).then(data => {
+        document.getElementById(`reaction-count-${postId}`).innerText = data.reaction_count;
+      });
+    }
+
+    function toggleComments(postId) {
+      const commentsSection = document.getElementById(`comments-${postId}`);
+      commentsSection.style.display = commentsSection.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function addComment(postId, postType) {
+      const input = document.querySelector(`#comments-${postId} .comment-input input`);
+      const text = input.value.trim();
+      if (!text) return;
+      fetch('/api/add_comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: postId, post_type: postType, comment_text: text })
+      }).then(res => res.json()).then(data => {
+        const list = document.getElementById(`comments-list-${postId}`);
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${data.username}:</strong> ${data.comment_text}`;
+        list.appendChild(div);
+        input.value = '';
+      });
+    }
+
+    function shareLink(link) {
+      navigator.clipboard.writeText(link).then(() => alert('Link copied to clipboard!'));
+    }
+
+    function downloadStudyMaterial(link) {
+      window.open(link, '_blank');
+    }
+
+    function downloadPost(postId, type) {
+      alert('Download with watermark "FUTO Marketplace"');
+    }
+
+    // Load initial data
+    loadGist();
+    loadNews();
+    loadStudyMaterials();
+
+    // Infinite scroll
+    document.querySelectorAll('.posts-container').forEach(container => {
+      container.addEventListener('scroll', () => {
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 10) {
+          const tab = container.parentElement.getAttribute('data-tab');
+          if (tab === 'gist') loadGist();
+          if (tab === 'news') loadNews();
+          if (tab === 'study') loadStudyMaterials();
+        }
+      });
+    });
+
+    // Event listeners
+    document.getElementById('gistSearchBtn')?.addEventListener('click', () => loadGist(true));
+    document.getElementById('newsSearchBtn')?.addEventListener('click', () => loadNews(true));
+    document.getElementById('studySearchBtn')?.addEventListener('click', () => loadStudyMaterials(true));
+
+    // Create Post button
+    document.getElementById('createPostBtn')?.addEventListener('click', () => {
+      window.location.href = '/create_post?category=gist'; // Or open modal
+    });
+  </script>
+</body>
+</html>
