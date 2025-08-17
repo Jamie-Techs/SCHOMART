@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ seller.businessname or seller.username }}'s Profile - View</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+    <style>
+        /* General Body and Container Styles */
+        body {
+            font-family: 'Inter', Arial, sans-serif; /* Using Inter for modern look */
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px; /* Increased rounded corners */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Softer shadow */
+        }
+        
+        /* Font Awesome Icon Styling: Make icons white within specific contexts */
+        /* These rules target icons inside elements with colored backgrounds */
+        .back-button i,
+        .flash-messages i, /* For icons within flash messages */
+        .profile-details .badge i,
+        .follow-button i,
+        .advert-actions .btn i {
+            color: white; /* Make icons white on colored backgrounds */
+            margin-right: 5px; /* Spacing between icon and text */
+        }
+
+        /* General Font Awesome icon styling (for non-colored backgrounds, they inherit text color) */
+        .section-title i,
+        .contact-section i,
+        .social-links-section i,
+        .business-hours-section i,
+        .advert-details i {
+            margin-right: 8px; /* Consistent spacing */
+            color: #555; /* Default icon color for informational text */
+        }
+
+        /* Flash Message Styles */
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+            border-radius: 8px; /* Rounded corners for the whole message block */
+            overflow: hidden; /* Ensures border-radius applies cleanly */
+        }
+        .flash-messages li {
+            padding: 12px 20px; /* More padding */
+            margin-bottom: 8px; /* Space between messages */
+            border-radius: 8px; /* Individual message rounded corners */
+            font-size: 0.95em;
+            display: flex; /* Align icon and text */
+            align-items: center;
+        }
+        .flash-messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-messages .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .flash-messages .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .flash-messages .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Back Button Style */
+        .back-button {
+            background-color: #006B3C;
+            color: white;
+            border: none;
+            padding: 10px 18px; /* Increased padding */
+            border-radius: 8px; /* Rounded corners */
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: inline-flex; /* Align icon and text */
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .back-button:hover {
+            background-color: #FDB813;
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        /* Profile Header/Banner Section - ADJUSTMENTS START HERE */
+        .profile-banner {
+            position: relative;
+            width: 100%;
+            height: 220px; /* Slightly increased height to give more space */
+            background-color: #a0a0a0;
+            overflow: hidden;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: -50px; /* Reduced overlap, but still some to blend picture */
+        }
+        .profile-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: zoom-in; /* Indicate clickability */
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-banner img:hover {
+            transform: scale(1.02); /* Slight zoom on hover */
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: flex-start; /* Aligns items to the top, allowing margin-top on details to work */
+            padding: 0 20px 20px 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .profile-header .profile-picture-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            background-color: #eee;
+            overflow: hidden;
+            margin-right: 25px;
+            margin-top: -80px; /* Maintained strong overlap for the picture */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .profile-header .profile-picture-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            cursor: zoom-in; /* Indicate clickability */
+            transition: transform 0.2s ease-in-out;
+        }
+        .profile-header .profile-picture-container img:hover {
+            transform: scale(1.02); /* Slight zoom on hover */
+        }
+
+        .profile-details {
+            flex-grow: 1;
+            /* CRITICAL CHANGE: Push the text details downward */
+            margin-top: 70px; /* Adjust this value to control how far down the text appears */
+            padding-bottom: 10px;
+        }
+        .profile-details h2 {
+            margin: 0 0 8px 0;
+            color: #006B3C;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 1.8em;
+        }
+        .profile-details h2 .badge {
+            margin-left: 10px;
+            font-size: 0.8em;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: normal;
+            background-color: #28a745;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .profile-details .verification-badges {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .profile-details .verification-badges .badge {
+            background-color: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .profile-details p {
+            margin: 5px 0;
+            font-size: 1.05em;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+        .profile-details p strong {
+            color: #000;
+        }
+        .rating-stars {
+            color: #FDB813;
+            font-size: 1.3em;
+            margin-right: 5px;
+        }
+        .rating-stars .far.fa-star {
+            color: #cccccc;
+        }
+        .follow-button {
+            background-color: #006B3C;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-left: auto;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-shrink: 0;
+            margin-top: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .follow-button:hover {
+            background-color: #FDB813;
+            color: #000;
+            transform: translateY(-2px);
+        }
+        .follow-button.unfollow {
+            background-color: #d9534f;
+        }
+        .follow-button.unfollow:hover {
+            background-color: #c9302c;
+        }
+
+        /* --- NEW CSS FOR FOLLOWERS COUNT --- */
+        .followers-count {
+            font-size: 1.05em;
+            color: #555;
+            margin-top: 5px; /* Add some space above it */
+            display: flex;
+            align-items: center;
+        }
+        .followers-count strong {
+            color: #000;
+        }
+        /* --- END NEW CSS --- */
+
+
+        /* Section Titles for Information Blocks */
+        .section-title {
+            color: #006B3C;
+            border-bottom: 2px solid #FDB813;
+            padding-bottom: 8px;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+        }
+        .about-section, .contact-section, .business-hours-section, .social-links-section {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .about-section h3, .contact-section h3, .business-hours-section h3, .social-links-section h3 {
+            color: #006B3C;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+        }
+        .about-section p, .contact-section p, .business-hours-section p {
+            margin-bottom: 8px;
+        }
+        .contact-section p, .business-hours-section li {
+            display: flex;
+            align-items: flex-start;
+        }
+        .social-links-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        .social-links-section li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .social-links-section a {
+            color: #007bff;
+            text-decoration: none;
+            word-wrap: break-word;
+            flex-grow: 1;
+        }
+        .social-links-section a:hover {
+            text-decoration: underline;
+        }
+        .business-hours-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        .business-hours-section li {
+            margin-bottom: 8px;
+        }
+
+        /* Advert List (Grid) Styles */
+        .advert-list {
+            display: grid;
+            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        .advert-item {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .advert-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+        .advert-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            border-radius: 10px 10px 0 0;
+        }
+        .advert-details {
+            padding: 18px;
+            flex-grow: 1;
+        }
+        .advert-details h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+            color: #006B3C;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+        }
+        .advert-details p {
+            margin: 6px 0;
+            font-size: 0.95em;
+            color: #666;
+            display: flex;
+            align-items: center;
+        }
+        .advert-details .price {
+            font-weight: bold;
+            color: #FDB813;
+            font-size: 1.3em;
+        }
+        .advert-details .post_date {
+            font-size: 0.85em;
+            color: #777;
+        }
+        .advert-actions {
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+        }
+        .advert-actions .btn {
+            background-color: #006B3C;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-align: center;
+            width: 90%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .advert-actions .btn:hover {
+            background-color: #FDB813;
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        /* No Adverts Message */
+        .no-adverts-message {
+            text-align: center;
+            color: #777;
+            padding: 40px;
+            border: 2px dashed #cccccc;
+            border-radius: 10px;
+            margin-top: 30px;
+            grid-column: 1 / -1;
+            font-size: 1.1em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .no-adverts-message i {
+            font-size: 3em;
+            color: #bbb;
+            margin-bottom: 15px;
+        }
+
+        /* Image Modal Styles */
+        .image-modal {
+            display: none; /* Hidden by default, will be set to flex when active */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain; /* Ensure image fits without cropping */
+            border-radius: 8px; /* Rounded corners for the image */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7); /* Stronger shadow */
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* Smooth transitions */
+            transform: scale(0.8); /* Start smaller for animation */
+            opacity: 0; /* Start invisible for animation */
+        }
+
+        .image-modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            z-index: 1001; /* Ensure close button is above image */
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            .profile-header .profile-picture-container {
+                margin-right: 0;
+                margin-bottom: 15px;
+                margin-top: -60px; /* Adjusted slightly for mobile overlap */
+                width: 100px;
+                height: 100px;
+            }
+            .profile-details {
+                margin-top: 30px; /* Adjusted margin-top for mobile */
+            }
+            .profile-details h2 {
+                font-size: 1.5em;
+            }
+            .profile-details h2 .badge {
+                margin-top: 5px;
+                margin-left: 0;
+            }
+            .profile-details .verification-badges {
+                justify-content: center;
+            }
+            .follow-button {
+                margin-left: 0;
+                width: 80%;
+                padding: 10px 20px;
+            }
+            .advert-list {
+                grid-template-columns: 1fr;
+            }
+            .section-title {
+                font-size: 1.4em;
+            }
+            .about-section, .contact-section, .business-hours-section, .social-links-section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+        </style>
+</head>
+<body>
+    <div class="container">
+        {# Flash Messages #}
+        <ul class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">
+                            {% if category == 'error' %}<i class="fas fa-triangle-exclamation"></i>
+                            {% elif category == 'info' %}<i class="fas fa-circle-info"></i>
+                            {% elif category == 'warning' %}<i class="fas fa-triangle-exclamation"></i>
+                            {% elif category == 'success' %}<i class="fas fa-circle-check"></i>
+                            {% endif %}
+                            {{ message }}
+                        </li>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </ul>
+
+        <a href="javascript:history.back()" class="back-button"><i class="fas fa-arrow-left"></i> Back</a>
+
+        {# Profile Banner and Header #}
+<div class="profile-banner">
+    {% if seller.cover_photo_url %}
+        <img src="{{ seller.cover_photo_url }}" alt="{{ seller.businessname or seller.username }}'s Cover Photo" onclick="openImageModal(this.src)">
+    {% else %}
+        <div style="width: 100%; height: 100%; background-color: #a0a0a0; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em;"><i class="fas fa-image"></i></div>
+    {% endif %}
+</div>
+
+<div class="profile-header">
+    <div class="profile-picture-container">
+        <img src="{{ seller.profile_picture_url }}" alt="{{ seller.businessname or seller.username }}'s Profile Picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';" onclick="openImageModal(this.src)">
+    </div>
+    <div class="profile-details">
+        <h2>
+            {{ seller.businessname or seller.username }}
+            {% if seller.badge %}
+                <span class="badge">{{ seller.badge }}</span>
+            {% endif %}
+        </h2>
+        {% if seller.username and seller.businessname %}
+            <p><strong>Username:</strong> {{ seller.username }}</p>
+        {% endif %}
+
+        <div class="verification-badges">
+            {% if seller.is_verified %}
+                <span class="badge" style="background-color: #007bff;"><i class="fas fa-circle-check"></i> Verified Account</span>
+            {% endif %}
+            {% if seller.verified_phone %}
+                <span class="badge" style="background-color: #28a745;"><i class="fas fa-phone-check"></i> Phone Verified</span>
+            {% endif %}
+        </div>
+
+        <p><i class="fas fa-chart-line"></i> <strong>Status:</strong> {{ seller.account_status|capitalize }}</p>
+        {% if seller.location %}
+            <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
+        {% endif %}
+        <p><i class="fas fa-calendar-days"></i> <strong>Joined:</strong> {{ seller.created_at }}</p>
+        <p>
+            <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
+            <span class="rating-stars">
+                {% for i in range(seller.rating|round(0, 'floor')|int) %}
+                    <i class="fas fa-star"></i>
+                {% endfor %}
+                {% for i in range(5 - (seller.rating|round(0, 'floor')|int)) %}
+                    <i class="far fa-star"></i> {# Outline star for unrated #}
+                {% endfor %}
+            </span>
+            ({{ seller.review_count }} Reviews)
+        </p>
+
+        {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
+        {# Add a hidden input or a data attribute to the profile-header itself #}
+        <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
+            <i class="fas fa-users"></i> <strong>Followers:</strong> <span id="followersCount">{{ followers_count | default(0) }}</span>
+        </div>
+    </div>
+    {% if current_user_id and current_user_id != seller.id %}
+        <button class="follow-button {% if is_following %}unfollow{% endif %}" data-seller-id="{{ seller.id }}">
+            <i class="{% if is_following %}fas fa-user-minus{% else %}fas fa-user-plus{% endif %}"></i>
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+        </button>
+    {% endif %}
+</div>
+
+{# About Section #}
+{% if seller.bio %}
+<div class="about-section">
+    <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
+    <p>{{ seller.bio }}</p>
+</div>
+{% endif %}
+
+{# Contact Information Section #}
+{% if seller.phone_number %} {# Assuming email might be optional or handled elsewhere #}
+<div class="contact-section">
+    <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
+    {# {% if seller.email %} #}
+    {# <p><i class="fas fa-envelope"></i> <strong>Email:</strong> <a href="mailto:{{ seller.email }}">{{ seller.email }}</a></p> #}
+    {# {% endif %} #}
+    {% if seller.phone_number %}
+    <p><i class="fas fa-phone"></i> <strong>Phone:</strong> <a href="tel:{{ seller.phone_number }}">{{ seller.phone_number }}</a></p>
+    {% endif %}
+</div>
+{% endif %}
+
+{# Social Media Section #}
+{% if seller.social_links %}
+<div class="social-links-section">
+    <h3 class="section-title"><i class="fas fa-share-nodes"></i> Social Media</h3>
+    <ul>
+        {% for platform, link in seller.social_links.items() %}
+        <li>
+            {% set icon_class = "" %}
+            {% if platform.lower() == 'facebook' %}{% set icon_class = "fab fa-facebook" %}
+            {% elif platform.lower() == 'twitter' %}{% set icon_class = "fab fa-x-twitter" %}
+            {% elif platform.lower() == 'instagram' %}{% set icon_class = "fab fa-instagram" %}
+            {% elif platform.lower() == 'linkedin' %}{% set icon_class = "fab fa-linkedin" %}
+            {% elif platform.lower() == 'youtube' %}{% set icon_class = "fab fa-youtube" %}
+            {% elif platform.lower() == 'whatsapp' %}{% set icon_class = "fab fa-whatsapp" %}
+            {% else %}{% set icon_class = "fas fa-link" %}
+            {% endif %}
+            <i class="{{ icon_class }}"></i> <strong>{{ platform|title }}:</strong> <a href="{{ link }}" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# Business Hours Section #}
+{% if seller.working_days and seller.working_times %}
+<div class="business-hours-section">
+    <h3 class="section-title"><i class="fas fa-clock"></i> Business Hours</h3>
+    <ul>
+        {# Loop through all days to ensure "Closed" is shown for non-working days #}
+        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+            <li>
+                <strong>{{ day }}:</strong>
+                {% if day in seller.working_days and seller.working_times and seller.working_times[day] %}
+                    {{ seller.working_times[day].open }} - {{ seller.working_times[day].close }}
+                {% else %}
+                    Closed
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{# Active Adverts Section #}
+<h3 class="section-title"><i class="fas fa-tag"></i> Active Adverts by {{ seller.businessname or seller.username }}</h3>
+{% if adverts %}
+    <div class="advert-list">
+        {% for advert in adverts %}
+            <div class="advert-item">
+                <img src="{{ advert.main_image_url }}" alt="{{ advert.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
+                <div class="advert-details">
+                    <h3><i class="fas fa-bullhorn"></i> {{ advert.title }}</h3>
+                    <p class="price"><i class="fas fa-money-bill-wave"></i> ₦{{ "{:,.2f}".format(advert.price|float) }}</p>
+                    <p class="post_date"><i class="fas fa-calendar-alt"></i> Posted: {{ advert.created_at.strftime('%Y-%m-%d') }}</p>
+                </div>
+                <div class="advert-actions">
+                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn"><i class="fas fa-eye"></i> View Advert</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="no-adverts-message"><i class="fas fa-box-open"></i> {{ seller.businessname or seller.username }} currently has no active adverts.</p>
+{% endif %}
+</div>
+
+{# Image Modal Structure #}
+<div id="imageModal" class="image-modal">
+    <span class="close-button" onclick="closeImageModal()">&times;</span>
+    <img class="modal-content" id="modalImage">
+</div>
+
+{# JavaScript for Follow/Unfollow and Image Modal #}
+<script>
+    // --- Image Modal Logic ---
+    const imageModal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+
+    function openImageModal(src) {
+        modalImage.src = src;
+        imageModal.classList.add('active'); // Add 'active' class for CSS transitions
+        imageModal.style.display = 'flex'; // Use flex to center content
+    }
+
+    function closeImageModal() {
+        imageModal.classList.remove('active'); // Remove 'active' class
+        // Wait for transition to complete before hiding to ensure smooth animation
+        setTimeout(() => {
+            imageModal.style.display = 'none';
+        }, 300); // Should match CSS transition duration
+    }
+
+    // Close modal when clicking outside the image
+    imageModal.addEventListener('click', function(event) {
+        if (event.target === imageModal) {
+            closeImageModal();
+        }
+    });
+
+    // --- Follow/Unfollow Button Logic and Initial Follower Count Display ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const followButton = document.querySelector('.follow-button');
+        const followersCountSpan = document.getElementById('followersCount'); // Grab the followers count span
+        // Get sellerId from a more reliable element, like the followers-count div
+        const profileHeader = document.querySelector('.profile-header .followers-count'); // Target the specific div
+        const sellerIdFromProfile = profileHeader ? profileHeader.dataset.sellerId : null;
+
+        // --- Function to fetch and display initial follower count ---
+        async function fetchInitialFollowerCount() {
+            if (!followersCountSpan) {
+                console.warn('Followers count span (ID: "followersCount") not found.');
+                return;
+            }
+
+            // Use the sellerId obtained from the profile header
+            const sellerId = sellerIdFromProfile;
+
+            if (!sellerId) {
+                console.error('Seller ID not found. Cannot fetch initial follower count.');
+                return;
+            }
+
+            try {
+                // Assuming you have an API endpoint to get a user's follower count
+                const response = await fetch(`/api/get_follower_count/${sellerId}`);
+                const data = await response.json();
+
+                if (response.ok && data.success && data.follower_count !== undefined) {
+                    followersCountSpan.textContent = data.follower_count;
+                } else {
+                    console.error('Failed to fetch initial follower count:', data.message || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error fetching initial follower count:', error);
+            }
+        }
+
+        // Call the function to fetch and display the initial follower count when the page loads
+        fetchInitialFollowerCount();
+
+        if (followButton) {
+            followButton.addEventListener('click', async function() {
+                const sellerId = this.dataset.sellerId; // This should be reliable for the button click
+                const isFollowing = this.classList.contains('unfollow'); // Check current state from class
+
+                // Determine the correct API endpoint based on the action
+                const endpoint = isFollowing ? `/api/unfollow_user/${sellerId}` : `/api/follow_user/${sellerId}`;
+                const method = 'POST'; // Both are POST requests
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // Include CSRF token if you are using Flask-WTF or similar
+                            // 'X-CSRFToken': 'YOUR_CSRF_TOKEN_HERE'
+                        },
+                    });
+
+                    const data = await response.json(); // Parse the JSON response
+
+                    if (response.ok && data.success) { // Check both HTTP status and custom success flag
+                        // Toggle the button's appearance and text
+                        if (isFollowing) {
+                            this.classList.remove('unfollow');
+                            this.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                            showFlashMessage('success', 'You have unfollowed this user.');
+                        } else {
+                            this.classList.add('unfollow');
+                            this.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                            showFlashMessage('success', 'You are now following this user!');
+                        }
+                        // --- UPDATE THE FOLLOWER COUNT DYNAMICALLY ---
+                        if (followersCountSpan && data.new_followers_count !== undefined) {
+                            followersCountSpan.textContent = data.new_followers_count;
+                        }
+                    } else {
+                        // Handle error, e.g., show a flash message
+                        showFlashMessage('error', data.message || 'An error occurred.');
+                    }
+                } catch (error) {
+                    console.error('Error during follow/unfollow:', error);
+                    showFlashMessage('error', 'Network error. Please try again.');
+                }
+            });
+        }
+
+        // Function to dynamically add flash messages
+        function showFlashMessage(category, message) {
+            const flashMessagesContainer = document.querySelector('.flash-messages');
+            if (!flashMessagesContainer) {
+                console.warn('Flash messages container not found. Message not displayed:', message);
+                return;
+            }
+
+            const li = document.createElement('li');
+            li.classList.add(category);
+
+            let iconHTML = ''; // Use an empty string for the icon initially
+            if (category === 'error') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
+            else if (category === 'info') iconHTML = '<i class="fas fa-circle-info"></i>';
+            else if (category === 'warning') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
+            else if (category === 'success') iconHTML = '<i class="fas fa-circle-check"></i>';
+
+            li.innerHTML = iconHTML + message; // Set innerHTML to include the icon
+            flashMessagesContainer.appendChild(li);
+
+            // Optional: Automatically remove message after a few seconds
+            setTimeout(() => {
+                li.remove();
+            }, 5000); // Message disappears after 5 seconds
+        }
+    });
+</script>
+</body>
+</html>
