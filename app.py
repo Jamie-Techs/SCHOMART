@@ -78,8 +78,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 # Initialize extensions
 bcrypt = Bcrypt(app)
 mail = Mail(app)
-login_manager = LoginManager(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message_category = 'warning'
 oauth = OAuth(app)
 
 # 🔐 Secure Firebase Admin initialization
@@ -324,15 +326,6 @@ def add_security_headers(response):
 
 
 
-# Initialize Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    """
-    Loads a User object from the Firestore database using the user's ID.
-    This function is required by Flask-Login.
-    """
-    # Refactored to use the new User.get static method
-    return User.get(user_id)
 
 
 
@@ -424,9 +417,48 @@ class User:
 
 
 class User(UserMixin):
-    def __init__(self, id, is_verified=False):
-        self.id = id
+    """
+    User class for Flask-Login.
+    It links the Flask-Login session to a Firebase user.
+    """
+    def __init__(self, user_id, is_verified=False):
+        self.id = user_id
         self.is_verified = is_verified
+        # Flask-Login requires these properties
+        self.is_authenticated = True
+        self.is_active = True
+        self.is_anonymous = False
+
+    @property
+    def is_active(self):
+        """Returns True if the user is active."""
+        return self.is_verified
+
+@login_manager.user_loader
+def load_user(user_id):
+    """
+    Loads a user from the database based on their user ID.
+    This function is required by Flask-Login.
+    """
+    logging.info(f"Attempting to load user with ID: {user_id}")
+    try:
+        user_doc = admin_db.collection('users').document(user_id).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            if user_data.get('is_verified', False):
+                return User(user_id, is_verified=True)
+            else:
+                logging.warning(f"User {user_id} is not verified.")
+                return None
+        else:
+            logging.warning(f"User document not found for ID: {user_id}")
+            return None
+    except Exception as e:
+        logging.error(f"Error loading user {user_id}: {e}")
+        return None
+
+
+
 
     @staticmethod
     def get(user_id):
@@ -8600,6 +8632,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
