@@ -207,7 +207,7 @@
             apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
             authDomain: "schomart-7a743.firebaseapp.com",
             projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.firebasestorage.app",
+            storageBucket: "schomart-7a743.appspot.com", // Corrected storage bucket
             messagingSenderId: "20119186662",
             appId: "1:20119186662:web:da1755b55dacde4fa6df27",
             measurementId: "G-9QGL3XHSC7"
@@ -216,6 +216,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const storage = firebase.storage(); // Initialize storage
 
         // Get DOM elements
         const signupForm = document.getElementById('signupForm');
@@ -293,21 +294,22 @@
             }
 
             try {
-                // Call backend API for user creation
-                const response = await fetch('/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, username })
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                // Send a verification email to the user
+                await user.sendEmailVerification();
+                
+                // Then, save additional user data to Firestore
+                await db.collection('users').doc(user.uid).set({
+                    username: username,
+                    email: email,
+                    created_at: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                const data = await response.json();
-                if (response.ok) {
-                    // Firebase Auth sends verification email automatically on new user creation
-                    showMessageBox(msgBoxSignup, 'Account created successfully. Please check your inbox for a verification email.');
-                    auth.signOut(); // Log out the user until they verify
-                } else {
-                    showMessageBox(msgBoxSignup, `Error: ${data.error}`, true);
-                }
+                showMessageBox(msgBoxSignup, 'Account created successfully! Please check your inbox for a verification email.');
+                auth.signOut(); // Log out the user until they verify
+                
             } catch (error) {
                 showMessageBox(msgBoxSignup, `Error creating account: ${error.message}`, true);
                 console.error("Signup error:", error);
@@ -326,26 +328,14 @@
                 const user = userCredential.user;
 
                 if (!user.emailVerified) {
-                    showMessageBox(msgBoxLogin, 'Please verify your email address before logging in.', true);
+                    showMessageBox(msgBoxLogin, 'Please verify your email address before logging in. A new verification link has been sent to your email.', true);
+                    await user.sendEmailVerification(); // Send verification link again
                     auth.signOut();
                     return;
                 }
                 
-                // Get ID token to send to backend
-                const idToken = await user.getIdToken();
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    showMessageBox(msgBoxLogin, `Welcome back, ${data.username}!`);
-                } else {
-                    showMessageBox(msgBoxLogin, `Login failed: ${data.error}`, true);
-                    auth.signOut(); // Log out user if backend validation fails
-                }
+                // On successful login, you might want to redirect or update the UI
+                showMessageBox(msgBoxLogin, `Welcome back!`);
 
             } catch (error) {
                 showMessageBox(msgBoxLogin, `Login failed: ${error.message}`, true);
@@ -388,21 +378,14 @@
             }
 
             try {
-                const idToken = await user.getIdToken();
-                const response = await fetch('/api/update-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken, newEmail })
-                });
+                await user.updateEmail(newEmail);
+                await user.sendEmailVerification();
+                
+                // You may also want to update Firestore here
+                const userRef = db.collection('users').doc(user.uid);
+                await userRef.update({ email: newEmail });
 
-                const data = await response.json();
-                if (response.ok) {
-                    // Trigger email verification on the frontend after a successful backend update
-                    await user.sendEmailVerification();
-                    showMessageBox(msgBoxProfile, 'Email updated successfully. A verification email has been sent to your new address.');
-                } else {
-                    showMessageBox(msgBoxProfile, `Error: ${data.error}`, true);
-                }
+                showMessageBox(msgBoxProfile, 'Email updated successfully. A verification email has been sent to your new address.');
             } catch (error) {
                 showMessageBox(msgBoxProfile, `Error updating email: ${error.message}`, true);
                 console.error("Update email error:", error);
@@ -420,19 +403,8 @@
             }
 
             try {
-                const idToken = await user.getIdToken();
-                const response = await fetch('/api/update-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken, newPassword })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    showMessageBox(msgBoxProfile, 'Password updated successfully!');
-                } else {
-                    showMessageBox(msgBoxProfile, `Error: ${data.error}`, true);
-                }
+                await user.updatePassword(newPassword);
+                showMessageBox(msgBoxProfile, 'Password updated successfully!');
             } catch (error) {
                 showMessageBox(msgBoxProfile, `Error updating password: ${error.message}`, true);
                 console.error("Update password error:", error);
@@ -447,13 +419,11 @@
             const user = auth.currentUser;
 
             if (!user) {
-                uploadStatusEl.textContent = 'You must be logged in to upload files.';
-                uploadStatusEl.style.color = 'red';
+                showMessageBox(msgBoxProfile, 'You must be logged in to upload files.', true);
                 return;
             }
             if (!file) {
-                uploadStatusEl.textContent = 'Please select a file to upload.';
-                uploadStatusEl.style.color = 'red';
+                showMessageBox(msgBoxProfile, 'Please select a file to upload.', true);
                 return;
             }
 
@@ -461,25 +431,12 @@
             uploadStatusEl.style.color = 'black';
 
             try {
-                const idToken = await user.getIdToken();
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('file_type', 'profile'); // You can change this to 'cover', 'media', etc.
-
-                const response = await fetch('/api/upload-file', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${idToken}` },
-                    body: formData
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    uploadStatusEl.textContent = 'File uploaded successfully! URL: ' + data.file_url;
-                    uploadStatusEl.style.color = 'green';
-                } else {
-                    uploadStatusEl.textContent = 'Upload failed: ' + data.error;
-                    uploadStatusEl.style.color = 'red';
-                }
+                const storageRef = storage.ref(`users/${user.uid}/uploads/${file.name}`);
+                const snapshot = await storageRef.put(file);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                
+                uploadStatusEl.textContent = 'File uploaded successfully! URL: ' + downloadURL;
+                uploadStatusEl.style.color = 'green';
             } catch (error) {
                 uploadStatusEl.textContent = 'An unexpected error occurred during upload.';
                 uploadStatusEl.style.color = 'red';
