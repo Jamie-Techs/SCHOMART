@@ -254,6 +254,15 @@ def api_update_email():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+
+
+@app.route('/account_settings')
+def account_settings():
+    """Serves the account settings page."""
+    return render_template('account_settings.html')
+
+
+
 # --------------------
 # Cloud Storage File Upload API Endpoint
 # --------------------
@@ -8190,6 +8199,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
