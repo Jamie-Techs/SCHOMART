@@ -773,7 +773,7 @@ def activate_account(token):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Handles user login."""
-    if current_user.is_verified:
+    if current_user.is_authenticated:
         return redirect(url_for('profile'))
     if request.method == 'POST':
         username_or_email = request.form.get('username_or_email', '').strip().lower()
@@ -8566,6 +8566,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
