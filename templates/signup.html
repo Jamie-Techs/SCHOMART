@@ -9,7 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
 
   <style>
-    /* Your existing CSS remains unchanged */
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
@@ -63,10 +62,16 @@
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      transition: background-color 0.3s ease;
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       background-color: #004d2a;
+    }
+    
+    .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
     }
 
     .login-link {
@@ -138,9 +143,28 @@
       width: 1px;
       z-index: -1;
     }
+
+    /* Password criteria styling */
+    .password-criteria {
+        list-style-type: none;
+        padding: 0;
+        margin-top: -10px;
+        margin-bottom: 10px;
+    }
+    .password-criteria li {
+        color: #dc3545; /* Red for not fulfilled */
+        font-size: 0.9em;
+        margin-bottom: 5px;
+        transition: color 0.3s ease;
+    }
+    .password-criteria li.valid {
+        color: #28a745; /* Green for fulfilled */
+    }
+    .password-criteria i {
+        margin-right: 5px;
+    }
   </style>
 </head>
-<body>
 <body>
   <div id="loader" style="display:none;"></div>
 
@@ -176,11 +200,19 @@
         <label>Password</label>
         <input type="password" name="password" id="password" required>
       </div>
+      <!-- Password Criteria Section -->
+      <ul id="password-criteria" class="password-criteria">
+        <li id="length-check"><i class="fas fa-times-circle"></i> At least 7 characters</li>
+        <li id="lowercase-check"><i class="fas fa-times-circle"></i> At least one lowercase letter</li>
+        <li id="uppercase-check"><i class="fas fa-times-circle"></i> At least one uppercase letter</li>
+        <li id="number-check"><i class="fas fa-times-circle"></i> At least one number</li>
+        <li id="special-check"><i class="fas fa-times-circle"></i> At least one special character</li>
+      </ul>
       <div class="form-group">
         <label>Confirm Password</label>
         <input type="password" name="confirm_password" id="confirm_password" required>
       </div>
-
+      
       <input type="hidden" name="referrer" value="{{ referrer}}">
       <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
 
@@ -189,7 +221,7 @@
         <input type="text" id="honeypot_field" name="honeypot_field" autocomplete="off" tabindex="-1">
       </div>
 
-      <button type="submit" class="btn">Sign Up</button>
+      <button type="submit" class="btn" id="signupBtn" disabled>Sign Up</button>
     </form>
 
     <div class="login-link">
@@ -237,15 +269,58 @@
         }, 5000);
       });
 
-      // 3. Form Submission
+      // 3. Password Validation and Button Control
+      const passwordInput = document.getElementById('password');
+      const confirmPasswordInput = document.getElementById('confirm_password');
+      const signupBtn = document.getElementById('signupBtn');
+      const criteria = {
+        length: document.getElementById('length-check'),
+        lowercase: document.getElementById('lowercase-check'),
+        uppercase: document.getElementById('uppercase-check'),
+        number: document.getElementById('number-check'),
+        special: document.getElementById('special-check'),
+      };
+
+      const validatePassword = () => {
+        const password = passwordInput.value;
+        
+        const isLengthValid = password.length >= 7;
+        const hasLowercase = /[a-z]/.test(password);
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
+
+        // Update list item styling and icon
+        function updateCriteria(element, isValid) {
+          element.classList.toggle('valid', isValid);
+          const icon = element.querySelector('i');
+          icon.classList.toggle('fa-check-circle', isValid);
+          icon.classList.toggle('fa-times-circle', !isValid);
+        }
+
+        updateCriteria(criteria.length, isLengthValid);
+        updateCriteria(criteria.lowercase, hasLowercase);
+        updateCriteria(criteria.uppercase, hasUppercase);
+        updateCriteria(criteria.number, hasNumber);
+        updateCriteria(criteria.special, hasSpecial);
+
+        // Check if all criteria are met and enable/disable button
+        const allCriteriaMet = isLengthValid && hasLowercase && hasUppercase && hasNumber && hasSpecial;
+        const passwordsMatch = password === confirmPasswordInput.value && password !== '';
+        
+        signupBtn.disabled = !(allCriteriaMet && passwordsMatch);
+      };
+
+      // Add event listeners for validation
+      passwordInput.addEventListener('input', validatePassword);
+      confirmPasswordInput.addEventListener('input', validatePassword);
+
+      // 4. Form Submission
       const form = document.getElementById('signupForm');
       form.addEventListener('submit', function(event) {
-        const pw = document.getElementById('password').value;
-        const confirmPw = document.getElementById('confirm_password').value;
-        if (pw !== confirmPw) {
+        if (passwordInput.value !== confirmPasswordInput.value) {
           event.preventDefault(); // Stop the form from submitting
           alert('Passwords do not match.');
-          return;
         }
       });
     });
