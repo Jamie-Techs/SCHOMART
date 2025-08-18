@@ -7,9 +7,9 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key}}"></script>
 
   <style>
+    /* Your existing CSS remains unchanged */
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
@@ -183,7 +183,6 @@
 
       <input type="hidden" name="referrer" value="{{ referrer}}">
       <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
-      <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
       <div class="honeypot-trap">
         <label for="honeypot_field">Leave this field blank:</label>
@@ -209,8 +208,8 @@
       const fingerprintInputField = document.getElementById('deviceFingerprintData');
       if (fingerprintInputField) {
         FingerprintJS.load()
-.then(fp => fp.get())
-.then(result => {
+          .then(fp => fp.get())
+          .then(result => {
             const components = result.components;
             const fingerprintData = {
               userAgent: components.userAgent.value,
@@ -220,14 +219,14 @@
               fonts: components.fonts.value,
               timezone: components.timezone.value,
               platform: components.platform.value,
-};
+            };
             fingerprintInputField.value = JSON.stringify(fingerprintData);
             console.log('Device Fingerprint captured.');
-})
-.catch(error => {
+          })
+          .catch(error => {
             console.error('FingerprintJS error:', error);
-});
-}
+          });
+      }
 
       // 2. Flash Message Fade Out
       const alerts = document.querySelectorAll('.alert');
@@ -235,34 +234,21 @@
         setTimeout(() => {
           alert.style.opacity = '0';
           setTimeout(() => alert.remove(), 500);
-}, 5000);
-});
+        }, 5000);
+      });
 
-      // 3. Form Submission with reCAPTCHA
+      // 3. Form Submission
       const form = document.getElementById('signupForm');
-      form.addEventListener('submit', async function(event) {
-        event.preventDefault();
-
+      form.addEventListener('submit', function(event) {
         const pw = document.getElementById('password').value;
         const confirmPw = document.getElementById('confirm_password').value;
-        if (pw!== confirmPw) {
+        if (pw !== confirmPw) {
+          event.preventDefault(); // Stop the form from submitting
           alert('Passwords do not match.');
           return;
-}
-
-        try {
-          const token = await grecaptcha.execute('{{ recaptcha_site_key}}', {action: 'signup'});
-          document.getElementById('recaptcha_token').value = token;
-          console.log('reCAPTCHA token:', token); // Debug log
-          document.getElementById('loader').style.display = 'block';
-          form.submit();
-} catch (error) {
-          alert('Failed to verify CAPTCHA. Please refresh and try again.');
-          console.error('reCAPTCHA error:', error);
-}
-});
-});
+        }
+      });
+    });
   </script>
 </body>
 </html>
-
