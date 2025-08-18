@@ -426,7 +426,6 @@ class User(UserMixin):
         self.is_verified = is_verified
         # Flask-Login requires these properties
        
-        self.is_active = True
         self.is_anonymous = False
 
     @property
@@ -8539,6 +8538,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
