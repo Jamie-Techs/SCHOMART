@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <title>Login - Futo Jiji</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key}}"></script>
     
     <style>
+        /* Your existing CSS remains unchanged */
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
@@ -80,12 +83,12 @@
             text-decoration: underline;
         }
 
-        /* Flash message styling (harmonized with previous base.html) */
+        /* Flash message styling */
         .alert {
             padding: 15px 20px;
-            margin: 20px auto; /* Centered */
+            margin: 20px auto; 
             width: 90%;
-            max-width: 500px; /* Aligned with container width */
+            max-width: 500px; 
             border-radius: 8px;
             font-weight: bold;
             display: flex;
@@ -95,8 +98,8 @@
             transition: opacity 0.5s ease-out;
         }
         .alert.error {
-            background-color: #f8d7da; /* Lighter red */
-            color: #721c24; /* Darker red text */
+            background-color: #f8d7da; 
+            color: #721c24; 
             border: 1px solid #f5c6cb;
         }
         .alert.success {
@@ -109,7 +112,7 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
-        .alert.warning { /* Added warning style */
+        .alert.warning {
             background-color: #fff3cd;
             color: #856404;
             border: 1px solid #ffeeba;
@@ -140,7 +143,7 @@
 
 <div class="login-container">
   <h2>Login to Futo Jiji</h2>
-  <form method="POST" action="/login">
+  <form id="loginForm" method="POST" action="/login">
     <div class="form-group">
       <label>Email or Username</label>
       <input type="text" name="username_or_email" placeholder="you@example.com" required>
@@ -165,69 +168,66 @@
   </div>
 </div>
 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key}}"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const fingerprintInputField = document.getElementById('deviceFingerprintData');
-            if (fingerprintInputField) {
-                const fpPromise = FingerprintJS.load();
-                fpPromise
-                    .then(fp => fp.get())
-                    .then(result => {
-                        const components = result.components;
-                        const fingerprintData = {
-                            userAgent: components.userAgent.value,
-                            screenResolution: components.screenResolution.value,
-                            canvas: components.canvas.value,
-                            webgl: components.webgl.value,
-                            fonts: components.fonts.value,
-                            timezone: components.timezone.value,
-                            platform: components.platform.value,
-                        };
-                        fingerprintInputField.value = JSON.stringify(fingerprintData);
-                        console.log('Device Fingerprint captured for login.');
-                    })
-                    .catch(error => {
-                        console.error('Error loading or getting FingerprintJS:', error);
-                    });
-            }
-
-            // Optional: Fade out flash messages after a few seconds
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                setTimeout(() => {
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500); // Remove after fade out
-                }, 5000); // 5 seconds
-            });
-        });
-    </script>
-  <script>
+<script>
     document.addEventListener('DOMContentLoaded', () => {
-      const fingerprintInputField = document.getElementById('deviceFingerprintData');
-      if (fingerprintInputField) {
-        FingerprintJS.load().then(fp => fp.get()).then(result => {
-          fingerprintInputField.value = JSON.stringify(result.components);
-});
-}
+        // Handle device fingerprinting
+        const fingerprintInputField = document.getElementById('deviceFingerprintData');
+        if (fingerprintInputField) {
+            FingerprintJS.load()
+                .then(fp => fp.get())
+                .then(result => {
+                    const components = result.components;
+                    const fingerprintData = {
+                        userAgent: components.userAgent.value,
+                        screenResolution: components.screenResolution.value,
+                        canvas: components.canvas.value,
+                        webgl: components.webgl.value,
+                        fonts: components.fonts.value,
+                        timezone: components.timezone.value,
+                        platform: components.platform.value,
+                    };
+                    fingerprintInputField.value = JSON.stringify(fingerprintData);
+                    console.log('Device Fingerprint captured for login.');
+                })
+                .catch(error => {
+                    console.error('Error loading or getting FingerprintJS:', error);
+                });
+        }
 
-      grecaptcha.ready(function() {
-        grecaptcha.execute('{{ recaptcha_site_key}}', {action: 'login'}).then(function(token) {
-          document.getElementById('recaptcha_token').value = token;
-});
-});
+        // Handle reCAPTCHA and form submission
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
 
-      const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        setTimeout(() => {
-          alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 500);
-}, 5000);
-});
-});
-  </script>
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'block';
+
+            try {
+                // Execute reCAPTCHA and get the token
+                const token = await grecaptcha.execute('{{ recaptcha_site_key}}', { action: 'login' });
+                
+                // Add the token to the form data
+                document.getElementById('recaptcha_token').value = token;
+                console.log('reCAPTCHA token:', token);
+                
+                // Submit the form
+                loginForm.submit();
+            } catch (error) {
+                if (loader) loader.style.display = 'none';
+                alert('Failed to verify CAPTCHA. Please refresh and try again.');
+                console.error('reCAPTCHA error:', error);
+            }
+        });
+        
+        // Optional: Fade out flash messages
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000); 
+        });
+    });
+</script>
 </body>
 </html>
