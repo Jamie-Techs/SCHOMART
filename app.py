@@ -547,9 +547,27 @@ def is_valid_email(email):
     """Validates email format using regex."""
     return bool(re.match(r"^[^@]+@[^@]+\.[^@]+$", email))
 
+
 def is_strong_password(password):
-    """Checks if password meets minimum strength requirements."""
-    return len(password)>= 8
+    """
+    Checks if a password meets the required strength criteria:
+    - At least 7 characters long.
+    - Contains at least one lowercase letter.
+    - Contains at least one uppercase letter.
+    - Contains at least one number.
+    - Contains at least one special character.
+    """
+    if len(password) < 7:
+        return False
+    if not re.search(r"[a-z]", password):
+        return False
+    if not re.search(r"[A-Z]", password):
+        return False
+    if not re.search(r"[0-9]", password):
+        return False
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+", password):
+        return False
+    return True
 
 #--- Referral Code Generator ---
 def generate_referral_code(length=8):
@@ -819,7 +837,6 @@ def login():
 
 ### **3. New Email Verification Route**
 
-This new route is crucial. It's where the actual user data gets moved from the `pending_users` collection to the `users` collection. This is triggered when a user clicks the verification link in their email.
 
 
 @app.route('/verify-email/<token>', methods=['GET'])
@@ -8498,6 +8515,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
