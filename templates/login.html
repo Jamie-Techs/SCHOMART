@@ -5,7 +5,6 @@
     <title>Login - Futo Jiji</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
     
     <style>
         /* Your existing CSS remains unchanged */
@@ -152,7 +151,6 @@
           <input type="password" id="password" name="password" placeholder="Enter your password" required>
         </div>
         <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
-        <input type="hidden" name="recaptcha_token" id="recaptcha_token">
         <button type="submit" class="btn">Login</button>
       </form>
 
@@ -192,31 +190,6 @@
                   console.error('Error loading or getting FingerprintJS:', error);
               });
         }
-
-        // Handle reCAPTCHA and form submission
-        const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent default form submission
-
-            const loader = document.getElementById('loader');
-            if (loader) loader.style.display = 'block';
-
-            try {
-                // Execute reCAPTCHA and get the token
-                const token = await grecaptcha.execute('{{ recaptcha_site_key }}', { action: 'login' });
-                
-                // Add the token to the form data
-                document.getElementById('recaptcha_token').value = token;
-                console.log('reCAPTCHA token:', token);
-                
-                // Submit the form
-                loginForm.submit();
-            } catch (error) {
-                if (loader) loader.style.display = 'none';
-                alert('Failed to verify CAPTCHA. Please refresh and try again.');
-                console.error('reCAPTCHA error:', error);
-            }
-        });
         
         // Optional: Fade out flash messages
         const alerts = document.querySelectorAll('.alert');
