@@ -438,6 +438,7 @@ class User(UserMixin):
             return User(id=user_id, is_verified=user_data.get('is_verified', False))
         return None
 
+login_user(User(id=user_doc.id, is_verified=True))
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO)
 
@@ -8468,6 +8469,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
