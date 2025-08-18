@@ -436,17 +436,30 @@ class User(UserMixin):
     User class for Flask-Login.
     It links the Flask-Login session to a Firebase user.
     """
-    def __init__(self, user_id, is_verified=False):
+    def __init__(self, user_id, is_verified=False, active=True):
         self.id = user_id
         self.is_verified = is_verified
-        # Flask-Login requires these properties
-       
-        
+        self._active = active
+
+    @property
+    def is_authenticated(self):
+        # Always True once logged in
+        return True
 
     @property
     def is_active(self):
-        """Returns True if the user is active."""
-        return self.is_verified
+        # You can customize this based on user status
+        return self._active
+
+    @property
+    def is_anonymous(self):
+        # This user is not anonymous
+        return False
+
+    def get_id(self):
+        return self.id
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -8553,6 +8566,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
