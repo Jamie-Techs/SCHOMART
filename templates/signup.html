@@ -1,317 +1,491 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Your Account</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Auth & Firestore</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-storage-compat.js"></script>
 
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <!-- FingerprintJS for device fingerprinting -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-
-  <style>
-    /* Basic Page and Container Styling */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-
-    .signup-container {
-      width: 100%;
-      max-width: 500px;
-      margin: 50px auto;
-      background-color: #fff;
-      border: 2px solid #006B3C;
-      border-radius: 10px;
-      padding: 30px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .signup-container h2 {
-      text-align: center;
-      color: #006B3C;
-      margin-bottom: 25px;
-    }
-
-    /* Form Element Styling */
-    .form-group {
-      margin-bottom: 18px;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: #00391F;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 15px;
-    }
-
-    /* Button Styling */
-    .btn {
-      width: 100%;
-      padding: 12px;
-      background-color: #006B3C;
-      color: white;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-
-    .btn:hover {
-      background-color: #004d2a;
-    }
-
-    /* Link Styling */
-    .login-link {
-      text-align: center;
-      margin-top: 15px;
-    }
-
-    .login-link a {
-      color: #FDB813;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .login-link a:hover {
-      text-decoration: underline;
-    }
-
-    /* Flash Message Styling (for server-side messages) */
-    .alert {
-      padding: 15px 20px;
-      margin: 20px auto;
-      width: 90%;
-      max-width: 500px;
-      border-radius: 8px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 1;
-      transition: opacity 0.5s ease-out;
-    }
-
-    .alert.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    /* Honeypot trap for bots */
-    .honeypot-trap {
-      position: absolute;
-      left: -9999px;
-      height: 1px;
-      overflow: hidden;
-      opacity: 0;
-      pointer-events: none;
-      width: 1px;
-      z-index: -1;
-    }
-
-    /* New password info box styling */
-    .password-info-box {
-      background-color: #f0f0f0;
-      border: 0.5px solid #ddd;
-      border-radius: 6px;
-      padding: 6px;
-      margin-top: -10px;
-      margin-bottom: 10px;
-      font-size: 0.5em;
-      color: #FF0000;
-    }
-
-    /* Custom message box for client-side validation */
-    #messageBox {
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      font-size: 0.9em;
-      display: none; /* Initially hidden */
-      opacity: 0;
-      transition: opacity 0.3s ease-in-out;
-      text-align: center;
-      color: #721c24;
-      background-color: #f8d7da;
-      border: 1px solid #f5c6cb;
-    }
-
-    #messageBox.show {
-      display: block;
-      opacity: 1;
-    }
-  </style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 50px auto;
+            background-color: #fff;
+            border: 2px solid #006B3C;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #006B3C;
+            margin-bottom: 25px;
+        }
+        h3 {
+            color: #FDB813;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #00391F;
+            text-align: left;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #006B3C;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #004d2a;
+        }
+        .btn-google {
+            background-color: #DB4437;
+        }
+        .btn-secondary {
+            background-color: #fff;
+            color: #006B3C;
+            border: 1px solid #006B3C;
+            margin-top: 10px;
+        }
+        .link-text {
+            font-size: 0.9em;
+            margin-top: 10px;
+            cursor: pointer;
+            color: #006B3C;
+            text-decoration: underline;
+        }
+        #messageBox {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            text-align: center;
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        #messageBox.show {
+            display: block;
+            opacity: 1;
+        }
+        .hidden {
+            display: none;
+        }
+        .profile-card {
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .profile-card p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+    </style>
 </head>
 <body>
-  <div id="loader" style="display:none;"></div>
-
-  <!-- Flash messages from server-side -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert {{ category}}">
-          <span class="alert-icon">
-            {% if category == 'error' %}<i class="fas fa-times-circle"></i>
-            {% elif category == 'success' %}<i class="fas fa-check-circle"></i>
-            {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
-            {% else %}<i class="fas fa-info-circle"></i>
-            {% endif %}
-          </span>
-          {{ message}}
+    <div class="container">
+        <div id="auth-forms">
+            <div id="signup-section">
+                <h2>Create Your Account</h2>
+                <div id="messageBox"></div>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email Address</label>
+                        <input type="email" id="signup-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" required>
+                    </div>
+                    <button type="submit" class="btn">Sign Up</button>
+                </form>
+                <p class="link-text" onclick="toggleForm('login')">Already have an account? Log in here.</p>
+            </div>
+            <div id="login-section" class="hidden">
+                <h2>Log In</h2>
+                <div id="messageBoxLogin"></div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="btn">Log In</button>
+                </form>
+                <p class="link-text" onclick="toggleForm('signup')">Don't have an account? Sign up here.</p>
+                <p class="link-text" onclick="sendPasswordReset()">Forgot Password?</p>
+            </div>
         </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+        <div id="profile-section" class="hidden">
+            <h2>Welcome!</h2>
+            <div id="messageBoxProfile"></div>
+            <div class="profile-card">
+                <p><strong>Username:</strong> <span id="profile-username"></span></p>
+                <p><strong>Email:</strong> <span id="profile-email"></span></p>
+                <p><strong>Email Verified:</strong> <span id="profile-verified"></span></p>
+            </div>
+            <h3>Account Settings</h3>
+            <form id="changeEmailForm">
+                <div class="form-group">
+                    <label for="new-email">New Email</label>
+                    <input type="email" id="new-email" required>
+                </div>
+                <button type="submit" class="btn btn-secondary">Update Email</button>
+            </form>
+            <form id="changePasswordForm" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" required>
+                </div>
+                <button type="submit" class="btn btn-secondary">Update Password</button>
+            </form>
+            
+            <h3>Upload Media to Cloud Storage</h3>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file-upload">Select File to Upload</label>
+                    <input type="file" id="file-upload" required>
+                </div>
+                <button type="submit" class="btn">Upload File</button>
+            </form>
+            <div id="upload-status" style="margin-top: 10px;"></div>
 
-  <div class="signup-container">
-    <h2>Create Your Account</h2>
-    <!-- Custom message box for client-side errors -->
-    <div id="messageBox"></div>
-
-    <form id="signupForm" method="POST" action="{{ url_for('signup')}}">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
-      </div>
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" required>
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
-      </div>
-
-      <!-- Password Info Box -->
-      <div class="password-info-box">
-          
-          <p>Your password must be at least 7 characters long.</p>
-      </div>
-
-      <div class="form-group">
-        <label for="confirm_password">Confirm Password</label>
-        <input type="password" id="confirm_password" name="confirm_password" required>
-      </div>
-      
-      <input type="hidden" name="referrer" value="{{ referrer}}">
-      <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
-
-      <!-- Honeypot trap to catch bots -->
-      <div class="honeypot-trap">
-        <label for="honeypot_field">Leave this field blank:</label>
-        <input type="text" id="honeypot_field" name="honeypot_field" autocomplete="off" tabindex="-1">
-      </div>
-
-      <!-- Button is no longer disabled by default -->
-      <button type="submit" class="btn" id="signupBtn">Sign Up</button>
-    </form>
-
-    <div class="login-link">
-      Already have an account? <a href="{{ url_for('login')}}">Log in here</a>
+            <button id="logoutBtn" class="btn btn-google">Log Out</button>
+        </div>
     </div>
-    <div class="login-link" style="margin-top: 10px;">
-      <a href="{{ url_for('google_login')}}" class="btn" style="background-color: #DB4437;">
-        <i class="fab fa-google"></i> Sign up with Google
-      </a>
-    </div>
-  </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Get necessary DOM elements
-      const passwordInput = document.getElementById('password');
-      const confirmPasswordInput = document.getElementById('confirm_password');
-      const messageBox = document.getElementById('messageBox');
-      const signupForm = document.getElementById('signupForm');
-      const fingerprintInputField = document.getElementById('deviceFingerprintData');
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
+            authDomain: "schomart-7a743.firebaseapp.com",
+            projectId: "schomart-7a743",
+            storageBucket: "schomart-7a743.firebasestorage.app",
+            messagingSenderId: "20119186662",
+            appId: "1:20119186662:web:da1755b55dacde4fa6df27",
+            measurementId: "G-9QGL3XHSC7"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-      /**
-       * Shows a message in the custom message box.
-       * @param {string} message - The message to display.
-       */
-      function showMessageBox(message) {
-          messageBox.textContent = message;
-          messageBox.classList.add('show');
-      }
-
-      /**
-       * Hides the custom message box.
-       */
-      function hideMessageBox() {
-          messageBox.classList.remove('show');
-      }
-
-      // Handle form submission
-      signupForm.addEventListener('submit', function(event) {
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
+        // Get DOM elements
+        const signupForm = document.getElementById('signupForm');
+        const loginForm = document.getElementById('loginForm');
+        const changeEmailForm = document.getElementById('changeEmailForm');
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        const uploadForm = document.getElementById('uploadForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authFormsSection = document.getElementById('auth-forms');
+        const profileSection = document.getElementById('profile-section');
+        const uploadStatusEl = document.getElementById('upload-status');
         
-        // Hide any previous message
-        hideMessageBox();
+        // Custom message boxes
+        const msgBoxSignup = document.getElementById('messageBox');
+        const msgBoxLogin = document.getElementById('messageBoxLogin');
+        const msgBoxProfile = document.getElementById('messageBoxProfile');
 
-        // Check if passwords match
-        if (password !== confirmPassword) {
-          event.preventDefault(); // Stop the form from submitting
-          showMessageBox('Passwords do not match.');
-          return; // Exit the function
+        function showMessageBox(box, message, isError = false) {
+            box.textContent = message;
+            box.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+            box.style.color = isError ? '#721c24' : '#155724';
+            box.style.borderColor = isError ? '#f5c6cb' : '#c3e6cb';
+            box.classList.add('show');
+        }
+        function hideMessageBox(box) {
+            box.classList.remove('show');
+        }
+        function toggleForm(section) {
+            document.getElementById('signup-section').classList.add('hidden');
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('profile-section').classList.add('hidden');
+            if (section === 'signup') {
+                document.getElementById('signup-section').classList.remove('hidden');
+            } else if (section === 'login') {
+                document.getElementById('login-section').classList.remove('hidden');
+            } else if (section === 'profile') {
+                document.getElementById('profile-section').classList.remove('hidden');
+            }
         }
         
-        // Check for password length
-        if (password.length < 7) {
-          event.preventDefault(); // Stop the form from submitting
-          showMessageBox('Password must be at least 7 characters long.');
-          return; // Exit the function
-        }
-        
-        // All checks passed, form will now submit
-      });
-      
-      // 1. Device Fingerprinting (on page load)
-      if (fingerprintInputField) {
-        FingerprintJS.load()
-          .then(fp => fp.get())
-          .then(result => {
-            const components = result.components;
-            const fingerprintData = {
-              userAgent: components.userAgent.value,
-              screenResolution: components.screenResolution.value,
-              canvas: components.canvas.value,
-              webgl: components.webgl.value,
-              fonts: components.fonts.value,
-              timezone: components.timezone.value,
-              platform: components.platform.value,
-            };
-            fingerprintInputField.value = JSON.stringify(fingerprintData);
-            console.log('Device Fingerprint captured.');
-          })
-          .catch(error => {
-            console.error('FingerprintJS error:', error);
-          });
-      }
+        // Listen for authentication state changes
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                toggleForm('profile');
+                try {
+                    const profileDoc = await db.collection('users').doc(user.uid).get();
+                    const userData = profileDoc.data();
+                    document.getElementById('profile-username').textContent = userData ? userData.username : 'N/A';
+                    document.getElementById('profile-email').textContent = user.email;
+                    document.getElementById('profile-verified').textContent = user.emailVerified ? 'Yes ✅' : 'No ❌ (Please verify your email)';
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                toggleForm('signup');
+            }
+        });
 
-      // 2. Flash Message Fade Out
-      const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        setTimeout(() => {
-          alert.style.opacity = '0';
-          setTimeout(() => alert.remove(), 500);
-        }, 5000);
-      });
-    });
-  </script>
+        // 1. SIGNUP Functionality
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('signup-username').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            hideMessageBox(msgBoxSignup);
+
+            if (password.length < 7) {
+                showMessageBox(msgBoxSignup, 'Password must be at least 7 characters long.', true);
+                return;
+            }
+            if (password !== confirmPassword) {
+                showMessageBox(msgBoxSignup, 'Passwords do not match.', true);
+                return;
+            }
+
+            try {
+                // Call backend API for user creation
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, username })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Firebase Auth sends verification email automatically on new user creation
+                    showMessageBox(msgBoxSignup, 'Account created successfully. Please check your inbox for a verification email.');
+                    auth.signOut(); // Log out the user until they verify
+                } else {
+                    showMessageBox(msgBoxSignup, `Error: ${data.error}`, true);
+                }
+            } catch (error) {
+                showMessageBox(msgBoxSignup, `Error creating account: ${error.message}`, true);
+                console.error("Signup error:", error);
+            }
+        });
+
+        // 2. LOGIN Functionality
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            hideMessageBox(msgBoxLogin);
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                if (!user.emailVerified) {
+                    showMessageBox(msgBoxLogin, 'Please verify your email address before logging in.', true);
+                    auth.signOut();
+                    return;
+                }
+                
+                // Get ID token to send to backend
+                const idToken = await user.getIdToken();
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showMessageBox(msgBoxLogin, `Welcome back, ${data.username}!`);
+                } else {
+                    showMessageBox(msgBoxLogin, `Login failed: ${data.error}`, true);
+                    auth.signOut(); // Log out user if backend validation fails
+                }
+
+            } catch (error) {
+                showMessageBox(msgBoxLogin, `Login failed: ${error.message}`, true);
+                console.error("Login error:", error);
+            }
+        });
+
+        // 3. LOGOUT Functionality
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                showMessageBox(msgBoxLogin, 'You have been logged out.');
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+        });
+
+        // 4. PASSWORD RESET Functionality
+        async function sendPasswordReset() {
+            const email = prompt('Please enter your email address to reset your password:');
+            if (email) {
+                try {
+                    await auth.sendPasswordResetEmail(email);
+                    showMessageBox(msgBoxLogin, 'Password reset email sent! Please check your inbox.');
+                } catch (error) {
+                    showMessageBox(msgBoxLogin, `Error: ${error.message}`, true);
+                    console.error("Password reset error:", error);
+                }
+            }
+        }
+
+        // 5. UPDATE EMAIL Functionality
+        changeEmailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEmail = document.getElementById('new-email').value;
+            const user = auth.currentUser;
+            if (!user) {
+                showMessageBox(msgBoxProfile, "You must be logged in to change your email.", true);
+                return;
+            }
+
+            try {
+                const idToken = await user.getIdToken();
+                const response = await fetch('/api/update-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, newEmail })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Trigger email verification on the frontend after a successful backend update
+                    await user.sendEmailVerification();
+                    showMessageBox(msgBoxProfile, 'Email updated successfully. A verification email has been sent to your new address.');
+                } else {
+                    showMessageBox(msgBoxProfile, `Error: ${data.error}`, true);
+                }
+            } catch (error) {
+                showMessageBox(msgBoxProfile, `Error updating email: ${error.message}`, true);
+                console.error("Update email error:", error);
+            }
+        });
+        
+        // 6. UPDATE PASSWORD Functionality
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('new-password').value;
+            const user = auth.currentUser;
+            if (!user) {
+                showMessageBox(msgBoxProfile, "You must be logged in to change your password.", true);
+                return;
+            }
+
+            try {
+                const idToken = await user.getIdToken();
+                const response = await fetch('/api/update-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken, newPassword })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showMessageBox(msgBoxProfile, 'Password updated successfully!');
+                } else {
+                    showMessageBox(msgBoxProfile, `Error: ${data.error}`, true);
+                }
+            } catch (error) {
+                showMessageBox(msgBoxProfile, `Error updating password: ${error.message}`, true);
+                console.error("Update password error:", error);
+            }
+        });
+
+        // 7. FILE UPLOAD to Cloud Storage Functionality
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-upload');
+            const file = fileInput.files[0];
+            const user = auth.currentUser;
+
+            if (!user) {
+                uploadStatusEl.textContent = 'You must be logged in to upload files.';
+                uploadStatusEl.style.color = 'red';
+                return;
+            }
+            if (!file) {
+                uploadStatusEl.textContent = 'Please select a file to upload.';
+                uploadStatusEl.style.color = 'red';
+                return;
+            }
+
+            uploadStatusEl.textContent = 'Uploading...';
+            uploadStatusEl.style.color = 'black';
+
+            try {
+                const idToken = await user.getIdToken();
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('file_type', 'profile'); // You can change this to 'cover', 'media', etc.
+
+                const response = await fetch('/api/upload-file', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${idToken}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    uploadStatusEl.textContent = 'File uploaded successfully! URL: ' + data.file_url;
+                    uploadStatusEl.style.color = 'green';
+                } else {
+                    uploadStatusEl.textContent = 'Upload failed: ' + data.error;
+                    uploadStatusEl.style.color = 'red';
+                }
+            } catch (error) {
+                uploadStatusEl.textContent = 'An unexpected error occurred during upload.';
+                uploadStatusEl.style.color = 'red';
+                console.error('Upload error:', error);
+            }
+        });
+    </script>
 </body>
 </html>
