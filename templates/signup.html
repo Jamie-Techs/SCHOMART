@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Your Account</title>
 
+  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- FingerprintJS for device fingerprinting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
 
   <style>
+    /* Basic Page and Container Styling */
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
@@ -34,6 +36,7 @@
       margin-bottom: 25px;
     }
 
+    /* Form Element Styling */
     .form-group {
       margin-bottom: 18px;
     }
@@ -53,6 +56,7 @@
       font-size: 15px;
     }
 
+    /* Button Styling */
     .btn {
       width: 100%;
       padding: 12px;
@@ -66,15 +70,11 @@
       transition: background-color 0.3s ease;
     }
 
-    .btn:hover:not(:disabled) {
+    .btn:hover {
       background-color: #004d2a;
     }
-    
-    .btn:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
 
+    /* Link Styling */
     .login-link {
       text-align: center;
       margin-top: 15px;
@@ -90,7 +90,7 @@
       text-decoration: underline;
     }
 
-    /* Flash message styling */
+    /* Flash Message Styling (for server-side messages) */
     .alert {
       padding: 15px 20px;
       margin: 20px auto;
@@ -111,28 +111,6 @@
       border: 1px solid #f5c6cb;
     }
 
-    .alert.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .alert.info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-
-    .alert.warning {
-      background-color: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeeba;
-    }
-
-    .alert-icon {
-      font-size: 1.2em;
-    }
-
     /* Honeypot trap for bots */
     .honeypot-trap {
       position: absolute;
@@ -145,42 +123,43 @@
       z-index: -1;
     }
 
-    /* Password criteria styling */
-    .password-criteria li {
-  color: #a94442;
-  margin-bottom: 5px;
-  font-size: 14px;
-  transition: color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0.7;
-}
+    /* New password info box styling */
+    .password-info-box {
+      background-color: #f0f0f0;
+      border: 0.5px solid #ddd;
+      border-radius: 6px;
+      padding: 6px;
+      margin-top: -10px;
+      margin-bottom: 10px;
+      font-size: 0.5em;
+      color: #FF0000;
+    }
 
-.password-criteria li.valid {
-  color: #28a745;
-  transform: scale(1.2);
-  opacity: 1;
-}
+    /* Custom message box for client-side validation */
+    #messageBox {
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      display: none; /* Initially hidden */
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      text-align: center;
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
 
-.password-criteria li:not(.valid) {
-  transform: scale(1);
-}
-
-.password-criteria li i {
-  margin-right: 8px;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
-
-.password-criteria li.valid i {
-  color: #28a745;
-}
-
-.password-criteria li:not(.valid) i {
-  color: #a94442;
-}
+    #messageBox.show {
+      display: block;
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div id="loader" style="display:none;"></div>
 
+  <!-- Flash messages from server-side -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
@@ -200,40 +179,45 @@
 
   <div class="signup-container">
     <h2>Create Your Account</h2>
+    <!-- Custom message box for client-side errors -->
+    <div id="messageBox"></div>
+
     <form id="signupForm" method="POST" action="{{ url_for('signup')}}">
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="username" required>
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
       </div>
       <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" name="email" required>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required>
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" id="password" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
       </div>
-      <ul id="password-criteria" class="password-criteria">
-        <li id="length-check"><i class="fas fa-times-circle"></i> At least 7 characters</li>
-        <li id="lowercase-check"><i class="fas fa-times-circle"></i> At least one lowercase letter</li>
-        <li id="uppercase-check"><i class="fas fa-times-circle"></i> At least one uppercase letter</li>
-        <li id="number-check"><i class="fas fa-times-circle"></i> At least one number</li>
-        <li id="special-check"><i class="fas fa-times-circle"></i> At least one special character</li>
-      </ul>
+
+      <!-- Password Info Box -->
+      <div class="password-info-box">
+          
+          <p>Your password must be at least 7 characters long.</p>
+      </div>
+
       <div class="form-group">
-        <label>Confirm Password</label>
-        <input type="password" name="confirm_password" id="confirm_password" required>
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
       </div>
       
       <input type="hidden" name="referrer" value="{{ referrer}}">
       <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
 
+      <!-- Honeypot trap to catch bots -->
       <div class="honeypot-trap">
         <label for="honeypot_field">Leave this field blank:</label>
         <input type="text" id="honeypot_field" name="honeypot_field" autocomplete="off" tabindex="-1">
       </div>
 
-      <button type="submit" class="btn" id="signupBtn" disabled>Sign Up</button>
+      <!-- Button is no longer disabled by default -->
+      <button type="submit" class="btn" id="signupBtn">Sign Up</button>
     </form>
 
     <div class="login-link">
@@ -248,8 +232,55 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Device Fingerprinting
+      // Get necessary DOM elements
+      const passwordInput = document.getElementById('password');
+      const confirmPasswordInput = document.getElementById('confirm_password');
+      const messageBox = document.getElementById('messageBox');
+      const signupForm = document.getElementById('signupForm');
       const fingerprintInputField = document.getElementById('deviceFingerprintData');
+
+      /**
+       * Shows a message in the custom message box.
+       * @param {string} message - The message to display.
+       */
+      function showMessageBox(message) {
+          messageBox.textContent = message;
+          messageBox.classList.add('show');
+      }
+
+      /**
+       * Hides the custom message box.
+       */
+      function hideMessageBox() {
+          messageBox.classList.remove('show');
+      }
+
+      // Handle form submission
+      signupForm.addEventListener('submit', function(event) {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        // Hide any previous message
+        hideMessageBox();
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+          event.preventDefault(); // Stop the form from submitting
+          showMessageBox('Passwords do not match.');
+          return; // Exit the function
+        }
+        
+        // Check for password length
+        if (password.length < 7) {
+          event.preventDefault(); // Stop the form from submitting
+          showMessageBox('Password must be at least 7 characters long.');
+          return; // Exit the function
+        }
+        
+        // All checks passed, form will now submit
+      });
+      
+      // 1. Device Fingerprinting (on page load)
       if (fingerprintInputField) {
         FingerprintJS.load()
           .then(fp => fp.get())
@@ -279,61 +310,6 @@
           alert.style.opacity = '0';
           setTimeout(() => alert.remove(), 500);
         }, 5000);
-      });
-
-      // 3. Password Validation and Button Control
-      const passwordInput = document.getElementById('password');
-      const confirmPasswordInput = document.getElementById('confirm_password');
-      const signupBtn = document.getElementById('signupBtn');
-      const criteria = {
-        length: document.getElementById('length-check'),
-        lowercase: document.getElementById('lowercase-check'),
-        uppercase: document.getElementById('uppercase-check'),
-        number: document.getElementById('number-check'),
-        special: document.getElementById('special-check'),
-      };
-
-      const validatePassword = () => {
-        const password = passwordInput.value;
-        
-        const isLengthValid = password.length >= 7;
-        const hasLowercase = /[a-z]/.test(password);
-        const hasUppercase = /[A-Z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
-        const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
-
-        // Update list item styling and icon
-        function updateCriteria(element, isValid) {
-          element.classList.toggle('valid', isValid);
-          const icon = element.querySelector('i');
-          icon.classList.toggle('fa-check-circle', isValid);
-          icon.classList.toggle('fa-times-circle', !isValid);
-        }
-
-        updateCriteria(criteria.length, isLengthValid);
-        updateCriteria(criteria.lowercase, hasLowercase);
-        updateCriteria(criteria.uppercase, hasUppercase);
-        updateCriteria(criteria.number, hasNumber);
-        updateCriteria(criteria.special, hasSpecial);
-
-        // Check if all criteria are met and enable/disable button
-        const allCriteriaMet = isLengthValid && hasLowercase && hasUppercase && hasNumber && hasSpecial;
-        const passwordsMatch = password === confirmPasswordInput.value && password !== '';
-        
-        signupBtn.disabled = !(allCriteriaMet && passwordsMatch);
-      };
-
-      // Add event listeners for validation
-      passwordInput.addEventListener('input', validatePassword);
-      confirmPasswordInput.addEventListener('input', validatePassword);
-
-      // 4. Form Submission
-      const form = document.getElementById('signupForm');
-      form.addEventListener('submit', function(event) {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-          event.preventDefault(); // Stop the form from submitting
-          alert('Passwords do not match.');
-        }
       });
     });
   </script>
