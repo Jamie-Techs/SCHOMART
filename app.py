@@ -103,8 +103,6 @@ try:
     cred = credentials.Certificate(temp_path)
     initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
     admin_db = admin_firestore.client()
-    gcp_credentials = service_account.Credentials.from_service_account_info(json.loads(raw_json))
-    gcp_db = gcp_firestore.Client(credentials=gcp_credentials)
     
     # Initialize Cloud Storage
     cloud_storage = storage.bucket()
@@ -525,23 +523,6 @@ def load_user(user_id):
     logging.info(f"Attempting to load user with ID: {user_id}")
     return User.get(user_id)
 
-
-
-
-
-
-# --- Google OAuth Setup ---
-google = oauth.register(
-    name='google',
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    access_token_url='https://oauth2.googleapis.com/token',
-    access_token_params=None,
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    authorize_params=None,
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    client_kwargs={'scope': 'openid email profile'}
-)
 
 
 
@@ -8207,6 +8188,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
