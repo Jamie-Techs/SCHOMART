@@ -3,236 +3,89 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Firebase Auth & Firestore</title>
+    <title>Schomart - Login/Signup</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-storage-compat.js"></script>
-
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            width: 100%;
-            max-width: 500px;
-            margin: 50px auto;
-            background-color: #fff;
-            border: 2px solid #006B3C;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        h2 {
-            color: #006B3C;
-            margin-bottom: 25px;
-        }
-        h3 {
-            color: #FDB813;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-        .form-group {
-            margin-bottom: 18px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #00391F;
-            text-align: left;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #006B3C;
-            color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .btn:hover {
-            background-color: #004d2a;
-        }
-        .btn-google {
-            background-color: #DB4437;
-        }
-        .btn-secondary {
-            background-color: #fff;
-            color: #006B3C;
-            border: 1px solid #006B3C;
-            margin-top: 10px;
-        }
-        .link-text {
-            font-size: 0.9em;
-            margin-top: 10px;
-            cursor: pointer;
-            color: #006B3C;
-            text-decoration: underline;
-        }
-        #messageBox {
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            text-align: center;
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
-        #messageBox.show {
-            display: block;
-            opacity: 1;
-        }
-        .hidden {
-            display: none;
-        }
-        .profile-card {
-            padding: 20px;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: left;
-        }
-        .profile-card p {
-            margin: 5px 0;
-            font-size: 1.1em;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { width: 100%; max-width: 500px; margin: 50px auto; background-color: #fff; border: 2px solid #006B3C; border-radius: 10px; padding: 30px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); text-align: center; }
+        h2 { color: #006B3C; margin-bottom: 25px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 6px; color: #00391F; text-align: left; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        .btn { width: 100%; padding: 12px; background-color: #006B3C; color: white; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background-color 0.3s ease; margin-top: 10px; }
+        .btn:hover { background-color: #004d2a; }
+        .link-text { font-size: 0.9em; margin-top: 10px; cursor: pointer; color: #006B3C; text-decoration: underline; }
+        #messageBox { padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9em; display: none; opacity: 0; transition: opacity 0.3s ease-in-out; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        #messageBox.show { display: block; opacity: 1; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="auth-forms">
-            <div id="signup-section">
-                <h2>Create Your Account</h2>
-                <div id="messageBox"></div>
-                <form id="signupForm">
-                    <div class="form-group">
-                        <label for="signup-username">Username</label>
-                        <input type="text" id="signup-username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-email">Email Address</label>
-                        <input type="email" id="signup-email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-password">Password</label>
-                        <input type="password" id="signup-password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signup-confirm-password">Confirm Password</label>
-                        <input type="password" id="signup-confirm-password" required>
-                    </div>
-                    <button type="submit" class="btn">Sign Up</button>
-                </form>
-                <p class="link-text" onclick="toggleForm('login')">Already have an account? Log in here.</p>
-            </div>
-            <div id="login-section" class="hidden">
-                <h2>Log In</h2>
-                <div id="messageBoxLogin"></div>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="login-email">Email Address</label>
-                        <input type="email" id="login-email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="login-password">Password</label>
-                        <input type="password" id="login-password" required>
-                    </div>
-                    <button type="submit" class="btn">Log In</button>
-                </form>
-                <p class="link-text" onclick="toggleForm('signup')">Don't have an account? Sign up here.</p>
-                <p class="link-text" onclick="sendPasswordReset()">Forgot Password?</p>
-            </div>
+        <div id="signup-section">
+            <h2>Create Your Account</h2>
+            <div id="messageBox"></div>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signup-username">Username</label>
+                    <input type="text" id="signup-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email Address</label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" required>
+                </div>
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+            <p class="link-text" onclick="showSection('login-section')">Already have an account? Log in here.</p>
         </div>
-        <div id="profile-section" class="hidden">
-            <h2>Welcome!</h2>
-            <div id="messageBoxProfile"></div>
-            <div class="profile-card">
-                <p><strong>Username:</strong> <span id="profile-username"></span></p>
-                <p><strong>Email:</strong> <span id="profile-email"></span></p>
-                <p><strong>Email Verified:</strong> <span id="profile-verified"></span></p>
-            </div>
-            <h3>Account Settings</h3>
-            <form id="changeEmailForm">
+        <div id="login-section" class="hidden">
+            <h2>Log In</h2>
+            <div id="messageBoxLogin"></div>
+            <form id="loginForm">
                 <div class="form-group">
-                    <label for="new-email">New Email</label>
-                    <input type="email" id="new-email" required>
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" required>
                 </div>
-                <button type="submit" class="btn btn-secondary">Update Email</button>
-            </form>
-            <form id="changePasswordForm" style="margin-top: 20px;">
                 <div class="form-group">
-                    <label for="new-password">New Password</label>
-                    <input type="password" id="new-password" required>
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required>
                 </div>
-                <button type="submit" class="btn btn-secondary">Update Password</button>
+                <button type="submit" class="btn">Log In</button>
             </form>
-            
-            <h3>Upload Media to Cloud Storage</h3>
-            <form id="uploadForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="file-upload">Select File to Upload</label>
-                    <input type="file" id="file-upload" required>
-                </div>
-                <button type="submit" class="btn">Upload File</button>
-            </form>
-            <div id="upload-status" style="margin-top: 10px;"></div>
-
-            <button id="logoutBtn" class="btn btn-google">Log Out</button>
+            <p class="link-text" onclick="showSection('signup-section')">Don't have an account? Sign up here.</p>
+            <p class="link-text" onclick="sendPasswordReset()">Forgot Password?</p>
         </div>
     </div>
-
     <script>
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
             authDomain: "schomart-7a743.firebaseapp.com",
             projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.appspot.com", // Corrected storage bucket
+            storageBucket: "schomart-7a743.appspot.com", 
             messagingSenderId: "20119186662",
             appId: "1:20119186662:web:da1755b55dacde4fa6df27",
             measurementId: "G-9QGL3XHSC7"
         };
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage(); // Initialize storage
+        const db = firebase.firestore(); 
 
-        // Get DOM elements
         const signupForm = document.getElementById('signupForm');
         const loginForm = document.getElementById('loginForm');
-        const changeEmailForm = document.getElementById('changeEmailForm');
-        const changePasswordForm = document.getElementById('changePasswordForm');
-        const uploadForm = document.getElementById('uploadForm');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const authFormsSection = document.getElementById('auth-forms');
-        const profileSection = document.getElementById('profile-section');
-        const uploadStatusEl = document.getElementById('upload-status');
-        
-        // Custom message boxes
         const msgBoxSignup = document.getElementById('messageBox');
         const msgBoxLogin = document.getElementById('messageBoxLogin');
-        const msgBoxProfile = document.getElementById('messageBoxProfile');
 
         function showMessageBox(box, message, isError = false) {
             box.textContent = message;
@@ -244,38 +97,20 @@
         function hideMessageBox(box) {
             box.classList.remove('show');
         }
-        function toggleForm(section) {
+        function showSection(sectionId) {
             document.getElementById('signup-section').classList.add('hidden');
             document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('profile-section').classList.add('hidden');
-            if (section === 'signup') {
-                document.getElementById('signup-section').classList.remove('hidden');
-            } else if (section === 'login') {
-                document.getElementById('login-section').classList.remove('hidden');
-            } else if (section === 'profile') {
-                document.getElementById('profile-section').classList.remove('hidden');
-            }
+            document.getElementById(sectionId).classList.remove('hidden');
         }
-        
-        // Listen for authentication state changes
+
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                toggleForm('profile');
-                try {
-                    const profileDoc = await db.collection('users').doc(user.uid).get();
-                    const userData = profileDoc.data();
-                    document.getElementById('profile-username').textContent = userData ? userData.username : 'N/A';
-                    document.getElementById('profile-email').textContent = user.email;
-                    document.getElementById('profile-verified').textContent = user.emailVerified ? 'Yes ✅' : 'No ❌ (Please verify your email)';
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                }
+                window.location.href = '/profile';
             } else {
-                toggleForm('signup');
+                showSection('login-section');
             }
         });
 
-        // 1. SIGNUP Functionality
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('signup-username').value;
@@ -296,27 +131,20 @@
             try {
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
-
-                // Send a verification email to the user
                 await user.sendEmailVerification();
-                
-                // Then, save additional user data to Firestore
                 await db.collection('users').doc(user.uid).set({
                     username: username,
                     email: email,
                     created_at: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
                 showMessageBox(msgBoxSignup, 'Account created successfully! Please check your inbox for a verification email.');
-                auth.signOut(); // Log out the user until they verify
-                
+                auth.signOut();
             } catch (error) {
                 showMessageBox(msgBoxSignup, `Error creating account: ${error.message}`, true);
                 console.error("Signup error:", error);
             }
         });
 
-        // 2. LOGIN Functionality
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
@@ -326,34 +154,19 @@
             try {
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
-
                 if (!user.emailVerified) {
                     showMessageBox(msgBoxLogin, 'Please verify your email address before logging in. A new verification link has been sent to your email.', true);
-                    await user.sendEmailVerification(); // Send verification link again
+                    await user.sendEmailVerification();
                     auth.signOut();
                     return;
                 }
-                
-                // On successful login, you might want to redirect or update the UI
-                showMessageBox(msgBoxLogin, `Welcome back!`);
-
+                window.location.href = '/profile';
             } catch (error) {
                 showMessageBox(msgBoxLogin, `Login failed: ${error.message}`, true);
                 console.error("Login error:", error);
             }
         });
 
-        // 3. LOGOUT Functionality
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-                showMessageBox(msgBoxLogin, 'You have been logged out.');
-            } catch (error) {
-                console.error("Logout error:", error);
-            }
-        });
-
-        // 4. PASSWORD RESET Functionality
         async function sendPasswordReset() {
             const email = prompt('Please enter your email address to reset your password:');
             if (email) {
@@ -366,83 +179,6 @@
                 }
             }
         }
-
-        // 5. UPDATE EMAIL Functionality
-        changeEmailForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newEmail = document.getElementById('new-email').value;
-            const user = auth.currentUser;
-            if (!user) {
-                showMessageBox(msgBoxProfile, "You must be logged in to change your email.", true);
-                return;
-            }
-
-            try {
-                await user.updateEmail(newEmail);
-                await user.sendEmailVerification();
-                
-                // You may also want to update Firestore here
-                const userRef = db.collection('users').doc(user.uid);
-                await userRef.update({ email: newEmail });
-
-                showMessageBox(msgBoxProfile, 'Email updated successfully. A verification email has been sent to your new address.');
-            } catch (error) {
-                showMessageBox(msgBoxProfile, `Error updating email: ${error.message}`, true);
-                console.error("Update email error:", error);
-            }
-        });
-        
-        // 6. UPDATE PASSWORD Functionality
-        changePasswordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newPassword = document.getElementById('new-password').value;
-            const user = auth.currentUser;
-            if (!user) {
-                showMessageBox(msgBoxProfile, "You must be logged in to change your password.", true);
-                return;
-            }
-
-            try {
-                await user.updatePassword(newPassword);
-                showMessageBox(msgBoxProfile, 'Password updated successfully!');
-            } catch (error) {
-                showMessageBox(msgBoxProfile, `Error updating password: ${error.message}`, true);
-                console.error("Update password error:", error);
-            }
-        });
-
-        // 7. FILE UPLOAD to Cloud Storage Functionality
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fileInput = document.getElementById('file-upload');
-            const file = fileInput.files[0];
-            const user = auth.currentUser;
-
-            if (!user) {
-                showMessageBox(msgBoxProfile, 'You must be logged in to upload files.', true);
-                return;
-            }
-            if (!file) {
-                showMessageBox(msgBoxProfile, 'Please select a file to upload.', true);
-                return;
-            }
-
-            uploadStatusEl.textContent = 'Uploading...';
-            uploadStatusEl.style.color = 'black';
-
-            try {
-                const storageRef = storage.ref(`users/${user.uid}/uploads/${file.name}`);
-                const snapshot = await storageRef.put(file);
-                const downloadURL = await snapshot.ref.getDownloadURL();
-                
-                uploadStatusEl.textContent = 'File uploaded successfully! URL: ' + downloadURL;
-                uploadStatusEl.style.color = 'green';
-            } catch (error) {
-                uploadStatusEl.textContent = 'An unexpected error occurred during upload.';
-                uploadStatusEl.style.color = 'red';
-                console.error('Upload error:', error);
-            }
-        });
     </script>
 </body>
 </html>
