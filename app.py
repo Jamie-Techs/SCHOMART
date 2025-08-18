@@ -558,22 +558,6 @@ def generate_referral_code(length=8):
 
 
 
-import os
-import requests
-import logging
-from flask import (
-    Flask,
-    request,
-    render_template,
-    redirect,
-    url_for,
-    flash,
-    current_app,
-)
-# ... other imports from your original app.py
-
-# Assume other functions like is_valid_email, is_strong_password,
-# and send_verification_email are defined elsewhere.
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -582,52 +566,35 @@ def signup():
     if current_user.is_authenticated:
         return redirect(url_for('profile'))
 
-    # Load recaptcha_site_key for GET and POST requests
-    recaptcha_site_key = os.getenv('RECAPTCHA_SITE_KEY')
-
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         honeypot_field = request.form.get('honeypot_field')
-        recaptcha_token = request.form.get('recaptcha_token')
 
         # Honeypot trap
         if honeypot_field:
             logging.warning("Honeypot field filled. Bot suspected.")
             flash("Suspicious activity detected.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
 
         # Basic input validation
         if not username or not email or not password or not confirm_password:
             flash("All fields are required.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
 
         if not is_valid_email(email):
             flash("Please enter a valid email address.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
 
         if not is_strong_password(password):
             flash("Password is not strong enough. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
 
         if password != confirm_password:
             flash("Passwords do not match.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
-
-        # reCAPTCHA validation
-        if not recaptcha_token:
-            flash("CAPTCHA token missing. Please refresh and try again.", "error")
-            logging.warning("No reCAPTCHA token received.")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
-        
-        recaptcha_success, error_message = verify_recaptcha_v3(recaptcha_token, action='signup')
-        
-        if not recaptcha_success:
-            flash(f"CAPTCHA verification failed: {error_message}. Please try again.", "error")
-            logging.error(f"reCAPTCHA verification failed with message: {error_message}")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
         
         # All validations passed, proceed with user creation
         try:
@@ -635,7 +602,7 @@ def signup():
             user_doc = admin_db.collection('users').document(email).get()
             if user_doc.exists:
                 flash("An account with this email already exists.", "error")
-                return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+                return render_template('signup.html', referrer=referrer_code)
 
             hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
             activation_token = os.urandom(24).hex()
@@ -655,50 +622,14 @@ def signup():
 
             send_verification_email(email, activation_token)
             flash("Signup successful! Check your email to verify your account.", "success")
-            return redirect(url_for('login')) # Redirect to login after successful signup
+            return redirect(url_for('login'))
         
         except Exception as e:
             logging.error(f"Signup error: {e}")
             flash("Signup failed due to a server error. Please try again.", "error")
-            return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
+            return render_template('signup.html', referrer=referrer_code)
 
-    return render_template('signup.html', referrer=referrer_code, recaptcha_site_key=recaptcha_site_key)
-
-def verify_recaptcha_v3(token, action='signup'):
-    secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
-    payload = {'secret': secret_key, 'response': token}
-    try:
-        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-        r.raise_for_status()  # This will raise an exception for bad status codes
-        result = r.json()
-        
-        # Log the full result for debugging
-        logging.info(f"reCAPTCHA verification result: {result}")
-        
-        if not result.get('success', False):
-            # Google API call failed
-            error_codes = result.get('error-codes', ['Unknown error'])
-            return False, f"API error: {', '.join(error_codes)}"
-
-        # Check score and action
-        score = result.get('score', 0)
-        api_action = result.get('action')
-        threshold = 0.5  # You can adjust this threshold
-        
-        if api_action != action:
-            return False, f"Action mismatch. Expected '{action}', got '{api_action}'."
-        
-        if score < threshold:
-            return False, f"Low score ({score}). Bot suspected."
-        
-        return True, "Verification successful."
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"reCAPTCHA network error: {e}")
-        return False, f"Network error: {e}"
-    except Exception as e:
-        logging.error(f"reCAPTCHA verification exception: {e}")
-        return False, f"Internal server error: {e}"
+    return render_template('signup.html', referrer=referrer_code)
 
 
 
@@ -758,7 +689,45 @@ def google_authorized():
         return redirect(url_for('login'))
     
     
-    
+
+def verify_recaptcha_v3(token, action='signup'):
+    secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
+    payload = {'secret': secret_key, 'response': token}
+    try:
+        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
+        r.raise_for_status()  # This will raise an exception for bad status codes
+        result = r.json()
+        
+        # Log the full result for debugging
+        logging.info(f"reCAPTCHA verification result: {result}")
+        
+        if not result.get('success', False):
+            # Google API call failed
+            error_codes = result.get('error-codes', ['Unknown error'])
+            return False, f"API error: {', '.join(error_codes)}"
+
+        # Check score and action
+        score = result.get('score', 0)
+        api_action = result.get('action')
+        threshold = 0.5  # You can adjust this threshold
+        
+        if api_action != action:
+            return False, f"Action mismatch. Expected '{action}', got '{api_action}'."
+        
+        if score < threshold:
+            return False, f"Low score ({score}). Bot suspected."
+        
+        return True, "Verification successful."
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"reCAPTCHA network error: {e}")
+        return False, f"Network error: {e}"
+    except Exception as e:
+        logging.error(f"reCAPTCHA verification exception: {e}")
+        return False, f"Internal server error: {e}"
+
+
+
     
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -8457,6 +8426,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
