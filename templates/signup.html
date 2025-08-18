@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,24 +146,36 @@
     }
 
     /* Password criteria styling */
-    .password-criteria {
-        list-style-type: none;
-        padding: 0;
-        margin-top: -10px;
-        margin-bottom: 10px;
-    }
     .password-criteria li {
-        color: #dc3545; /* Red for not fulfilled */
-        font-size: 0.9em;
-        margin-bottom: 5px;
-        transition: color 0.3s ease;
-    }
-    .password-criteria li.valid {
-        color: #28a745; /* Green for fulfilled */
-    }
-    .password-criteria i {
-        margin-right: 5px;
-    }
+  color: #a94442;
+  margin-bottom: 5px;
+  font-size: 14px;
+  transition: color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.7;
+}
+
+.password-criteria li.valid {
+  color: #28a745;
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+.password-criteria li:not(.valid) {
+  transform: scale(1);
+}
+
+.password-criteria li i {
+  margin-right: 8px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.password-criteria li.valid i {
+  color: #28a745;
+}
+
+.password-criteria li:not(.valid) i {
+  color: #a94442;
+}
   </style>
 </head>
 <body>
