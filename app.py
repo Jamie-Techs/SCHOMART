@@ -68,6 +68,8 @@ import re
 from google.cloud import firestore as gcp_firestore
 from google.oauth2 import service_account
 from firebase_admin import credentials, firestore as admin_firestore, initialize_app
+
+
 # Load environment variables
 load_dotenv()
 
@@ -84,17 +86,30 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'warning'
 oauth = OAuth(app)
 
-# 🔐 Secure Firebase Admin initialization
-cred_dict = json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"])
-cred = credentials.Certificate(cred_dict)
-initialize_app(cred)
+# 🔐 Secure Firebase Admin initialization using temp file
+try:
+    raw_json = os.environ["FIREBASE_CREDENTIALS_JSON"]
 
-# Firebase Admin Firestore client
-admin_db = admin_firestore.client()
+    # Write JSON to a temporary file
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
+        temp.write(raw_json)
+        temp.flush()
+        temp_path = temp.name
 
-# Google Cloud Firestore client (using same credentials)
-gcp_credentials = service_account.Credentials.from_service_account_info(cred_dict)
-gcp_db = gcp_firestore.Client(credentials=gcp_credentials)
+    # Initialize Firebase Admin SDK using the temp file
+    cred = credentials.Certificate(temp_path)
+    initialize_app(cred)
+    admin_db = admin_firestore.client()
+
+    # Load credentials again for GCP Firestore
+    cred_dict = json.loads(raw_json)
+    gcp_credentials = service_account.Credentials.from_service_account_info(cred_dict)
+    gcp_db = gcp_firestore.Client(credentials=gcp_credentials)
+
+except Exception as e:
+    logging.error(f"Failed to initialize Firebase: {e}")
+    raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+
 # Logging
 logger = logging.getLogger(__name__)
 
@@ -8538,6 +8553,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
