@@ -89,6 +89,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'warning'
 oauth = OAuth(app)
+socketio = SocketIO(app)
+
 
 try:
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
@@ -8188,6 +8190,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
