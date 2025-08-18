@@ -743,100 +743,6 @@ def activate_account(token):
 
 
 
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Handles user login."""
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-
-    if request.method == 'POST':
-        username_or_email = request.form.get('username_or_email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-        
-        try:
-            # First, try to fetch by email (which is also the document ID)
-            user_doc = admin_db.collection('users').document(username_or_email).get()
-            
-            if not user_doc.exists:
-                # If not found by email, try to find by username
-                user_query = admin_db.collection('users').where(filter=firestore.FieldFilter('username', '==', username_or_email)).limit(1)
-                user_docs = user_query.get()
-                if not user_docs:
-                    flash('Incorrect credentials.', 'error')
-                    return render_template('login.html')
-                user_doc = user_docs[0]
-
-            user_data = user_doc.to_dict()
-
-            if user_data.get('auth_provider') != 'local':
-                flash("Please use your Google account to log in.", "warning")
-                return redirect(url_for('login'))
-                
-            if not user_data.get('is_verified', False):
-                flash("Your email is not verified. Check your inbox for the verification link.", "warning")
-                return redirect(url_for('login'))
-
-            if check_password_hash(user_data['password_hash'], password):
-                # The crucial part: Call login_user with a valid User object
-                login_user(User(user_doc.id, is_verified=True))
-                flash('Logged in successfully!', 'success')
-                return redirect(url_for('profile'))
-            else:
-                flash('Incorrect credentials.', 'error')
-
-        except Exception as e:
-            logging.error(f"Login error: {e}")
-            flash("An error occurred during login. Please try again.", "error")
-    
-    return render_template('login.html')
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    """Handles user registration by creating a temporary pending account."""
-    referrer_code = request.args.get('ref')
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        honeypot_field = request.form.get('honeypot_field')
-
-        if honeypot_field:
-            logging.warning("Honeypot field filled. Bot suspected.")
-            flash("Suspicious activity detected.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not all([username, email, password, confirm_password]):
-            flash("All fields are required.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not is_valid_email(email):
-            flash("Please enter a valid email address.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        # Check password strength on the server side
-        if not is_strong_password(password):
-            flash("Password is not strong enough. Please meet all criteria.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if password != confirm_password:
-            flash("Passwords do not match.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        try:
-            user_exists = admin_db.collection('users').document(email).get().exists
-            pending_user_exists = admin_db.collection('pending_users').document(email).get().exists
-            if user_exists or pending_user_exists:
-                flash("An account with this email already exists or is pending verification. Check your inbox.", "warning")
-                return render_template('signup.html', referrer=referrer_code)
-
-            hashed_pw = generate_password_hash(password).decode('utf-8')
-            activation_token = str(uuid.uuid4())
-            token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Handles user login."""
@@ -999,6 +905,10 @@ def verify_account(token):
         flash("An error occurred during verification. Please try again.", "error")
         return redirect(url_for('login'))
 
+
+
+
+        
 
 
 
@@ -8632,6 +8542,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
