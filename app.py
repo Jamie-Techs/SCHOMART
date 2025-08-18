@@ -70,14 +70,18 @@ from google.oauth2 import service_account
 from firebase_admin import credentials, firestore as admin_firestore, initialize_app
 import tempfile
 
-# Load environment variables
+
+ 
+
+# --------------------
+# Firebase Initialization
+# --------------------
+
 load_dotenv()
 
-# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 
-# Initialize extensions
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 login_manager = LoginManager()
@@ -86,141 +90,221 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'warning'
 oauth = OAuth(app)
 
-# 🔐 Secure Firebase Admin initialization using temp file
 try:
-    raw_json = os.environ["FIREBASE_CREDENTIALS_JSON"]
+    raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if not raw_json:
+        raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
 
-    # Write JSON to a temporary file
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
         temp.write(raw_json)
         temp.flush()
         temp_path = temp.name
 
-    # Initialize Firebase Admin SDK using the temp file
     cred = credentials.Certificate(temp_path)
-    initialize_app(cred)
+    initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
     admin_db = admin_firestore.client()
-
-    # Load credentials again for GCP Firestore
-    cred_dict = json.loads(raw_json)
-    gcp_credentials = service_account.Credentials.from_service_account_info(cred_dict)
+    gcp_credentials = service_account.Credentials.from_service_account_info(json.loads(raw_json))
     gcp_db = gcp_firestore.Client(credentials=gcp_credentials)
+    
+    # Initialize Cloud Storage
+    cloud_storage = storage.bucket()
 
 except Exception as e:
     logging.error(f"Failed to initialize Firebase: {e}")
     raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+finally:
+    if 'temp_path' in locals() and os.path.exists(temp_path):
+        os.remove(temp_path)
 
-# Logging
 logger = logging.getLogger(__name__)
 
-# SES Configuration
-app.config['SES_REGION'] = os.getenv('SES_REGION', 'us-east-1')
-app.config['SES_SOURCE_EMAIL'] = os.getenv('SES_SOURCE_EMAIL')
-
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
-
-# Note: It's a good practice to use os.path.join to build file paths
-app.config['UPLOAD_FOLDER_PROFILE'] = os.path.join(BASE_DIR, 'static', 'uploads', 'profile_pictures')
-app.config['UPLOAD_FOLDER_COVER'] = os.path.join(BASE_DIR, 'static', 'uploads', 'cover_photos')
-app.config['UPLOAD_FOLDER_MEDIA'] = os.path.join(BASE_DIR, 'static', 'media') # Message attachments (including audio)
-app.config['UPLOAD_FOLDER_ADVERTS'] = os.path.join(BASE_DIR, 'static', 'uploads', 'adverts') # Advert images
-app.config['CONVERT_AUDIO_TO_MP3'] = True # Set to True to enable MP3 conversion
-app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip', 'rar', # Document types
-                                     'png', 'jpg', 'jpeg', 'gif', # Image types
-                                     'mp4', 'webm', 'ogg', # Video types
-                                     'mp3', 'wav'} # Audio types
-
-
-UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'media')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure the upload folder exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-    print(f"Created upload directory: {UPLOAD_FOLDER}") # Optional: for debugging
-
-# Allowed extensions (if needed)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'} # Added mp4 for video
-def allowed_file(filename):
-    """Checks if a file has an allowed extension."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-socketio = SocketIO(app, cors_allowed_origins="*") # Allow all origins for development
-
-
-def get_ses_client():
-    region = os.getenv('SES_REGION', 'us-east-1')
-    return boto3.client('ses', region_name=region)
-
-def generate_token(length=32):
-    """Generate a secure random token."""
-    characters = string.ascii_letters + string.digits
-    return ''.join(random.choices(characters, k=length))
-
-def get_allowed_file_extensions(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+# Note: Local file storage configurations are now obsolete, but kept for context.
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
 
 def allowed_file(filename):
-    return get_allowed_file_extensions(filename)
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
-def get_current_user():
-    user_id = session.get('user_id')
-    if user_id:
-        return User.get(user_id)
-    return None
+# --------------------
+# Firebase Authentication and Firestore API Endpoints
+# --------------------
 
-def save_uploaded_file(file, file_type, user_id):
-    print(f"DIAGNOSTIC: save_uploaded_file called for user_id={user_id}, file_type={file_type}")
+@app.route('/api/signup', methods=['POST'])
+def api_signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    username = data.get('username')
 
-    if not file or file.filename == '':
-        current_app.logger.warning(f"No {file_type} file provided or filename is empty.")
-        flash(f"No {file_type} file selected.", "info")
-        return None
+    if not email or not password or not username:
+        return jsonify({'error': 'Missing email, password, or username'}), 400
 
-    if not get_allowed_file_extensions(file.filename):
-        current_app.logger.warning(f"Invalid file extension for {file_type} file: {file.filename}")
-        flash(f"Invalid file type for {file_type} picture. Allowed: {', '.join(current_app.config['ALLOWED_EXTENSIONS'])}", "warning")
-        return None
-
-    upload_folder_config_key = None
-    if file_type == 'profile':
-        upload_folder_config_key = 'UPLOAD_FOLDER_PROFILE'
-    elif file_type == 'cover':
-        upload_folder_config_key = 'UPLOAD_FOLDER_COVER'
-    elif file_type == 'media':
-        upload_folder_config_key = 'UPLOAD_FOLDER_MEDIA'
-    elif file_type == 'advert_image':
-        upload_folder_config_key = 'UPLOAD_FOLDER_ADVERTS'
-    else:
-        current_app.logger.error(f"Invalid file_type provided to save_uploaded_file: {file_type}")
-        flash("Internal error: Invalid file type specified for upload.", "danger")
-        return None
-
-    if upload_folder_config_key not in current_app.config:
-        current_app.logger.error(f"Upload folder config '{upload_folder_config_key}' not defined in Flask app config.")
-        flash("Internal error: Upload folder not configured.", "danger")
-        return None
-
-    upload_folder = current_app.config[upload_folder_config_key]
-    print(f"DIAGNOSTIC: Determined upload_folder: {upload_folder} based on config key '{upload_folder_config_key}'")
-
-    original_filename = secure_filename(file.filename)
-    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
-    file_path = os.path.join(upload_folder, unique_filename)
-
-    print(f"DIAGNOSTIC: Attempting to save file to: {file_path}")
     try:
-        os.makedirs(upload_folder, exist_ok=True)
-        file.save(file_path)
-        print(f"DIAGNOSTIC: File saved successfully: {unique_filename}")
-        return unique_filename # IMPORTANT: Only return the filename, not a partial path
+        # Create user in Firebase Auth
+        user = auth.create_user(email=email, password=password)
+        
+        # Save additional user data to Firestore
+        user_ref = admin_db.collection('users').document(user.uid)
+        user_ref.set({
+            'username': username,
+            'email': email,
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        # This is where we would send a verification email, but the frontend SDK handles it.
+        # For a backend-only approach, we would use auth.generate_email_verification_link()
+        
+        return jsonify({
+            'message': 'User created successfully.',
+            'uid': user.uid
+        }), 201
+
+    except auth.EmailAlreadyExistsError:
+        return jsonify({'error': 'Email already in use.'}), 409
     except Exception as e:
-        current_app.logger.error(f"Error saving file {unique_filename} to {upload_folder}: {e}", exc_info=True)
-        flash(f"Failed to save {file_type} file due to server error.", "danger")
-        return None
+        logger.error(f"Signup error: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to create user.'}), 500
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    id_token = data.get('idToken')
+
+    if not id_token:
+        return jsonify({'error': 'Missing ID token'}), 400
+
+    try:
+        # Verify the ID token sent from the frontend
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        user_doc = admin_db.collection('users').document(uid).get()
+        
+        if not user_doc.exists:
+            # This is an edge case, but good to handle
+            return jsonify({'error': 'User data not found in Firestore'}), 404
+
+        return jsonify({
+            'message': 'Login successful',
+            'uid': uid,
+            'username': user_doc.get('username')
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Login error: {e}", exc_info=True)
+        return jsonify({'error': 'Invalid ID token'}), 401
+
+
+@app.route('/api/update-password', methods=['POST'])
+def api_update_password():
+    data = request.get_json()
+    id_token = data.get('idToken')
+    new_password = data.get('newPassword')
+
+    if not id_token or not new_password:
+        return jsonify({'error': 'Missing ID token or new password'}), 400
+    
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        
+        auth.update_user(uid, password=new_password)
+        
+        return jsonify({'message': 'Password updated successfully'}), 200
+        
+    except auth.AuthError as e:
+        logger.error(f"Password update error: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to update password'}), 400
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/update-email', methods=['POST'])
+def api_update_email():
+    data = request.get_json()
+    id_token = data.get('idToken')
+    new_email = data.get('newEmail')
+
+    if not id_token or not new_email:
+        return jsonify({'error': 'Missing ID token or new email'}), 400
+
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        
+        auth.update_user(uid, email=new_email)
+
+        # Update Firestore as well for data consistency
+        user_ref = admin_db.collection('users').document(uid)
+        user_ref.update({'email': new_email})
+        
+        # Note: The email verification link is usually sent by the frontend SDK
+        # after a successful update, or you can send it from here as well.
+        # auth.generate_email_verification_link()
+
+        return jsonify({'message': 'Email updated successfully'}), 200
+
+    except auth.EmailAlreadyExistsError:
+        return jsonify({'error': 'This email is already in use by another account'}), 409
+    except auth.AuthError as e:
+        logger.error(f"Email update error: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to update email'}), 400
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}", exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+# --------------------
+# Cloud Storage File Upload API Endpoint
+# --------------------
+
+@app.route('/api/upload-file', methods=['POST'])
+def api_upload_file():
+    # Example to get ID token from headers (best practice)
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    id_token = auth_header.split('Bearer ')[1]
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+    
+    file = request.files['file']
+    file_type = request.form.get('file_type', 'media') # Default to media
+    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+            original_filename = secure_filename(file.filename)
+            file_extension = os.path.splitext(original_filename)[1]
+            unique_filename = f"{uid}/{file_type}/{uuid.uuid4().hex}{file_extension}"
+            
+            # Create a blob and upload the file
+            blob = cloud_storage.blob(unique_filename)
+            blob.upload_from_file(file, content_type=file.content_type)
+            
+            # Make the file publicly accessible
+            blob.make_public()
+            public_url = blob.public_url
+
+            return jsonify({
+                'message': 'File uploaded successfully',
+                'file_url': public_url
+            }), 201
+
+        except Exception as e:
+            logger.error(f"File upload error: {e}", exc_info=True)
+            return jsonify({'error': 'Failed to upload file'}), 500
+    
+    return jsonify({'error': 'Invalid file type'}), 400
+
+
+
 
 
 # ---------------- Routes ----------------
@@ -8566,6 +8650,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
