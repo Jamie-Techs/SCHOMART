@@ -48,7 +48,7 @@ from flask_apscheduler import APScheduler
 from dotenv import load_dotenv
 from firebase_functions import https_fn
 import firebase_admin
-from firebase_admin import credentials, firestore, auth, exceptions, initialize_app
+from firebase_admin import credentials, storage,  firestore, auth, exceptions, initialize_app
 from firebase_admin.exceptions import FirebaseError
 from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilter
 from google.cloud.firestore_v1 import Increment
@@ -548,116 +548,6 @@ google = oauth.register(
 
 
 
-# --- AWS SES Client ---
-def get_ses_client():
-    """Creates and returns an AWS SES client."""
-    region = os.getenv('SES_REGION', 'us-east-1')
-    if not region:
-        logging.warning("SES_REGION not set. Defaulting to us-east-1.")
-    return boto3.client('ses', region_name=region)
-
-# --- Send Verification Email ---
-def send_verification_email(email, activation_token):
-    """Sends an account activation email using AWS SES."""
-    ses_client = get_ses_client()
-    source_email = os.getenv('SES_SOURCE_EMAIL')
-    if not source_email:
-        logging.error("SES_SOURCE_EMAIL not set.")
-        return False
-
-    try:
-        activation_link = url_for('activate_account', token=activation_token, _external=True)
-    except RuntimeError:
-        logging.error("Flask context missing. Cannot generate activation link.")
-        return False
-
-    subject = "Confirm your email address"
-    body_text = f"""Welcome!
-
-Click the link below to verify your email:
-{activation_link}
-
-This link expires in 24 hours.
-
-If you didn't request this, ignore the email."""
-
-    try:
-        response = ses_client.send_email(
-            Source=source_email,
-            Destination={'ToAddresses': [email]},
-            Message={
-                'Subject': {'Data': subject},
-                'Body': {'Text': {'Data': body_text}}
-}
-)
-        logging.info(f"Verification email sent to {email}. Message ID: {response['MessageId']}")
-        return True
-    except ClientError as e:
-        logging.error(f"SES error sending verification email: {e.response['Error']['Message']}")
-        return False
-
-# --- Send OTP Email ---
-def send_email_otp(email, otp):
-    """Sends an OTP to the user's email address using AWS SES."""
-    ses_client = get_ses_client()
-    source_email = os.getenv('SES_SOURCE_EMAIL')
-    if not source_email:
-        logging.error("SES_SOURCE_EMAIL not set.")
-        return False
-
-    subject = "Your Email Verification Code"
-    body_text = f"""Dear User,
-
-Your verification code is: {otp}
-
-This code is valid for 10 minutes.
-If you did not request this code, please ignore this email.
-
-Thank you,
-Futo Jiji Team"""
-
-    try:
-        response = ses_client.send_email(
-            Source=source_email,
-            Destination={'ToAddresses': [email]},
-            Message={
-                'Subject': {'Data': subject},
-                'Body': {'Text': {'Data': body_text}}
-}
-)
-        logging.info(f"OTP email sent to {email}. Message ID: {response['MessageId']}")
-        return True
-    except ClientError as e:
-        logging.error(f"SES error sending OTP email: {e.response['Error']['Message']}")
-        return False
-
-
-def is_valid_email(email):
-    """Validates email format using regex."""
-    return bool(re.match(r"^[^@]+@[^@]+\.[^@]+$", email))
-
-
-def is_strong_password(password):
-    """
-    Checks if a password meets the required strength criteria:
-    - At least 7 characters long.
-    - Contains at least one lowercase letter.
-    - Contains at least one uppercase letter.
-    - Contains at least one number.
-    - Contains at least one special character.
-    """
-    if len(password) < 7:
-        return False
-    if not re.search(r"[a-z]", password):
-        return False
-    if not re.search(r"[A-Z]", password):
-        return False
-    if not re.search(r"[0-9]", password):
-        return False
-    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+", password):
-        return False
-    return True
-
 #--- Referral Code Generator ---
 def generate_referral_code(length=8):
     """Generates a random alphanumeric referral code."""
@@ -667,300 +557,20 @@ def generate_referral_code(length=8):
 
 
 
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
 
-
-@app.route('/google-login')
-def google_login():
-    redirect_uri = url_for('google_authorized', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-
-@app.route('/google-authorized')
-def google_authorized():
-    """Handles the callback from Google OAuth using Authlib."""
-    try:
-        # Authlib uses authorize_access_token to get the token and store it in the session
-        token = oauth.google.authorize_access_token()
-        if not token:
-            flash("Google login failed.", "error")
-            return redirect(url_for('login'))
-
-        # Fetch user info using the token; Authlib's get method is now a client method
-        user_info = oauth.google.get('https://www.googleapis.com/oauth2/v2/userinfo').json()
-        email = user_info['email'].lower()
-        name = user_info.get('name', 'GoogleUser')
-
-        user_ref = gcp_db.collection('users').document(email)
-        user_doc = user_ref.get()
-
-        if not user_doc.exists:
-            # New user logic remains the same
-            activation_token = os.urandom(24).hex()
-            token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
-            user_ref.set({
-                'username': name,
-                'email': email,
-                'is_verified': False,
-                'activation_token': activation_token,
-                'token_expires_at': token_expiry,
-                'created_at': datetime.now(timezone.utc),
-                'auth_provider': 'google'
-            })
-            send_verification_email(email, activation_token)
-            flash("Google signup successful! Check your email to verify your account.", "success")
-            return redirect(url_for('login'))
-
-        user_data = user_doc.to_dict()
-        if not user_data.get('is_verified', False):
-            flash("Email not verified. Check your inbox.", "error")
-            return redirect(url_for('login'))
-
-        login_user(User(id=email, is_verified=True))
-        flash("Logged in with Google!", "success")
-        return redirect(url_for('profile'))
-
-    except Exception as e:
-        logging.error(f"Google login error: {e}")
-        flash("Login failed.", "error")
-        return redirect(url_for('login'))
-    
-    
-
-
-# Re-using the robust reCAPTCHA verification function
-def verify_recaptcha_v3(token, action):
-    secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
-    payload = {'secret': secret_key, 'response': token}
-    try:
-        r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-        r.raise_for_status()
-        result = r.json()
-        logging.info(f"reCAPTCHA verification result: {result}")
-        
-        if not result.get('success', False):
-            error_codes = result.get('error-codes', ['Unknown error'])
-            return False, f"API error: {', '.join(error_codes)}"
-
-        score = result.get('score', 0)
-        api_action = result.get('action')
-        threshold = 0.5 
-        
-        if api_action != action:
-            return False, f"Action mismatch. Expected '{action}', got '{api_action}'."
-        
-        if score < threshold:
-            return False, f"Low score ({score}). Bot suspected."
-        
-        return True, "Verification successful."
-
-    except requests.exceptions.RequestException as e:
-        logging.error(f"reCAPTCHA network error: {e}")
-        return False, f"Network error: {e}"
-    except Exception as e:
-        logging.error(f"reCAPTCHA verification exception: {e}")
-        return False, f"Internal server error: {e}"
-
-
-
-@app.route('/activate/<token>')
-def activate_account(token):
-    """Activates a user's account with a verification token."""
-    try:
-        users_ref = admin_db.collection('users')
-        query = users_ref.where('activation_token', '==', token).limit(1).stream()
-        user_doc_stream = next(query, None)
-        
-        if user_doc_stream:
-            user_doc = user_doc_stream
-            user_data = user_doc.to_dict()
-            
-            # Check for token expiration
-            if datetime.now(timezone.utc) > user_data.get('token_expires_at', datetime.min.replace(tzinfo=timezone.utc)):
-                flash("Activation link expired. Please sign up again.", "error")
-                return redirect(url_for('signup'))
-            
-            # Check if already verified
-            if user_data.get('is_verified', False):
-                flash("Your account has already been verified.", "info")
-                return redirect(url_for('login'))
-
-            # Update the user document to mark as verified
-            user_doc.reference.update({'is_verified': True, 'activation_token': firestore.DELETE_FIELD})
-            flash("Email successfully verified! You can now log in.", "success")
-        else:
-            flash("Invalid or expired activation link.", "error")
-    except Exception as e:
-        logging.error(f"Activation error: {e}")
-        flash("An error occurred during activation.", "error")
-
-    return redirect(url_for('login'))
-
-
-
-
-
-
-        
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login')
 def login():
-    """Handles user login."""
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-    if request.method == 'POST':
-        username_or_email = request.form.get('username_or_email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-        
-        user_doc = None
-        
-        try:
-            is_email = '@' in username_or_email
-            
-            if is_email:
-                user_doc = admin_db.collection('users').document(username_or_email).get()
-            else:
-                user_query = admin_db.collection('users').where(filter=firestore.FieldFilter('username', '==', username_or_email)).limit(1)
-                user_docs = user_query.get()
-                if user_docs:
-                    user_doc = user_docs[0]
-            
-            if not user_doc or not user_doc.exists:
-                flash('Incorrect email or username.', 'error')
-                return render_template('login.html')
-
-            user_data = user_doc.to_dict()
-
-            if user_data.get('auth_provider') != 'local':
-                flash("Please use your Google account to log in.", "warning")
-                return redirect(url_for('login'))
-            
-            if not user_data.get('is_verified', False):
-                flash("Your email is not verified. Please check your inbox for the verification link.", "warning")
-                return redirect(url_for('login'))
-                
-            if bcrypt.check_password_hash(user_data['password_hash'], password):
-                login_user(User(user_doc.id, is_verified=True))
-                flash('Logged in successfully!', 'success')
-                return redirect(url_for('profile'))
-            else:
-                flash('Incorrect password.', 'error')
-
-        except Exception as e:
-            # Log the specific error for debugging on the server
-            logging.error(f"Login error: {e}")
-            flash("An unexpected error occurred during login. Please try again.", "error")
-    
     return render_template('login.html')
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    """Handles user registration by creating a temporary pending account."""
-    referrer_code = request.args.get('ref')
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        honeypot_field = request.form.get('honeypot_field')
-
-        if honeypot_field:
-            logging.warning("Honeypot field filled. Bot suspected.")
-            flash("Suspicious activity detected.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not all([username, email, password, confirm_password]):
-            flash("All fields are required.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not is_valid_email(email):
-            flash("Please enter a valid email address.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not is_strong_password(password):
-            flash("Password is not strong enough. Please meet all criteria.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if password != confirm_password:
-            flash("Passwords do not match.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        try:
-            user_exists = admin_db.collection('users').document(email).get().exists
-            pending_user_exists = admin_db.collection('pending_users').document(email).get().exists
-            if user_exists or pending_user_exists:
-                flash("An account with this email already exists or is pending verification. Check your inbox.", "warning")
-                return render_template('signup.html', referrer=referrer_code)
-            
-            # Use bcrypt to hash the password
-            hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-            activation_token = str(uuid.uuid4())
-            token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
-
-            pending_user_ref = admin_db.collection('pending_users').document(email)
-            pending_user_ref.set({
-                'username': username,
-                'email': email,
-                'password_hash': hashed_pw,
-                'activation_token': activation_token,
-                'token_expires_at': token_expiry,
-                'referrer_code': referrer_code,
-                'created_at': datetime.now(timezone.utc)
-            })
-
-            verification_link = url_for('verify_account', token=activation_token, _external=True)
-            send_verification_email(email, verification_link)
-            flash("Signup successful! A verification link has been sent to your email. Please verify your account to proceed.", "success")
-            return redirect(url_for('login'))
-        
-        except Exception as e:
-            logging.error(f"Signup error: {e}")
-            flash("An unexpected error occurred during signup. Please try again.", "error")
-
-    return render_template('signup.html', referrer=referrer_code)
 
 
-@app.route('/verify-account/<token>')
-def verify_account(token):
-    """Verifies a user's email using the provided token."""
-    try:
-        pending_users_query = admin_db.collection('pending_users').where(filter=firestore.FieldFilter('activation_token', '==', token)).limit(1)
-        pending_users = list(pending_users_query.get())
-        if not pending_users:
-            flash("Invalid or expired verification link.", "error")
-            return redirect(url_for('login'))
 
-        pending_user_doc = pending_users[0]
-        pending_user_data = pending_user_doc.to_dict()
-        
-        token_expires_at = pending_user_data.get('token_expires_at')
-        if token_expires_at and datetime.now(timezone.utc) > token_expires_at:
-            pending_user_doc.reference.delete()
-            flash("Verification link has expired. Please sign up again.", "error")
-            return redirect(url_for('signup'))
 
-        user_data = {
-            'username': pending_user_data['username'],
-            'email': pending_user_data['email'],
-            'password_hash': pending_user_data['password_hash'],
-            'is_verified': True,
-            'auth_provider': 'local',
-            'created_at': pending_user_data['created_at'],
-            'referrer_code': pending_user_data.get('referrer_code')
-        }
-        
-        user_ref = admin_db.collection('users').document(user_data['email'])
-        user_ref.set(user_data)
-        pending_user_doc.reference.delete()
-        
-        login_user(User(user_ref.id, is_verified=True))
-        flash("Email successfully verified! You are now logged in.", "success")
-        return redirect(url_for('profile'))
 
-    except Exception as e:
-        logging.error(f"Email verification error: {e}")
-        flash("An unexpected error occurred during verification. Please try again.", "error")
-        return redirect(url_for('login'))
+
 
 
         
@@ -8597,6 +8207,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
