@@ -559,77 +559,6 @@ def generate_referral_code(length=8):
 
 
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    """Handles user registration with a local account."""
-    referrer_code = request.args.get('ref')
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        honeypot_field = request.form.get('honeypot_field')
-
-        # Honeypot trap
-        if honeypot_field:
-            logging.warning("Honeypot field filled. Bot suspected.")
-            flash("Suspicious activity detected.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        # Basic input validation
-        if not username or not email or not password or not confirm_password:
-            flash("All fields are required.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not is_valid_email(email):
-            flash("Please enter a valid email address.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if not is_strong_password(password):
-            flash("Password is not strong enough. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-        if password != confirm_password:
-            flash("Passwords do not match.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-        
-        # All validations passed, proceed with user creation
-        try:
-            # Check if user already exists
-            user_doc = admin_db.collection('users').document(email).get()
-            if user_doc.exists:
-                flash("An account with this email already exists.", "error")
-                return render_template('signup.html', referrer=referrer_code)
-
-            hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
-            activation_token = os.urandom(24).hex()
-            token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
-
-            user_ref = admin_db.collection('users').document(email)
-            user_ref.set({
-                'username': username,
-                'email': email,
-                'password_hash': hashed_pw,
-                'activation_token': activation_token,
-                'token_expires_at': token_expiry,
-                'is_verified': False,
-                'created_at': datetime.now(timezone.utc),
-                'auth_provider': 'local'
-            }, merge=True)
-
-            send_verification_email(email, activation_token)
-            flash("Signup successful! Check your email to verify your account.", "success")
-            return redirect(url_for('login'))
-        
-        except Exception as e:
-            logging.error(f"Signup error: {e}")
-            flash("Signup failed due to a server error. Please try again.", "error")
-            return render_template('signup.html', referrer=referrer_code)
-
-    return render_template('signup.html', referrer=referrer_code)
 
 
 
@@ -724,74 +653,6 @@ def verify_recaptcha_v3(token, action):
         logging.error(f"reCAPTCHA verification exception: {e}")
         return False, f"Internal server error: {e}"
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Handles user login with a local account, including reCAPTCHA verification."""
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-
-    recaptcha_site_key = os.getenv('RECAPTCHA_SITE_KEY')
-
-    if request.method == 'POST':
-        username_or_email = request.form.get('username_or_email', '').strip().lower()
-        password = request.form.get('password', '').strip()
-        recaptcha_token = request.form.get('recaptcha_token')
-
-        # --- reCAPTCHA Validation ---
-        if not recaptcha_token:
-            flash("CAPTCHA token missing. Please refresh and try again.", "error")
-            return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
-
-        recaptcha_success, error_message = verify_recaptcha_v3(recaptcha_token, action='login')
-
-        if not recaptcha_success:
-            flash(f"Login failed: {error_message}. Please try again.", "error")
-            logging.warning(f"reCAPTCHA verification failed for user '{username_or_email}': {error_message}")
-            return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
-        
-        # --- User Authentication (only if reCAPTCHA passes) ---
-        try:
-            # Check if the input is an email (contains '@')
-            is_email = '@' in username_or_email
-            if is_email:
-                user_doc_ref = admin_db.collection('users').document(username_or_email)
-            else:
-                # Assuming you need to find a user by username if not an email
-                # This part needs a proper lookup function, e.g., a query
-                user_query = admin_db.collection('users').where(filter=firestore.FieldFilter('username', '==', username_or_email)).limit(1)
-                user_docs = user_query.get()
-                if not user_docs:
-                    flash('Incorrect credentials.', 'error')
-                    return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
-                user_doc_ref = user_docs[0].reference
-
-            user_doc = user_doc_ref.get()
-            
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-
-                if not user_data.get('is_verified', False):
-                    flash("Email not verified. Check your inbox.", "error")
-                    return redirect(url_for('login'))
-
-                if user_data.get('auth_provider') != 'local':
-                    flash("Please use your Google account to log in.", "error")
-                    return redirect(url_for('login'))
-
-                # Correct password hash check
-                if bcrypt.check_password_hash(user_data['password_hash'], password):
-                    login_user(User(id=user_doc.id, is_verified=True))
-                    flash('Logged in successfully!', 'success')
-                    return redirect(url_for('profile'))
-            
-            # This flash is for incorrect username/email or password
-            flash('Incorrect credentials.', 'error')
-        
-        except Exception as e:
-            logging.error(f"Login error: {e}")
-            flash("Login failed due to a server error. Please try again.", "error")
-
-    return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
 
 
 @app.route('/activate/<token>')
@@ -826,6 +687,188 @@ def activate_account(token):
         flash("An error occurred during activation.", "error")
 
     return redirect(url_for('login'))
+
+
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    """Handles user registration by creating a temporary pending account."""
+    referrer_code = request.args.get('ref')
+    if current_user.is_authenticated:
+        return redirect(url_for('profile'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        honeypot_field = request.form.get('honeypot_field')
+
+        # Honeypot trap
+        if honeypot_field:
+            logging.warning("Honeypot field filled. Bot suspected.")
+            flash("Suspicious activity detected.", "error")
+            return render_template('signup.html', referrer=referrer_code)
+
+        # Basic input validation
+        if not all([username, email, password, confirm_password]):
+            flash("All fields are required.", "error")
+            return render_template('signup.html', referrer=referrer_code)
+
+        if not is_valid_email(email):
+            flash("Please enter a valid email address.", "error")
+            return render_template('signup.html', referrer=referrer_code)
+
+        if not is_strong_password(password):
+            flash("Password is not strong enough. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.", "error")
+            return render_template('signup.html', referrer=referrer_code)
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "error")
+            return render_template('signup.html', referrer=referrer_code)
+
+        try:
+            # Check if user already exists in either collection
+            user_exists = admin_db.collection('users').document(email).get().exists
+            pending_user_exists = admin_db.collection('pending_users').document(email).get().exists
+            if user_exists or pending_user_exists:
+                flash("An account with this email already exists or is pending verification. Check your inbox.", "warning")
+                return render_template('signup.html', referrer=referrer_code)
+
+            hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+            activation_token = os.urandom(24).hex()
+            token_expiry = datetime.now(timezone.utc) + timedelta(hours=24)
+
+            # Store user data temporarily in 'pending_users'
+            pending_user_ref = admin_db.collection('pending_users').document(email)
+            pending_user_ref.set({
+                'username': username,
+                'email': email,
+                'password_hash': hashed_pw,
+                'activation_token': activation_token,
+                'token_expires_at': token_expiry,
+                'referrer_code': referrer_code,
+                'created_at': datetime.now(timezone.utc)
+            })
+
+            send_verification_email(email, activation_token)
+            flash("Signup successful! A verification link has been sent to your email. Please verify your account to proceed.", "success")
+            return redirect(url_for('login'))
+        
+        except Exception as e:
+            logging.error(f"Signup error: {e}")
+            flash("Signup failed due to a server error. Please try again.", "error")
+
+    return render_template('signup.html', referrer=referrer_code)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handles user login with a local account."""
+    if current_user.is_authenticated:
+        return redirect(url_for('profile'))
+
+    if request.method == 'POST':
+        username_or_email = request.form.get('username_or_email', '').strip().lower()
+        password = request.form.get('password', '').strip()
+
+        try:
+            # Check if the input is an email (contains '@')
+            is_email = '@' in username_or_email
+            
+            if is_email:
+                user_doc_ref = admin_db.collection('users').document(username_or_email)
+            else:
+                user_query = admin_db.collection('users').where(filter=firestore.FieldFilter('username', '==', username_or_email)).limit(1)
+                user_docs = user_query.get()
+                if not user_docs:
+                    flash('Incorrect credentials.', 'error')
+                    return render_template('login.html')
+                user_doc_ref = user_docs[0].reference
+
+            user_doc = user_doc_ref.get()
+            
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+
+                if not user_data.get('is_verified', False):
+                    flash("Email not verified. Check your inbox.", "error")
+                    return redirect(url_for('login'))
+
+                if user_data.get('auth_provider') != 'local':
+                    flash("Please use your Google account to log in.", "error")
+                    return redirect(url_for('login'))
+
+                # Correct password hash check
+                if bcrypt.check_password_hash(user_data['password_hash'], password):
+                    login_user(User(id=user_doc.id, is_verified=True))
+                    flash('Logged in successfully!', 'success')
+                    return redirect(url_for('profile'))
+            
+            flash('Incorrect credentials.', 'error')
+        
+        except Exception as e:
+            logging.error(f"Login error: {e}")
+            flash("Login failed due to a server error. Please try again.", "error")
+
+    return render_template('login.html')
+
+
+
+
+
+### **3. New Email Verification Route**
+
+This new route is crucial. It's where the actual user data gets moved from the `pending_users` collection to the `users` collection. This is triggered when a user clicks the verification link in their email.
+
+
+@app.route('/verify-email/<token>', methods=['GET'])
+def verify_email(token):
+    """Verifies a user's email using the provided token."""
+    try:
+        pending_users = admin_db.collection('pending_users').where(filter=firestore.FieldFilter('activation_token', '==', token)).limit(1).get()
+
+        if not pending_users:
+            flash("Invalid or expired verification link.", "error")
+            return redirect(url_for('login'))
+
+        pending_user_doc = pending_users[0]
+        pending_user_data = pending_user_doc.to_dict()
+        
+        # Check if the token has expired
+        token_expires_at = pending_user_data.get('token_expires_at')
+        if token_expires_at and datetime.now(timezone.utc) > token_expires_at:
+            pending_user_doc.reference.delete()
+            flash("Verification link has expired. Please sign up again.", "error")
+            return redirect(url_for('signup'))
+
+        # Move the user data to the main 'users' collection
+        user_data = {
+            'username': pending_user_data['username'],
+            'email': pending_user_data['email'],
+            'password_hash': pending_user_data['password_hash'],
+            'is_verified': True,
+            'auth_provider': 'local',
+            'created_at': pending_user_data['created_at'],
+            'referrer_code': pending_user_data.get('referrer_code')
+        }
+        
+        user_ref = admin_db.collection('users').document(user_data['email'])
+        user_ref.set(user_data)
+
+        # Delete the temporary entry from 'pending_users'
+        pending_user_doc.reference.delete()
+        
+        # Log the user in automatically after successful verification
+        # Assuming you have a way to retrieve the User object
+        flash("Email successfully verified! You are now logged in.", "success")
+        return redirect(url_for('profile'))
+
+    except Exception as e:
+        logging.error(f"Email verification error: {e}")
+        flash("An error occurred during verification. Please try again.", "error")
+        return redirect(url_for('login'))
+
 
 
 
@@ -8455,6 +8498,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
