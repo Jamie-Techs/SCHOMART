@@ -839,53 +839,6 @@ def login():
 
 
 
-@app.route('/verify-email/<token>', methods=['GET'])
-def verify_email(token):
-    """Verifies a user's email using the provided token."""
-    try:
-        pending_users = admin_db.collection('pending_users').where(filter=firestore.FieldFilter('activation_token', '==', token)).limit(1).get()
-
-        if not pending_users:
-            flash("Invalid or expired verification link.", "error")
-            return redirect(url_for('login'))
-
-        pending_user_doc = pending_users[0]
-        pending_user_data = pending_user_doc.to_dict()
-        
-        # Check if the token has expired
-        token_expires_at = pending_user_data.get('token_expires_at')
-        if token_expires_at and datetime.now(timezone.utc) > token_expires_at:
-            pending_user_doc.reference.delete()
-            flash("Verification link has expired. Please sign up again.", "error")
-            return redirect(url_for('signup'))
-
-        # Move the user data to the main 'users' collection
-        user_data = {
-            'username': pending_user_data['username'],
-            'email': pending_user_data['email'],
-            'password_hash': pending_user_data['password_hash'],
-            'is_verified': True,
-            'auth_provider': 'local',
-            'created_at': pending_user_data['created_at'],
-            'referrer_code': pending_user_data.get('referrer_code')
-        }
-        
-        user_ref = admin_db.collection('users').document(user_data['email'])
-        user_ref.set(user_data)
-
-        # Delete the temporary entry from 'pending_users'
-        pending_user_doc.reference.delete()
-        
-        # Log the user in automatically after successful verification
-        # Assuming you have a way to retrieve the User object
-        flash("Email successfully verified! You are now logged in.", "success")
-        return redirect(url_for('profile'))
-
-    except Exception as e:
-        logging.error(f"Email verification error: {e}")
-        flash("An error occurred during verification. Please try again.", "error")
-        return redirect(url_for('login'))
-
 
 
 
@@ -8515,6 +8468,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
