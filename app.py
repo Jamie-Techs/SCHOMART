@@ -690,26 +690,24 @@ def google_authorized():
     
     
 
-def verify_recaptcha_v3(token, action='signup'):
+
+# Re-using the robust reCAPTCHA verification function
+def verify_recaptcha_v3(token, action):
     secret_key = os.getenv('RECAPTCHA_SECRET_KEY')
     payload = {'secret': secret_key, 'response': token}
     try:
         r = requests.post('https://www.google.com/recaptcha/api/siteverify', data=payload)
-        r.raise_for_status()  # This will raise an exception for bad status codes
+        r.raise_for_status()
         result = r.json()
-        
-        # Log the full result for debugging
         logging.info(f"reCAPTCHA verification result: {result}")
         
         if not result.get('success', False):
-            # Google API call failed
             error_codes = result.get('error-codes', ['Unknown error'])
             return False, f"API error: {', '.join(error_codes)}"
 
-        # Check score and action
         score = result.get('score', 0)
         api_action = result.get('action')
-        threshold = 0.5  # You can adjust this threshold
+        threshold = 0.5 
         
         if api_action != action:
             return False, f"Action mismatch. Expected '{action}', got '{api_action}'."
@@ -726,21 +724,49 @@ def verify_recaptcha_v3(token, action='signup'):
         logging.error(f"reCAPTCHA verification exception: {e}")
         return False, f"Internal server error: {e}"
 
-
-
-    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles user login with a local account."""
+    """Handles user login with a local account, including reCAPTCHA verification."""
     if current_user.is_authenticated:
         return redirect(url_for('profile'))
+
+    recaptcha_site_key = os.getenv('RECAPTCHA_SITE_KEY')
 
     if request.method == 'POST':
         username_or_email = request.form.get('username_or_email', '').strip().lower()
         password = request.form.get('password', '').strip()
+        recaptcha_token = request.form.get('recaptcha_token')
 
+        # --- reCAPTCHA Validation ---
+        if not recaptcha_token:
+            flash("CAPTCHA token missing. Please refresh and try again.", "error")
+            return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
+
+        recaptcha_success, error_message = verify_recaptcha_v3(recaptcha_token, action='login')
+
+        if not recaptcha_success:
+            flash(f"Login failed: {error_message}. Please try again.", "error")
+            logging.warning(f"reCAPTCHA verification failed for user '{username_or_email}': {error_message}")
+            return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
+        
+        # --- User Authentication (only if reCAPTCHA passes) ---
         try:
-            user_doc = admin_db.collection('users').document(username_or_email).get()
+            # Check if the input is an email (contains '@')
+            is_email = '@' in username_or_email
+            if is_email:
+                user_doc_ref = admin_db.collection('users').document(username_or_email)
+            else:
+                # Assuming you need to find a user by username if not an email
+                # This part needs a proper lookup function, e.g., a query
+                user_query = admin_db.collection('users').where(filter=firestore.FieldFilter('username', '==', username_or_email)).limit(1)
+                user_docs = user_query.get()
+                if not user_docs:
+                    flash('Incorrect credentials.', 'error')
+                    return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
+                user_doc_ref = user_docs[0].reference
+
+            user_doc = user_doc_ref.get()
+            
             if user_doc.exists:
                 user_data = user_doc.to_dict()
 
@@ -752,17 +778,20 @@ def login():
                     flash("Please use your Google account to log in.", "error")
                     return redirect(url_for('login'))
 
+                # Correct password hash check
                 if bcrypt.check_password_hash(user_data['password_hash'], password):
-                    login_user(User(id=username_or_email, is_verified=True))
+                    login_user(User(id=user_doc.id, is_verified=True))
                     flash('Logged in successfully!', 'success')
                     return redirect(url_for('profile'))
-
+            
+            # This flash is for incorrect username/email or password
             flash('Incorrect credentials.', 'error')
+        
         except Exception as e:
             logging.error(f"Login error: {e}")
-            flash("Login failed due to server error.", "error")
+            flash("Login failed due to a server error. Please try again.", "error")
 
-    return render_template('login.html', recaptcha_site_key=os.getenv('RECAPTCHA_SITE_KEY'))
+    return render_template('login.html', recaptcha_site_key=recaptcha_site_key)
 
 
 @app.route('/activate/<token>')
@@ -8426,6 +8455,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
