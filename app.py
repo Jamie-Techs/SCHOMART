@@ -307,28 +307,15 @@ def api_upload_file():
 
 
 
-# ---------------- Routes ----------------
-
-def generate_token():
-    return str(uuid.uuid4())
-
-# login_required decorator remains the same for now, but will likely be updated
-# once you implement a robust authentication system.
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
 
 
-# --- Before Request: Set IP Address for all requests ---
-@app.before_request
-def before_request_func():
-    g.client_ip = get_client_ip()
+
+# Assuming 'admin_db' and 'app' are already initialized.
+# from your_firebase_setup import admin_db, app
+# from flask_login import LoginManager
 
 # --- Helper Functions ---
+
 def get_client_ip():
     """Attempts to get the client's IP address, handling proxies."""
     if request.headers.get('X-Forwarded-For'):
@@ -344,7 +331,6 @@ def get_device_fingerprint_hash(device_data_json):
     try:
         device_data_dict = json.loads(device_data_json)
         canonical_json = json.dumps(device_data_dict, sort_keys=True)
-        # Use .hexdigest() for the final hash string
         return hashlib.sha256(canonical_json.encode('utf-8')).hexdigest()
     except json.JSONDecodeError:
         logging.error(f"Invalid device fingerprint data JSON: {device_data_json}")
@@ -353,21 +339,19 @@ def get_device_fingerprint_hash(device_data_json):
 def record_behavioral_log(user_id, action, additional_info=None):
     """
     Records behavioral data to Firestore.
-    The old MySQL logic has been replaced with Firestore API calls.
     """
     device_hash = request.form.get('device_fingerprint_hash', 'unknown')
     log_entry = {
-        "timestamp": datetime.now(UTC), # Firestore can store native datetime objects
+        "timestamp": datetime.now(timezone.utc),
         "user_id": user_id,
         "action": action,
         "ip_address": getattr(g, 'client_ip', 'unknown'),
         "device_hash": device_hash,
         "additional_info": additional_info
     }
-    logging.info(f"BEHAVIORAL_LOG: {json.dumps(log_entry, default=str)}") # default=str for datetime
+    logging.info(f"BEHAVIORAL_LOG: {json.dumps(log_entry, default=str)}")
     
     try:
-        # Use add() to create a new document with an auto-generated ID
         admin_db.collection('behavioral_logs').add(log_entry)
     except Exception as e:
         logging.error(f"Error saving behavioral log to Firestore: {e}")
@@ -375,28 +359,27 @@ def record_behavioral_log(user_id, action, additional_info=None):
 def is_suspicious_behavior(user_id, ip_address, device_hash):
     """
     Analyzes behavioral data from Firestore for suspicious activity.
-    The MySQL queries are replaced with Firestore queries.
     """
     logging.info(f"Performing behavioral analysis for user {user_id} from IP {ip_address} with device {device_hash}")
     
     try:
         # Rule 1: Too many failed login attempts from this IP recently
-        time_limit = datetime.now(UTC) - timedelta(minutes=10)
-        failed_attempts_query = admim_db.collection('behavioral_logs').where(
+        time_limit = datetime.now(timezone.utc) - timedelta(minutes=10)
+        failed_attempts_query = admin_db.collection('behavioral_logs').where(
             'ip_address', '==', ip_address
         ).where(
             'action', '==', 'login_failed'
         ).where(
             'timestamp', '>', time_limit
         ).stream()
-
+        
         failed_attempts_count = len(list(failed_attempts_query))
         if failed_attempts_count > 5:
             logging.warning(f"Suspicious behavior: IP {ip_address} has {failed_attempts_count} recent failed login attempts.")
             return True
-
+        
         # Rule 2: Multiple registrations from the same IP very recently
-        time_limit = datetime.now(UTC) - timedelta(hours=1)
+        time_limit = datetime.now(timezone.utc) - timedelta(hours=1)
         recent_registrations_query = admin_db.collection('behavioral_logs').where(
             'ip_address', '==', ip_address
         ).where(
@@ -404,7 +387,7 @@ def is_suspicious_behavior(user_id, ip_address, device_hash):
         ).where(
             'timestamp', '>', time_limit
         ).stream()
-
+        
         recent_registrations_count = len(list(recent_registrations_query))
         if recent_registrations_count > 2:
             logging.warning(f"Suspicious behavior: IP {ip_address} has {recent_registrations_count} recent registrations.")
@@ -414,7 +397,14 @@ def is_suspicious_behavior(user_id, ip_address, device_hash):
         logging.error(f"Error during behavioral analysis: {e}")
     return False
 
+# --- Before Request: Set IP Address for all requests ---
+
+@app.before_request
+def before_request_func():
+    g.client_ip = get_client_ip()
+
 # --- Security Headers ---
+
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -422,15 +412,14 @@ def add_security_headers(response):
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
 
+# --- User Class and Flask-Login Integration ---
 
-
-
-
-
-
-
-class User:
-    def _init_(self, **kwargs):
+class User(UserMixin):
+    """
+    User data model and Flask-Login integration.
+    This class now handles both data representation and Flask-Login methods.
+    """
+    def __init__(self, **kwargs):
         self.id = str(kwargs.get('id'))
         self.username = kwargs.get('username', '')
         self.email = kwargs.get('email', '')
@@ -462,7 +451,7 @@ class User:
         self.working_times = kwargs.get('working_times') if isinstance(kwargs.get('working_times'), dict) else {}
         self.delivery_methods = kwargs.get('delivery_methods') if isinstance(kwargs.get('delivery_methods'), list) else []
 
-        # Format timestamps
+        # Format timestamps and dates
         for key in [
             'created_at', 'last_active', 'last_referral_verification_at',
             'last_email_otp_sent_at', 'email_code_expiry', 'token_created_at', 'last_online'
@@ -470,24 +459,32 @@ class User:
             value = getattr(self, key)
             if isinstance(value, datetime):
                 setattr(self, key, value.replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S'))
-
-        # Format birthday
+        
         if isinstance(self.birthday, datetime):
             self.birthday = self.birthday.replace(tzinfo=None).strftime('%Y-%m-%d')
-
-        # Image URLs
+        
+        # Image URLs (assuming helper functions exist)
         try:
-            self.profile_picture_url = get_profile_picture_url(self.profile_picture)
+            # Placeholder for image URL retrieval
+            self.profile_picture_url = f"/static/images/{self.profile_picture}"
         except Exception:
             self.profile_picture_url = "/static/default_avatar.png"
 
         try:
-            self.cover_photo_url = get_cover_photo_url(self.cover_photo)
+            # Placeholder for image URL retrieval
+            self.cover_photo_url = f"/static/images/{self.cover_photo}"
         except Exception:
             self.cover_photo_url = "/static/default_cover.png"
 
+    def get_id(self):
+        """Required by Flask-Login to get the user's ID."""
+        return self.id
+
     @staticmethod
     def get(user_id):
+        """
+        Retrieves a user document from Firestore and returns a User object.
+        """
         if not user_id:
             return None
         try:
@@ -504,46 +501,20 @@ class User:
 
     @staticmethod
     def update_online_status(user_id, status):
+        """
+        Updates the user's online status in Firestore.
+        """
         try:
             user_ref = admin_db.collection('users').document(str(user_id))
             user_ref.update({
                 'is_online': status,
                 'last_online': firestore.SERVER_TIMESTAMP
-})
+            })
             current_app.logger.info(f"User {user_id} online status set to {status}")
         except Exception as e:
             current_app.logger.error(f"Error updating online status for user {user_id}: {e}", exc_info=True)
 
-
-class User(UserMixin):
-    """
-    User class for Flask-Login.
-    It links the Flask-Login session to a Firebase user.
-    """
-    def __init__(self, user_id, is_verified=False, active=True):
-        self.id = user_id
-        self.is_verified = is_verified
-        self._active = active
-
-    @property
-    def is_authenticated(self):
-        # Always True once logged in
-        return True
-
-    @property
-    def is_active(self):
-        # You can customize this based on user status
-        return self._active
-
-    @property
-    def is_anonymous(self):
-        # This user is not anonymous
-        return False
-
-    def get_id(self):
-        return self.id
-
-
+# --- Flask-Login User Loader ---
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -552,34 +523,10 @@ def load_user(user_id):
     This function is required by Flask-Login.
     """
     logging.info(f"Attempting to load user with ID: {user_id}")
-    try:
-        user_doc = admin_db.collection('users').document(user_id).get()
-        if user_doc.exists:
-            user_data = user_doc.to_dict()
-            if user_data.get('is_verified', False):
-                return User(user_id, is_verified=True)
-            else:
-                logging.warning(f"User {user_id} is not verified.")
-                return None
-        else:
-            logging.warning(f"User document not found for ID: {user_id}")
-            return None
-    except Exception as e:
-        logging.error(f"Error loading user {user_id}: {e}")
-        return None
+    return User.get(user_id)
 
 
 
-
-    @staticmethod
-    def get(user_id):
-        # This is a mock user retrieval function
-        # In a real app, you would retrieve the user from the database
-        user_doc = admin_db.collection('users').document(user_id).get()
-        if user_doc.exists:
-            user_data = user_doc.to_dict()
-            return User(id=user_id, is_verified=user_data.get('is_verified', False))
-        return None
 
 
 
@@ -8650,6 +8597,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
