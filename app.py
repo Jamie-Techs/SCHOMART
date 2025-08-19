@@ -1,5 +1,3 @@
-
-# Import your Flask app and give it an alias
 import os
 import random
 import string
@@ -150,7 +148,6 @@ def generate_referral_code(uid, length=8):
     """
     Generates a unique referral code based on the user's UID.
     """
-    # Use the first 8 characters of the user's UID for the code
     return uid[:length].upper()
 
 # --- API Routes ---
@@ -170,20 +167,22 @@ def api_signup():
     referral_code_used = data.get('referralCode')
 
     if not all([uid, email, username]):
+        logger.warning("Missing UID, email, or username in signup request.")
         return jsonify({'error': 'Missing UID, email, or username'}), 400
 
     try:
         user_ref = admin_db.collection('users').document(uid)
         
-        # Check if the user document already exists to prevent duplicates
+        # Check if the user document already exists
         if user_ref.get().exists:
+            logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
             return jsonify({'error': 'User data already exists in Firestore'}), 409
 
         # Generate a unique referral code and link
         referral_code = generate_referral_code(uid)
-        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}" # Replace 'your-domain.com'
+        referral_link = f"https://your-domain.com/signup?ref={referral_code}" # Replace 'your-domain.com'
 
-        # Initialize and save the new user data with all required fields
+        # Initialize and save the new user data
         new_user_data = {
             'email': email,
             'username': username,
@@ -221,6 +220,7 @@ def api_signup():
         
         # Check if a referral code was used and update the referrer's count
         if referral_code_used:
+            logger.info(f"Referral code used: {referral_code_used}. Searching for referrer.")
             referrer_query = admin_db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
             referrer_docs = referrer_query.stream()
             
@@ -254,12 +254,12 @@ def api_verify_user():
     uid = data.get('uid')
 
     if not uid:
+        logger.warning("Missing UID in verify user request.")
         return jsonify({'error': 'Missing UID'}), 400
 
     try:
         user_ref = admin_db.collection('users').document(uid)
         
-        # Update is_verified field to true
         user_ref.update({
             'is_verified': True
         })
@@ -285,6 +285,7 @@ def api_login():
     id_token = data.get('idToken')
 
     if not id_token:
+        logger.warning("Missing ID token in login request.")
         return jsonify({'error': 'Missing ID token'}), 400
 
     try:
@@ -315,8 +316,9 @@ def api_login():
 
     except Exception as e:
         logger.error(f"Login verification error: {e}", exc_info=True)
-        return jsonify({'error': 'Authentication failed.'}), 401
-        
+        return jsonify({'error': 'Authentication failed.'}), 40
+
+
 
 
 
@@ -8359,6 +8361,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
