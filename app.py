@@ -181,7 +181,7 @@ def api_signup():
 
         # Generate a unique referral code and link
         referral_code = generate_referral_code(uid)
-        referral_link = f"https://your-domain.com/signup?ref={referral_code}" # Replace 'your-domain.com'
+        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}" # Replace 'your-domain.com'
 
         # Initialize and save the new user data
         new_user_data = {
@@ -8377,6 +8377,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
