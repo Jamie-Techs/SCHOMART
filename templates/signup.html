@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Schomart - Login/Signup</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Updated Firebase SDK versions for improved stability and security -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-storage-compat.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <style>
         body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
         .container { width: 100%; max-width: 500px; margin: 50px auto; background-color: #fff; border: 2px solid #006B3C; border-radius: 10px; padding: 30px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); text-align: center; }
@@ -20,29 +20,32 @@
         .btn { width: 100%; padding: 12px; background-color: #006B3C; color: white; font-size: 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background-color 0.3s ease; margin-top: 10px; }
         .btn:hover { background-color: #004d2a; }
         .link-text { font-size: 0.9em; margin-top: 10px; cursor: pointer; color: #006B3C; text-decoration: underline; }
-        #messageBox { padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9em; display: none; opacity: 0; transition: opacity 0.3s ease-in-out; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        #messageBox { padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9em; display: none; opacity: 0; transition: opacity 0.3s ease-in-out; text-align: center; }
         #messageBox.show { display: block; opacity: 1; }
+        .msg-error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .msg-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
         .hidden { display: none; }
-        #logout-btn {
-            background-color: #e53e3e;
-        }
-        #logout-btn:hover {
-            background-color: #c53030;
-        }
+        #logout-btn { background-color: #e53e3e; }
+        #logout-btn:hover { background-color: #c53030; }
+        #forgotPasswordModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        #forgotPasswordModal > div { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        #forgotPasswordModal input { padding: 8px; margin-bottom: 10px; width: 80%; border-radius: 5px; border: 1px solid #ccc; }
+        #forgotPasswordModal button { padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; }
+        #forgotPasswordModal .send-btn { background-color: #006B3C; color: white; }
+        #forgotPasswordModal .cancel-btn { background-color: #ccc; color: black; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- New element to show when the user is logged in -->
         <div id="logged-in-message" class="hidden">
-            <h2>You are already logged in.</h2>
-            <p>Please log out to access the signup or login forms.</p>
+            <h2>Welcome!</h2>
+            <p>You are logged in.</p>
             <button id="logout-btn" class="btn">Sign Out</button>
         </div>
 
         <div id="signup-section" class="hidden">
             <h2>Create Your Account</h2>
-            <div id="messageBox"></div>
+            <div id="messageBox" class="messageBox"></div>
             <form id="signupForm">
                 <div class="form-group">
                     <label for="signup-username">Username</label>
@@ -64,9 +67,10 @@
             </form>
             <p class="link-text" onclick="showSection('login-section')">Already have an account? Log in here.</p>
         </div>
+
         <div id="login-section" class="hidden">
             <h2>Log In</h2>
-            <div id="messageBoxLogin"></div>
+            <div id="messageBoxLogin" class="messageBox"></div>
             <form id="loginForm">
                 <div class="form-group">
                     <label for="login-email">Email Address</label>
@@ -82,23 +86,25 @@
             <p class="link-text" onclick="showForgotPasswordModal()">Forgot Password?</p>
         </div>
     </div>
-    <div id="forgotPasswordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+
+    <div id="forgotPasswordModal">
+        <div>
             <p>Please enter your email address to reset your password:</p>
-            <input type="email" id="resetEmailInput" style="padding: 8px; margin-bottom: 10px;">
+            <input type="email" id="resetEmailInput" required>
             <div style="display: flex; justify-content: space-around;">
-                <button onclick="sendPasswordReset()" style="padding: 8px 16px; background-color: #006B3C; color: white; border: none; border-radius: 5px;">Send</button>
-                <button onclick="hideForgotPasswordModal()" style="padding: 8px 16px; background-color: #ccc; color: black; border: none; border-radius: 5px;">Cancel</button>
+                <button class="send-btn" onclick="sendPasswordReset()">Send</button>
+                <button class="cancel-btn" onclick="hideForgotPasswordModal()">Cancel</button>
             </div>
         </div>
     </div>
+    
     <script>
-        // Use the Firebase credentials you provided
+        // Use your Firebase credentials here.
         const firebaseConfig = {
             apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
             authDomain: "schomart-7a743.firebaseapp.com",
             projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.appspot.com", 
+            storageBucket: "schomart-7a743.appspot.com",
             messagingSenderId: "20119186662",
             appId: "1:20119186662:web:da1755b55dacde4fa6df27",
             measurementId: "G-9QGL3XHSC7"
@@ -114,13 +120,23 @@
         const msgBoxSignup = document.getElementById('messageBox');
         const msgBoxLogin = document.getElementById('messageBoxLogin');
         const loggedInMessage = document.getElementById('logged-in-message');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+
+        let messageTimeout;
 
         function showMessageBox(box, message, isError = false) {
+            clearTimeout(messageTimeout); // Clear previous timeout
             box.textContent = message;
-            box.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
-            box.style.color = isError ? '#721c24' : '#155724';
-            box.style.borderColor = isError ? '#f5c6cb' : '#c3e6cb';
-            box.classList.add('show');
+            box.className = 'messageBox show'; // Reset classes
+            if (isError) {
+                box.classList.add('msg-error');
+            } else {
+                box.classList.add('msg-success');
+            }
+            
+            messageTimeout = setTimeout(() => {
+                hideMessageBox(box);
+            }, 5000); // Message disappears after 5 seconds
         }
 
         function hideMessageBox(box) {
@@ -131,40 +147,42 @@
             document.getElementById('signup-section').classList.add('hidden');
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById(sectionId).classList.remove('hidden');
+            hideMessageBox(msgBoxSignup);
+            hideMessageBox(msgBoxLogin);
         }
 
         function showForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'flex';
+            forgotPasswordModal.style.display = 'flex';
         }
 
         function hideForgotPasswordModal() {
-            document.getElementById('forgotPasswordModal').style.display = 'none';
+            forgotPasswordModal.style.display = 'none';
         }
         
         // Listen for auth state changes
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // If the user is already signed in, show a message and a logout button
+                // If user is logged in, show the welcome message and hide forms
                 loggedInMessage.classList.remove('hidden');
                 document.getElementById('signup-section').classList.add('hidden');
                 document.getElementById('login-section').classList.add('hidden');
-                // You can still redirect if you want, but this provides a way to stay on the page.
-                // window.location.assign('/profile'); 
+                
+                // You can also redirect the user here if you want
+                // window.location.assign('/profile');
             } else {
-                // If no user is signed in, show the login section by default
+                // If no user is logged in, show the login section by default
                 loggedInMessage.classList.add('hidden');
                 showSection('login-section');
             }
         });
 
-        // Add event listener for the new logout button
         document.getElementById('logout-btn').addEventListener('click', async () => {
             try {
                 await auth.signOut();
-                // The onAuthStateChanged listener will handle the redirect/UI change
                 console.log("User signed out successfully.");
             } catch (error) {
                 console.error("Error signing out:", error);
+                showMessageBox(loggedInMessage, 'Error signing out. Please try again.', true);
             }
         });
 
@@ -186,24 +204,32 @@
             }
 
             try {
-                // Create the user with email and password
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
                 // Send email verification
                 await user.sendEmailVerification();
-
+                
                 // Store user data in Firestore with the user's UID as the document ID
-                const userDocRef = db.collection('artifacts').doc(firebaseConfig.projectId).collection('users').doc(user.uid);
-                await userDocRef.set({
+                await db.collection('users').doc(user.uid).set({
                     username: username,
                     email: email,
                     created_at: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 showMessageBox(msgBoxSignup, 'Account created successfully! Please check your inbox for a verification email.', false);
+                signupForm.reset();
             } catch (error) {
-                showMessageBox(msgBoxSignup, `Error creating account: ${error.message}`, true);
+                let errorMessage = `Error creating account: ${error.message}`;
+                // Customize error messages for better user experience
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'This email is already in use. Please log in instead or use a different email.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'The email address is not valid.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'The password is too weak.';
+                }
+                showMessageBox(msgBoxSignup, errorMessage, true);
                 console.error("Signup error:", error);
             }
         });
@@ -217,33 +243,53 @@
             try {
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
+                
                 if (!user.emailVerified) {
-                    showMessageBox(msgBoxLogin, 'Please verify your email address before logging in. A new verification link has been sent to your email.', true);
+                    showMessageBox(msgBoxLogin, 'Please verify your email address. A new verification link has been sent.', true);
                     await user.sendEmailVerification();
-                    auth.signOut();
+                    auth.signOut(); // Log out the unverified user
                     return;
                 }
-                window.location.assign('/profile');
+                
+                // If successful and email is verified, this will trigger onAuthStateChanged
+                // The onAuthStateChanged listener will handle the UI change.
+                showMessageBox(msgBoxLogin, `Welcome back! Logged in successfully.`, false);
+                loginForm.reset();
+                
             } catch (error) {
-                showMessageBox(msgBoxLogin, `Login failed: ${error.message}`, true);
+                let errorMessage = `Login failed: ${error.message}`;
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    errorMessage = 'Invalid email or password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'The email address is not valid.';
+                }
+                showMessageBox(msgBoxLogin, errorMessage, true);
                 console.error("Login error:", error);
             }
         });
 
         async function sendPasswordReset() {
             const email = document.getElementById('resetEmailInput').value;
-            if (email) {
-                try {
-                    await auth.sendPasswordResetEmail(email);
-                    showMessageBox(msgBoxLogin, 'Password reset email sent! Please check your inbox.');
-                    hideForgotPasswordModal();
-                } catch (error) {
-                    showMessageBox(msgBoxLogin, `Error: ${error.message}`, true);
-                    console.error("Password reset error:", error);
+            if (!email) {
+                showMessageBox(msgBoxLogin, 'Please enter a valid email address.', true);
+                return;
+            }
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showMessageBox(msgBoxLogin, 'Password reset email sent! Please check your inbox.', false);
+                hideForgotPasswordModal();
+            } catch (error) {
+                let errorMessage = `Error: ${error.message}`;
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'No user found with that email address.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'The email address is not valid.';
                 }
+                showMessageBox(msgBoxLogin, errorMessage, true);
+                console.error("Password reset error:", error);
             }
         }
     </script>
 </body>
 </html>
-
