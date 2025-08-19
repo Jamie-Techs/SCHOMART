@@ -140,30 +140,29 @@ def login():
 
 
 
+
+
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
     """
     Handles user signup by creating a new user in Firebase Auth and saving
-    their data to Firestore.
+    their data to Firestore. This endpoint is an alternative to client-side signup.
     """
+    if admin_db is None:
+        return jsonify({'error': 'Backend services are unavailable.'}), 503
+
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     username = data.get('username')
 
-    if not email or not password or not username:
+    if not all([email, password, username]):
         return jsonify({'error': 'Missing email, password, or username'}), 400
 
     try:
         # Create user in Firebase Auth
         user = auth.create_user(email=email, password=password)
         
-        # Generate the email verification link
-        # This link must be sent to the user via a separate email service
-        # (e.g., SendGrid, Mailgun, etc.) since Flask itself cannot send emails.
-        verification_link = auth.generate_email_verification_link(email)
-        logger.info(f"Generated email verification link for {email}: {verification_link}")
-
         # Save additional user data to Firestore
         user_ref = admin_db.collection('users').document(user.uid)
         user_ref.set({
@@ -171,16 +170,26 @@ def api_signup():
             'email': email,
             'created_at': firestore.SERVER_TIMESTAMP
         })
+
+        # IMPORTANT: You need a separate email service (like SendGrid or Mailgun)
+        # to send the verification link. Flask itself does not send emails.
+        # This is for server-side logging or an external trigger.
+        verification_link = auth.generate_email_verification_link(email)
+        logger.info(f"Generated email verification link for {email}: {verification_link}")
         
         return jsonify({
-            'message': 'User created successfully. A verification link has been generated on the server.',
+            'message': 'User created successfully. A verification link has been generated.',
             'uid': user.uid
         }), 201
 
     except auth.EmailAlreadyExistsError:
+        logger.warning(f"Signup attempt with existing email: {email}")
         return jsonify({'error': 'Email already in use.'}), 409
+    except auth.AuthError as e:
+        logger.error(f"Firebase Auth error during signup: {e}", exc_info=True)
+        return jsonify({'error': f"Authentication failed: {e.code}"}), 500
     except Exception as e:
-        logger.error(f"Signup error: {e}", exc_info=True)
+        logger.error(f"Unexpected signup error: {e}", exc_info=True)
         return jsonify({'error': 'Failed to create user.'}), 500
 
 @app.route('/api/login', methods=['POST'])
@@ -189,6 +198,9 @@ def api_login():
     Verifies a user's ID token sent from the frontend and retrieves user data
     from Firestore.
     """
+    if admin_db is None:
+        return jsonify({'error': 'Backend services are unavailable.'}), 503
+
     data = request.get_json()
     id_token = data.get('idToken')
 
@@ -199,24 +211,28 @@ def api_login():
         # Verify the ID token sent from the frontend
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
+
         user_doc = admin_db.collection('users').document(uid).get()
         
         if not user_doc.exists:
-            # This is an edge case, but good to handle
+            logger.warning(f"User data not found in Firestore for UID: {uid}")
             return jsonify({'error': 'User data not found in Firestore'}), 404
 
+        user_data = user_doc.to_dict()
+        
         return jsonify({
             'message': 'Login successful',
             'uid': uid,
-            'username': user_doc.get('username')
+            'username': user_data.get('username'),
+            'email': user_data.get('email')
         }), 200
 
-    except Exception as e:
-        logger.error(f"Login error: {e}", exc_info=True)
+    except auth.InvalidIdTokenError:
+        logger.warning("Attempt with invalid ID token.")
         return jsonify({'error': 'Invalid ID token'}), 401
-
-
-
+    except Exception as e:
+        logger.error(f"Login verification error: {e}", exc_info=True)
+        return jsonify({'error': 'Authentication failed.'}), 4
 
 
 
@@ -8254,6 +8270,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
