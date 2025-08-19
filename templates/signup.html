@@ -49,6 +49,10 @@
                     <label for="signup-confirm-password">Confirm Password</label>
                     <input type="password" id="signup-confirm-password" required>
                 </div>
+                <div class="form-group">
+                    <label for="referral-code">Referral Code (Optional)</label>
+                    <input type="text" id="referral-code">
+                </div>
                 <button type="submit" class="btn">Sign Up</button>
             </form>
             <p class="link-text" onclick="showSection('login-section')">Already have an account? Log in here.</p>
@@ -85,6 +89,7 @@
         
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.firestore();
 
         const signupForm = document.getElementById('signupForm');
         const loginForm = document.getElementById('loginForm');
@@ -128,6 +133,7 @@
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('signup-confirm-password').value;
+            const referralCode = document.getElementById('referral-code').value;
             hideMessageBox(msgBoxSignup);
 
             if (password.length < 7) {
@@ -140,22 +146,28 @@
             }
 
             try {
+                // Step 1: Create user in Firebase Auth
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 const user = userCredential.user;
 
-                // Send email verification
+                // Step 2: Send email verification
                 await user.sendEmailVerification();
                 
-                // Send user data to backend to create Firestore document
+                // Step 3: Send user data to backend to create Firestore document
                 await fetch('/api/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, username: username, uid: user.uid })
+                    body: JSON.stringify({ 
+                        uid: user.uid,
+                        email: email, 
+                        username: username, 
+                        referralCode: referralCode 
+                    })
                 });
 
                 showMessageBox(msgBoxSignup, 'Account created successfully! Please check your email for a verification link.', false);
                 signupForm.reset();
-                showSection('login-section'); // Redirect to login after successful signup
+                showSection('login-section');
             } catch (error) {
                 let errorMessage = `Error creating account: ${error.message}`;
                 if (error.code === 'auth/email-already-in-use') {
@@ -187,7 +199,14 @@
                     return;
                 }
                 
-                // If login is successful and email is verified, redirect to profile page
+                // If login is successful and email is verified, update the is_verified field
+                await fetch('/api/verify_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: user.uid })
+                });
+
+                // Now redirect to profile page
                 window.location.assign('/profile');
                 
             } catch (error) {
