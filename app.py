@@ -570,15 +570,12 @@ def load_logged_in_user():
 
 
 
-    
-
-
 
 @app.route('/profile')
 def profile():
     """
     Renders the user's profile page, handling authentication via Firestore.
-
+    
     This function manually checks if a user is logged in and verified by
     inspecting the Flask session and their Firestore document.
     """
@@ -587,7 +584,7 @@ def profile():
         user_uid = session.get('user_id')
         if not user_uid:
             # If no user_id in session, the user is not logged in.
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('login'))
 
         # Fetch the user's data from Firestore using their unique UID.
         user_doc_ref = firestore_db.collection('users').document(user_uid)
@@ -597,21 +594,21 @@ def profile():
             # If the user document doesn't exist, something is wrong. Clear session and redirect.
             session.pop('user_id', None)
             flash("User data not found. Please log in again.", "error")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('login'))
 
         user_data = user_doc.to_dict()
 
         # Check for email verification status
         if not user_data.get('is_verified', False):
             flash("Your email address is not verified. Please check your inbox to verify your account.", "error")
-            # Assuming a dedicated route for email verification.
-            return redirect(url_for('auth.email_verification'))
+            # Redirect to the email verification page.
+            return redirect(url_for('email_verification'))
 
         # Handle last active timestamp logic.
         user_data['last_active'] = datetime.datetime.fromtimestamp(
             user_data.get('last_active_timestamp', 0)
         ).strftime('%b %d, %Y')
-
+        
         # Format the member since date.
         user_data['created_at'] = datetime.datetime.fromtimestamp(
             user_data.get('created_at_timestamp', 0)
@@ -656,7 +653,8 @@ def profile():
         flash("An unexpected error occurred. Please try again later.", "error")
         # In case of any unexpected error, redirect to a safe page.
         return redirect(url_for('signup'))
-
+        
+    
 
 
 
@@ -8165,6 +8163,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
