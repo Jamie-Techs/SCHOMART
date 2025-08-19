@@ -23,11 +23,24 @@
         #messageBox { padding: 12px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9em; display: none; opacity: 0; transition: opacity 0.3s ease-in-out; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
         #messageBox.show { display: block; opacity: 1; }
         .hidden { display: none; }
+        #logout-btn {
+            background-color: #e53e3e;
+        }
+        #logout-btn:hover {
+            background-color: #c53030;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="signup-section">
+        <!-- New element to show when the user is logged in -->
+        <div id="logged-in-message" class="hidden">
+            <h2>You are already logged in.</h2>
+            <p>Please log out to access the signup or login forms.</p>
+            <button id="logout-btn" class="btn">Sign Out</button>
+        </div>
+
+        <div id="signup-section" class="hidden">
             <h2>Create Your Account</h2>
             <div id="messageBox"></div>
             <form id="signupForm">
@@ -100,6 +113,7 @@
         const loginForm = document.getElementById('loginForm');
         const msgBoxSignup = document.getElementById('messageBox');
         const msgBoxLogin = document.getElementById('messageBoxLogin');
+        const loggedInMessage = document.getElementById('logged-in-message');
 
         function showMessageBox(box, message, isError = false) {
             box.textContent = message;
@@ -126,14 +140,31 @@
         function hideForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'none';
         }
-
+        
+        // Listen for auth state changes
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // If user is authenticated, redirect to the profile page
-                window.location.assign('/profile');
+                // If the user is already signed in, show a message and a logout button
+                loggedInMessage.classList.remove('hidden');
+                document.getElementById('signup-section').classList.add('hidden');
+                document.getElementById('login-section').classList.add('hidden');
+                // You can still redirect if you want, but this provides a way to stay on the page.
+                // window.location.assign('/profile'); 
             } else {
-                // If no user is authenticated, show the login section
+                // If no user is signed in, show the login section by default
+                loggedInMessage.classList.add('hidden');
                 showSection('login-section');
+            }
+        });
+
+        // Add event listener for the new logout button
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                // The onAuthStateChanged listener will handle the redirect/UI change
+                console.log("User signed out successfully.");
+            } catch (error) {
+                console.error("Error signing out:", error);
             }
         });
 
@@ -215,3 +246,4 @@
     </script>
 </body>
 </html>
+
