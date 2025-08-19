@@ -73,6 +73,20 @@
                 <button type="submit" class="btn">Log In</button>
             </form>
             <p class="link-text" onclick="showSection('signup-section')">Don't have an account? Sign up here.</p>
+            <p class="link-text" onclick="showSection('reset-section')">Forgot Password?</p>
+        </div>
+
+        <div id="reset-section" class="hidden">
+            <h2>Reset Password</h2>
+            <div id="messageBoxReset" class="messageBox"></div>
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="reset-email">Email Address</label>
+                    <input type="email" id="reset-email" required>
+                </div>
+                <button type="submit" class="btn">Send Password Reset Email</button>
+            </form>
+            <p class="link-text" onclick="showSection('login-section')">Back to Log In</p>
         </div>
     </div>
     
@@ -92,8 +106,11 @@
 
         const signupForm = document.getElementById('signupForm');
         const loginForm = document.getElementById('loginForm');
+        const resetPasswordForm = document.getElementById('resetPasswordForm');
+        
         const msgBoxSignup = document.getElementById('messageBox');
         const msgBoxLogin = document.getElementById('messageBoxLogin');
+        const msgBoxReset = document.getElementById('messageBoxReset');
         
         let messageTimeout;
 
@@ -118,9 +135,11 @@
         function showSection(sectionId) {
             document.getElementById('signup-section').classList.add('hidden');
             document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('reset-section').classList.add('hidden');
             document.getElementById(sectionId).classList.remove('hidden');
             hideMessageBox(msgBoxSignup);
             hideMessageBox(msgBoxLogin);
+            hideMessageBox(msgBoxReset);
         }
 
         // Initially show the signup section
@@ -165,9 +184,13 @@
                 });
 
                 if (response.ok) {
+                    // Flash the message before changing sections
                     showMessageBox(msgBoxSignup, 'Account created successfully! Please check your email for a verification link.', false);
                     signupForm.reset();
-                    showSection('login-section');
+                    // Change sections after a short delay to allow message to show
+                    setTimeout(() => {
+                        showSection('login-section');
+                    }, 2000); 
                 } else {
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Failed to save user data on the backend.');
@@ -223,6 +246,30 @@
                 }
                 showMessageBox(msgBoxLogin, errorMessage, true);
                 console.error("Login error:", error);
+            }
+        });
+
+        resetPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('reset-email').value;
+            hideMessageBox(msgBoxReset);
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showMessageBox(msgBoxReset, 'A password reset link has been sent to your email.', false);
+                resetPasswordForm.reset();
+                setTimeout(() => {
+                    showSection('login-section');
+                }, 2000);
+            } catch (error) {
+                let errorMessage = `Failed to send password reset email: ${error.message}`;
+                if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'The email address is not valid.';
+                } else if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'No user found with that email address.';
+                }
+                showMessageBox(msgBoxReset, errorMessage, true);
+                console.error("Password reset error:", error);
             }
         });
     </script>
