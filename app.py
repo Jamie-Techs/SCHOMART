@@ -52,7 +52,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilte
 from google.cloud.firestore_v1 import Increment
 import boto3
 from botocore.exceptions import ClientError
-
+from flask import Blueprint
 from authlib.integrations.flask_client import OAuth
 
 from firebase_functions import https_fn
@@ -571,122 +571,94 @@ def load_logged_in_user():
 
 
     
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
+
+
+# Create a Blueprint for your routes.
+profile_bp = Blueprint('profile', __name__)
+
+@profile_bp.route('/profile')
 def profile():
     """
-    Handles displaying and updating a user's profile information.
+    Renders the user's profile page, handling authentication via Firestore.
+    
+    This function manually checks if a user is logged in and verified by
+    inspecting the Flask session and their Firestore document.
     """
-    user = g.user
-    if request.method == 'POST':
+    try:
+        # Check if the user's UID is stored in the session, indicating a logged-in user.
+        user_uid = session.get('user_id')
+        if not user_uid:
+            # If no user_id in session, the user is not logged in.
+            return redirect(url_for('auth.login'))
+
+        # Fetch the user's data from Firestore using their unique UID.
+        user_doc_ref = firestore_db.collection('users').document(user_uid)
+        user_doc = user_doc_ref.get()
+
+        if not user_doc.exists:
+            # If the user document doesn't exist, something is wrong. Clear session and redirect.
+            session.pop('user_id', None)
+            flash("User data not found. Please log in again.", "error")
+            return redirect(url_for('auth.login'))
+
+        user_data = user_doc.to_dict()
+
+        # Check for email verification status
+        if not user_data.get('is_verified', False):
+            flash("Your email address is not verified. Please check your inbox to verify your account.", "error")
+            # Assuming a dedicated route for email verification.
+            return redirect(url_for('auth.email_verification'))
+
+        # Handle last active timestamp logic.
+        user_data['last_active'] = datetime.datetime.fromtimestamp(
+            user_data.get('last_active_timestamp', 0)
+        ).strftime('%b %d, %Y')
+        
+        # Format the member since date.
+        user_data['created_at'] = datetime.datetime.fromtimestamp(
+            user_data.get('created_at_timestamp', 0)
+        ).strftime('%b %d, %Y')
+
+        # Generate signed URLs for profile and cover photos from Firebase Storage.
+        # This requires the user's UID and the path to the images.
+        bucket = storage.bucket()
+        profile_pic_path = f"users/{user_uid}/profile.jpg"
+        cover_photo_path = f"users/{user_uid}/cover.jpg"
+
+        profile_pic_url = ""
+        cover_photo_url = ""
+
         try:
-            first_name = request.form.get('first_name')
-            last_name = request.form.get('last_name')
-            email = request.form.get('email')
-            location = request.form.get('location')
-            birthday_str = request.form.get('birthday')
-            birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date() if birthday_str else None
-            sex = request.form.get('sex')
-            businessname = request.form.get('businessname')
-            phone_number = request.form.get('phone_number')
-            social_links = request.form.get('social_links') # Assuming JSON string from form
-            delivery_methods = request.form.get('delivery_methods') # Assuming list from form
-            working_days = request.form.get('working_days') # Assuming list from form
-            working_times = request.form.get('working_times') # Assuming JSON string from form
-
-            if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                flash("Invalid email format.", "danger")
-                return redirect(url_for('profile'))
-
-            users_ref = admin_db.collection('users')
-            query = users_ref.where('email', '==', email).stream()
-            
-            email_exists_for_other_user = False
-            for doc in query:
-                if doc.id != user.id:
-                    email_exists_for_other_user = True
-                    break
-            
-            if email_exists_for_other_user:
-                flash("Email already registered by another user.", "danger")
-                return redirect(url_for('profile'))
-
-            profile_picture_filename = user.profile_picture
-            cover_photo_filename = user.cover_photo
-
-            profile_file = request.files.get('profile_picture')
-            cover_file = request.files.get('cover_photo')
-
-            if profile_file and profile_file.filename != '':
-                try:
-                    unique_id = get_unique_id()
-                    filename = f"profile_picture_{user.id}_{unique_id}_{secure_filename(profile_file.filename)}"
-                    blob = cloud_storage.blob(f"profile_pictures/{filename}")
-                    blob.upload_from_file(profile_file)
-                    profile_picture_filename = filename
-                except Exception as e:
-                    logger.error(f"Error uploading profile picture: {e}")
-                    flash("Failed to upload profile picture. Please try again.", "danger")
-
-            if cover_file and cover_file.filename != '':
-                try:
-                    unique_id = get_unique_id()
-                    filename = f"cover_photo_{user.id}_{unique_id}_{secure_filename(cover_file.filename)}"
-                    blob = cloud_storage.blob(f"cover_photos/{filename}")
-                    blob.upload_from_file(cover_file)
-                    cover_photo_filename = filename
-                except Exception as e:
-                    logger.error(f"Error uploading cover photo: {e}")
-                    flash("Failed to upload cover photo. Please try again.", "danger")
-
-            update_data = {
-                'first_name': first_name,
-                'last_name': last_name,
-                'email': email,
-                'location': location,
-                'birthday': birthday,
-                'sex': sex,
-                'businessname': businessname,
-                'phone_number': phone_number,
-                'profile_picture': profile_picture_filename,
-                'cover_photo': cover_photo_filename,
-                'social_links': social_links,
-                'working_days': working_days,
-                'working_times': working_times,
-                'delivery_methods': delivery_methods,
-                'updated_at': admin_firestore.SERVER_TIMESTAMP
-            }
-
-            user_ref = admin_db.collection('users').document(user.id)
-            user_ref.update(update_data)
-            
-            flash("Profile updated successfully.", "success")
-            return redirect(url_for('profile'))
-
+            profile_pic_blob = bucket.blob(profile_pic_path)
+            if profile_pic_blob.exists():
+                profile_pic_url = profile_pic_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15),
+                    method='GET'
+                )
         except Exception as e:
-            logger.error(f"Error in profile POST route for user {user.id}: {e}", exc_info=True)
-            flash("An error occurred updating your profile. Please try again.", "danger")
-            return redirect(url_for('profile'))
-    else:
+            print(f"Error generating profile pic URL: {e}")
+
         try:
-            current_user = User.get(g.user.id)
-            referral_link = url_for('signup', ref=current_user.referral_code, _external=True)
-            
-            profile_pic_url = get_profile_picture_url(current_user.profile_picture)
-            cover_photo_url = get_cover_photo_url(current_user.cover_photo)
-            
-            return render_template('profile.html', 
-                                   user=current_user,
-                                   referral_link=referral_link,
-                                   profile_pic_url=profile_pic_url,
-                                   cover_photo_url=cover_photo_url)
-
+            cover_photo_blob = bucket.blob(cover_photo_path)
+            if cover_photo_blob.exists():
+                cover_photo_url = cover_photo_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15),
+                    method='GET'
+                )
         except Exception as e:
-            logger.error(f"Error in profile GET route for user {g.user.id}: {e}", exc_info=True)
-            flash("An error occurred loading your profile. Please try again.", "danger")
-            return redirect(url_for('login'))
+            print(f"Error generating cover photo URL: {e}")
 
+        # Pass all necessary data to the template.
+        return render_template('profile.html',
+                               user=user_data,
+                               profile_pic_url=profile_pic_url,
+                               cover_photo_url=cover_photo_url)
 
+    except Exception as e:
+        print(f"An unexpected error occurred while rendering the profile page: {e}")
+        flash("An unexpected error occurred. Please try again later.", "error")
+        # In case of any unexpected error, redirect to a safe page.
+        return redirect(url_for('signup'))
 
 
 
@@ -8197,6 +8169,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
