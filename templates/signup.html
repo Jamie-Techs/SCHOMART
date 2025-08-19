@@ -142,8 +142,27 @@
             hideMessageBox(msgBoxReset);
         }
 
-        // Initially show the signup section
+        function checkReferralLink() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const referralCode = urlParams.get('ref');
+            const referralCodeInput = document.getElementById('referral-code');
+
+            if (referralCode) {
+                referralCodeInput.value = referralCode;
+                referralCodeInput.readOnly = true;
+                referralCodeInput.style.backgroundColor = '#f0f0f0';
+                referralCodeInput.style.cursor = 'not-allowed';
+            } else {
+                referralCodeInput.value = '';
+                referralCodeInput.readOnly = false;
+                referralCodeInput.style.backgroundColor = '#fff';
+                referralCodeInput.style.cursor = 'text';
+            }
+        }
+
+        // Initially show the signup section and check for referral link
         showSection('signup-section');
+        checkReferralLink();
 
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -225,7 +244,6 @@
                     return;
                 }
                 
-                // If login is successful and email is verified, update the is_verified field on the backend
                 const verifyResponse = await fetch('/api/verify_user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
