@@ -434,201 +434,64 @@ def account_settings():
 
 
 
-# --------------------
-# Cloud Storage File Upload API Endpoint
-# --------------------
-
-@app.route('/api/upload-file', methods=['POST'])
-def api_upload_file():
-    # Example to get ID token from headers (best practice)
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    id_token = auth_header.split('Bearer ')[1]
-    
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part in the request'}), 400
-    
-    file = request.files['file']
-    file_type = request.form.get('file_type', 'media') # Default to media
-    
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    if file and allowed_file(file.filename):
-        try:
-            decoded_token = auth.verify_id_token(id_token)
-            uid = decoded_token['uid']
-            original_filename = secure_filename(file.filename)
-            file_extension = os.path.splitext(original_filename)[1]
-            unique_filename = f"{uid}/{file_type}/{uuid.uuid4().hex}{file_extension}"
-            
-            # Create a blob and upload the file
-            blob = cloud_storage.blob(unique_filename)
-            blob.upload_from_file(file, content_type=file.content_type)
-            
-            # Make the file publicly accessible
-            blob.make_public()
-            public_url = blob.public_url
-
-            return jsonify({
-                'message': 'File uploaded successfully',
-                'file_url': public_url
-            }), 201
-
-        except Exception as e:
-            logger.error(f"File upload error: {e}", exc_info=True)
-            return jsonify({'error': 'Failed to upload file'}), 500
-    
-    return jsonify({'error': 'Invalid file type'}), 400
 
 
 
 
-# --- Helper Functions ---
-
-def get_client_ip():
-    """Attempts to get the client's IP address, handling proxies."""
-    if request.headers.get('X-Forwarded-For'):
-        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    return request.remote_addr
-
-
-
-# --- Before Request: Set IP Address for all requests ---
-
-@app.before_request
-def before_request_func():
-    g.client_ip = get_client_ip()
-
-# --- Security Headers ---
-
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    return response
-
-# --- User Class and Flask-Login Integration ---
-
-class User(UserMixin):
+# --- User Model Class ---
+class User:
     """
-    User data model and Flask-Login integration.
-    This class now handles both data representation and Flask-Login methods.
+    User data model that retrieves and represents a user from Firestore.
     """
-    def __init__(self, **kwargs):
-        self.id = str(kwargs.get('id'))
-        self.username = kwargs.get('username', '')
-        self.email = kwargs.get('email', '')
-        self.profile_picture = kwargs.get('profile_picture')
-        self.cover_photo = kwargs.get('cover_photo')
-        self.location = kwargs.get('location', '')
-        self.referral_code = kwargs.get('referral_code', '')
-        self.first_name = kwargs.get('first_name', '')
-        self.last_name = kwargs.get('last_name', '')
-        self.birthday = kwargs.get('birthday')
-        self.sex = kwargs.get('sex', '')
-        self.created_at = kwargs.get('created_at')
-        self.last_active = kwargs.get('last_active')
-        self.referral_count = kwargs.get('referral_count', 0)
-        self.is_verified = bool(kwargs.get('is_verified', False))
-        self.is_admin = bool(kwargs.get('is_admin', False))
-        self.is_referral_verified = bool(kwargs.get('is_referral_verified', False))
-        self.last_referral_verification_at = kwargs.get('last_referral_verification_at')
-        self.businessname = kwargs.get('businessname', '')
-        self.phone_number = kwargs.get('phone_number', '')
-        self.verified_phone = bool(kwargs.get('verified_phone', False))
-        self.last_email_otp_sent_at = kwargs.get('last_email_otp_sent_at')
-        self.email_code_expiry = kwargs.get('email_code_expiry')
-        self.token_created_at = kwargs.get('token_created_at')
-        self.is_online = bool(kwargs.get('is_online', False))
-        self.last_online = kwargs.get('last_online')
-        self.social_links = kwargs.get('social_links') if isinstance(kwargs.get('social_links'), dict) else {}
-        self.working_days = kwargs.get('working_days') if isinstance(kwargs.get('working_days'), list) else []
-        self.working_times = kwargs.get('working_times') if isinstance(kwargs.get('working_times'), dict) else {}
-        self.delivery_methods = kwargs.get('delivery_methods') if isinstance(kwargs.get('delivery_methods'), list) else []
-
-        # Format timestamps and dates
-        for key in [
-            'created_at', 'last_active', 'last_referral_verification_at',
-            'last_email_otp_sent_at', 'email_code_expiry', 'token_created_at', 'last_online'
-        ]:
-            value = getattr(self, key)
-            if isinstance(value, datetime):
-                setattr(self, key, value.replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S'))
-        
-        if isinstance(self.birthday, datetime):
-            self.birthday = self.birthday.replace(tzinfo=None).strftime('%Y-%m-%d')
-        
-        # Image URLs (assuming helper functions exist)
-        try:
-            # Placeholder for image URL retrieval
-            self.profile_picture_url = f"/static/images/{self.profile_picture}"
-        except Exception:
-            self.profile_picture_url = "/static/default_avatar.png"
-
-        try:
-            # Placeholder for image URL retrieval
-            self.cover_photo_url = f"/static/images/{self.cover_photo}"
-        except Exception:
-            self.cover_photo_url = "/static/default_cover.png"
-
-    def get_id(self):
-        """Required by Flask-Login to get the user's ID."""
-        return self.id
+    def __init__(self, uid, data):
+        self.id = str(uid)
+        self.data = data
+        self.username = data.get('username', '')
+        self.email = data.get('email', '')
+        self.profile_picture = data.get('profile_picture')
+        self.cover_photo = data.get('cover_photo')
+        self.location = data.get('location', '')
+        self.referral_code = data.get('referral_code', '')
+        self.first_name = data.get('first_name', '')
+        self.last_name = data.get('last_name', '')
+        self.birthday = data.get('birthday')
+        self.sex = data.get('sex', '')
+        self.created_at = data.get('created_at')
+        self.last_active = data.get('last_active')
+        self.referral_count = data.get('referral_count', 0)
+        self.is_verified = bool(data.get('is_verified', False))
+        self.is_admin = bool(data.get('is_admin', False))
+        self.is_referral_verified = bool(data.get('is_referral_verified', False))
+        self.last_referral_verification_at = data.get('last_referral_verification_at')
+        self.businessname = data.get('businessname', '')
+        self.phone_number = data.get('phone_number', '')
+        self.verified_phone = bool(data.get('verified_phone', False))
+        self.last_email_otp_sent_at = data.get('last_email_otp_sent_at')
+        self.email_code_expiry = data.get('email_code_expiry')
+        self.token_created_at = data.get('token_created_at')
+        self.is_online = bool(data.get('is_online', False))
+        self.last_online = data.get('last_online')
+        self.social_links = data.get('social_links') if isinstance(data.get('social_links'), dict) else {}
+        self.working_days = data.get('working_days') if isinstance(data.get('working_days'), list) else []
+        self.working_times = data.get('working_times') if isinstance(data.get('working_times'), dict) else {}
+        self.delivery_methods = data.get('delivery_methods') if isinstance(data.get('delivery_methods'), list) else []
 
     @staticmethod
-    def get(user_id):
+    def get(uid):
         """
         Retrieves a user document from Firestore and returns a User object.
         """
-        if not user_id:
+        if not admin_db or not uid:
             return None
         try:
-            user_ref = admin_db.collection('users').document(str(user_id))
-            user_doc = user_ref.get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                user_data['id'] = user_doc.id
-                return User(**user_data)
+            doc_ref = admin_db.collection('users').document(str(uid))
+            doc = doc_ref.get()
+            if doc.exists:
+                return User(doc.id, doc.to_dict())
             return None
         except Exception as e:
-            current_app.logger.error(f"Error fetching user by ID {user_id}: {e}", exc_info=True)
+            current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
-
-    @staticmethod
-    def update_online_status(user_id, status):
-        """
-        Updates the user's online status in Firestore.
-        """
-        try:
-            user_ref = admin_db.collection('users').document(str(user_id))
-            user_ref.update({
-                'is_online': status,
-                'last_online': firestore.SERVER_TIMESTAMP
-            })
-            current_app.logger.info(f"User {user_id} online status set to {status}")
-        except Exception as e:
-            current_app.logger.error(f"Error updating online status for user {user_id}: {e}", exc_info=True)
-
-# --- Flask-Login User Loader ---
-
-@login_manager.user_loader
-def load_user(user_id):
-    """
-    Loads a user from the database based on their user ID.
-    This function is required by Flask-Login.
-    """
-    logging.info(f"Attempting to load user with ID: {user_id}")
-    return User.get(user_id)
-
-
-
-
-
-
 
 # --- Custom Decorator for Login Required ---
 def login_required(f):
@@ -644,19 +507,23 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
+
+
+
+
+
+
+
+
+
 # --- Helper Functions ---
 def get_unique_id():
     """Generates a unique ID for files or other items."""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
-def generate_unique_referral_code(db, length=6):
-    """Generates a unique referral code by checking against existing codes in Firestore."""
-    while True:
-        referral_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-        # Check for uniqueness
-        query = db.collection('users').where('referral_code', '==', referral_code).limit(1)
-        if not next(query.stream(), None):
-            return referral_code
+
 
 def get_profile_picture_url(profile_picture_filename_str):
     """Generates a public URL for a profile picture from Firebase Storage."""
@@ -713,7 +580,6 @@ def profile():
     user = g.user
     if request.method == 'POST':
         try:
-            # --- Form Data Retrieval ---
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             email = request.form.get('email')
@@ -721,14 +587,18 @@ def profile():
             birthday_str = request.form.get('birthday')
             birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date() if birthday_str else None
             sex = request.form.get('sex')
-            
-            # --- Validation and Uniqueness Checks ---
+            businessname = request.form.get('businessname')
+            phone_number = request.form.get('phone_number')
+            social_links = request.form.get('social_links') # Assuming JSON string from form
+            delivery_methods = request.form.get('delivery_methods') # Assuming list from form
+            working_days = request.form.get('working_days') # Assuming list from form
+            working_times = request.form.get('working_times') # Assuming JSON string from form
+
             if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
                 flash("Invalid email format.", "danger")
                 return redirect(url_for('profile'))
 
             users_ref = admin_db.collection('users')
-            # Check if the new email already exists for another user
             query = users_ref.where('email', '==', email).stream()
             
             email_exists_for_other_user = False
@@ -741,11 +611,9 @@ def profile():
                 flash("Email already registered by another user.", "danger")
                 return redirect(url_for('profile'))
 
-            # Get existing photo filenames to check against
             profile_picture_filename = user.profile_picture
             cover_photo_filename = user.cover_photo
 
-            # --- File Upload Handling ---
             profile_file = request.files.get('profile_picture')
             cover_file = request.files.get('cover_photo')
 
@@ -771,7 +639,6 @@ def profile():
                     logger.error(f"Error uploading cover photo: {e}")
                     flash("Failed to upload cover photo. Please try again.", "danger")
 
-            # --- Firestore Document Update ---
             update_data = {
                 'first_name': first_name,
                 'last_name': last_name,
@@ -779,8 +646,14 @@ def profile():
                 'location': location,
                 'birthday': birthday,
                 'sex': sex,
+                'businessname': businessname,
+                'phone_number': phone_number,
                 'profile_picture': profile_picture_filename,
                 'cover_photo': cover_photo_filename,
+                'social_links': social_links,
+                'working_days': working_days,
+                'working_times': working_times,
+                'delivery_methods': delivery_methods,
                 'updated_at': admin_firestore.SERVER_TIMESTAMP
             }
 
@@ -795,13 +668,10 @@ def profile():
             flash("An error occurred updating your profile. Please try again.", "danger")
             return redirect(url_for('profile'))
     else:
-        # --- GET Request Handling ---
         try:
-            # Re-fetch user data to ensure the template has the latest info
             current_user = User.get(g.user.id)
             referral_link = url_for('signup', ref=current_user.referral_code, _external=True)
             
-            # Get the URLs for the photos from Firebase Storage
             profile_pic_url = get_profile_picture_url(current_user.profile_picture)
             cover_photo_url = get_cover_photo_url(current_user.cover_photo)
             
@@ -809,14 +679,12 @@ def profile():
                                    user=current_user,
                                    referral_link=referral_link,
                                    profile_pic_url=profile_pic_url,
-                                   cover_photo_url=cover_photo_url,
-                                   full_location=current_user.location)
+                                   cover_photo_url=cover_photo_url)
 
         except Exception as e:
             logger.error(f"Error in profile GET route for user {g.user.id}: {e}", exc_info=True)
             flash("An error occurred loading your profile. Please try again.", "danger")
             return redirect(url_for('login'))
-
 
 
 
@@ -8329,6 +8197,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
