@@ -140,9 +140,12 @@ def login():
 
 
 
-
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
+    """
+    Handles user signup by creating a new user in Firebase Auth and saving
+    their data to Firestore.
+    """
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -155,6 +158,12 @@ def api_signup():
         # Create user in Firebase Auth
         user = auth.create_user(email=email, password=password)
         
+        # Generate the email verification link
+        # This link must be sent to the user via a separate email service
+        # (e.g., SendGrid, Mailgun, etc.) since Flask itself cannot send emails.
+        verification_link = auth.generate_email_verification_link(email)
+        logger.info(f"Generated email verification link for {email}: {verification_link}")
+
         # Save additional user data to Firestore
         user_ref = admin_db.collection('users').document(user.uid)
         user_ref.set({
@@ -163,11 +172,8 @@ def api_signup():
             'created_at': firestore.SERVER_TIMESTAMP
         })
         
-        # This is where we would send a verification email, but the frontend SDK handles it.
-        # For a backend-only approach, we would use auth.generate_email_verification_link()
-        
         return jsonify({
-            'message': 'User created successfully.',
+            'message': 'User created successfully. A verification link has been generated on the server.',
             'uid': user.uid
         }), 201
 
@@ -177,9 +183,12 @@ def api_signup():
         logger.error(f"Signup error: {e}", exc_info=True)
         return jsonify({'error': 'Failed to create user.'}), 500
 
-
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    """
+    Verifies a user's ID token sent from the frontend and retrieves user data
+    from Firestore.
+    """
     data = request.get_json()
     id_token = data.get('idToken')
 
@@ -205,6 +214,11 @@ def api_login():
     except Exception as e:
         logger.error(f"Login error: {e}", exc_info=True)
         return jsonify({'error': 'Invalid ID token'}), 401
+
+
+
+
+
 
 
 @app.route('/api/update-password', methods=['POST'])
@@ -8240,6 +8254,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
