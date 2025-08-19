@@ -82,10 +82,6 @@ app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 
 bcrypt = Bcrypt(app)
 mail = Mail(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'warning'
 oauth = OAuth(app)
 socketio = SocketIO(app)
 
@@ -498,80 +494,7 @@ def get_client_ip():
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
     return request.remote_addr
 
-def get_device_fingerprint_hash(device_data_json):
-    """
-    Generates a consistent SHA256 hash from collected device data (JSON string).
-    """
-    if not device_data_json:
-        return None
-    try:
-        device_data_dict = json.loads(device_data_json)
-        canonical_json = json.dumps(device_data_dict, sort_keys=True)
-        return hashlib.sha256(canonical_json.encode('utf-8')).hexdigest()
-    except json.JSONDecodeError:
-        logging.error(f"Invalid device fingerprint data JSON: {device_data_json}")
-        return None
 
-def record_behavioral_log(user_id, action, additional_info=None):
-    """
-    Records behavioral data to Firestore.
-    """
-    device_hash = request.form.get('device_fingerprint_hash', 'unknown')
-    log_entry = {
-        "timestamp": datetime.now(timezone.utc),
-        "user_id": user_id,
-        "action": action,
-        "ip_address": getattr(g, 'client_ip', 'unknown'),
-        "device_hash": device_hash,
-        "additional_info": additional_info
-    }
-    logging.info(f"BEHAVIORAL_LOG: {json.dumps(log_entry, default=str)}")
-    
-    try:
-        admin_db.collection('behavioral_logs').add(log_entry)
-    except Exception as e:
-        logging.error(f"Error saving behavioral log to Firestore: {e}")
-
-def is_suspicious_behavior(user_id, ip_address, device_hash):
-    """
-    Analyzes behavioral data from Firestore for suspicious activity.
-    """
-    logging.info(f"Performing behavioral analysis for user {user_id} from IP {ip_address} with device {device_hash}")
-    
-    try:
-        # Rule 1: Too many failed login attempts from this IP recently
-        time_limit = datetime.now(timezone.utc) - timedelta(minutes=10)
-        failed_attempts_query = admin_db.collection('behavioral_logs').where(
-            'ip_address', '==', ip_address
-        ).where(
-            'action', '==', 'login_failed'
-        ).where(
-            'timestamp', '>', time_limit
-        ).stream()
-        
-        failed_attempts_count = len(list(failed_attempts_query))
-        if failed_attempts_count > 5:
-            logging.warning(f"Suspicious behavior: IP {ip_address} has {failed_attempts_count} recent failed login attempts.")
-            return True
-        
-        # Rule 2: Multiple registrations from the same IP very recently
-        time_limit = datetime.now(timezone.utc) - timedelta(hours=1)
-        recent_registrations_query = admin_db.collection('behavioral_logs').where(
-            'ip_address', '==', ip_address
-        ).where(
-            'action', '==', 'registration_success'
-        ).where(
-            'timestamp', '>', time_limit
-        ).stream()
-        
-        recent_registrations_count = len(list(recent_registrations_query))
-        if recent_registrations_count > 2:
-            logging.warning(f"Suspicious behavior: IP {ip_address} has {recent_registrations_count} recent registrations.")
-            return True
-            
-    except Exception as e:
-        logging.error(f"Error during behavioral analysis: {e}")
-    return False
 
 # --- Before Request: Set IP Address for all requests ---
 
@@ -707,61 +630,54 @@ def load_user(user_id):
 
 
 
-
-
-
-
 # --- Custom Decorator for Login Required ---
 def login_required(f):
+    """
+    Decorator to protect routes that require user authentication.
+    It redirects unauthenticated users to the signup page.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if the user object is populated in the 'g' object
-        if g.user is None:
+        if 'user_id' not in session:
             flash("You need to be logged in to view this page.", "danger")
-            # The 'signup' route is used as the redirect target
-            return redirect(url_for('signup')) 
+            return redirect(url_for('signup'))
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Application Context Processor for Templates ---
-@app.context_processor
-def inject_user_into_templates():
-    """Makes 'g.user' available as 'current_user' in all templates."""
-    return {'current_user': g.user}
+# --- Helper Functions ---
+def get_unique_id():
+    """Generates a unique ID for files or other items."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
-@app.before_request
-def load_logged_in_user():
-    """Loads the user object before each request if a user ID is in the session."""
-    user_id = session.get('user_id')
-    g.user = None  # Initialize g.user to None for every request
+def generate_unique_referral_code(db, length=6):
+    """Generates a unique referral code by checking against existing codes in Firestore."""
+    while True:
+        referral_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        # Check for uniqueness
+        query = db.collection('users').where('referral_code', '==', referral_code).limit(1)
+        if not next(query.stream(), None):
+            return referral_code
 
-    if user_id is not None:
-        g.user = User.get(user_id)
-    g.client_ip = request.remote_addr
-
-# --- Helper Functions for URLs (Now using Firebase Storage) ---
 def get_profile_picture_url(profile_picture_filename_str):
     """Generates a public URL for a profile picture from Firebase Storage."""
-    if not profile_picture_filename_str or not bucket:
+    if not profile_picture_filename_str or not cloud_storage:
         return url_for('static', filename='images/default_profile.png')
     
     blob_path = f"profile_pictures/{profile_picture_filename_str}"
-    blob = bucket.blob(blob_path)
+    blob = cloud_storage.blob(blob_path)
 
     if blob.exists():
-        # You need to generate a signed URL if files are not public
-        # For public files, this should be fine. Check your Firebase Storage rules.
         return blob.public_url
     else:
         return url_for('static', filename='images/default_profile.png')
 
 def get_cover_photo_url(cover_photo_filename_str):
     """Generates a public URL for a cover photo from Firebase Storage."""
-    if not cover_photo_filename_str or not bucket:
+    if not cover_photo_filename_str or not cloud_storage:
         return url_for('static', filename='images/no-photo-selected.png')
         
     blob_path = f"cover_photos/{cover_photo_filename_str}"
-    blob = bucket.blob(blob_path)
+    blob = cloud_storage.blob(blob_path)
     
     if blob.exists():
         return blob.public_url
@@ -770,14 +686,34 @@ def get_cover_photo_url(cover_photo_filename_str):
 
 
 
+@app.context_processor
+def inject_user_into_templates():
+    """Makes the current user object available to all templates."""
+    return {'current_user': g.user}
 
+@app.before_request
+def load_logged_in_user():
+    """Loads the user object into the Flask `g` object before each request."""
+    user_id = session.get('user_id')
+    g.user = None
+    if user_id is not None:
+        g.user = User.get(user_id)
+    g.client_ip = request.remote_addr
+
+
+
+
+    
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    """Handles the profile page, including updates and display."""
+    """
+    Handles displaying and updating a user's profile information.
+    """
     user = g.user
     if request.method == 'POST':
         try:
+            # --- Form Data Retrieval ---
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             email = request.form.get('email')
@@ -786,44 +722,56 @@ def profile():
             birthday = datetime.strptime(birthday_str, '%Y-%m-%d').date() if birthday_str else None
             sex = request.form.get('sex')
             
-            user_id_str = user.id
-
+            # --- Validation and Uniqueness Checks ---
             if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-                flash("Invalid email format.", "error")
+                flash("Invalid email format.", "danger")
                 return redirect(url_for('profile'))
 
-            users_ref = db.collection('users')
+            users_ref = admin_db.collection('users')
+            # Check if the new email already exists for another user
             query = users_ref.where('email', '==', email).stream()
             
-            email_exists = False
+            email_exists_for_other_user = False
             for doc in query:
-                if doc.id != user_id_str:
-                    email_exists = True
+                if doc.id != user.id:
+                    email_exists_for_other_user = True
                     break
             
-            if email_exists:
-                flash("Email already registered by another user.", "error")
+            if email_exists_for_other_user:
+                flash("Email already registered by another user.", "danger")
                 return redirect(url_for('profile'))
 
+            # Get existing photo filenames to check against
             profile_picture_filename = user.profile_picture
             cover_photo_filename = user.cover_photo
 
-            if 'profile_picture' in request.files:
-                file = request.files['profile_picture']
-                if file and file.filename != '':
-                    filename = secure_filename(file.filename)
-                    blob = bucket.blob(f"profile_pictures/{user_id_str}-{filename}")
-                    blob.upload_from_file(file, content_type=file.mimetype)
-                    profile_picture_filename = f"{user_id_str}-{filename}"
+            # --- File Upload Handling ---
+            profile_file = request.files.get('profile_picture')
+            cover_file = request.files.get('cover_photo')
 
-            if 'cover_photo' in request.files:
-                file = request.files['cover_photo']
-                if file and file.filename != '':
-                    filename = secure_filename(file.filename)
-                    blob = bucket.blob(f"cover_photos/{user_id_str}-{filename}")
-                    blob.upload_from_file(file, content_type=file.mimetype)
-                    cover_photo_filename = f"{user_id_str}-{filename}"
+            if profile_file and profile_file.filename != '':
+                try:
+                    unique_id = get_unique_id()
+                    filename = f"profile_picture_{user.id}_{unique_id}_{secure_filename(profile_file.filename)}"
+                    blob = cloud_storage.blob(f"profile_pictures/{filename}")
+                    blob.upload_from_file(profile_file)
+                    profile_picture_filename = filename
+                except Exception as e:
+                    logger.error(f"Error uploading profile picture: {e}")
+                    flash("Failed to upload profile picture. Please try again.", "danger")
 
+            if cover_file and cover_file.filename != '':
+                try:
+                    unique_id = get_unique_id()
+                    filename = f"cover_photo_{user.id}_{unique_id}_{secure_filename(cover_file.filename)}"
+                    blob = cloud_storage.blob(f"cover_photos/{filename}")
+                    blob.upload_from_file(cover_file)
+                    cover_photo_filename = filename
+                except Exception as e:
+                    logger.error(f"Error uploading cover photo: {e}")
+                    flash("Failed to upload cover photo. Please try again.", "danger")
+
+            # --- Firestore Document Update ---
             update_data = {
                 'first_name': first_name,
                 'last_name': last_name,
@@ -833,34 +781,47 @@ def profile():
                 'sex': sex,
                 'profile_picture': profile_picture_filename,
                 'cover_photo': cover_photo_filename,
-                'updated_at': firestore.SERVER_TIMESTAMP
+                'updated_at': admin_firestore.SERVER_TIMESTAMP
             }
 
-            user_ref = db.collection('users').document(user_id_str)
+            user_ref = admin_db.collection('users').document(user.id)
             user_ref.update(update_data)
             
             flash("Profile updated successfully.", "success")
             return redirect(url_for('profile'))
 
         except Exception as e:
-            current_app.logger.error(f"Error in profile POST route for user {user.id}: {e}", exc_info=True)
+            logger.error(f"Error in profile POST route for user {user.id}: {e}", exc_info=True)
             flash("An error occurred updating your profile. Please try again.", "danger")
             return redirect(url_for('profile'))
-    else:  # GET request to display the profile
+    else:
+        # --- GET Request Handling ---
         try:
-            if not user:
-                flash("User profile not found.", "danger")
-                return redirect(url_for('signup'))
-
-            referral_link = url_for('signup', ref=user.referral_code, _external=True)
-            full_location = user.location if user.location else "Not set"
-
-            return render_template('profile.html', user=user, referral_link=referral_link, full_location=full_location)
+            # Re-fetch user data to ensure the template has the latest info
+            current_user = User.get(g.user.id)
+            referral_link = url_for('signup', ref=current_user.referral_code, _external=True)
+            
+            # Get the URLs for the photos from Firebase Storage
+            profile_pic_url = get_profile_picture_url(current_user.profile_picture)
+            cover_photo_url = get_cover_photo_url(current_user.cover_photo)
+            
+            return render_template('profile.html', 
+                                   user=current_user,
+                                   referral_link=referral_link,
+                                   profile_pic_url=profile_pic_url,
+                                   cover_photo_url=cover_photo_url,
+                                   full_location=current_user.location)
 
         except Exception as e:
-            current_app.logger.error(f"Error in profile GET route for user {user.id}: {e}", exc_info=True)
+            logger.error(f"Error in profile GET route for user {g.user.id}: {e}", exc_info=True)
             flash("An error occurred loading your profile. Please try again.", "danger")
-            return redirect(url_for('signup'))
+            return redirect(url_for('login'))
+
+
+
+
+
+
 
 
 
@@ -8368,6 +8329,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
