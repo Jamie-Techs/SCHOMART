@@ -143,6 +143,7 @@ def login():
 
 
 
+
 # --- Helper Function for Referral Code Generation ---
 def generate_referral_code(uid, length=8):
     """
@@ -189,7 +190,7 @@ def api_signup():
             'referral_code': referral_code,
             'referral_link': referral_link,
             'referral_count': 0,
-            'is_verified': False, # Initially false until email is verified
+            'is_verified': False,
             'is_referral_verified': False,
             'created_at': firestore.SERVER_TIMESTAMP,
             'last_active': firestore.SERVER_TIMESTAMP,
@@ -226,6 +227,21 @@ def api_signup():
             
             for doc in referrer_docs:
                 referrer_ref = doc.reference
+                
+                # Retrieve the current referral count to ensure it's an integer
+                referrer_data = doc.to_dict()
+                current_count = referrer_data.get('referral_count', 0)
+                
+                # Check if the existing value is a string and convert it if necessary
+                if not isinstance(current_count, int):
+                    try:
+                        current_count = int(current_count)
+                        logger.warning(f"Converted referrer's referral_count from string to integer for UID: {referrer_ref.id}")
+                    except (ValueError, TypeError):
+                        logger.error(f"Could not convert referrer's referral_count to integer for UID: {referrer_ref.id}")
+                        current_count = 0 # Default to 0 to prevent further errors
+                
+                # Now, safely increment the count
                 referrer_ref.update({
                     'referral_count': firestore.Increment(1)
                 })
@@ -316,8 +332,8 @@ def api_login():
 
     except Exception as e:
         logger.error(f"Login verification error: {e}", exc_info=True)
-        return jsonify({'error': 'Authentication failed.'}), 40
-
+        return jsonify({'error': 'Authentication failed.'}), 401
+        
 
 
 
@@ -8361,6 +8377,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
