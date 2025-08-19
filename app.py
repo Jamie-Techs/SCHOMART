@@ -146,10 +146,11 @@ def login():
 
 # --- Helper Function for Referral Code Generation ---
 def generate_referral_code(uid, length=8):
-    """
-    Generates a unique referral code based on the user's UID.
-    """
-    return uid[:length].upper()
+    try:
+        length = int(length)
+    except (ValueError, TypeError):
+        length = 8  # fallback to default if conversion fails
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 # --- API Routes ---
 
@@ -8377,6 +8378,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
