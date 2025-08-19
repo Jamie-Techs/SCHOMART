@@ -52,7 +52,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilte
 from google.cloud.firestore_v1 import Increment
 import boto3
 from botocore.exceptions import ClientError
-from flask import Blueprint
+
 from authlib.integrations.flask_client import OAuth
 
 from firebase_functions import https_fn
@@ -573,14 +573,12 @@ def load_logged_in_user():
     
 
 
-# Create a Blueprint for your routes.
-profile_bp = Blueprint('profile', __name__)
 
-@profile_bp.route('/profile')
+@app.route('/profile')
 def profile():
     """
     Renders the user's profile page, handling authentication via Firestore.
-    
+
     This function manually checks if a user is logged in and verified by
     inspecting the Flask session and their Firestore document.
     """
@@ -613,14 +611,13 @@ def profile():
         user_data['last_active'] = datetime.datetime.fromtimestamp(
             user_data.get('last_active_timestamp', 0)
         ).strftime('%b %d, %Y')
-        
+
         # Format the member since date.
         user_data['created_at'] = datetime.datetime.fromtimestamp(
             user_data.get('created_at_timestamp', 0)
         ).strftime('%b %d, %Y')
 
         # Generate signed URLs for profile and cover photos from Firebase Storage.
-        # This requires the user's UID and the path to the images.
         bucket = storage.bucket()
         profile_pic_path = f"users/{user_uid}/profile.jpg"
         cover_photo_path = f"users/{user_uid}/cover.jpg"
@@ -659,7 +656,6 @@ def profile():
         flash("An unexpected error occurred. Please try again later.", "error")
         # In case of any unexpected error, redirect to a safe page.
         return redirect(url_for('signup'))
-
 
 
 
@@ -8169,6 +8165,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
