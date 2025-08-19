@@ -128,6 +128,19 @@ def allowed_file(filename):
 # Firebase Authentication and Firestore API Endpoints
 # --------------------
 
+
+
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+
+
+
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
     data = request.get_json()
@@ -314,14 +327,6 @@ def api_upload_file():
 
 
 
-
-
-
-
-
-# Assuming 'admin_db' and 'app' are already initialized.
-# from your_firebase_setup import admin_db, app
-# from flask_login import LoginManager
 
 # --- Helper Functions ---
 
@@ -549,83 +554,76 @@ def generate_referral_code(length=8):
 
 
 
-@app.route('/signup')
-def signup():
-    return render_template('signup.html')
-
-@app.route('/login')
-def login():
-    return render_template('login.html')
 
 
 
+# --- Custom Decorator for Login Required ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("You need to be logged in to view this page.", "danger")
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-
-
-
-
-
-        
-
-
-
-
-
-
-
-@app.route('/logout')
-@login_required
-def logout():
-    """
-    Logs the user out.
-    """
-    # Set the user's online status to False upon logout
-    User.update_online_status(current_user.id, False)
-
-    logout_user()
-    flash("You have been logged out.", "success")
-    return redirect(url_for('home')) 
 # --- Application Context Processor for Templates ---
 @app.context_processor
 def inject_user_into_templates():
-    # This makes 'g.user' available as 'current_user' in all templates
+    """Makes 'g.user' available as 'current_user' in all templates."""
     return {'current_user': g.user}
 
 @app.before_request
 def load_logged_in_user():
+    """Loads the user object before each request if a user ID is in the session."""
     user_id = session.get('user_id')
-    g.user = None # Initialize g.user to None for every request
+    g.user = None  # Initialize g.user to None for every request
 
     if user_id is not None:
         g.user = User.get(user_id)
     g.client_ip = request.remote_addr
 
-
-
-
-
-
-# --- Helper Functions for URLs (Ensure they construct paths correctly) ---
+# --- Helper Functions for URLs (Now using Firebase Storage) ---
 def get_profile_picture_url(profile_picture_filename_str):
-    if profile_picture_filename_str:
-        # Assumes profile_picture_filename_str is ONLY the filename (e.g., 'abc.jpg')
-        return url_for('static', filename=f'uploads/profile_pictures/{profile_picture_filename_str}')
+    """Generates a public URL for a profile picture from Firebase Storage."""
+    if not profile_picture_filename_str or not bucket:
+        # Fallback to a default image URL
+        return url_for('static', filename='images/default_profile.png')
+    
+    # Construct the blob path in Firebase Storage
+    blob_path = f"profile_pictures/{profile_picture_filename_str}"
+    blob = bucket.blob(blob_path)
+
+    # Check if the blob exists and return its public URL
+    # Note: This requires the file to be publicly readable in Firebase Storage rules
+    if blob.exists():
+        return blob.public_url
     else:
         return url_for('static', filename='images/default_profile.png')
 
 def get_cover_photo_url(cover_photo_filename_str):
-    if cover_photo_filename_str:
-        # Assumes cover_photo_filename_str is ONLY the filename
-        return url_for('static', filename=f'uploads/cover_photos/{cover_photo_filename_str}')
-    return url_for('static', filename='images/no-photo-selected.png')
-
+    """Generates a public URL for a cover photo from Firebase Storage."""
+    if not cover_photo_filename_str or not bucket:
+        # Fallback to a default image URL
+        return url_for('static', filename='images/no-photo-selected.png')
+        
+    # Construct the blob path in Firebase Storage
+    blob_path = f"cover_photos/{cover_photo_filename_str}"
+    blob = bucket.blob(blob_path)
+    
+    if blob.exists():
+        return blob.public_url
+    else:
+        return url_for('static', filename='images/no-photo-selected.png')
 
 
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    # POST request to update the profile
+    """Handles the profile page, including updates and display."""
+    user_id_str = g.user.id
+
     if request.method == 'POST':
         try:
             # Get data from the form
@@ -638,7 +636,7 @@ def profile():
             sex = request.form.get('sex')
             
             # Use g.user.id, which should be a string (the Firestore document ID)
-            user_id_str = g.user.id 
+            user_id_str = g.user.id
 
             # Validate email format
             if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
@@ -659,6 +657,26 @@ def profile():
                 flash("Email already registered by another user.", "error")
                 return redirect(url_for('profile'))
 
+            # Handle file uploads to Firebase Storage
+            profile_picture_filename = g.user.profile_picture
+            cover_photo_filename = g.user.cover_photo
+
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and file.filename != '':
+                    filename = secure_filename(file.filename)
+                    blob = bucket.blob(f"profile_pictures/{user_id_str}-{filename}")
+                    blob.upload_from_file(file, content_type=file.mimetype)
+                    profile_picture_filename = f"{user_id_str}-{filename}"
+
+            if 'cover_photo' in request.files:
+                file = request.files['cover_photo']
+                if file and file.filename != '':
+                    filename = secure_filename(file.filename)
+                    blob = bucket.blob(f"cover_photos/{user_id_str}-{filename}")
+                    blob.upload_from_file(file, content_type=file.mimetype)
+                    cover_photo_filename = f"{user_id_str}-{filename}"
+
             # Prepare the data for the Firestore update
             update_data = {
                 'first_name': first_name,
@@ -667,6 +685,8 @@ def profile():
                 'location': location,
                 'birthday': birthday,
                 'sex': sex,
+                'profile_picture': profile_picture_filename,
+                'cover_photo': cover_photo_filename,
                 'updated_at': firestore.SERVER_TIMESTAMP
             }
 
@@ -675,23 +695,20 @@ def profile():
             user_ref.update(update_data)
             
             flash("Profile updated successfully.", "success")
-            record_behavioral_log(user_id_str, 'profile_update', {'ip': g.client_ip if 'client_ip' in g else 'N/A'})
+            # record_behavioral_log(...) # Assuming this is a custom function
             return redirect(url_for('profile'))
 
         except Exception as e:
             current_app.logger.error(f"Error in profile POST route for user {g.user.id}: {e}", exc_info=True)
             flash("An error occurred updating your profile. Please try again.", "danger")
-            return redirect(url_for('home'))
-
-    # GET request to display the profile
-    else: 
+            return redirect(url_for('profile'))
+    else:  # GET request to display the profile
         try:
-            # g.user is loaded by the @login_required decorator
             if not g.user:
                 flash("User profile not found.", "danger")
                 return redirect(url_for('home'))
 
-            # Construct the referral link
+            # Construct the referral link (assuming a referral code exists)
             referral_link = url_for('signup', ref=g.user.referral_code, _external=True)
 
             full_location = g.user.location if hasattr(g.user, 'location') and g.user.location else "Not set"
@@ -702,6 +719,30 @@ def profile():
             current_app.logger.error(f"Error in profile GET route for user {g.user.id}: {e}", exc_info=True)
             flash("An error occurred loading your profile. Please try again.", "danger")
             return redirect(url_for('home'))
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Logs the user out and updates their online status."""
+    if g.user:
+        User.update_online_status(g.user.id, False)
+
+    session.pop('user_id', None)
+    flash("You have been logged out.", "success")
+    return redirect(url_for('home'))
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
+
+        
+
+
+
+
 
 
 
@@ -8199,6 +8240,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
