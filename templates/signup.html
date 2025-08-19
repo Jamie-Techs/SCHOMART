@@ -80,10 +80,16 @@
         </div>
     </div>
     <script>
-        // DO NOT CHANGE THESE GLOBAL VARIABLES - THEY ARE PROVIDED BY THE CANVAS ENVIRONMENT
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Use the Firebase credentials you provided
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
+            authDomain: "schomart-7a743.firebaseapp.com",
+            projectId: "schomart-7a743",
+            storageBucket: "schomart-7a743.appspot.com", 
+            messagingSenderId: "20119186662",
+            appId: "1:20119186662:web:da1755b55dacde4fa6df27",
+            measurementId: "G-9QGL3XHSC7"
+        };
         
         // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
@@ -157,7 +163,7 @@
                 await user.sendEmailVerification();
 
                 // Store user data in Firestore with the user's UID as the document ID
-                const userDocRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const userDocRef = db.collection('artifacts').doc(firebaseConfig.projectId).collection('users').doc(user.uid);
                 await userDocRef.set({
                     username: username,
                     email: email,
