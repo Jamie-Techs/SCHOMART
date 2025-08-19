@@ -53,16 +53,16 @@
 
         <!-- Cover Photo Section -->
         <div class="cover-photo w-full h-56 overflow-hidden bg-gray-200 relative">
-            <a href="#" onclick="showImageModal('{{ user.cover_photo_url }}')" title="View Full Cover Photo">
-                <img src="{{ user.cover_photo_url }}" alt="Cover Photo" class="w-full h-full object-cover block" onerror="this.onerror=null;this.src='https://placehold.co/1000x220/e0e0e0/777777?text=No+Cover+Photo';"/>
+            <a href="#" onclick="showImageModal('{{ cover_photo_url }}')" title="View Full Cover Photo">
+                <img src="{{ cover_photo_url }}" alt="Cover Photo" class="w-full h-full object-cover block" onerror="this.onerror=null;this.src='https://placehold.co/1000x220/e0e0e0/777777?text=No+Cover+Photo';"/>
             </a>
         </div>
 
         <!-- Profile Header Area (Picture, Name, Stats) -->
         <div class="profile-header-area flex items-end -mt-20 px-6 pb-4 relative z-10">
             <div class="profile-picture-container w-36 h-36 rounded-full border-4 border-white bg-gray-200 overflow-hidden flex-shrink-0 shadow-md">
-                <a href="#" onclick="showImageModal('{{ user.profile_picture_url }}')" title="View Full Profile Picture">
-                    <img src="{{ user.profile_picture_url }}" alt="Profile Picture" class="profile-picture w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
+                <a href="#" onclick="showImageModal('{{ profile_pic_url }}')" title="View Full Profile Picture">
+                    <img src="{{ profile_pic_url }}" alt="Profile Picture" class="profile-picture w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
                 </a>
             </div>
 
@@ -93,7 +93,7 @@
                 <p class="mb-2 text-sm"><strong class="font-bold">Business Name:</strong> {{ user.businessname or 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">First Name:</strong> {{ user.first_name or 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Last Name:</strong> {{ user.last_name or 'N/A' }}</p>
-                <p class="mb-2 text-sm"><strong class="font-bold">Location:</strong> <span class="location cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" onclick="window.location.href='{{ url_for('personal_details') }}'">{{ full_location }}</span></p>
+                <p class="mb-2 text-sm"><strong class="font-bold">Location:</strong> <span class="location cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" onclick="window.location.href='{{ url_for('personal_details') }}'">{{ user.location or 'N/A' }}</span></p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Birthday:</strong> {{ user.birthday if user.birthday else 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Sex:</strong> {{ user.sex or 'N/A' }}</p>
                 <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-edit mr-2"></i> Edit Personal Details</a></p>
