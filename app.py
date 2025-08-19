@@ -144,13 +144,25 @@ def login():
 
 
 
-# --- Helper Function for Referral Code Generation ---
-def generate_referral_code(uid, length=8):
-    try:
-        length = int(length)
-    except (ValueError, TypeError):
-        length = 8  # fallback to default if conversion fails
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+# --- Helper Functions for Referral Code Generation ---
+def generate_referral_code():
+    """
+    Generates a 6-digit numeric referral code as a string.
+    """
+    return f"{random.randint(0, 999999):06d}"
+
+def generate_unique_referral_code(admin_db):
+    """
+    Generates a unique 6-digit numeric referral code.
+    It checks Firestore to ensure the code does not already exist.
+    """
+    while True:
+        code = generate_referral_code()
+        # Check if the code already exists in the 'users' collection
+        existing = admin_db.collection('users').where('referral_code', '==', code).limit(1).stream()
+        if not any(existing):
+            return code
 
 # --- API Routes ---
 
@@ -181,8 +193,8 @@ def api_signup():
             return jsonify({'error': 'User data already exists in Firestore'}), 409
 
         # Generate a unique referral code and link
-        referral_code = generate_referral_code(uid)
-        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}" # Replace 'your-domain.com'
+        referral_code = generate_unique_referral_code(admin_db)
+        referral_link = f"https://your-domain.com/signup?ref={referral_code}" # Replace 'your-domain.com'
 
         # Initialize and save the new user data
         new_user_data = {
@@ -218,7 +230,7 @@ def api_signup():
         }
 
         user_ref.set(new_user_data)
-        logger.info(f"User data for {uid} created in Firestore.")
+        logger.info(f"User data for {uid} created in Firestore with referral code: {referral_code}")
         
         # Check if a referral code was used and update the referrer's count
         if referral_code_used:
@@ -335,6 +347,7 @@ def api_login():
         logger.error(f"Login verification error: {e}", exc_info=True)
         return jsonify({'error': 'Authentication failed.'}), 401
         
+
 
 
 
@@ -8378,6 +8391,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
