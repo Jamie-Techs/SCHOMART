@@ -770,12 +770,14 @@ def personal_details():
             try:
                 # Handle image uploads
                 profile_picture_file = request.files.get('profile_picture')
-                if profile_picture_file and profile_picture_file.filename:
-                    upload_image_to_firebase(profile_picture_file, f'users/{user_uid}/profile.jpg')
+                if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
+                    blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+                    blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
                     
                 cover_photo_file = request.files.get('cover_photo')
-                if cover_photo_file and cover_photo_file.filename:
-                    upload_image_to_firebase(cover_photo_file, f'users/{user_uid}/cover.jpg')
+                if cover_photo_file and cover_photo_file.filename and allowed_file(cover_photo_file.filename):
+                    blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+                    blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
 
                 user_doc_ref.update(update_data)
                 flash('Profile updated successfully!', 'success')
@@ -819,8 +821,6 @@ def personal_details():
         logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
-
-
 
 
 
@@ -8257,6 +8257,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
