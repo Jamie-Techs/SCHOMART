@@ -512,20 +512,6 @@ class User:
             current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
 
-# --- Custom Decorator for Login Required ---
-def login_required(f):
-    """
-    Decorator to protect routes that require user authentication.
-    It redirects unauthenticated users to the signup page.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash("You need to be logged in to view this page.", "danger")
-            return redirect(url_for('signup'))
-        return f(*args, **kwargs)
-    return decorated_function
-
 
 
 
@@ -595,60 +581,87 @@ def load_logged_in_user():
 
 
 
+
+
+
+
+
+# A decorator to ensure a user is logged in before accessing a route.
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("You must be logged in to view this page.", "error")
+            return redirect(url_for('signup'))  # Redirect to your login route
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Helper function to format Firestore Timestamps
 def format_timestamp(ts):
-    if ts and isinstance(ts, (int, float)):
+    """
+    Formats a Firestore Timestamp object into a readable string.
+    Returns an empty string if the timestamp is None or invalid.
+    """
+    if ts:
         try:
-            return datetime.datetime.fromtimestamp(ts).strftime('%b %d, %Y')
-        except Exception:
-            pass
-    return "Unknown"
-
-
+            return ts.strftime('%Y-%m-%d %H:%M:%S')
+        except (AttributeError, ValueError):
+            return ""
+    return ""
 
 @app.route('/profile')
+@login_required
 def profile():
     """
-    Renders the user's profile page using cached session data and Firebase Storage.
+    Renders the user's profile page by fetching the latest data from Firestore
+    and generating signed URLs for profile pictures.
     """
     try:
-        if not g.user:
-            flash("You must be logged in to view your profile.", "error")
+        user_uid = session.get('user_id')
+        
+        # Fetch the latest user data from Firestore to avoid using stale session data.
+        user_doc_ref = admin_db.collection('users').document(user_uid)
+        user_doc = user_doc_ref.get()
+
+        if not user_doc.exists:
+            flash("User data not found. Please log in again.", "error")
+            logger.error(f"User document does not exist for UID: {user_uid}")
             return redirect(url_for('signup'))
 
-        user_data = g.user.copy()  # Work with a safe copy
+        user_data = user_doc.to_dict()
 
-        # Check email verification status
+        # Check email verification status from the most recent data
         if not user_data.get('is_verified', False):
-            flash("Your email address is not verified. Please check your inbox to verify your account.", "error")
-            return redirect(url_for('email_verification'))
+            flash("Your email is not verified. Please check your inbox.", "error")
+            return redirect(url_for('email_verification')) # Redirect to your email verification route
 
-        # Format timestamps with fallback
-        user_data['last_active'] = format_timestamp(user_data.get('last_active_timestamp'))
-        user_data['created_at'] = format_timestamp(user_data.get('created_at_timestamp'))
+        # Format timestamps for display
+        user_data['last_active'] = format_timestamp(user_data.get('last_active'))
+        user_data['created_at'] = format_timestamp(user_data.get('created_at'))
 
-        # Generate signed URLs for profile and cover photos
-        user_uid = session.get('user_id')
-        bucket = storage.bucket()
+        # Generate signed URLs for profile and cover photos from Firebase Storage
         profile_pic_url = ""
         cover_photo_url = ""
 
         try:
-            profile_blob = bucket.blob(f"users/{user_uid}/profile.jpg")
+            profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
             if profile_blob.exists():
                 profile_pic_url = profile_blob.generate_signed_url(
                     datetime.timedelta(minutes=15), method='GET'
-)
+                )
         except Exception as e:
-            print(f"Profile pic error: {e}")
+            logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
+            flash(f"Error loading profile picture: {str(e)}", "error")
 
         try:
-            cover_blob = bucket.blob(f"users/{user_uid}/cover.jpg")
+            cover_blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
             if cover_blob.exists():
                 cover_photo_url = cover_blob.generate_signed_url(
                     datetime.timedelta(minutes=15), method='GET'
-)
+                )
         except Exception as e:
-            print(f"Cover photo error: {e}")
+            logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
+            flash(f"Error loading cover photo: {str(e)}", "error")
 
         return render_template('profile.html',
                                user=user_data,
@@ -656,8 +669,8 @@ def profile():
                                cover_photo_url=cover_photo_url)
 
     except Exception as e:
-        print(f"Unexpected error in profile route: {e}")
-        flash("Something went wrong. Please try again later.", "error")
+        logger.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
+        flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
 
         
@@ -8162,6 +8175,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
