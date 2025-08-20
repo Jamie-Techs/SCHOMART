@@ -934,7 +934,7 @@ def profile():
 
 
 
-app.route('/profile/personal', methods=['GET', 'POST'])
+@app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
     """
@@ -8445,6 +8445,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
