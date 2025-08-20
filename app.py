@@ -651,7 +651,7 @@ def profile():
             profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
             if profile_blob.exists():
                 profile_pic_url = profile_blob.generate_signed_url(
-                    datetime.timedelta(minutes=15), method='GET'
+                    timedelta(minutes=15), method='GET'
                 )
         except Exception as e:
             logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
@@ -8232,6 +8232,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
