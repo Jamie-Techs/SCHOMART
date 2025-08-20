@@ -79,7 +79,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
-
+app.permanent_session_lifetime = timedelta(hours=1)
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
@@ -8145,6 +8145,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
