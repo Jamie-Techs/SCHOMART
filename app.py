@@ -677,19 +677,18 @@ def profile():
         
 
 
-
-
-
-
-
-
 @app.route("/profile/personal", methods=["GET", "POST"])
 @login_required
 def personal_details():
-    user_id = g.user.id # Assuming 'g.user' object has an 'id' attribute from Flask-Login or similar
+    # Ensure the user object exists from the login_required decorator
+    if not g.user or not g.user.id:
+        flash("User session not found.", "danger")
+        return redirect(url_for('login_page'))
+    
+    user_id = g.user.id
 
     # Get a reference to the user's Firestore document
-    user_ref = db.collection('users').document(user_id)
+    user_ref = admin_db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
     # If the user document doesn't exist, handle it gracefully
@@ -700,8 +699,6 @@ def personal_details():
     user_data = user_doc.to_dict()
 
     # Populate a user object for the template, making sure all fields exist
-    # This is similar to your original code, but uses Firestore's native data.
-    # Firestore stores lists and dictionaries directly, so no need for json.loads
     user = type('UserObject', (object,), user_data)
     user.profile_picture = user_data.get('profile_picture', None)
     user.cover_photo = user_data.get('cover_photo', None)
@@ -713,6 +710,38 @@ def personal_details():
     user.delivery_methods = user_data.get('delivery_methods', [])
     user.social_links = user_data.get('social_links', {})
 
+    # --- UPDATED: New function for Firebase Storage Upload ---
+    def upload_to_firebase(file, folder, file_ext):
+        """
+        Uploads a file to Firebase Storage and returns its signed URL.
+        """
+        if not admin_storage:
+            logger.error("admin_storage is not initialized.")
+            return None
+        if not file or not file.filename:
+            return None
+
+        try:
+            # Create a unique path in storage
+            file_name = f"{user_id}.{file_ext}"
+            blob_path = f"users/{user_id}/{folder}/{file_name}"
+            blob = admin_storage.blob(blob_path)
+
+            # Upload the file
+            file.seek(0)  # Rewind the file pointer to the beginning
+            blob.upload_from_file(file)
+
+            # Generate a signed URL that expires in 15 minutes for access
+            signed_url = blob.generate_signed_url(
+                version='v4',
+                expiration=datetime.timedelta(minutes=15),
+                method='GET'
+            )
+            return signed_url
+        except Exception as e:
+            logger.error(f"Error uploading file to Firebase Storage: {e}", exc_info=True)
+            return None
+
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
@@ -720,20 +749,16 @@ def personal_details():
         birthday = request.form.get("birthday")
         sex = request.form.get("sex", "").strip()
 
-        # --- Handle Location Inputs as Strings ---
-        # No more integer IDs. We will store the user's text input directly.
         state_input = request.form.get("state_input", "").strip()
         location_input = request.form.get("location_input", "").strip()
         sublocation_input = request.form.get("sublocation_input", "").strip()
 
-        # Basic validation for mandatory fields (expand as needed)
         errors = []
         if not state_input:
             errors.append("State is required.")
         if not location_input:
             errors.append("Location (University) is required.")
 
-        # --- Handle Working Days & Hours ---
         selected_days = request.form.getlist('working_days')
         working_times_data = {}
         all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -750,10 +775,8 @@ def personal_details():
             else:
                 working_times_data[day] = {'open': None, 'close': None}
 
-        # --- Handle Delivery Methods ---
         delivery_methods_list = request.form.getlist('delivery_methods')
 
-        # --- Handle Social Links ---
         social_links_dict = {
             "website": request.form.get("social_links[website]", "").strip(),
             "instagram": request.form.get("social_links[instagram]", "").strip(),
@@ -761,48 +784,35 @@ def personal_details():
             "linkedin": request.form.get("social_links[linkedin]", "").strip(),
             "twitter": request.form.get("social_links[twitter]", "").strip(),
         }
-        # Filter out empty social links
         social_links_dict = {k: v for k, v in social_links_dict.items() if v}
 
-        # --- Handle File Uploads (placeholder for Firebase Storage) ---
-        # In a real app, this would use a Firebase Storage library.
-        # This function is a placeholder and should be implemented with proper storage logic.
-        def save_uploaded_file_to_storage(file, folder, user_id):
-            # Placeholder logic: return a dummy path.
-            if file and file.filename:
-                filename = f"{user_id}_{file.filename}"
-                # In a real app, upload 'file' to Firebase Storage at f"{folder}/{filename}"
-                # and get the download URL. For this example, we'll use a mock URL.
-                print(f"Uploading file '{filename}' to Firebase Storage in folder '{folder}'.")
-                return f"https://firebase-storage.com/{folder}/{filename}"
-            return None
-
-        # Initialize paths with current user's DB values
+        # --- UPDATED: Handle File Uploads with the new function ---
         profile_path_to_store = user.profile_picture
         cover_path_to_store = user.cover_photo
 
         profile_picture_file = request.files.get("profile_picture")
-        if profile_picture_file and profile_picture_file.filename:
-            new_profile_path = save_uploaded_file_to_storage(profile_picture_file, 'profile', user_id)
+        if profile_picture_file and allowed_file(profile_picture_file.filename):
+            file_ext = profile_picture_file.filename.rsplit('.', 1)[1].lower()
+            new_profile_path = upload_to_firebase(profile_picture_file, 'profile', file_ext)
             if new_profile_path:
                 profile_path_to_store = new_profile_path
             else:
                 flash("Failed to upload profile picture.", "danger")
+                errors.append("Profile picture upload failed.")
 
         cover_photo_file = request.files.get("cover_photo")
-        if cover_photo_file and cover_photo_file.filename:
-            new_cover_path = save_uploaded_file_to_storage(cover_photo_file, 'cover', user_id)
+        if cover_photo_file and allowed_file(cover_photo_file.filename):
+            file_ext = cover_photo_file.filename.rsplit('.', 1)[1].lower()
+            new_cover_path = upload_to_firebase(cover_photo_file, 'cover', file_ext)
             if new_cover_path:
                 cover_path_to_store = new_cover_path
             else:
                 flash("Failed to upload cover photo.", "danger")
+                errors.append("Cover photo upload failed.")
 
-        # Handle validation errors
         if errors:
             for error in errors:
                 flash(error, "danger")
-            # Re-render the form with existing data
-            # Use the data that was just posted to preserve user input
             user.state = state_input
             user.location = location_input
             user.sublocation = sublocation_input
@@ -815,7 +825,6 @@ def personal_details():
             return render_template("personal_details.html", user=user)
 
         try:
-            # Create a dictionary of the data to update
             update_data = {
                 "first_name": first_name,
                 "last_name": last_name,
@@ -833,7 +842,6 @@ def personal_details():
                 "cover_photo": cover_path_to_store,
             }
 
-            # Update the user's document in Firestore
             user_ref.update(update_data)
 
             flash("Your personal details have been updated successfully!", "success")
@@ -847,7 +855,6 @@ def personal_details():
     else: # GET request
         # The user object is already loaded from Firestore at the start of the function.
         # Generate the URLs for display using the paths from Firestore
-        # The URL generation functions should handle the mock URLs from the file upload placeholder
         def get_profile_picture_url(path):
             return path if path else "https://placehold.co/150x150/E5E7EB/4B5563?text=Profile"
 
@@ -859,6 +866,13 @@ def personal_details():
 
         return render_template("personal_details.html", user=user)
 
+
+
+
+
+
+
+                
 
 
 @app.route('/profile/<username>')
@@ -8224,6 +8238,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
