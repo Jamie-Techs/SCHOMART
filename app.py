@@ -620,48 +620,199 @@ NIGERIAN_STATES = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
     'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
     'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', '# In your app.py file
+
+NIGERIAN_SCHOOLS = {
+    'Abia': [
+        {'name': 'Abia State University', 'acronym': 'ABSU'},
+        {'name': 'Michael Okpara University of Agriculture', 'acronym': 'MOUAU'},
+        {'name': 'Abia State Polytechnic', 'acronym': 'ABIAPOLY'}
+    ],
+    'Adamawa': [
+        {'name': 'Adamawa State University', 'acronym': 'ADSU'},
+        {'name': 'American University of Nigeria', 'acronym': 'AUN'},
+        {'name': 'Modibbo Adama University of Technology', 'acronym': 'MAUTECH'}
+    ],
+    'Akwa Ibom': [
+        {'name': 'Akwa Ibom State University', 'acronym': 'AKSU'},
+        {'name': 'University of Uyo', 'acronym': 'UNIUYO'},
+        {'name': 'Akwa Ibom State Polytechnic', 'acronym': 'AKWAPOLY'}
+    ],
+    'Anambra': [
+        {'name': 'Nnamdi Azikiwe University', 'acronym': 'UNIZIK'},
+        {'name': 'Chukwuemeka Odumegwu Ojukwu University', 'acronym': 'COOU'},
+        {'name': 'Federal Polytechnic, Oko', 'acronym': 'OKOPOLY'}
+    ],
+    'Bauchi': [
+        {'name': 'Abubakar Tafawa Balewa University', 'acronym': 'ATBU'},
+        {'name': 'Bauchi State University', 'acronym': 'BASUG'},
+        {'name': 'Federal Polytechnic, Bauchi', 'acronym': 'FPTB'}
+    ],
+    'Bayelsa': [
+        {'name': 'Niger Delta University', 'acronym': 'NDU'},
+        {'name': 'Bayelsa Medical University', 'acronym': 'BMU'},
+        {'name': 'Federal Polytechnic of Oil and Gas, Ekowe', 'acronym': 'FEPOGA'}
+    ],
+    'Benue': [
+        {'name': 'Benue State University', 'acronym': 'BSU'},
+        {'name': 'Federal University of Agriculture, Makurdi', 'acronym': 'FUAM'},
+        {'name': 'Akperan Orshi College of Agriculture', 'acronym': 'AOCOA'}
+    ],
+    'Borno': [
+        {'name': 'University of Maiduguri', 'acronym': 'UNIMAID'},
+        {'name': 'Borno State University', 'acronym': 'BOSU'},
+        {'name': 'Ramsey Nouah University, Borno', 'acronym': 'RNUB'}
+    ],
+    'Cross River': [
+        {'name': 'University of Calabar', 'acronym': 'UNICAL'},
+        {'name': 'Cross River University of Technology', 'acronym': 'CRUTECH'},
+        {'name': 'Federal Polytechnic, Calabar', 'acronym': 'CALABARPOLY'}
+    ],
+    'Delta': [
+        {'name': 'Delta State University', 'acronym': 'DELSU'},
+        {'name': 'Federal University of Petroleum Resources Effurun', 'acronym': 'FUPRE'},
+        {'name': 'Delta State Polytechnic, Otefe-Oghara', 'acronym': 'DESPO'}
+    ],
+    'Ebonyi': [
+        {'name': 'Ebonyi State University', 'acronym': 'EBSU'},
+        {'name': 'Federal University, Ndufu-Alike Ikwo', 'acronym': 'FUNAI'},
+        {'name': 'Ebonyi State College of Health Sciences', 'acronym': 'EBSCHS'}
+    ],
+    'Edo': [
+        {'name': 'University of Benin', 'acronym': 'UNIBEN'},
+        {'name': 'Ambrose Alli University', 'acronym': 'AAU'},
+        {'name': 'Auchi Polytechnic', 'acronym': 'AUCHIPOLY'}
+    ],
+    'Ekiti': [
+        {'name': 'Federal University, Oye-Ekiti', 'acronym': 'FUOYE'},
+        {'name': 'Ekiti State University', 'acronym': 'EKSU'},
+        {'name': 'Afe Babalola University', 'acronym': 'ABUAD'}
+    ],
+    'Enugu': [
+        {'name': 'University of Nigeria, Nsukka', 'acronym': 'UNN'},
+        {'name': 'Enugu State University of Science and Technology', 'acronym': 'ESUT'},
+        {'name': 'Institute of Management and Technology', 'acronym': 'IMT'}
+    ],
+    'Gombe': [
+        {'name': 'Gombe State University', 'acronym': 'GSU'},
+        {'name': 'Federal University of Gombe', 'acronym': 'FUGOM'},
+        {'name': 'Gombe State Polytechnic, Bajoga', 'acronym': 'GSPB'}
+    ],
+    'Imo': [
+        {'name': 'Federal University of Technology, Owerri', 'acronym': 'FUTO'},
+        {'name': 'Imo State University', 'acronym': 'IMSU'},
+        {'name': 'Alvan Ikoku Federal College of Education', 'acronym': 'AIFCE'}
+    ],
+    'Jigawa': [
+        {'name': 'Jigawa State University', 'acronym': 'JSU'},
+        {'name': 'Federal University Dutse', 'acronym': 'FUD'},
+        {'name': 'Jigawa State Polytechnic', 'acronym': 'JIGPOLY'}
+    ],
+    'Kaduna': [
+        {'name': 'Ahmadu Bello University', 'acronym': 'ABU'},
+        {'name': 'Kaduna State University', 'acronym': 'KASU'},
+        {'name': 'Federal Polytechnic, Kaduna', 'acronym': 'FPTK'}
+    ],
+    'Kano': [
+        {'name': 'Bayero University, Kano', 'acronym': 'BUK'},
+        {'name': 'Kano University of Science and Technology', 'acronym': 'KUST'},
+        {'name': 'Federal College of Education, Kano', 'acronym': 'FCEKANO'}
+    ],
+    'Katsina': [
+        {'name': 'Umaru Musa Yar\'adua University', 'acronym': 'UMYU'},
+        {'name': 'Federal University, Dutsin-Ma', 'acronym': 'FUDMA'},
+        {'name': 'Hassan Usman Katsina Polytechnic', 'acronym': 'HUKPOLY'}
+    ],
+    'Kebbi': [
+        {'name': 'Kebbi State University of Science and Technology', 'acronym': 'KSUSTA'},
+        {'name': 'Federal University Birnin-Kebbi', 'acronym': 'FUBK'},
+        {'name': 'Waziri Umaru Federal Polytechnic Birnin Kebbi', 'acronym': 'WUFPBK'}
+    ],
+    'Kogi': [
+        {'name': 'Kogi State University', 'acronym': 'KSU'},
+        {'name': 'Federal University, Lokoja', 'acronym': 'FULOKOJA'},
+        {'name': 'Kogi State Polytechnic', 'acronym': 'KOGIPOLY'}
+    ],
+    'Kwara': [
+        {'name': 'University of Ilorin', 'acronym': 'UNILORIN'},
+        {'name': 'Kwara State University', 'acronym': 'KWASU'},
+        {'name': 'Kwara State Polytechnic', 'acronym': 'KWARAPOLY'}
+    ],
+    'Lagos': [
+        {'name': 'University of Lagos', 'acronym': 'UNILAG'},
+        {'name': 'Lagos State University', 'acronym': 'LASU'},
+        {'name': 'Yaba College of Technology', 'acronym': 'YABATECH'}
+    ],
+    'Nasarawa': [
+        {'name': 'Nasarawa State University', 'acronym': 'NSUK'},
+        {'name': 'Federal University of Lafia', 'acronym': 'FULAFIA'},
+        {'name': 'Federal Polytechnic, Nasarawa', 'acronym': 'FPN'}
+    ],
+    'Niger': [
+        {'name': 'Federal University of Technology, Minna', 'acronym': 'FUTMINNA'},
+        {'name': 'Ibrahim Badamasi Babangida University', 'acronym': 'IBBU'},
+        {'name': 'Niger State Polytechnic', 'acronym': 'NIGPOLY'}
+    ],
+    'Ogun': [
+        {'name': 'Federal University of Agriculture, Abeokuta', 'acronym': 'FUNAAB'},
+        {'name': 'Olabisi Onabanjo University', 'acronym': 'OOU'},
+        {'name': 'Tai Solarin University of Education', 'acronym': 'TASUED'}
+    ],
+    'Ondo': [
+        {'name': 'Federal University of Technology, Akure', 'acronym': 'FUTA'},
+        {'name': 'Adekunle Ajasin University', 'acronym': 'AAUA'},
+        {'name': 'Ondo State University of Science and Technology', 'acronym': 'OSUSTECH'}
+    ],
+    'Osun': [
+        {'name': 'Obafemi Awolowo University', 'acronym': 'OAU'},
+        {'name': 'Osun State University', 'acronym': 'UNIOSUN'},
+        {'name': 'Osun State Polytechnic', 'acronym': 'OSUNPOLY'}
+    ],
+    'Oyo': [
+        {'name': 'University of Ibadan', 'acronym': 'UI'},
+        {'name': 'Ladoke Akintola University of Technology', 'acronym': 'LAUTECH'},
+        {'name': 'The Polytechnic, Ibadan', 'acronym': 'IBADANPOLY'}
+    ],
+    'Plateau': [
+        {'name': 'University of Jos', 'acronym': 'UNIJOS'},
+        {'name': 'Plateau State University', 'acronym': 'PLASU'},
+        {'name': 'Plateau State Polytechnic', 'acronym': 'PLAPOLY'}
+    ],
+    'Rivers': [
+        {'name': 'University of Port Harcourt', 'acronym': 'UNIPORT'},
+        {'name': 'Rivers State University', 'acronym': 'RSU'},
+        {'name': 'Port Harcourt Polytechnic', 'acronym': 'PHPOLY'}
+    ],
+    'Sokoto': [
+        {'name': 'Usmanu Danfodiyo University', 'acronym': 'UDUS'},
+        {'name': 'Sokoto State University', 'acronym': 'SSU'},
+        {'name': 'Umaru Ali Shinkafi Polytechnic', 'acronym': 'UASPOLY'}
+    ],
+    'Taraba': [
+        {'name': 'Taraba State University', 'acronym': 'TSU'},
+        {'name': 'Federal University Wukari', 'acronym': 'FUWUKARI'},
+        {'name': 'Taraba State Polytechnic', 'acronym': 'TARAPOLY'}
+    ],
+    'Yobe': [
+        {'name': 'Yobe State University', 'acronym': 'YSU'},
+        {'name': 'Federal Polytechnic, Damaturu', 'acronym': 'FPD'},
+        {'name': 'College of Agriculture, Gujba', 'acronym': 'COAG'}
+    ],
+    'Zamfara': [
+        {'name': 'Federal University, Gusau', 'acronym': 'FUGUS'},
+        {'name': 'Zamfara State University', 'acronym': 'ZAMSU'},
+        {'name': 'Abdu Gusau Polytechnic', 'acronym': 'AGPOLY'}
+    ],
+    'F.C.T.': [
+        {'name': 'University of Abuja', 'acronym': 'UNIABUJA'},
+        {'name': 'Nigerian Turkish Nile University', 'acronym': 'NTNU'},
+        {'name': 'Baze University', 'acronym': 'BAZEU'}
+    ]
+    }Plateau', 'Rivers',
     'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
 ]
 
-NIGERIAN_SCHOOLS = {
-    'Abia': ['Abia State University', 'Michael Okpara University of Agriculture'],
-    'Adamawa': ['Adamawa State University', 'American University of Nigeria'],
-    'Akwa Ibom': ['Akwa Ibom State University', 'University of Uyo'],
-    'Anambra': ['Nnamdi Azikiwe University', 'Chukwuemeka Odumegwu Ojukwu University'],
-    'Bauchi': ['Abubakar Tafawa Balewa University', 'Bauchi State University'],
-    'Bayelsa': ['Niger Delta University', 'Bayelsa Medical University'],
-    'Benue': ['Benue State University', 'Federal University of Agriculture, Makurdi'],
-    'Borno': ['University of Maiduguri', 'Borno State University'],
-    'Cross River': ['University of Calabar', 'Cross River University of Technology'],
-    'Delta': ['Delta State University', 'Federal University of Petroleum Resources Effurun'],
-    'Ebonyi': ['Ebonyi State University', 'Federal University Ndufu Alike Ikwo'],
-    'Edo': ['University of Benin', 'Ambrose Alli University'],
-    'Ekiti': ['Ekiti State University', 'Federal University Oye-Ekiti'],
-    'Enugu': ['University of Nigeria, Nsukka', 'Godfrey Okoye University'],
-    'Gombe': ['Federal University, Kashere', 'Gombe State University'],
-    'Imo': ['Federal University of Technology, Owerri', 'Imo State University'],
-    'Jigawa': ['Federal University, Dutse', 'Sule Lamido University'],
-    'Kaduna': ['Ahmadu Bello University', 'Kaduna State University'],
-    'Kano': ['Bayero University Kano', 'Yusuf Maitama Sule University'],
-    'Katsina': ['Umaru Musa Yaradua University', 'Federal University, Dutsin-Ma'],
-    'Kebbi': ['Kebbi State University of Science and Technology', 'Federal University Birnin-Kebbi'],
-    'Kogi': ['Federal University, Lokoja', 'Kogi State University'],
-    'Kwara': ['University of Ilorin', 'Kwara State University'],
-    'Lagos': ['University of Lagos', 'Lagos State University', 'Yaba College of Technology'],
-    'Nasarawa': ['Federal University, Lafia', 'Nasarawa State University'],
-    'Niger': ['Federal University of Technology, Minna', 'Ibrahim Badamasi Babangida University'],
-    'Ogun': ['Federal University of Agriculture, Abeokuta', 'Olabisi Onabanjo University'],
-    'Ondo': ['Federal University of Technology, Akure', 'Adekunle Ajasin University'],
-    'Osun': ['Obafemi Awawolo University', 'Osun State University'],
-    'Oyo': ['University of Ibadan', 'Ladoke Akintola University of Technology'],
-    'Plateau': ['University of Jos', 'Plateau State University'],
-    'Rivers': ['University of Port Harcourt', 'Rivers State University'],
-    'Sokoto': ['Usmanu Danfodiyo University', 'Sokoto State University'],
-    'Taraba': ['Taraba State University', 'Federal University Wukari'],
-    'Yobe': ['Yobe State University', 'Federal University Gashua'],
-    'Zamfara': ['Federal University Gusau', 'Zamfara State University']
-}
+
 
 # The API endpoints now validate against the in-memory dictionaries.
 @app.route('/api/validate/state/<country>', methods=['GET'])
@@ -674,11 +825,16 @@ def validate_state(country):
 
 @app.route('/api/validate/school/<state>', methods=['GET'])
 def validate_school(state):
-    school_name = request.args.get('name')
-    valid_schools = NIGERIAN_SCHOOLS.get(state, [])
-    is_valid = school_name in valid_schools
+    school_name_or_acronym = request.args.get('name')
+    valid_schools_data = NIGERIAN_SCHOOLS.get(state, [])
+    
+    is_valid = False
+    for school in valid_schools_data:
+        if school['name'].lower() == school_name_or_acronym.lower() or school['acronym'].lower() == school_name_or_acronym.lower():
+            is_valid = True
+            break
+            
     return jsonify({"is_valid": is_valid})
-
 
 
 @app.route('/profile')
@@ -8300,6 +8456,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
