@@ -296,12 +296,10 @@ def api_verify_user():
         return jsonify({'error': 'Failed to update user verification status.'}), 500
 
 
+
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    """
-    Verifies a user's ID token sent from the frontend and retrieves user data
-    from Firestore. This endpoint is used for secure sessions after a verified login.
-    """
     if admin_db is None:
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
@@ -313,34 +311,38 @@ def api_login():
         return jsonify({'error': 'Missing ID token'}), 400
 
     try:
-        # Verify the ID token sent from the frontend
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
 
-        # Get user's Firestore document
         user_doc = admin_db.collection('users').document(uid).get()
-        
         if not user_doc.exists:
             logger.warning(f"User data not found in Firestore for UID: {uid}")
             return jsonify({'error': 'User data not found in Firestore'}), 404
 
         user_data = user_doc.to_dict()
-        
-        # Update is_online status to True
+
+        # Update online status
         admin_db.collection('users').document(uid).update({
             'is_online': True,
             'last_online': firestore.SERVER_TIMESTAMP
-        })
-        
+})
+
+        # 🔐 Store in session
+        session['user_id'] = uid
+        session['user_data'] = user_data
+
         return jsonify({
             'message': 'Login successful',
             'uid': uid,
             'data': user_data
-        }), 200
+}), 200
 
     except Exception as e:
         logger.error(f"Login verification error: {e}", exc_info=True)
         return jsonify({'error': 'Authentication failed.'}), 401
+
+
+
         
 
 
@@ -558,108 +560,88 @@ def inject_user_into_templates():
     """Makes the current user object available to all templates."""
     return {'current_user': g.user}
 
+
+
+
+
+
+
 @app.before_request
 def load_logged_in_user():
-    """Loads the user object into the Flask `g` object before each request."""
-    user_id = session.get('user_id')
+    """Loads user data from session into Flask's global `g` object."""
     g.user = None
-    if user_id is not None:
-        g.user = User.get(user_id)
+    user_data = session.get('user_data')
+    if user_data:
+        g.user = user_data.copy()  # Avoid modifying session directly
     g.client_ip = request.remote_addr
 
 
+
+
+def format_timestamp(ts):
+    if ts and isinstance(ts, (int, float)):
+        try:
+            return datetime.datetime.fromtimestamp(ts).strftime('%b %d, %Y')
+        except Exception:
+            pass
+    return "Unknown"
 
 
 
 @app.route('/profile')
 def profile():
     """
-    Renders the user's profile page, handling authentication via Firestore.
-    
-    This function manually checks if a user is logged in and verified by
-    inspecting the Flask session and their Firestore document.
+    Renders the user's profile page using cached session data and Firebase Storage.
     """
     try:
-        # Check if the user's UID is stored in the session, indicating a logged-in user.
-        user_uid = session.get('user_id')
-        if not user_uid:
-            # If no user_id in session, the user is not logged in.
+        if not g.user:
+            flash("You must be logged in to view your profile.", "error")
             return redirect(url_for('signup'))
 
-        # Fetch the user's data from Firestore using their unique UID.
-        user_doc_ref = firestore_db.collection('users').document(user_uid)
-        user_doc = user_doc_ref.get()
+        user_data = g.user.copy()  # Work with a safe copy
 
-        if not user_doc.exists:
-            # If the user document doesn't exist, something is wrong. Clear session and redirect.
-            session.pop('user_id', None)
-            flash("User data not found. Please log in again.", "error")
-            return redirect(url_for('signup'))
-
-        user_data = user_doc.to_dict()
-
-        # Check for email verification status
+        # Check email verification status
         if not user_data.get('is_verified', False):
             flash("Your email address is not verified. Please check your inbox to verify your account.", "error")
-            # Redirect to the email verification page.
             return redirect(url_for('email_verification'))
 
-        # Handle last active timestamp logic.
-        user_data['last_active'] = datetime.datetime.fromtimestamp(
-            user_data.get('last_active_timestamp', 0)
-        ).strftime('%b %d, %Y')
-        
-        # Format the member since date.
-        user_data['created_at'] = datetime.datetime.fromtimestamp(
-            user_data.get('created_at_timestamp', 0)
-        ).strftime('%b %d, %Y')
+        # Format timestamps with fallback
+        user_data['last_active'] = format_timestamp(user_data.get('last_active_timestamp'))
+        user_data['created_at'] = format_timestamp(user_data.get('created_at_timestamp'))
 
-        # Generate signed URLs for profile and cover photos from Firebase Storage.
+        # Generate signed URLs for profile and cover photos
+        user_uid = session.get('user_id')
         bucket = storage.bucket()
-        profile_pic_path = f"users/{user_uid}/profile.jpg"
-        cover_photo_path = f"users/{user_uid}/cover.jpg"
-
         profile_pic_url = ""
         cover_photo_url = ""
 
         try:
-            profile_pic_blob = bucket.blob(profile_pic_path)
-            if profile_pic_blob.exists():
-                profile_pic_url = profile_pic_blob.generate_signed_url(
-                    datetime.timedelta(minutes=15),
-                    method='GET'
-                )
+            profile_blob = bucket.blob(f"users/{user_uid}/profile.jpg")
+            if profile_blob.exists():
+                profile_pic_url = profile_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15), method='GET'
+)
         except Exception as e:
-            print(f"Error generating profile pic URL: {e}")
+            print(f"Profile pic error: {e}")
 
         try:
-            cover_photo_blob = bucket.blob(cover_photo_path)
-            if cover_photo_blob.exists():
-                cover_photo_url = cover_photo_blob.generate_signed_url(
-                    datetime.timedelta(minutes=15),
-                    method='GET'
-                )
+            cover_blob = bucket.blob(f"users/{user_uid}/cover.jpg")
+            if cover_blob.exists():
+                cover_photo_url = cover_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15), method='GET'
+)
         except Exception as e:
-            print(f"Error generating cover photo URL: {e}")
+            print(f"Cover photo error: {e}")
 
-        # Pass all necessary data to the template.
         return render_template('profile.html',
                                user=user_data,
                                profile_pic_url=profile_pic_url,
                                cover_photo_url=cover_photo_url)
 
     except Exception as e:
-        print(f"An unexpected error occurred while rendering the profile page: {e}")
-        flash("An unexpected error occurred. Please try again later.", "error")
-        # In case of any unexpected error, redirect to a safe page.
+        print(f"Unexpected error in profile route: {e}")
+        flash("Something went wrong. Please try again later.", "error")
         return redirect(url_for('signup'))
-        
-    
-
-
-
-
-
 
         
 
@@ -8163,6 +8145,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
