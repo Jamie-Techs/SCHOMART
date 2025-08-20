@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
-        /* All your previous CSS styles remain here, but with these additions for the new inputs */
+        /* All your previous CSS styles remain here, with the additions for new inputs */
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .header-container { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background-color: #ffffff; border-bottom: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .header-title { margin: 0; color: #006B3C; font-size: 1.8em; }
@@ -98,7 +98,6 @@
         /* Style for valid/invalid input fields */
         input.is-valid { border-color: #28a745; }
         input.is-invalid { border-color: #dc3545; }
-
     </style>
 </head>
 <body>
@@ -175,7 +174,7 @@
                     {# NEW INPUT FIELDS FOR LIVE VALIDATION #}
                     <div class="form-group">
                         <label for="state_input">State*</label>
-                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required/>
+                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
                         <span id="state-feedback" class="validation-feedback"></span>
                         <datalist id="state-list">
                             {% for state in NIGERIAN_STATES %}
@@ -185,13 +184,13 @@
                     </div>
                     <div class="form-group">
                         <label for="school_input">School*</label>
-                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="e.g., University of Lagos or UNILAG" disabled required/>
+                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Type a state first..." disabled required list="school-list"/>
                         <span id="school-feedback" class="validation-feedback"></span>
                         <datalist id="school-list"></datalist>
                     </div>
                     <div class="form-group">
                         <label for="location_input">Location in School</label>
-                        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="e.g., Faculty of Engineering" />
+                        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="Type a school first..." disabled/>
                     </div>
                     {# END NEW INPUT FIELDS #}
 
@@ -289,7 +288,7 @@
             </div>
         </div>
     </div>
-
+    
     <script>
         // Data for suggestions, pulled from Jinja2 context
         const NIGERIAN_STATES = [
@@ -300,45 +299,163 @@
             'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'F.C.T.'
         ];
 
-        // Function to handle the autocomplete for states and schools
-        async function fetchAndPopulateSchools() {
-            const stateInput = document.getElementById('state_input');
-            const schoolInput = document.getElementById('school_input');
-            const schoolDatalist = document.getElementById('school-list');
+        // Get elements for the dynamic fields
+        const stateInput = document.getElementById('state_input');
+        const schoolInput = document.getElementById('school_input');
+        const locationInput = document.getElementById('location_input');
+        const schoolDatalist = document.getElementById('school-list');
 
-            stateInput.addEventListener('input', async () => {
-                const currentState = stateInput.value.trim();
-
-                // Clear previous suggestions
-                schoolDatalist.innerHTML = '';
-                schoolInput.value = '';
+        // Initial setup for the form fields
+        function initializeFields() {
+            // Check if a state is already selected (e.g., on page load from saved data)
+            const currentState = stateInput.value.trim();
+            if (NIGERIAN_STATES.includes(currentState)) {
+                // If a state exists, enable school and fetch schools
+                schoolInput.disabled = false;
+                schoolInput.placeholder = 'Select from the list or type...';
+                fetchAndPopulateSchools(currentState);
+            } else {
+                // Otherwise, disable school and location inputs
                 schoolInput.disabled = true;
+                locationInput.disabled = true;
+                schoolInput.placeholder = 'Type a state first...';
+                locationInput.placeholder = 'Type a school first...';
+            }
+            
+            // If a school value exists on load, enable location input
+            const currentSchool = schoolInput.value.trim();
+            if (currentSchool) {
+                locationInput.disabled = false;
+                locationInput.placeholder = 'e.g., Faculty of Engineering';
+            }
+        }
 
-                // Only fetch schools if the entered state is valid
-                if (NIGERIAN_STATES.includes(currentState)) {
-                    try {
-                        const response = await fetch(`/api/schools/${encodeURIComponent(currentState)}`);
-                        const schoolsData = await response.json();
+        // Helper function to fetch and populate the school datalist
+        const fetchAndPopulateSchools = async (state) => {
+            // Clear previous schools
+            schoolDatalist.innerHTML = '';
+            
+            try {
+                const response = await fetch(`/api/schools/${encodeURIComponent(state)}`);
+                const schoolsData = await response.json();
 
-                        schoolsData.forEach(school => {
-                            const option1 = document.createElement('option');
-                            option1.value = school.name;
-                            schoolDatalist.appendChild(option1);
+                // Populate the datalist with both names and acronyms
+                if (schoolsData.length > 0) {
+                    schoolsData.forEach(school => {
+                        const option1 = document.createElement('option');
+                        option1.value = school.name;
+                        schoolDatalist.appendChild(option1);
 
+                        // Only add acronym if it's different from the full name
+                        if (school.acronym && school.acronym.toLowerCase() !== school.name.toLowerCase()) {
                             const option2 = document.createElement('option');
                             option2.value = school.acronym;
                             schoolDatalist.appendChild(option2);
-                        });
-
-                        schoolInput.disabled = false;
-                        schoolInput.focus();
-                    } catch (error) {
-                        console.error('Error fetching schools:', error);
-                        schoolInput.disabled = true;
-                    }
+                        }
+                    });
+                } else {
+                    schoolInput.placeholder = 'No schools found for this state.';
                 }
-            });
+            } catch (error) {
+                console.error('Error fetching schools:', error);
+                schoolInput.placeholder = 'Error loading schools.';
+            }
+        };
+
+        // --- Event Listeners for Dynamic Behavior ---
+
+        // State input listener
+        stateInput.addEventListener('input', () => {
+            const stateValue = stateInput.value.trim();
+            if (NIGERIAN_STATES.includes(stateValue)) {
+                fetchAndPopulateSchools(stateValue);
+                schoolInput.disabled = false;
+                schoolInput.placeholder = 'Select from the list or type...';
+            } else {
+                // Reset fields if state is invalid
+                schoolInput.disabled = true;
+                locationInput.disabled = true;
+                schoolDatalist.innerHTML = '';
+                schoolInput.placeholder = 'Type a state first...';
+                locationInput.placeholder = 'Type a school first...';
+            }
+        });
+
+        // School input listener
+        schoolInput.addEventListener('input', () => {
+            const schoolValue = schoolInput.value.trim();
+            const isValidSchool = Array.from(schoolDatalist.options).some(option => option.value.toLowerCase() === schoolValue.toLowerCase());
+
+            if (isValidSchool) {
+                locationInput.disabled = false;
+                locationInput.placeholder = 'e.g., Faculty of Engineering';
+            } else {
+                locationInput.disabled = true;
+                locationInput.placeholder = 'Select a valid school first...';
+            }
+        });
+
+        // --- Standard Functions (already in your code) ---
+
+        // Function to enable/disable time inputs based on checkbox
+        function toggleTimeInputs(day) {
+            const checkbox = document.getElementById(`checkbox-${day}`);
+            const openTimeInput = document.getElementById(`${day}_open`);
+            const closeTimeInput = document.getElementById(`${day}_close`);
+            const dayItem = document.getElementById(`day-item-${day}`);
+            if (checkbox.checked) {
+                openTimeInput.disabled = false;
+                closeTimeInput.disabled = false;
+                dayItem.classList.remove('disabled-day');
+            } else {
+                openTimeInput.disabled = true;
+                closeTimeInput.disabled = true;
+                dayItem.classList.add('disabled-day');
+                openTimeInput.value = '';
+                closeTimeInput.value = '';
+            }
         }
+
+        // Update character count for text inputs
+        function updateCharCount(id, max) {
+            const input = document.getElementById(id);
+            const countDisplay = document.getElementById(id + '_char_count');
+            if (input && countDisplay) {
+                countDisplay.textContent = `${input.value.length} / ${max}`;
+            }
+        }
+
+        // Modal functions
+        function showConfirmModal() {
+            document.getElementById('confirmModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('confirmModal');
+            if (event.target === modal) {
+                closeConfirmModal();
+            }
+        });
+
+        // Auto-hide flash messages
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFields();
+        });
     </script>
 </body>
 </html>
