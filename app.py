@@ -612,6 +612,74 @@ def format_timestamp(ts):
 
 
 
+# Assuming you have Flask and other necessary imports
+
+# Hardcoded data for Nigerian states and schools
+# You can extend these dictionaries with more data
+NIGERIAN_STATES = [
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+    'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
+    'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+    'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+]
+
+NIGERIAN_SCHOOLS = {
+    'Abia': ['Abia State University', 'Michael Okpara University of Agriculture'],
+    'Adamawa': ['Adamawa State University', 'American University of Nigeria'],
+    'Akwa Ibom': ['Akwa Ibom State University', 'University of Uyo'],
+    'Anambra': ['Nnamdi Azikiwe University', 'Chukwuemeka Odumegwu Ojukwu University'],
+    'Bauchi': ['Abubakar Tafawa Balewa University', 'Bauchi State University'],
+    'Bayelsa': ['Niger Delta University', 'Bayelsa Medical University'],
+    'Benue': ['Benue State University', 'Federal University of Agriculture, Makurdi'],
+    'Borno': ['University of Maiduguri', 'Borno State University'],
+    'Cross River': ['University of Calabar', 'Cross River University of Technology'],
+    'Delta': ['Delta State University', 'Federal University of Petroleum Resources Effurun'],
+    'Ebonyi': ['Ebonyi State University', 'Federal University Ndufu Alike Ikwo'],
+    'Edo': ['University of Benin', 'Ambrose Alli University'],
+    'Ekiti': ['Ekiti State University', 'Federal University Oye-Ekiti'],
+    'Enugu': ['University of Nigeria, Nsukka', 'Godfrey Okoye University'],
+    'Gombe': ['Federal University, Kashere', 'Gombe State University'],
+    'Imo': ['Federal University of Technology, Owerri', 'Imo State University'],
+    'Jigawa': ['Federal University, Dutse', 'Sule Lamido University'],
+    'Kaduna': ['Ahmadu Bello University', 'Kaduna State University'],
+    'Kano': ['Bayero University Kano', 'Yusuf Maitama Sule University'],
+    'Katsina': ['Umaru Musa Yaradua University', 'Federal University, Dutsin-Ma'],
+    'Kebbi': ['Kebbi State University of Science and Technology', 'Federal University Birnin-Kebbi'],
+    'Kogi': ['Federal University, Lokoja', 'Kogi State University'],
+    'Kwara': ['University of Ilorin', 'Kwara State University'],
+    'Lagos': ['University of Lagos', 'Lagos State University', 'Yaba College of Technology'],
+    'Nasarawa': ['Federal University, Lafia', 'Nasarawa State University'],
+    'Niger': ['Federal University of Technology, Minna', 'Ibrahim Badamasi Babangida University'],
+    'Ogun': ['Federal University of Agriculture, Abeokuta', 'Olabisi Onabanjo University'],
+    'Ondo': ['Federal University of Technology, Akure', 'Adekunle Ajasin University'],
+    'Osun': ['Obafemi Awawolo University', 'Osun State University'],
+    'Oyo': ['University of Ibadan', 'Ladoke Akintola University of Technology'],
+    'Plateau': ['University of Jos', 'Plateau State University'],
+    'Rivers': ['University of Port Harcourt', 'Rivers State University'],
+    'Sokoto': ['Usmanu Danfodiyo University', 'Sokoto State University'],
+    'Taraba': ['Taraba State University', 'Federal University Wukari'],
+    'Yobe': ['Yobe State University', 'Federal University Gashua'],
+    'Zamfara': ['Federal University Gusau', 'Zamfara State University']
+}
+
+# The API endpoints now validate against the in-memory dictionaries.
+@app.route('/api/validate/state/<country>', methods=['GET'])
+def validate_state(country):
+    state_name = request.args.get('name')
+    if country.upper() == 'NIGERIA':
+        is_valid = state_name in NIGERIAN_STATES
+        return jsonify({"is_valid": is_valid})
+    return jsonify({"is_valid": False, "message": "Validation for this country is not supported."})
+
+@app.route('/api/validate/school/<state>', methods=['GET'])
+def validate_school(state):
+    school_name = request.args.get('name')
+    valid_schools = NIGERIAN_SCHOOLS.get(state, [])
+    is_valid = school_name in valid_schools
+    return jsonify({"is_valid": is_valid})
+
+
 
 @app.route('/profile')
 @login_required
@@ -8232,6 +8300,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
