@@ -97,7 +97,7 @@ try:
     # Initialize Firebase Admin SDK with correct bucket name
     cred = credentials.Certificate(temp_path)
     firebase_admin.initialize_app(cred, {
-        'storageBucket': 'schomart-7a743.appspot.com'  # ✅ Correct internal bucket name
+        'storageBucket': 'schomart-7a743.firebasestorage.app'  # ✅ Correct internal bucket name
 })
 
     # Initialize Firestore and Storage clients
@@ -8262,6 +8262,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
