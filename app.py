@@ -71,7 +71,6 @@ import tempfile
 
  
 
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -96,7 +95,7 @@ try:
     initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
 
     # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
-    admin_db = admin_firestore.client()
+    db = admin_firestore.client()
 
     # --- THIS LINE IS THE CORRECT ADDITION FOR YOUR STORAGE CLIENT. ---
     admin_storage = storage.bucket()
@@ -112,7 +111,7 @@ finally:
         
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-                                         
+                                        
 logger = logging.getLogger(__name__)
 
 # Note: Local file storage configurations are now obsolete, but kept for context.
@@ -139,7 +138,7 @@ def login():
 
 
 
- 
+  
 
 # --- Helper Functions for Referral Code Generation ---
 def generate_referral_code():
@@ -148,7 +147,7 @@ def generate_referral_code():
     """
     return f"{random.randint(0, 999999):06d}"
 
-def generate_unique_referral_code(admin_db):
+def generate_unique_referral_code(db):
     """
     Generates a unique 6-digit numeric referral code.
     It checks Firestore to ensure the code does not already exist.
@@ -156,9 +155,10 @@ def generate_unique_referral_code(admin_db):
     while True:
         code = generate_referral_code()
         # Check if the code already exists in the 'users' collection
-        existing = admin_db.collection('users').where('referral_code', '==', code).limit(1).stream()
+        existing = db.collection('users').where('referral_code', '==', code).limit(1).stream()
         if not any(existing):
             return code
+
 
 # --- API Routes ---
 
@@ -167,7 +167,7 @@ def api_signup():
     """
     Handles a request from the frontend to create a user document in Firestore.
     """
-    if admin_db is None:
+    if db is None:
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
     data = request.get_json()
@@ -181,7 +181,7 @@ def api_signup():
         return jsonify({'error': 'Missing UID, email, or username'}), 400
 
     try:
-        user_ref = admin_db.collection('users').document(uid)
+        user_ref = db.collection('users').document(uid)
         
         # Check if the user document already exists
         if user_ref.get().exists:
@@ -189,7 +189,7 @@ def api_signup():
             return jsonify({'error': 'User data already exists in Firestore'}), 409
 
         # Generate a unique referral code and link
-        referral_code = generate_unique_referral_code(admin_db)
+        referral_code = generate_unique_referral_code(db)
         referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}" # Replace 'your-domain.com' with your actual domain
 
         # Initialize and save the new user data
@@ -231,7 +231,7 @@ def api_signup():
         # Check if a referral code was used and update the referrer's count
         if referral_code_used:
             logger.info(f"Referral code used: {referral_code_used}. Searching for referrer.")
-            referrer_query = admin_db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
+            referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
             referrer_docs = referrer_query.stream()
             
             for doc in referrer_docs:
@@ -272,7 +272,7 @@ def api_verify_user():
     Updates the is_verified status for a user after they successfully log in
     with a verified email address.
     """
-    if admin_db is None:
+    if db is None:
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
     data = request.get_json()
@@ -283,7 +283,7 @@ def api_verify_user():
         return jsonify({'error': 'Missing UID'}), 400
 
     try:
-        user_ref = admin_db.collection('users').document(uid)
+        user_ref = db.collection('users').document(uid)
         
         user_ref.update({
             'is_verified': True
@@ -303,7 +303,7 @@ def api_login():
     Verifies Firebase ID token, fetches user data from Firestore,
     updates online status, and stores session data for global access.
     """
-    if admin_db is None:
+    if db is None:
         logger.error("Firestore admin client is not initialized.")
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
@@ -320,7 +320,7 @@ def api_login():
         uid = decoded_token['uid']
 
         # Fetch user document from Firestore
-        user_doc = admin_db.collection('users').document(uid).get()
+        user_doc = db.collection('users').document(uid).get()
         if not user_doc.exists:
             logger.warning(f"User data not found in Firestore for UID: {uid}")
             return jsonify({'error': 'User data not found in Firestore'}), 404
@@ -328,7 +328,7 @@ def api_login():
         user_data = user_doc.to_dict()
 
         # Update online status
-        admin_db.collection('users').document(uid).update({
+        db.collection('users').document(uid).update({
             'is_online': True,
             'last_online': firestore.SERVER_TIMESTAMP
 })
@@ -360,11 +360,8 @@ def api_login():
         return jsonify({'error': 'Authentication failed.'}), 401
 
 
+      
 
-        
-
-
-     
 
 @app.route('/logout')
 @login_required
@@ -410,6 +407,8 @@ def api_update_password():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+        
+
 @app.route('/api/update-email', methods=['POST'])
 def api_update_email():
     data = request.get_json()
@@ -426,7 +425,7 @@ def api_update_email():
         auth.update_user(uid, email=new_email)
 
         # Update Firestore as well for data consistency
-        user_ref = admin_db.collection('users').document(uid)
+        user_ref = db.collection('users').document(uid)
         user_ref.update({'email': new_email})
         
         # Note: The email verification link is usually sent by the frontend SDK
@@ -501,10 +500,10 @@ class User:
         """
         Retrieves a user document from Firestore and returns a User object.
         """
-        if not admin_db or not uid:
+        if not db or not uid:
             return None
         try:
-            doc_ref = admin_db.collection('users').document(str(uid))
+            doc_ref = db.collection('users').document(str(uid))
             doc = doc_ref.get()
             if doc.exists:
                 return User(doc.id, doc.to_dict())
@@ -512,7 +511,6 @@ class User:
         except Exception as e:
             current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
-
 
 
 
@@ -8212,6 +8210,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
