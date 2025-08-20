@@ -1013,6 +1013,54 @@ def view_user_profile(user_id):
                            current_user_id=current_user_id)
 
 
+@app.route('/followers')
+@login_required
+def followers():
+    """
+    Renders the followers page for the currently logged-in user.
+    This route fetches the list of users who are following the current user.
+    """
+    try:
+        user_uid = session.get('user_id')
+
+        # Assuming your Firestore 'followers' collection stores follower relationships
+        # You'll need to adjust this query based on your actual data structure.
+        # Example: 'followers' collection where each document represents a follower relationship.
+        # The document ID or a field in the document should be the UID of the user being followed.
+        # For example, a document might have a 'following_uid' field that matches user_uid.
+        
+        # A more common structure is a subcollection:
+        # users/{user_id}/followers/{follower_id}
+        # To get the followers, you would query the subcollection for the current user.
+        
+        followers_ref = admin_db.collection('users').document(user_uid).collection('followers')
+        followers_docs = followers_ref.stream()
+
+        follower_list = []
+        for doc in followers_docs:
+            # You can fetch more details about each follower from the 'users' collection
+            follower_data = admin_db.collection('users').document(doc.id).get().to_dict()
+            if follower_data:
+                follower_list.append({
+                    'id': doc.id,
+                    'username': follower_data.get('username'),
+                    'profile_pic_url': "" # You can add logic to get the profile pic URL here
+                })
+        
+        # It is good practice to add a logger to check the data
+        logger.info(f"Found {len(follower_list)} followers for user {user_uid}")
+
+        return render_template('followers.html', followers=follower_list)
+
+    except Exception as e:
+        logger.error(f"Error in followers route: {e}", exc_info=True)
+        flash("An error occurred while fetching your followers. Please try again.", "error")
+        return redirect(url_for('profile'))
+
+
+
+
+
 
 def get_unread_notifications_count(user_id):
     """
@@ -8176,6 +8224,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
