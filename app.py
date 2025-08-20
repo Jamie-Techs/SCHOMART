@@ -837,6 +837,34 @@ def validate_school(state):
     return jsonify({"is_valid": is_valid})
 
 
+
+
+
+
+@app.route('/api/validate/state_and_school', methods=['GET'])
+def validate_state_and_school():
+    state_name = request.args.get('state')
+    school_name = request.args.get('school')
+
+    if not state_name or not school_name:
+        return jsonify({"is_valid": False, "message": "State and school are required."})
+
+    # Find the list of schools for the given state
+    schools_in_state = NIGERIAN_SCHOOLS.get(state_name, [])
+
+    is_valid = False
+    for school in schools_in_state:
+        # Check for both full name and acronym
+        if school['name'].lower() == school_name.lower() or school['acronym'].lower() == school_name.lower():
+            is_valid = True
+            break
+            
+    return jsonify({"is_valid": is_valid})
+
+
+
+
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -902,7 +930,11 @@ def profile():
         return redirect(url_for('signup'))
 
 
-@app.route('/profile/personal', methods=['GET', 'POST'])
+
+
+
+
+app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
     """
@@ -925,17 +957,21 @@ def personal_details():
         user_data = user_doc.to_dict()
 
         if request.method == 'POST':
-            # Extract form data
+            # Extract form data using the correct field names from the new frontend
             first_name = request.form.get('first_name', '')
             last_name = request.form.get('last_name', '')
             businessname = request.form.get('businessname', '')
+            
+            # These are the new fields for location
             state = request.form.get('state_input', '')
+            school = request.form.get('school_input', '')
             location = request.form.get('location_input', '')
-            sublocation = request.form.get('sublocation_input', '')
+
             birthday = request.form.get('birthday', '')
             sex = request.form.get('sex', '')
             delivery_methods = request.form.getlist('delivery_methods')
             working_days = request.form.getlist('working_days')
+            
             working_times = {}
             for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
                 if day in working_days:
@@ -943,6 +979,7 @@ def personal_details():
                         'open': request.form.get(f'{day}_open'),
                         'close': request.form.get(f'{day}_close')
                     }
+            
             social_links = {
                 'website': request.form.get('social_links[website]', ''),
                 'instagram': request.form.get('social_links[instagram]', ''),
@@ -951,13 +988,25 @@ def personal_details():
                 'twitter': request.form.get('social_links[twitter]', '')
             }
             
+            # Construct the combined location string as requested
+            combined_location = f"{state} > {school} > {location}"
+            
+            # Check for empty location parts and handle gracefully
+            if not state:
+                combined_location = ''
+            elif not school:
+                combined_location = f"{state} > {location}"
+            elif not location:
+                combined_location = f"{state} > {school}"
+
             update_data = {
                 'first_name': first_name,
                 'last_name': last_name,
                 'businessname': businessname,
                 'state': state,
+                'school': school, # Save school and location fields separately
                 'location': location,
-                'sublocation': sublocation,
+                'full_location': combined_location, # Save the combined string
                 'birthday': birthday,
                 'sex': sex,
                 'working_days': working_days,
@@ -967,7 +1016,7 @@ def personal_details():
             }
 
             try:
-                # Handle image uploads
+                # Handle image uploads as before
                 profile_picture_file = request.files.get('profile_picture')
                 if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
                     blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
@@ -1020,66 +1069,6 @@ def personal_details():
         logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
-
-
-
-
-
-# New endpoint for fetching all Nigerian states from an external API
-@app.route('/api/states')
-def get_states():
-    try:
-        response = requests.get("https://nigeria-states-towns-lgas.onrender.com/api/states")
-        response.raise_for_status() # Raises an exception for bad status codes
-        states_data = response.json()
-        return jsonify(states_data)
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Error fetching states from API: {e}")
-        return jsonify({"error": "Failed to fetch states data. Please try again later."}), 500
-    except json.JSONDecodeError as e:
-        app.logger.error(f"Error decoding JSON response from API: {e}")
-        return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
-
-# New endpoint for fetching schools from an external API, with an optional state filter
-@app.route('/api/schools')
-def get_schools():
-    state = request.args.get('state')
-    
-    try:
-        if state:
-            # If a state is specified, get the schools for that state
-            response = requests.get(f"https://nigeria-states-towns-lgas.onrender.com/api/{state}/universities")
-            response.raise_for_status()
-            schools_data = response.json()
-            return jsonify(schools_data)
-        else:
-            # If no state is specified, get all schools (this might be a large request)
-            # The API doesn't have a single endpoint for all universities, so we'll fetch them by states and combine.
-            # This is not a good practice due to API rate limits, but it's the only way with this API.
-            states_response = requests.get("https://nigeria-states-towns-lgas.onrender.com/api/states")
-            states_response.raise_for_status()
-            all_states = states_response.json()
-            
-            all_schools = []
-            for state_info in all_states:
-                state_code = state_info.get('state_code')
-                if state_code:
-                    schools_in_state_response = requests.get(f"https://nigeria-states-towns-lgas.onrender.com/api/{state_code}/universities")
-                    schools_in_state_response.raise_for_status()
-                    schools_in_state = schools_in_state_response.json()
-                    all_schools.extend(schools_in_state)
-            
-            return jsonify(all_schools)
-
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Error fetching schools from API: {e}")
-        return jsonify({"error": "Failed to fetch schools data. Please try again later."}), 500
-    except json.JSONDecodeError as e:
-        app.logger.error(f"Error decoding JSON response from API: {e}")
-        return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
-
-
-
 
         
 
@@ -8456,6 +8445,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
