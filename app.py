@@ -71,6 +71,7 @@ import tempfile
 
  
 
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -82,44 +83,48 @@ oauth = OAuth(app)
 socketio = SocketIO(app)
 
 try:
+    # Load Firebase credentials from environment
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     if not raw_json:
         raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
 
+    # Write credentials to a temporary file
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
         temp.write(raw_json)
         temp.flush()
         temp_path = temp.name
 
+    # Initialize Firebase Admin SDK with correct bucket name
     cred = credentials.Certificate(temp_path)
-    initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': 'schomart-7a743.appspot.com'  # ✅ Correct internal bucket name
+})
 
-    # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
+    # Initialize Firestore and Storage clients
     db = admin_firestore.client()
+    admin_storage = storage.bucket()  # Uses the default bucket set above
 
-    # --- THIS LINE IS THE CORRECT ADDITION FOR YOUR STORAGE CLIENT. ---
-    admin_storage = storage.bucket()
-    
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
 except Exception as e:
-    logging.error(f"Failed to initialize Firebase: {e}")
+    logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
     raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+
 finally:
+    # Clean up the temporary credentials file
     if 'temp_path' in locals() and os.path.exists(temp_path):
         os.remove(temp_path)
-        
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-                                        
 logger = logging.getLogger(__name__)
 
-# Note: Local file storage configurations are now obsolete, but kept for context.
+# Allowed file types for uploads
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
 
 def allowed_file(filename):
+    """Checks if the uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
 
 
 
@@ -8257,6 +8262,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
