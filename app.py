@@ -296,11 +296,14 @@ def api_verify_user():
         return jsonify({'error': 'Failed to update user verification status.'}), 500
 
 
-
-
 @app.route('/api/login', methods=['POST'])
 def api_login():
+    """
+    Verifies Firebase ID token, fetches user data from Firestore,
+    updates online status, and stores session data for global access.
+    """
     if admin_db is None:
+        logger.error("Firestore admin client is not initialized.")
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
     data = request.get_json()
@@ -311,9 +314,11 @@ def api_login():
         return jsonify({'error': 'Missing ID token'}), 400
 
     try:
+        # Verify the Firebase ID token
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
 
+        # Fetch user document from Firestore
         user_doc = admin_db.collection('users').document(uid).get()
         if not user_doc.exists:
             logger.warning(f"User data not found in Firestore for UID: {uid}")
@@ -327,14 +332,26 @@ def api_login():
             'last_online': firestore.SERVER_TIMESTAMP
 })
 
-        # 🔐 Store in session
+        # Sanitize user data before storing in session (optional)
+        safe_user_data = {
+            'email': user_data.get('email'),
+            'username': user_data.get('username'),
+            'is_verified': user_data.get('is_verified', False),
+            'created_at_timestamp': user_data.get('created_at_timestamp'),
+            'last_active_timestamp': user_data.get('last_active_timestamp')
+}
+
+        # Store session data
+        session.permanent = True  # Enables session expiration
         session['user_id'] = uid
-        session['user_data'] = user_data
+        session['user_data'] = safe_user_data
+
+        logger.info(f"User {uid} logged in successfully.")
 
         return jsonify({
             'message': 'Login successful',
             'uid': uid,
-            'data': user_data
+            'data': safe_user_data
 }), 200
 
     except Exception as e:
@@ -8145,6 +8162,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
