@@ -8,7 +8,6 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
         /* All your previous CSS styles remain here, but with these additions for the new inputs */
-        /* You can copy and paste your original styles here */
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .header-container { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background-color: #ffffff; border-bottom: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .header-title { margin: 0; color: #006B3C; font-size: 1.8em; }
@@ -176,13 +175,19 @@
                     {# NEW INPUT FIELDS FOR LIVE VALIDATION #}
                     <div class="form-group">
                         <label for="state_input">State*</label>
-                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" />
+                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required/>
                         <span id="state-feedback" class="validation-feedback"></span>
+                        <datalist id="state-list">
+                            {% for state in NIGERIAN_STATES %}
+                                <option value="{{ state }}">
+                            {% endfor %}
+                        </datalist>
                     </div>
                     <div class="form-group">
                         <label for="school_input">School*</label>
-                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="e.g., University of Lagos" disabled />
+                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="e.g., University of Lagos or UNILAG" disabled required/>
                         <span id="school-feedback" class="validation-feedback"></span>
+                        <datalist id="school-list"></datalist>
                     </div>
                     <div class="form-group">
                         <label for="location_input">Location in School</label>
@@ -220,8 +225,7 @@
                                     <label for="{{day}}_close">Close:</label>
                                     <input type="time" name="{{day}}_close" id="{{day}}_close" value="{{ user.working_times.get(day, {}).get('close', '17:00') or '' }}"
                                         {% if day not in user.working_days %}disabled{% endif %}>
-                                    
-                                  </div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -287,226 +291,54 @@
     </div>
 
     <script>
-        // Store user's country
-        let userCountry = 'NIGERIA'; // Default to Nigeria
-        let stateInput = document.getElementById('state_input');
-        let schoolInput = document.getElementById('school_input');
-        let stateFeedback = document.getElementById('state-feedback');
-        let schoolFeedback = document.getElementById('school-feedback');
+        // Data for suggestions, pulled from Jinja2 context
+        const NIGERIAN_STATES = [
+            'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+            'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
+            'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+            'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+            'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'F.C.T.'
+        ];
 
-        // Function to enable/disable time inputs based on checkbox
-        function toggleTimeInputs(day) {
-            const checkbox = document.getElementById(`checkbox-${day}`);
-            const openTimeInput = document.getElementById(`${day}_open`);
-            const closeTimeInput = document.getElementById(`${day}_close`);
-            const dayItem = document.getElementById(`day-item-${day}`);
+        // Function to handle the autocomplete for states and schools
+        async function fetchAndPopulateSchools() {
+            const stateInput = document.getElementById('state_input');
+            const schoolInput = document.getElementById('school_input');
+            const schoolDatalist = document.getElementById('school-list');
 
-            if (checkbox.checked) {
-                openTimeInput.disabled = false;
-                closeTimeInput.disabled = false;
-                dayItem.classList.remove('disabled-day');
-            } else {
-                openTimeInput.disabled = true;
-                closeTimeInput.disabled = true;
-                dayItem.classList.add('disabled-day');
-                openTimeInput.value = '';
-                closeTimeInput.value = '';
-            }
-        }
+            stateInput.addEventListener('input', async () => {
+                const currentState = stateInput.value.trim();
 
-        // Update character count for text inputs
-        function updateCharCount(id, max) {
-            const input = document.getElementById(id);
-            const countDisplay = document.getElementById(id + '_char_count');
-            if (input && countDisplay) {
-                countDisplay.textContent = `${input.value.length} / ${max}`;
-            }
-        }
+                // Clear previous suggestions
+                schoolDatalist.innerHTML = '';
+                schoolInput.value = '';
+                schoolInput.disabled = true;
 
-        // Modal functions
-        function showConfirmModal() {
-            document.getElementById('confirmModal').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
+                // Only fetch schools if the entered state is valid
+                if (NIGERIAN_STATES.includes(currentState)) {
+                    try {
+                        const response = await fetch(`/api/schools/${encodeURIComponent(currentState)}`);
+                        const schoolsData = await response.json();
 
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').classList.remove('active');
-            document.body.style.overflow = '';
-        }
+                        schoolsData.forEach(school => {
+                            const option1 = document.createElement('option');
+                            option1.value = school.name;
+                            schoolDatalist.appendChild(option1);
 
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('confirmModal');
-            if (event.target === modal) {
-                closeConfirmModal();
-            }
-        });
+                            const option2 = document.createElement('option');
+                            option2.value = school.acronym;
+                            schoolDatalist.appendChild(option2);
+                        });
 
-        // Live validation function with a delay
-        function validateInput(inputElement, feedbackElement, apiEndpoint) {
-            let timeout = null;
-            inputElement.addEventListener('input', () => {
-                clearTimeout(timeout);
-                const value = inputElement.value.trim();
-
-                // Reset state
-                feedbackElement.style.display = 'none';
-                inputElement.classList.remove('is-valid', 'is-invalid');
-
-                if (value.length > 0) {
-                    // Show loading spinner
-                    feedbackElement.style.display = 'block';
-                    feedbackElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                    feedbackElement.className = 'validation-feedback loading';
-
-                    timeout = setTimeout(async () => {
-                        try {
-                            const response = await fetch(`${apiEndpoint}?name=${encodeURIComponent(value)}`);
-                            const data = await response.json();
-
-                            if (data.is_valid) {
-                                feedbackElement.innerHTML = '<i class="fas fa-check-circle"></i>';
-                                feedbackElement.className = 'validation-feedback success';
-                                inputElement.classList.add('is-valid');
-                                inputElement.classList.remove('is-invalid');
-                                schoolInput.disabled = false;
-                                schoolInput.focus();
-                            } else {
-                                feedbackElement.innerHTML = '<i class="fas fa-times-circle"></i>';
-                                feedbackElement.className = 'validation-feedback error';
-                                inputElement.classList.add('is-invalid');
-                                inputElement.classList.remove('is-valid');
-                                schoolInput.disabled = true;
-                            }
-                        } catch (error) {
-                            console.error('Validation error:', error);
-                            feedbackElement.innerHTML = '<i class="fas fa-times-circle"></i>';
-                            feedbackElement.className = 'validation-feedback error';
-                            inputElement.classList.add('is-invalid');
-                            inputElement.classList.remove('is-valid');
-                            schoolInput.disabled = true;
-                        }
-                    }, 500); // Wait for 500ms after user stops typing
-                } else {
-                    schoolInput.disabled = true;
+                        schoolInput.disabled = false;
+                        schoolInput.focus();
+                    } catch (error) {
+                        console.error('Error fetching schools:', error);
+                        schoolInput.disabled = true;
+                    }
                 }
             });
         }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Determine user's country from IP address
-            try {
-                const response = await fetch('https://ip-api.com/json/');
-                const data = await response.json();
-                if (data.status === 'success') {
-                    userCountry = data.countryCode;
-                }
-            } catch (error) {
-                console.error("Could not determine user country:", error);
-            }
-
-            // Apply live validation to the state and school inputs
-            validateInput(stateInput, stateFeedback, `/api/validate/state/${userCountry}`);
-            validateInput(schoolInput, schoolFeedback, `/api/validate/university/${stateInput.value}`);
-
-            // Initialize character counts
-            updateCharCount('first_name', 20);
-            updateCharCount('last_name', 20);
-
-            // Initialize working days/hours display based on saved user data
-            const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            allDays.forEach(day => {
-                toggleTimeInputs(day);
-            });
-
-            // Auto-hide flash messages
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                setTimeout(() => {
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500);
-                }, 5000);
-            });
-        });
-        // ... your existing JS code ...
-
-// Hardcoded data for testing
-const NIGERIAN_STATES = [
-    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-    'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
-    'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
-    'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
-];
-
-// This hardcoded data should match the structure of your backend's NIGERIAN_SCHOOLS
-const NIGERIAN_SCHOOLS = {
-    'Abia': [{ name: 'Abia State University', acronym: 'ABSU' }, { name: 'Michael Okpara University of Agriculture', acronym: 'MOUAU' }],
-    'Adamawa': [{ name: 'Adamawa State University', acronym: 'ADSU' }, { name: 'American University of Nigeria', acronym: 'AUN' }],
-    'Akwa Ibom': [{ name: 'Akwa Ibom State University', acronym: 'AKSU' }, { name: 'University of Uyo', acronym: 'UNIUYO' }],
-    'Anambra': [{ name: 'Nnamdi Azikiwe University', acronym: 'NAU' }, { name: 'Chukwuemeka Odumegwu Ojukwu University', acronym: 'COOU' }],
-    'Bauchi': [{ name: 'Abubakar Tafawa Balewa University', acronym: 'ATBU' }, { name: 'Bauchi State University', acronym: 'BASUG' }],
-    'Bayelsa': [{ name: 'Niger Delta University', acronym: 'NDU' }, { name: 'Bayelsa Medical University', acronym: 'BMU' }],
-    'Benue': [{ name: 'Benue State University', acronym: 'BSU' }, { name: 'Federal University of Agriculture, Makurdi', acronym: 'FUAM' }],
-    'Borno': [{ name: 'University of Maiduguri', acronym: 'UNIMAID' }, { name: 'Borno State University', acronym: 'BOSU' }],
-    'Cross River': [{ name: 'University of Calabar', acronym: 'UNICAL' }, { name: 'Cross River University of Technology', acronym: 'CRUTECH' }],
-    'Delta': [{ name: 'Delta State University', acronym: 'DELSU' }, { name: 'Federal University of Petroleum Resources Effurun', acronym: 'FUPRE' }],
-    'Ebonyi': [{ name: 'Ebonyi State University', acronym: 'EBSU' }, { name: 'Federal University Ndufu Alike Ikwo', acronym: 'FUNAI' }],
-    'Edo': [{ name: 'University of Benin', acronym: 'UNIBEN' }, { name: 'Ambrose Alli University', acronym: 'AAU' }],
-    'Ekiti': [{ name: 'Ekiti State University', acronym: 'EKSU' }, { name: 'Federal University Oye-Ekiti', acronym: 'FUOYE' }],
-    'Enugu': [{ name: 'University of Nigeria, Nsukka', acronym: 'UNN' }, { name: 'Godfrey Okoye University', acronym: 'GOUNI' }],
-    'Gombe': [{ name: 'Federal University, Kashere', acronym: 'FUK' }, { name: 'Gombe State University', acronym: 'GSU' }],
-    'Imo': [{ name: 'Federal University of Technology, Owerri', acronym: 'FUTO' }, { name: 'Imo State University', acronym: 'IMSU' }],
-    'Jigawa': [{ name: 'Federal University, Dutse', acronym: 'FUD' }, { name: 'Sule Lamido University', acronym: 'SLU' }],
-    'Kaduna': [{ name: 'Ahmadu Bello University', acronym: 'ABU' }, { name: 'Kaduna State University', acronym: 'KASU' }],
-    'Kano': [{ name: 'Bayero University Kano', acronym: 'BUK' }, { name: 'Yusuf Maitama Sule University', acronym: 'YUMSUK' }],
-    'Katsina': [{ name: 'Umaru Musa Yaradua University', acronym: 'UMYU' }, { name: 'Federal University, Dutsin-Ma', acronym: 'FUDMA' }],
-    'Kebbi': [{ name: 'Kebbi State University of Science and Technology', acronym: 'KSUSTA' }, { name: 'Federal University Birnin-Kebbi', acronym: 'FUBK' }],
-    'Kogi': [{ name: 'Federal University, Lokoja', acronym: 'FUL' }, { name: 'Kogi State University', acronym: 'KSU' }],
-    'Kwara': [{ name: 'University of Ilorin', acronym: 'UNILORIN' }, { name: 'Kwara State University', acronym: 'KWASU' }],
-    'Lagos': [{ name: 'University of Lagos', acronym: 'UNILAG' }, { name: 'Lagos State University', acronym: 'LASU' }, { name: 'Yaba College of Technology', acronym: 'YABATECH' }],
-    'Nasarawa': [{ name: 'Federal University, Lafia', acronym: 'FULAFIA' }, { name: 'Nasarawa State University', acronym: 'NSUK' }],
-    'Niger': [{ name: 'Federal University of Technology, Minna', acronym: 'FUTMINNA' }, { name: 'Ibrahim Badamasi Babangida University', acronym: 'IBBU' }],
-    'Ogun': [{ name: 'Federal University of Agriculture, Abeokuta', acronym: 'FUNAAB' }, { name: 'Olabisi Onabanjo University', acronym: 'OOU' }],
-    'Ondo': [{ name: 'Federal University of Technology, Akure', acronym: 'FUTA' }, { name: 'Adekunle Ajasin University', acronym: 'AAUA' }],
-    'Osun': [{ name: 'Obafemi Awolowo University', acronym: 'OAU' }, { name: 'Osun State University', acronym: 'UNIOSUN' }],
-    'Oyo': [{ name: 'University of Ibadan', acronym: 'UI' }, { name: 'Ladoke Akintola University of Technology', acronym: 'LAUTECH' }],
-    'Plateau': [{ name: 'University of Jos', acronym: 'UNIJOS' }, { name: 'Plateau State University', acronym: 'PLASU' }],
-    'Rivers': [{ name: 'University of Port Harcourt', acronym: 'UNIPORT' }, { name: 'Rivers State University', acronym: 'RSU' }],
-    'Sokoto': [{ name: 'Usmanu Danfodiyo University', acronym: 'UDUS' }, { name: 'Sokoto State University', acronym: 'SSU' }],
-    'Taraba': [{ name: 'Taraba State University', acronym: 'TSU' }, { name: 'Federal University Wukari', acronym: 'FUWUKARI' }],
-    'Yobe': [{ name: 'Yobe State University', acronym: 'YSU' }, { name: 'Federal University Gashua', acronym: 'FUGASHUA' }],
-    'Zamfara': [{ name: 'Federal University Gusau', acronym: 'FUGUS' }, { name: 'Zamfara State University', acronym: 'ZAMSU' }]
-};
-
-// ... your existing JS code ...
-
-// Event listener for state input
-stateInput.addEventListener('input', () => {
-    const currentState = stateInput.value;
-    const schoolList = document.getElementById('school-list');
-    
-    // Clear previous options
-    schoolList.innerHTML = '';
-    
-    // Enable/disable school input based on state
-    if (NIGERIAN_STATES.includes(currentState)) {
-        schoolInput.disabled = false;
-        const schools = NIGERIAN_SCHOOLS[currentState] || [];
-        schools.forEach(school => {
-            const option = document.createElement('option');
-            option.value = school.name;
-            schoolList.appendChild(option);
-            
-            // Add an option for the acronym as well
-            const acronymOption = document.createElement('option');
-            acronymOption.value = school.acronym;
-            schoolList.appendChild(acronymOption);
-        });
-    } else {
-        schoolInput.disabled = true;
-    }
-});
     </script>
 </body>
 </html>
