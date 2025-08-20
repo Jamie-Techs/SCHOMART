@@ -677,195 +677,171 @@ def profile():
         
 
 
-@app.route("/profile/personal", methods=["GET", "POST"])
+
+
+
+def upload_image_to_firebase(file, destination_blob_name):
+    """Uploads an image file to Firebase Storage and returns the public URL."""
+    try:
+        blob = bucket.blob(destination_blob_name)
+        
+        temp_path = f"/tmp/{file.filename}"
+        file.save(temp_path)
+
+        img = Image.open(temp_path)
+        img.thumbnail((800, 800))
+        img.save(temp_path, "JPEG", quality=85)
+
+        blob.upload_from_filename(temp_path, content_type='image/jpeg')
+
+        os.remove(temp_path)
+        
+        print(f"File {destination_blob_name} uploaded to Firebase Storage.")
+        return blob.name
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return None
+
+def get_signed_url(blob_name):
+    """Generates a signed URL for a given blob name."""
+    try:
+        blob = bucket.blob(blob_name)
+        if blob.exists():
+            return blob.generate_signed_url(version="v4", expiration=datetime.timedelta(minutes=15), method="GET")
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
+        return None
+
+@app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
-    # Ensure the user object exists from the login_required decorator
-    if not g.user or not g.user.id:
-        flash("User session not found.", "danger")
-        return redirect(url_for('login_page'))
-    
-    user_id = g.user.id
-
-    # Get a reference to the user's Firestore document
-    user_ref = admin_db.collection('users').document(user_id)
+    user_id = g.user.get('uid')
+    user_ref = db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
-    # If the user document doesn't exist, handle it gracefully
     if not user_doc.exists:
-        flash("User data not found in Firestore. Please create a profile.", "danger")
+        flash('User not found.', 'danger')
         return redirect(url_for('profile'))
 
     user_data = user_doc.to_dict()
 
-    # Populate a user object for the template, making sure all fields exist
-    user = type('UserObject', (object,), user_data)
-    user.profile_picture = user_data.get('profile_picture', None)
-    user.cover_photo = user_data.get('cover_photo', None)
-    user.state = user_data.get('state', '')
-    user.location = user_data.get('location', '')
-    user.sublocation = user_data.get('sublocation', '')
-    user.working_days = user_data.get('working_days', [])
-    user.working_times = user_data.get('working_times', {})
-    user.delivery_methods = user_data.get('delivery_methods', [])
-    user.social_links = user_data.get('social_links', {})
+    if request.method == 'POST':
+        first_name = request.form.get('first_name', '')
+        last_name = request.form.get('last_name', '')
+        businessname = request.form.get('businessname', '')
+        state = request.form.get('state_input', '')
+        location = request.form.get('location_input', '')
+        sublocation = request.form.get('sublocation_input', '')
+        birthday = request.form.get('birthday', '')
+        sex = request.form.get('sex', '')
+        delivery_methods = request.form.getlist('delivery_methods')
+        
+        working_days = request.form.getlist('working_days')
+        working_times = {}
+        for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+            if day in working_days:
+                working_times[day] = {
+                    'open': request.form.get(f'{day}_open'),
+                    'close': request.form.get(f'{day}_close')
+                }
 
-    # --- UPDATED: New function for Firebase Storage Upload ---
-    def upload_to_firebase(file, folder, file_ext):
-        """
-        Uploads a file to Firebase Storage and returns its signed URL.
-        """
-        if not admin_storage:
-            logger.error("admin_storage is not initialized.")
-            return None
-        if not file or not file.filename:
-            return None
-
-        try:
-            # Create a unique path in storage
-            file_name = f"{user_id}.{file_ext}"
-            blob_path = f"users/{user_id}/{folder}/{file_name}"
-            blob = admin_storage.blob(blob_path)
-
-            # Upload the file
-            file.seek(0)  # Rewind the file pointer to the beginning
-            blob.upload_from_file(file)
-
-            # Generate a signed URL that expires in 15 minutes for access
-            signed_url = blob.generate_signed_url(
-                version='v4',
-                expiration=datetime.timedelta(minutes=15),
-                method='GET'
-            )
-            return signed_url
-        except Exception as e:
-            logger.error(f"Error uploading file to Firebase Storage: {e}", exc_info=True)
-            return None
-
-    if request.method == "POST":
-        first_name = request.form.get("first_name", "").strip()
-        last_name = request.form.get("last_name", "").strip()
-        businessname = request.form.get("businessname", "").strip()
-        birthday = request.form.get("birthday")
-        sex = request.form.get("sex", "").strip()
-
-        state_input = request.form.get("state_input", "").strip()
-        location_input = request.form.get("location_input", "").strip()
-        sublocation_input = request.form.get("sublocation_input", "").strip()
-
-        errors = []
-        if not state_input:
-            errors.append("State is required.")
-        if not location_input:
-            errors.append("Location (University) is required.")
-
-        selected_days = request.form.getlist('working_days')
-        working_times_data = {}
-        all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-        for day in all_days:
-            if day in selected_days:
-                open_time = request.form.get(f"{day}_open")
-                close_time = request.form.get(f"{day}_close")
-                if open_time and close_time:
-                    working_times_data[day] = {'open': open_time, 'close': close_time}
-                else:
-                    flash(f"Please provide both open and close times for {day}.", "warning")
-                    working_times_data[day] = {'open': None, 'close': None}
-            else:
-                working_times_data[day] = {'open': None, 'close': None}
-
-        delivery_methods_list = request.form.getlist('delivery_methods')
-
-        social_links_dict = {
-            "website": request.form.get("social_links[website]", "").strip(),
-            "instagram": request.form.get("social_links[instagram]", "").strip(),
-            "facebook": request.form.get("social_links[facebook]", "").strip(),
-            "linkedin": request.form.get("social_links[linkedin]", "").strip(),
-            "twitter": request.form.get("social_links[twitter]", "").strip(),
+        social_links = {
+            'website': request.form.get('social_links[website]', ''),
+            'instagram': request.form.get('social_links[instagram]', ''),
+            'facebook': request.form.get('social_links[facebook]', ''),
+            'linkedin': request.form.get('social_links[linkedin]', ''),
+            'twitter': request.form.get('social_links[twitter]', '')
         }
-        social_links_dict = {k: v for k, v in social_links_dict.items() if v}
-
-        # --- UPDATED: Handle File Uploads with the new function ---
-        profile_path_to_store = user.profile_picture
-        cover_path_to_store = user.cover_photo
-
-        profile_picture_file = request.files.get("profile_picture")
-        if profile_picture_file and allowed_file(profile_picture_file.filename):
-            file_ext = profile_picture_file.filename.rsplit('.', 1)[1].lower()
-            new_profile_path = upload_to_firebase(profile_picture_file, 'profile', file_ext)
-            if new_profile_path:
-                profile_path_to_store = new_profile_path
-            else:
-                flash("Failed to upload profile picture.", "danger")
-                errors.append("Profile picture upload failed.")
-
-        cover_photo_file = request.files.get("cover_photo")
-        if cover_photo_file and allowed_file(cover_photo_file.filename):
-            file_ext = cover_photo_file.filename.rsplit('.', 1)[1].lower()
-            new_cover_path = upload_to_firebase(cover_photo_file, 'cover', file_ext)
-            if new_cover_path:
-                cover_path_to_store = new_cover_path
-            else:
-                flash("Failed to upload cover photo.", "danger")
-                errors.append("Cover photo upload failed.")
-
-        if errors:
-            for error in errors:
-                flash(error, "danger")
-            user.state = state_input
-            user.location = location_input
-            user.sublocation = sublocation_input
-            user.working_days = selected_days
-            user.working_times = working_times_data
-            user.delivery_methods = delivery_methods_list
-            user.social_links = social_links_dict
-            user.profile_picture = profile_path_to_store
-            user.cover_photo = cover_path_to_store
-            return render_template("personal_details.html", user=user)
-
+        
+        update_data = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'businessname': businessname,
+            'state': state,
+            'location': location,
+            'sublocation': sublocation,
+            'birthday': birthday,
+            'sex': sex,
+            'working_days': working_days,
+            'working_times': working_times,
+            'delivery_methods': delivery_methods,
+            'social_links': social_links,
+        }
+        
         try:
-            update_data = {
-                "first_name": first_name,
-                "last_name": last_name,
-                "businessname": businessname,
-                "state": state_input,
-                "location": location_input,
-                "sublocation": sublocation_input,
-                "birthday": birthday,
-                "sex": sex,
-                "social_links": social_links_dict,
-                "working_days": selected_days,
-                "working_times": working_times_data,
-                "delivery_methods": delivery_methods_list,
-                "profile_picture": profile_path_to_store,
-                "cover_photo": cover_path_to_store,
-            }
+            profile_picture_file = request.files.get('profile_picture')
+            if profile_picture_file and profile_picture_file.filename:
+                update_data['profile_picture'] = upload_image_to_firebase(profile_picture_file, f'profile_pictures/{user_id}.jpg')
+
+            cover_photo_file = request.files.get('cover_photo')
+            if cover_photo_file and cover_photo_file.filename:
+                update_data['cover_photo'] = upload_image_to_firebase(cover_photo_file, f'cover_photos/{user_id}.jpg')
 
             user_ref.update(update_data)
-
-            flash("Your personal details have been updated successfully!", "success")
-            return redirect(url_for('profile'))
-
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('personal_details'))
         except Exception as e:
-            current_app.logger.error(f"Error updating personal details for user {user_id}: {e}", exc_info=True)
-            flash(f"An error occurred while saving your details: {e}", "danger")
-            return render_template("personal_details.html", user=user)
+            app.logger.error(f"Error updating user profile: {e}")
+            flash(f'An error occurred while updating your profile: {e}', 'danger')
+            
+    user_data['profile_picture_url'] = get_signed_url(f'profile_pictures/{user_id}.jpg') or url_for('static', filename='default-pfp.jpg')
+    user_data['cover_photo_url'] = get_signed_url(f'cover_photos/{user_id}.jpg') or url_for('static', filename='default-cover.jpg')
 
-    else: # GET request
-        # The user object is already loaded from Firestore at the start of the function.
-        # Generate the URLs for display using the paths from Firestore
-        def get_profile_picture_url(path):
-            return path if path else "https://placehold.co/150x150/E5E7EB/4B5563?text=Profile"
+    return render_template('personal_details.html', user=user_data)
 
-        def get_cover_photo_url(path):
-            return path if path else "https://placehold.co/1000x300/E5E7EB/4B5563?text=Cover+Photo"
+# Endpoint for fetching all Nigerian states from an external API
+@app.route('/api/states')
+def get_states():
+    try:
+        response = requests.get("https://nigeria-states-towns-lgas.onrender.com/api/states")
+        response.raise_for_status() # Raises an exception for bad status codes
+        states_data = response.json()
+        return jsonify(states_data)
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching states from API: {e}")
+        return jsonify({"error": "Failed to fetch states data. Please try again later."}), 500
+    except json.JSONDecodeError as e:
+        app.logger.error(f"Error decoding JSON response from API: {e}")
+        return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
 
-        user.profile_picture_url = get_profile_picture_url(user.profile_picture)
-        user.cover_photo_url = get_cover_photo_url(user.cover_photo)
+# Endpoint for fetching schools from an external API, with an optional state filter
+@app.route('/api/schools')
+def get_schools():
+    state = request.args.get('state')
+    
+    try:
+        if state:
+            # If a state is specified, get the schools for that state
+            response = requests.get(f"https://nigeria-states-towns-lgas.onrender.com/api/{state}/universities")
+            response.raise_for_status()
+            schools_data = response.json()
+            return jsonify(schools_data)
+        else:
+            # If no state is specified, get all schools (this might be a large request)
+            # The API doesn't have a single endpoint for all universities, so we'll fetch them by states and combine.
+            # This is not a good practice due to API rate limits, but it's the only way with this API.
+            # A better API would have a single endpoint for all schools.
+            states_response = requests.get("https://nigeria-states-towns-lgas.onrender.com/api/states")
+            states_response.raise_for_status()
+            all_states = states_response.json()
+            
+            all_schools = []
+            for state_info in all_states:
+                state_code = state_info.get('state_code')
+                if state_code:
+                    schools_in_state_response = requests.get(f"https://nigeria-states-towns-lgas.onrender.com/api/{state_code}/universities")
+                    schools_in_state_response.raise_for_status()
+                    schools_in_state = schools_in_state_response.json()
+                    all_schools.extend(schools_in_state)
+            
+            return jsonify(all_schools)
 
-        return render_template("personal_details.html", user=user)
-
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching schools from API: {e}")
+        return jsonify({"error": "Failed to fetch schools data. Please try again later."}), 500
+    except json.JSONDecodeError as e:
+        app.logger.error(f"Error decoding JSON response from API: {e}")
+        return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
 
 
 
@@ -8238,6 +8214,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
