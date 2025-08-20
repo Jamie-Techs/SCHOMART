@@ -620,7 +620,9 @@ NIGERIAN_STATES = [
     'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
     'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
     'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', '# In your app.py file
+    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+    'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+]
 
 NIGERIAN_SCHOOLS = {
     'Abia': [
@@ -808,9 +810,7 @@ NIGERIAN_SCHOOLS = {
         {'name': 'Nigerian Turkish Nile University', 'acronym': 'NTNU'},
         {'name': 'Baze University', 'acronym': 'BAZEU'}
     ]
-    }Plateau', 'Rivers',
-    'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
-]
+}
 
 
 
@@ -8456,6 +8456,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
