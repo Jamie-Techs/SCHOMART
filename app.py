@@ -584,7 +584,7 @@ def profile():
         user_uid = session.get('user_id')
         if not user_uid:
             # If no user_id in session, the user is not logged in.
-            return redirect(url_for('login'))
+            return redirect(url_for('signup'))
 
         # Fetch the user's data from Firestore using their unique UID.
         user_doc_ref = firestore_db.collection('users').document(user_uid)
@@ -594,7 +594,7 @@ def profile():
             # If the user document doesn't exist, something is wrong. Clear session and redirect.
             session.pop('user_id', None)
             flash("User data not found. Please log in again.", "error")
-            return redirect(url_for('login'))
+            return redirect(url_for('signup'))
 
         user_data = user_doc.to_dict()
 
@@ -8163,6 +8163,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
