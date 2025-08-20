@@ -97,12 +97,13 @@ try:
     # Initialize Firebase Admin SDK with correct bucket name
     cred = credentials.Certificate(temp_path)
     firebase_admin.initialize_app(cred, {
-        'storageBucket': 'schomart-7a743.firebasestorage.app'  # ✅ Correct internal bucket name
-})
+        'storageBucket': 'schomart-7a743.firebasestorage.app'
+    })
 
     # Initialize Firestore and Storage clients
     db = admin_firestore.client()
-    admin_storage = storage.bucket()  # Uses the default bucket set above
+    # Corrected line: Explicitly get the bucket using its name
+    admin_storage = storage.bucket('schomart-7a743.firebasestorage.app')
 
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
@@ -125,9 +126,6 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 
 def allowed_file(filename):
     """Checks if the uploaded file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-
-
 
 
 
@@ -609,37 +607,7 @@ def format_timestamp(ts):
 
 
 
-def upload_image_to_firebase(file, destination_blob_name):
-    """Uploads an image file to Firebase Storage and returns the public URL."""
-    try:
-        blob = bucket.blob(destination_blob_name)
-        
-        temp_path = f"/tmp/{file.filename}"
-        file.save(temp_path)
 
-        img = Image.open(temp_path)
-        img.thumbnail((800, 800))
-        img.save(temp_path, "JPEG", quality=85)
-
-        blob.upload_from_filename(temp_path, content_type='image/jpeg')
-
-        os.remove(temp_path)
-        
-        print(f"File {destination_blob_name} uploaded to Firebase Storage.")
-        return blob.name
-    except Exception as e:
-        print(f"Error uploading image: {e}")
-        return None
-
-def get_signed_url(blob_name):
-    """Generates a signed URL for a given blob name."""
-    try:
-        blob = bucket.blob(blob_name)
-        if blob.exists():
-            return blob.generate_signed_url(version="v4", expiration=datetime.timedelta(minutes=15), method="GET")
-    except Exception as e:
-        print(f"Error generating signed URL: {e}")
-        return None
 
 
 
@@ -8262,6 +8230,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
