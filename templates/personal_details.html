@@ -218,9 +218,10 @@
                                     <input type="time" name="{{day}}_open" id="{{day}}_open" value="{{ user.working_times.get(day, {}).get('open', '09:00') or '' }}"
                                         {% if day not in user.working_days %}disabled{% endif %}>
                                     <label for="{{day}}_close">Close:</label>
-                                    <input type="time" name="{{day}}_close" id="{{day}_close" value="{{ user.working_times.get(day, {}).get('close', '17:00') or '' }}"
+                                    <input type="time" name="{{day}}_close" id="{{day}}_close" value="{{ user.working_times.get(day, {}).get('close', '17:00') or '' }}"
                                         {% if day not in user.working_days %}disabled{% endif %}>
-                                </div>
+                                    
+                                  </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -427,6 +428,85 @@
                 }, 5000);
             });
         });
+        // ... your existing JS code ...
+
+// Hardcoded data for testing
+const NIGERIAN_STATES = [
+    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+    'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
+    'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
+    'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
+];
+
+// This hardcoded data should match the structure of your backend's NIGERIAN_SCHOOLS
+const NIGERIAN_SCHOOLS = {
+    'Abia': [{ name: 'Abia State University', acronym: 'ABSU' }, { name: 'Michael Okpara University of Agriculture', acronym: 'MOUAU' }],
+    'Adamawa': [{ name: 'Adamawa State University', acronym: 'ADSU' }, { name: 'American University of Nigeria', acronym: 'AUN' }],
+    'Akwa Ibom': [{ name: 'Akwa Ibom State University', acronym: 'AKSU' }, { name: 'University of Uyo', acronym: 'UNIUYO' }],
+    'Anambra': [{ name: 'Nnamdi Azikiwe University', acronym: 'NAU' }, { name: 'Chukwuemeka Odumegwu Ojukwu University', acronym: 'COOU' }],
+    'Bauchi': [{ name: 'Abubakar Tafawa Balewa University', acronym: 'ATBU' }, { name: 'Bauchi State University', acronym: 'BASUG' }],
+    'Bayelsa': [{ name: 'Niger Delta University', acronym: 'NDU' }, { name: 'Bayelsa Medical University', acronym: 'BMU' }],
+    'Benue': [{ name: 'Benue State University', acronym: 'BSU' }, { name: 'Federal University of Agriculture, Makurdi', acronym: 'FUAM' }],
+    'Borno': [{ name: 'University of Maiduguri', acronym: 'UNIMAID' }, { name: 'Borno State University', acronym: 'BOSU' }],
+    'Cross River': [{ name: 'University of Calabar', acronym: 'UNICAL' }, { name: 'Cross River University of Technology', acronym: 'CRUTECH' }],
+    'Delta': [{ name: 'Delta State University', acronym: 'DELSU' }, { name: 'Federal University of Petroleum Resources Effurun', acronym: 'FUPRE' }],
+    'Ebonyi': [{ name: 'Ebonyi State University', acronym: 'EBSU' }, { name: 'Federal University Ndufu Alike Ikwo', acronym: 'FUNAI' }],
+    'Edo': [{ name: 'University of Benin', acronym: 'UNIBEN' }, { name: 'Ambrose Alli University', acronym: 'AAU' }],
+    'Ekiti': [{ name: 'Ekiti State University', acronym: 'EKSU' }, { name: 'Federal University Oye-Ekiti', acronym: 'FUOYE' }],
+    'Enugu': [{ name: 'University of Nigeria, Nsukka', acronym: 'UNN' }, { name: 'Godfrey Okoye University', acronym: 'GOUNI' }],
+    'Gombe': [{ name: 'Federal University, Kashere', acronym: 'FUK' }, { name: 'Gombe State University', acronym: 'GSU' }],
+    'Imo': [{ name: 'Federal University of Technology, Owerri', acronym: 'FUTO' }, { name: 'Imo State University', acronym: 'IMSU' }],
+    'Jigawa': [{ name: 'Federal University, Dutse', acronym: 'FUD' }, { name: 'Sule Lamido University', acronym: 'SLU' }],
+    'Kaduna': [{ name: 'Ahmadu Bello University', acronym: 'ABU' }, { name: 'Kaduna State University', acronym: 'KASU' }],
+    'Kano': [{ name: 'Bayero University Kano', acronym: 'BUK' }, { name: 'Yusuf Maitama Sule University', acronym: 'YUMSUK' }],
+    'Katsina': [{ name: 'Umaru Musa Yaradua University', acronym: 'UMYU' }, { name: 'Federal University, Dutsin-Ma', acronym: 'FUDMA' }],
+    'Kebbi': [{ name: 'Kebbi State University of Science and Technology', acronym: 'KSUSTA' }, { name: 'Federal University Birnin-Kebbi', acronym: 'FUBK' }],
+    'Kogi': [{ name: 'Federal University, Lokoja', acronym: 'FUL' }, { name: 'Kogi State University', acronym: 'KSU' }],
+    'Kwara': [{ name: 'University of Ilorin', acronym: 'UNILORIN' }, { name: 'Kwara State University', acronym: 'KWASU' }],
+    'Lagos': [{ name: 'University of Lagos', acronym: 'UNILAG' }, { name: 'Lagos State University', acronym: 'LASU' }, { name: 'Yaba College of Technology', acronym: 'YABATECH' }],
+    'Nasarawa': [{ name: 'Federal University, Lafia', acronym: 'FULAFIA' }, { name: 'Nasarawa State University', acronym: 'NSUK' }],
+    'Niger': [{ name: 'Federal University of Technology, Minna', acronym: 'FUTMINNA' }, { name: 'Ibrahim Badamasi Babangida University', acronym: 'IBBU' }],
+    'Ogun': [{ name: 'Federal University of Agriculture, Abeokuta', acronym: 'FUNAAB' }, { name: 'Olabisi Onabanjo University', acronym: 'OOU' }],
+    'Ondo': [{ name: 'Federal University of Technology, Akure', acronym: 'FUTA' }, { name: 'Adekunle Ajasin University', acronym: 'AAUA' }],
+    'Osun': [{ name: 'Obafemi Awolowo University', acronym: 'OAU' }, { name: 'Osun State University', acronym: 'UNIOSUN' }],
+    'Oyo': [{ name: 'University of Ibadan', acronym: 'UI' }, { name: 'Ladoke Akintola University of Technology', acronym: 'LAUTECH' }],
+    'Plateau': [{ name: 'University of Jos', acronym: 'UNIJOS' }, { name: 'Plateau State University', acronym: 'PLASU' }],
+    'Rivers': [{ name: 'University of Port Harcourt', acronym: 'UNIPORT' }, { name: 'Rivers State University', acronym: 'RSU' }],
+    'Sokoto': [{ name: 'Usmanu Danfodiyo University', acronym: 'UDUS' }, { name: 'Sokoto State University', acronym: 'SSU' }],
+    'Taraba': [{ name: 'Taraba State University', acronym: 'TSU' }, { name: 'Federal University Wukari', acronym: 'FUWUKARI' }],
+    'Yobe': [{ name: 'Yobe State University', acronym: 'YSU' }, { name: 'Federal University Gashua', acronym: 'FUGASHUA' }],
+    'Zamfara': [{ name: 'Federal University Gusau', acronym: 'FUGUS' }, { name: 'Zamfara State University', acronym: 'ZAMSU' }]
+};
+
+// ... your existing JS code ...
+
+// Event listener for state input
+stateInput.addEventListener('input', () => {
+    const currentState = stateInput.value;
+    const schoolList = document.getElementById('school-list');
+    
+    // Clear previous options
+    schoolList.innerHTML = '';
+    
+    // Enable/disable school input based on state
+    if (NIGERIAN_STATES.includes(currentState)) {
+        schoolInput.disabled = false;
+        const schools = NIGERIAN_SCHOOLS[currentState] || [];
+        schools.forEach(school => {
+            const option = document.createElement('option');
+            option.value = school.name;
+            schoolList.appendChild(option);
+            
+            // Add an option for the acronym as well
+            const acronymOption = document.createElement('option');
+            acronymOption.value = school.acronym;
+            schoolList.appendChild(acronymOption);
+        });
+    } else {
+        schoolInput.disabled = true;
+    }
+});
     </script>
 </body>
 </html>
