@@ -71,10 +71,6 @@ import tempfile
 
  
 
-# --------------------
-# Firebase Initialization
-# --------------------
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -84,6 +80,7 @@ bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
+
 
 
 try:
@@ -98,10 +95,11 @@ try:
 
     cred = credentials.Certificate(temp_path)
     initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
-    admin_db = admin_firestore.client()
+    admin_db = firestore.client()
     
-    # Initialize Cloud Storage
-    cloud_storage = storage.bucket()
+    # Initialize Cloud Storage with the corrected variable name
+    admin_storage = storage.bucket()
+    logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
 except Exception as e:
     logging.error(f"Failed to initialize Firebase: {e}")
@@ -112,7 +110,7 @@ finally:
         
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-                                     
+                                         
 logger = logging.getLogger(__name__)
 
 # Note: Local file storage configurations are now obsolete, but kept for context.
@@ -121,9 +119,10 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
-# --------------------
-# Firebase Authentication and Firestore API Endpoints
-# --------------------
+
+
+
+
 
 
 
@@ -8175,6 +8174,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
