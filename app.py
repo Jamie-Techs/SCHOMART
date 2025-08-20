@@ -679,7 +679,6 @@ def profile():
 
 
 
-
 def upload_image_to_firebase(file, destination_blob_name):
     """Uploads an image file to Firebase Storage and returns the public URL."""
     try:
@@ -716,7 +715,7 @@ def get_signed_url(blob_name):
 @login_required
 def personal_details():
     user_id = g.user.get('uid')
-    user_ref = db.collection('users').document(user_id)
+    user_ref = admin_db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
     if not user_doc.exists:
@@ -789,7 +788,7 @@ def personal_details():
 
     return render_template('personal_details.html', user=user_data)
 
-# Endpoint for fetching all Nigerian states from an external API
+# New endpoint for fetching all Nigerian states from an external API
 @app.route('/api/states')
 def get_states():
     try:
@@ -804,7 +803,7 @@ def get_states():
         app.logger.error(f"Error decoding JSON response from API: {e}")
         return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
 
-# Endpoint for fetching schools from an external API, with an optional state filter
+# New endpoint for fetching schools from an external API, with an optional state filter
 @app.route('/api/schools')
 def get_schools():
     state = request.args.get('state')
@@ -820,7 +819,6 @@ def get_schools():
             # If no state is specified, get all schools (this might be a large request)
             # The API doesn't have a single endpoint for all universities, so we'll fetch them by states and combine.
             # This is not a good practice due to API rate limits, but it's the only way with this API.
-            # A better API would have a single endpoint for all schools.
             states_response = requests.get("https://nigeria-states-towns-lgas.onrender.com/api/states")
             states_response.raise_for_status()
             all_states = states_response.json()
@@ -8214,6 +8212,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
