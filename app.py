@@ -814,52 +814,53 @@ NIGERIAN_SCHOOLS = {
 
 
 
-# The API endpoints now validate against the in-memory dictionaries.
-@app.route('/api/validate/state/<country>', methods=['GET'])
-def validate_state(country):
-    state_name = request.args.get('name')
-    if country.upper() == 'NIGERIA':
-        is_valid = state_name in NIGERIAN_STATES
-        return jsonify({"is_valid": is_valid})
-    return jsonify({"is_valid": False, "message": "Validation for this country is not supported."})
 
-@app.route('/api/validate/school/<state>', methods=['GET'])
-def validate_school(state):
-    school_name_or_acronym = request.args.get('name')
-    valid_schools_data = NIGERIAN_SCHOOLS.get(state, [])
+
+
+
+
+# This is the API endpoint to fetch schools, used by the new JavaScript
+
+@app.route('/api/schools/<state>')
+
+def get_schools(state):
+
+    schools = NIGERIAN_SCHOOLS.get(state, [])
+
+    return jsonify(schools)
     
-    is_valid = False
-    for school in valid_schools_data:
-        if school['name'].lower() == school_name_or_acronym.lower() or school['acronym'].lower() == school_name_or_acronym.lower():
-            is_valid = True
-            break
-            
-    return jsonify({"is_valid": is_valid})
 
-
-
-
-
+# This is the API endpoint to validate state and school (optional, for later use)
 
 @app.route('/api/validate/state_and_school', methods=['GET'])
+
 def validate_state_and_school():
+
     state_name = request.args.get('state')
+
     school_name = request.args.get('school')
 
     if not state_name or not school_name:
+
         return jsonify({"is_valid": False, "message": "State and school are required."})
 
-    # Find the list of schools for the given state
     schools_in_state = NIGERIAN_SCHOOLS.get(state_name, [])
 
     is_valid = False
+
     for school in schools_in_state:
-        # Check for both full name and acronym
+
         if school['name'].lower() == school_name.lower() or school['acronym'].lower() == school_name.lower():
+
             is_valid = True
+
             break
-            
+
     return jsonify({"is_valid": is_valid})
+
+
+
+
 
 
 
@@ -8445,6 +8446,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
