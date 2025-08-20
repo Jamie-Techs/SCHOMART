@@ -71,6 +71,7 @@ import tempfile
 
  
 
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -80,8 +81,6 @@ bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
-
-
 
 try:
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
@@ -95,10 +94,13 @@ try:
 
     cred = credentials.Certificate(temp_path)
     initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
-    admin_db = firestore.client()
-    
-    # Initialize Cloud Storage with the corrected variable name
+
+    # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
+    admin_db = admin_firestore.client()
+
+    # --- THIS LINE IS THE CORRECT ADDITION FOR YOUR STORAGE CLIENT. ---
     admin_storage = storage.bucket()
+    
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
 except Exception as e:
@@ -8174,6 +8176,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
