@@ -89,207 +89,208 @@
             <p class="link-text" onclick="showSection('login-section')">Back to Log In</p>
         </div>
     </div>
-    
+
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
-            authDomain: "schomart-7a743.firebaseapp.com",
-            projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.appspot.com",
-            messagingSenderId: "20119186662",
-            appId: "1:20119186662:web:da1755b55dacde4fa6df27",
-            measurementId: "G-9QGL3XHSC7"
-        };
-        
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+    const firebaseConfig = {
+        apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
+        authDomain: "schomart-7a743.firebaseapp.com",
+        projectId: "schomart-7a743",
+        storageBucket: "schomart-7a743.appspot.com",
+        messagingSenderId: "20119186662",
+        appId: "1:20119186662:web:da1755b55dacde4fa6df27",
+        measurementId: "G-9QGL3XHSC7"
+    };
+    
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-        const signupForm = document.getElementById('signupForm');
-        const loginForm = document.getElementById('loginForm');
-        const resetPasswordForm = document.getElementById('resetPasswordForm');
-        
-        const msgBoxSignup = document.getElementById('messageBox');
-        const msgBoxLogin = document.getElementById('messageBoxLogin');
-        const msgBoxReset = document.getElementById('messageBoxReset');
-        
-        let messageTimeout;
+    const signupForm = document.getElementById('signupForm');
+    const loginForm = document.getElementById('loginForm');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    
+    const msgBoxSignup = document.getElementById('messageBox');
+    const msgBoxLogin = document.getElementById('messageBoxLogin');
+    const msgBoxReset = document.getElementById('messageBoxReset');
+    
+    let messageTimeout;
 
-        function showMessageBox(box, message, isError = false) {
-            clearTimeout(messageTimeout);
-            box.textContent = message;
-            box.className = 'messageBox show';
-            if (isError) {
-                box.classList.add('msg-error');
-            } else {
-                box.classList.add('msg-success');
-            }
-            messageTimeout = setTimeout(() => {
-                hideMessageBox(box);
-            }, 5000);
+    function showMessageBox(box, message, isError = false) {
+        clearTimeout(messageTimeout);
+        box.textContent = message;
+        box.className = 'messageBox show';
+        if (isError) {
+            box.classList.add('msg-error');
+        } else {
+            box.classList.add('msg-success');
+        }
+        messageTimeout = setTimeout(() => {
+            hideMessageBox(box);
+        }, 5000);
+    }
+
+    function hideMessageBox(box) {
+        box.classList.remove('show');
+    }
+
+    function showSection(sectionId) {
+        document.getElementById('signup-section').classList.add('hidden');
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('reset-section').classList.add('hidden');
+        document.getElementById(sectionId).classList.remove('hidden');
+        hideMessageBox(msgBoxSignup);
+        hideMessageBox(msgBoxLogin);
+        hideMessageBox(msgBoxReset);
+    }
+
+    function checkReferralLink() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const referralCode = urlParams.get('ref');
+        const referralCodeInput = document.getElementById('referral-code');
+
+        if (referralCode) {
+            referralCodeInput.value = referralCode;
+            referralCodeInput.readOnly = true;
+            referralCodeInput.style.backgroundColor = '#f0f0f0';
+            referralCodeInput.style.cursor = 'not-allowed';
+        } else {
+            referralCodeInput.value = '';
+            referralCodeInput.readOnly = false;
+            referralCodeInput.style.backgroundColor = '#fff';
+            referralCodeInput.style.cursor = 'text';
+        }
+    }
+
+    // Initially show the signup section and check for referral link
+    showSection('signup-section');
+    checkReferralLink();
+
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('signup-username').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm-password').value;
+        const referralCode = document.getElementById('referral-code').value;
+        hideMessageBox(msgBoxSignup);
+
+        if (password.length < 7) {
+            showMessageBox(msgBoxSignup, 'Password must be at least 7 characters long.', true);
+            return;
+        }
+        if (password !== confirmPassword) {
+            showMessageBox(msgBoxSignup, 'Passwords do not match.', true);
+            return;
         }
 
-        function hideMessageBox(box) {
-            box.classList.remove('show');
-        }
+        try {
+            // Step 1: Create user in Firebase Auth
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
 
-        function showSection(sectionId) {
-            document.getElementById('signup-section').classList.add('hidden');
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('reset-section').classList.add('hidden');
-            document.getElementById(sectionId).classList.remove('hidden');
-            hideMessageBox(msgBoxSignup);
-            hideMessageBox(msgBoxLogin);
-            hideMessageBox(msgBoxReset);
-        }
+            // Step 2: Send email verification
+            await user.sendEmailVerification();
+            
+            // Step 3: Send user data to backend to create Firestore document
+            const response = await fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    uid: user.uid,
+                    email: email, 
+                    username: username, 
+                    referralCode: referralCode 
+                })
+            });
 
-        function checkReferralLink() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const referralCode = urlParams.get('ref');
-            const referralCodeInput = document.getElementById('referral-code');
-
-            if (referralCode) {
-                referralCodeInput.value = referralCode;
-                referralCodeInput.readOnly = true;
-                referralCodeInput.style.backgroundColor = '#f0f0f0';
-                referralCodeInput.style.cursor = 'not-allowed';
-            } else {
-                referralCodeInput.value = '';
-                referralCodeInput.readOnly = false;
-                referralCodeInput.style.backgroundColor = '#fff';
-                referralCodeInput.style.cursor = 'text';
-            }
-        }
-
-        // Initially show the signup section and check for referral link
-        showSection('signup-section');
-        checkReferralLink();
-
-        signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('signup-username').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('signup-confirm-password').value;
-            const referralCode = document.getElementById('referral-code').value;
-            hideMessageBox(msgBoxSignup);
-
-            if (password.length < 7) {
-                showMessageBox(msgBoxSignup, 'Password must be at least 7 characters long.', true);
-                return;
-            }
-            if (password !== confirmPassword) {
-                showMessageBox(msgBoxSignup, 'Passwords do not match.', true);
-                return;
-            }
-
-            try {
-                // Step 1: Create user in Firebase Auth
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-
-                // Step 2: Send email verification
-                await user.sendEmailVerification();
-                
-                // Step 3: Send user data to backend to create Firestore document
-                const response = await fetch('/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        uid: user.uid,
-                        email: email, 
-                        username: username, 
-                        referralCode: referralCode 
-                    })
-                });
-
-                if (response.ok) {
-                    // Flash the message before changing sections
-                    showMessageBox(msgBoxSignup, 'Account created successfully! Please check your email for a verification link.', false);
-                    signupForm.reset();
-                    // Change sections after a short delay to allow message to show
-                    setTimeout(() => {
-                        showSection('login-section');
-                    }, 2000); 
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to save user data on the backend.');
-                }
-            } catch (error) {
-                let errorMessage = `Error creating account: ${error.message}`;
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'This email is already in use. Please log in instead or use a different email.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'The email address is not valid.';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'The password is too weak.';
-                }
-                showMessageBox(msgBoxSignup, errorMessage, true);
-                console.error("Signup error:", error);
-            }
-        });
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            hideMessageBox(msgBoxLogin);
-
-            try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                const user = userCredential.user;
-                
-                if (!user.emailVerified) {
-                    showMessageBox(msgBoxLogin, 'Please verify your email address to log in.', true);
-                    await auth.signOut();
-                    return;
-                }
-                
-                const verifyResponse = await fetch('/api/verify_user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: user.uid })
-                });
-
-                if (verifyResponse.ok) {
-                    window.location.assign('/profile');
-                } else {
-                    const errorData = await verifyResponse.json();
-                    throw new Error(errorData.error || 'Failed to update user verification status.');
-                }
-                
-            } catch (error) {
-                let errorMessage = `Login failed: ${error.message}`;
-                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-                    errorMessage = 'Invalid email or password.';
-                }
-                showMessageBox(msgBoxLogin, errorMessage, true);
-                console.error("Login error:", error);
-            }
-        });
-
-        resetPasswordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('reset-email').value;
-            hideMessageBox(msgBoxReset);
-
-            try {
-                await auth.sendPasswordResetEmail(email);
-                showMessageBox(msgBoxReset, 'A password reset link has been sent to your email.', false);
-                resetPasswordForm.reset();
+            if (response.ok) {
+                // Flash the message before changing sections
+                showMessageBox(msgBoxSignup, 'Account created successfully! Please check your email for a verification link.', false);
+                signupForm.reset();
+                // Change sections after a short delay to allow message to show
                 setTimeout(() => {
                     showSection('login-section');
-                }, 2000);
-            } catch (error) {
-                let errorMessage = `Failed to send password reset email: ${error.message}`;
-                if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'The email address is not valid.';
-                } else if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'No user found with that email address.';
-                }
-                showMessageBox(msgBoxReset, errorMessage, true);
-                console.error("Password reset error:", error);
+                }, 2000); 
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save user data on the backend.');
             }
-        });
-    </script>
+        } catch (error) {
+            let errorMessage = `Error creating account: ${error.message}`;
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'This email is already in use. Please log in instead or use a different email.';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'The email address is not valid.';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'The password is too weak.';
+            }
+            showMessageBox(msgBoxSignup, errorMessage, true);
+            console.error("Signup error:", error);
+        }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        hideMessageBox(msgBoxLogin);
+
+        try {
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            if (!user.emailVerified) {
+                showMessageBox(msgBoxLogin, 'Please verify your email address to log in.', true);
+                await auth.signOut();
+                return;
+            }
+            
+            const idToken = await user.getIdToken();
+            const sessionResponse = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json'},
+              body: JSON.stringify({ idToken })
+            });
+            if (sessionResponse.ok) {
+              window.location.assign('/profile');
+            } else {
+              const errorData = await sessionResponse.json();
+              throw new Error(errorData.error || 'Failed to establish session.');
+            }
+            
+        } catch (error) {
+            let errorMessage = `Login failed: ${error.message}`;
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                errorMessage = 'Invalid email or password.';
+            }
+            showMessageBox(msgBoxLogin, errorMessage, true);
+            console.error("Login error:", error);
+        }
+    });
+
+    resetPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('reset-email').value;
+        hideMessageBox(msgBoxReset);
+
+        try {
+            await auth.sendPasswordResetEmail(email);
+            showMessageBox(msgBoxReset, 'A password reset link has been sent to your email.', false);
+            resetPasswordForm.reset();
+            setTimeout(() => {
+                showSection('login-section');
+            }, 2000);
+        } catch (error) {
+            let errorMessage = `Failed to send password reset email: ${error.message}`;
+            if (error.code === 'auth/invalid-email') {
+                errorMessage = 'The email address is not valid.';
+            } else if (error.code === 'auth/user-not-found') {
+                errorMessage = 'No user found with that email address.';
+            }
+            showMessageBox(msgBoxReset, errorMessage, true);
+            console.error("Password reset error:", error);
+        }
+    });
+</script>
 </body>
 </html>
+                
