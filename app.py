@@ -667,6 +667,126 @@ def profile():
         return redirect(url_for('signup'))
 
 
+@app.route('/profile/personal', methods=['GET', 'POST'])
+@login_required
+def personal_details():
+    """
+    Handles displaying and updating a user's personal details.
+    """
+    try:
+        user_uid = session.get('user_id')
+        if not user_uid:
+            flash("User session expired. Please log in again.", "error")
+            return redirect(url_for('signup'))
+
+        user_doc_ref = db.collection('users').document(user_uid)
+        user_doc = user_doc_ref.get()
+
+        if not user_doc.exists:
+            logger.error(f"User document does not exist for UID: {user_uid}")
+            flash("User data not found. Please log in again.", "error")
+            return redirect(url_for('signup'))
+
+        user_data = user_doc.to_dict()
+
+        if request.method == 'POST':
+            # Extract form data
+            first_name = request.form.get('first_name', '')
+            last_name = request.form.get('last_name', '')
+            businessname = request.form.get('businessname', '')
+            state = request.form.get('state_input', '')
+            location = request.form.get('location_input', '')
+            sublocation = request.form.get('sublocation_input', '')
+            birthday = request.form.get('birthday', '')
+            sex = request.form.get('sex', '')
+            delivery_methods = request.form.getlist('delivery_methods')
+            working_days = request.form.getlist('working_days')
+            working_times = {}
+            for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+                if day in working_days:
+                    working_times[day] = {
+                        'open': request.form.get(f'{day}_open'),
+                        'close': request.form.get(f'{day}_close')
+                    }
+            social_links = {
+                'website': request.form.get('social_links[website]', ''),
+                'instagram': request.form.get('social_links[instagram]', ''),
+                'facebook': request.form.get('social_links[facebook]', ''),
+                'linkedin': request.form.get('social_links[linkedin]', ''),
+                'twitter': request.form.get('social_links[twitter]', '')
+            }
+            
+            update_data = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'businessname': businessname,
+                'state': state,
+                'location': location,
+                'sublocation': sublocation,
+                'birthday': birthday,
+                'sex': sex,
+                'working_days': working_days,
+                'working_times': working_times,
+                'delivery_methods': delivery_methods,
+                'social_links': social_links,
+            }
+
+            try:
+                # Handle image uploads
+                profile_picture_file = request.files.get('profile_picture')
+                if profile_picture_file and profile_picture_file.filename:
+                    upload_image_to_firebase(profile_picture_file, f'users/{user_uid}/profile.jpg')
+                    
+                cover_photo_file = request.files.get('cover_photo')
+                if cover_photo_file and cover_photo_file.filename:
+                    upload_image_to_firebase(cover_photo_file, f'users/{user_uid}/cover.jpg')
+
+                user_doc_ref.update(update_data)
+                flash('Profile updated successfully!', 'success')
+                return redirect(url_for('personal_details'))
+
+            except Exception as e:
+                logger.error(f"Error updating user profile for UID {user_uid}: {e}", exc_info=True)
+                flash(f'An error occurred while updating your profile: {e}', 'error')
+                return redirect(url_for('personal_details'))
+
+        # GET request handling
+        # Generate signed URLs for profile and cover photos
+        profile_pic_url = ""
+        cover_photo_url = ""
+        
+        try:
+            profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+            if profile_blob.exists():
+                profile_pic_url = profile_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15), method='GET'
+                )
+        except Exception as e:
+            logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
+            
+        try:
+            cover_blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+            if cover_blob.exists():
+                cover_photo_url = cover_blob.generate_signed_url(
+                    datetime.timedelta(minutes=15), method='GET'
+                )
+        except Exception as e:
+            logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
+
+        # Update the user data with the generated URLs for template rendering
+        user_data['profile_picture_url'] = profile_pic_url
+        user_data['cover_photo_url'] = cover_photo_url
+
+        return render_template('personal_details.html', user=user_data)
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
+        flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
+        return redirect(url_for('signup'))
+
+
+
+
 
 def upload_image_to_firebase(file, destination_blob_name):
     """Uploads an image file to Firebase Storage and returns the public URL."""
@@ -700,82 +820,6 @@ def get_signed_url(blob_name):
         print(f"Error generating signed URL: {e}")
         return None
 
-@app.route('/profile/personal', methods=['GET', 'POST'])
-@login_required
-def personal_details():
-    user_id = g.user.get('uid')
-    user_ref = db.collection('users').document(user_id)
-    user_doc = user_ref.get()
-
-    if not user_doc.exists:
-        flash('User not found.', 'danger')
-        return redirect(url_for('profile'))
-
-    user_data = user_doc.to_dict()
-
-    if request.method == 'POST':
-        first_name = request.form.get('first_name', '')
-        last_name = request.form.get('last_name', '')
-        businessname = request.form.get('businessname', '')
-        state = request.form.get('state_input', '')
-        location = request.form.get('location_input', '')
-        sublocation = request.form.get('sublocation_input', '')
-        birthday = request.form.get('birthday', '')
-        sex = request.form.get('sex', '')
-        delivery_methods = request.form.getlist('delivery_methods')
-        
-        working_days = request.form.getlist('working_days')
-        working_times = {}
-        for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
-            if day in working_days:
-                working_times[day] = {
-                    'open': request.form.get(f'{day}_open'),
-                    'close': request.form.get(f'{day}_close')
-                }
-
-        social_links = {
-            'website': request.form.get('social_links[website]', ''),
-            'instagram': request.form.get('social_links[instagram]', ''),
-            'facebook': request.form.get('social_links[facebook]', ''),
-            'linkedin': request.form.get('social_links[linkedin]', ''),
-            'twitter': request.form.get('social_links[twitter]', '')
-        }
-        
-        update_data = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'businessname': businessname,
-            'state': state,
-            'location': location,
-            'sublocation': sublocation,
-            'birthday': birthday,
-            'sex': sex,
-            'working_days': working_days,
-            'working_times': working_times,
-            'delivery_methods': delivery_methods,
-            'social_links': social_links,
-        }
-        
-        try:
-            profile_picture_file = request.files.get('profile_picture')
-            if profile_picture_file and profile_picture_file.filename:
-                update_data['profile_picture'] = upload_image_to_firebase(profile_picture_file, f'profile_pictures/{user_id}.jpg')
-
-            cover_photo_file = request.files.get('cover_photo')
-            if cover_photo_file and cover_photo_file.filename:
-                update_data['cover_photo'] = upload_image_to_firebase(cover_photo_file, f'cover_photos/{user_id}.jpg')
-
-            user_ref.update(update_data)
-            flash('Profile updated successfully!', 'success')
-            return redirect(url_for('personal_details'))
-        except Exception as e:
-            app.logger.error(f"Error updating user profile: {e}")
-            flash(f'An error occurred while updating your profile: {e}', 'danger')
-            
-    user_data['profile_picture_url'] = get_signed_url(f'profile_pictures/{user_id}.jpg') or url_for('static', filename='default-pfp.jpg')
-    user_data['cover_photo_url'] = get_signed_url(f'cover_photos/{user_id}.jpg') or url_for('static', filename='default-cover.jpg')
-
-    return render_template('personal_details.html', user=user_data)
 
 # New endpoint for fetching all Nigerian states from an external API
 @app.route('/api/states')
@@ -8208,6 +8252,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
