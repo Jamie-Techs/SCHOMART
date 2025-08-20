@@ -516,12 +516,6 @@ class User:
 
 
 
-
-
-
-
-
-
 # --- Helper Functions ---
 def get_unique_id():
     """Generates a unique ID for files or other items."""
@@ -619,7 +613,7 @@ def profile():
         user_uid = session.get('user_id')
         
         # Fetch the latest user data from Firestore to avoid using stale session data.
-        user_doc_ref = admin_db.collection('users').document(user_uid)
+        user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
         if not user_doc.exists:
@@ -672,9 +666,6 @@ def profile():
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
 
-        
-
-
 
 
 def upload_image_to_firebase(file, destination_blob_name):
@@ -713,7 +704,7 @@ def get_signed_url(blob_name):
 @login_required
 def personal_details():
     user_id = g.user.get('uid')
-    user_ref = admin_db.collection('users').document(user_id)
+    user_ref = db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
     if not user_doc.exists:
@@ -838,6 +829,13 @@ def get_schools():
     except json.JSONDecodeError as e:
         app.logger.error(f"Error decoding JSON response from API: {e}")
         return jsonify({"error": "Failed to parse API response. The data is not in the expected format."}), 500
+
+
+
+
+        
+
+
 
 
 
@@ -8210,6 +8208,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
