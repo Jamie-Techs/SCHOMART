@@ -95,6 +95,8 @@
                 <p class="mb-2 text-sm"><strong class="font-bold">Business Name:</strong> {{ user.businessname or 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">First Name:</strong> {{ user.first_name or 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Last Name:</strong> {{ user.last_name or 'N/A' }}</p>
+                <p class="mb-2 text-sm"><strong class="font-bold">State:</strong> <span class="state cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" onclick="window.state.href='{{ url_for('personal_details') }}'">{{ user.state or 'N/A' }}</span></p>
+                <p class="mb-2 text-sm"><strong class="font-bold">School:</strong> <span class="school cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" onclick="window.school.href='{{ url_for('personal_details') }}'">{{ user.school or 'N/A' }}</span></p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Location:</strong> <span class="location cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" onclick="window.location.href='{{ url_for('personal_details') }}'">{{ user.location or 'N/A' }}</span></p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Birthday:</strong> {{ user.birthday if user.birthday else 'N/A' }}</p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Sex:</strong> {{ user.sex or 'N/A' }}</p>
