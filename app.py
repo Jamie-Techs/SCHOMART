@@ -1587,18 +1587,6 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
 
 
 
-# Assuming all necessary imports are at the top of the file
-import logging
-from flask import request, flash, redirect, url_for, render_template, session
-from your_firebase_setup import firestore, db # Assuming these are correctly imported
-from datetime import datetime, timedelta, timezone
-from werkzeug.utils import secure_filename
-# Assuming these are your custom functions and data structures
-# from your_module import get_user_data, get_advert_options, get_all_categories, NIGERIAN_SCHOOLS, get_school_acronym, upload_file_to_firebase, allowed_file 
-# from your_firebase_storage import admin_storage 
-
-# Configure logging
-logger = logging.getLogger(__name__)
 
 def create_advert_db(data):
     """Creates a new advert document in Firestore."""
@@ -7762,6 +7750,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
