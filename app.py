@@ -1205,6 +1205,7 @@ def get_firebase_category_url(filename):
 # --- Home Route - Rewritten for Firestore ---
 
 
+
 @app.route('/')
 def home():
     """
@@ -1220,28 +1221,28 @@ def home():
         categories_data = []
         for doc in categories_ref:
             category = doc.to_dict()
-            category['id'] = doc.id  # Add the document ID
+            category['id'] = doc.id
             
-            # Use a try-except block to handle missing category images
-            # Check for different file extensions as a fallback
+            # Construct the exact path in your Firebase Storage bucket.
+            # This assumes filenames match category names (e.g., 'electronics.jpg').
+            category_name = category['name'].replace(' ', '_').lower()
+            
+            # Try to get .jpg, .jpeg, and .png as fallbacks
             image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
-            
-            # Let's try to get a .jpg image first
-            blob_path = f"categories/{category['name'].replace(' ', '_').lower()}.jpg"
-            blob = storage.bucket().blob(blob_path)
-            if blob.exists():
-                image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-            else:
-                # If .jpg doesn't exist, try .png
-                blob_path = f"categories/{category['name'].replace(' ', '_').lower()}.png"
+            blob_found = False
+
+            for extension in ['jpg', 'jpeg', 'png']:
+                blob_path = f"static/category/{category_name}.{extension}"
                 blob = storage.bucket().blob(blob_path)
                 if blob.exists():
                     image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-                
+                    blob_found = True
+                    break
+            
             category['image_url'] = image_url
             categories_data.append(category)
 
-        # --- Adverts Logic (unchanged from your original code) ---
+        # --- Adverts Logic (unchanged) ---
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -8160,6 +8161,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
