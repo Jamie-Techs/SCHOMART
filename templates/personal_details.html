@@ -76,6 +76,8 @@
 
         /* New styles for live validation inputs */
         .validation-feedback { display: none; }
+        .is-invalid { border-color: #dc3545; }
+        .invalid-feedback { color: #dc3545; font-size: 0.85em; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -133,54 +135,55 @@
                 </section>
 
                 <section>
-    <h2 class="section-title"><i class="fas fa-user-alt"></i> Personal Information</h2>
-    <div class="form-group">
-        <label for="first_name">First Name*</label>
-        <input type="text" name="first_name" id="first_name" maxlength="20" value="{{ user.first_name or '' }}" onkeyup="updateCharCount('first_name', 20)" />
-        <div class="char-count" id="first_name_char_count">{{ user.first_name|length if user.first_name else 0 }} / 20</div>
-    </div>
-    <div class="form-group">
-        <label for="last_name">Last Name*</label>
-        <input type="text" name="last_name" id="last_name" maxlength="20" value="{{ user.last_name or '' }}" onkeyup="updateCharCount('last_name', 20)" />
-        <div class="char-count" id="last_name_char_count">{{ user.last_name|length if user.last_name else 0 }} / 20</div>
-    </div>
-    <div class="form-group">
-        <label for="businessname">Business Name</label>
-        <input type="text" name="businessname" id="businessname" value="{{ user.businessname or '' }}" />
-    </div>
-    <div class="form-group">
-        <label for="state_input">State*</label>
-        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
-        <datalist id="state-list">
-            {% for state in NIGERIAN_STATES %}
-                <option value="{{ state }}">
-            {% endfor %}
-        </datalist>
-    </div>
-    <div class="form-group">
-        <label for="school_input">School*</label>
-        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
-        <datalist id="school-list"></datalist>
-    </div>
-    <div class="form-group">
-        <label for="location_input">Location in School</label>
-        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="Select a school first..." disabled/>
-    </div>
-    
-    <div class="form-group">
-        <label for="birthday">Birthday</label>
-        <input type="date" name="birthday" id="birthday" value="{{ user.birthday if user.birthday else '' }}" />
-    </div>
-    <div class="form-group">
-        <label for="sex">Sex</label>
-        <select name="sex" id="sex">
-            <option value="">Do not specify</option>
-            <option value="male" {% if user.sex == 'male' %}selected{% endif %}>Male</option>
-            <option value="female" {% if user.sex == 'female' %}selected{% endif %}>Female</option>
-            <option value="other" {% if user.sex == 'other' %}selected{% endif %}>Other</option>
-        </select>
-    </div>
-</section>
+                    <h2 class="section-title"><i class="fas fa-user-alt"></i> Personal Information</h2>
+                    <div class="form-group">
+                        <label for="first_name">First Name*</label>
+                        <input type="text" name="first_name" id="first_name" maxlength="20" value="{{ user.first_name or '' }}" onkeyup="updateCharCount('first_name', 20)" />
+                        <div class="char-count" id="first_name_char_count">{{ user.first_name|length if user.first_name else 0 }} / 20</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Last Name*</label>
+                        <input type="text" name="last_name" id="last_name" maxlength="20" value="{{ user.last_name or '' }}" onkeyup="updateCharCount('last_name', 20)" />
+                        <div class="char-count" id="last_name_char_count">{{ user.last_name|length if user.last_name else 0 }} / 20</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="businessname">Business Name</label>
+                        <input type="text" name="businessname" id="businessname" value="{{ user.businessname or '' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label for="state_input">State*</label>
+                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
+                        <datalist id="state-list">
+                            {% for state in NIGERIAN_STATES %}
+                                <option value="{{ state }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="school_input">School*</label>
+                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
+                        <span id="school_error" class="invalid-feedback"></span>
+                        <datalist id="school-list"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="location_input">Location in School</label>
+                        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="Select a school first..." disabled/>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" name="birthday" id="birthday" value="{{ user.birthday if user.birthday else '' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sex">Sex</label>
+                        <select name="sex" id="sex">
+                            <option value="">Do not specify</option>
+                            <option value="male" {% if user.sex == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if user.sex == 'female' %}selected{% endif %}>Female</option>
+                            <option value="other" {% if user.sex == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </section>
 
                 <section>
                     <h2 class="section-title"><i class="far fa-clock"></i> Working Days & Hours</h2>
@@ -256,7 +259,7 @@
             <h3><i class="fas fa-exclamation-circle"></i> Confirm Changes</h3>
             <p>Are you sure you want to save these changes to your profile?</p>
             <div class="modal-buttons">
-                <button class="confirm-btn" onclick="document.getElementById('editProfileForm').submit()">Yes, Save Changes</button>
+                <button class="confirm-btn" onclick="validateAndSubmit()">Yes, Save Changes</button>
                 <button class="cancel-btn" onclick="closeConfirmModal()">Cancel</button>
             </div>
         </div>
@@ -271,6 +274,7 @@
         const schoolInput = document.getElementById('school_input');
         const locationInput = document.getElementById('location_input');
         const schoolDatalist = document.getElementById('school-list');
+        const schoolError = document.getElementById('school_error');
 
         const populateSchools = (state) => {
             const schools = NIGERIAN_SCHOOLS[state] || [];
@@ -284,6 +288,26 @@
             schoolInput.placeholder = 'Select from the list or type...';
         };
 
+        // Validate if the typed school is in the list
+        const validateSchool = () => {
+            const stateValue = stateInput.value.trim();
+            const schoolValue = schoolInput.value.trim();
+            const schoolsForState = (NIGERIAN_SCHOOLS[stateValue] || []).map(s => s.name);
+            
+            if (schoolValue && !schoolsForState.includes(schoolValue)) {
+                schoolInput.classList.add('is-invalid');
+                schoolError.textContent = 'Please select a valid school from the list.';
+                locationInput.disabled = true;
+                return false;
+            } else {
+                schoolInput.classList.remove('is-invalid');
+                schoolError.textContent = '';
+                locationInput.disabled = false;
+                locationInput.placeholder = 'e.g., Faculty of Engineering';
+                return true;
+            }
+        };
+
         // Initialize fields on page load based on existing data
         document.addEventListener('DOMContentLoaded', () => {
             const currentState = stateInput.value.trim();
@@ -293,8 +317,7 @@
 
             const currentSchool = schoolInput.value.trim();
             if (currentSchool) {
-                locationInput.disabled = false;
-                locationInput.placeholder = 'e.g., Faculty of Engineering';
+                // We'll rely on the input validation for this
             }
         });
 
@@ -307,6 +330,8 @@
                 locationInput.disabled = true;
                 locationInput.value = '';
                 locationInput.placeholder = 'Select a school first...';
+                schoolInput.classList.remove('is-invalid');
+                schoolError.textContent = '';
             } else {
                 schoolInput.disabled = true;
                 schoolInput.placeholder = 'Select a state from the list.';
@@ -314,15 +339,22 @@
                 locationInput.disabled = true;
                 locationInput.value = '';
                 locationInput.placeholder = 'Select a school first...';
+                schoolInput.classList.remove('is-invalid');
+                schoolError.textContent = '';
             }
         });
 
         // Event listener for school input
-        schoolInput.addEventListener('input', () => {
-            const schoolValue = schoolInput.value.trim();
-            locationInput.disabled = !schoolValue;
-            locationInput.placeholder = schoolValue ? 'e.g., Faculty of Engineering' : 'Select a school first...';
-        });
+        schoolInput.addEventListener('input', validateSchool);
+
+        // Function to validate and submit the form
+        function validateAndSubmit() {
+            if (validateSchool()) {
+                document.getElementById('editProfileForm').submit();
+            } else {
+                closeConfirmModal();
+            }
+        }
 
         // --- Standard functions from your previous code ---
         function toggleTimeInputs(day) {
@@ -375,7 +407,6 @@
                 setTimeout(() => alert.remove(), 500);
             }, 5000);
         });
-
     </script>
 </body>
 </html>
