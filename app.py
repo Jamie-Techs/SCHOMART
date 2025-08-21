@@ -1190,6 +1190,111 @@ def view_user_profile(user_id):
                            current_user_id=current_user_id)
 
 
+
+
+# --- Home Route - Rewritten for Firestore ---
+@app.route('/')
+def home():
+    try:
+        # --- Fetching Static Data: Locations and Categories ---
+        # The equivalent of `SELECT name FROM location ORDER BY name ASC`
+        locations_ref = db.collection('locations').order_by('name').stream()
+        locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
+
+        # The equivalent of `get_all_categories_with_subcategories`
+        categories_ref = db.collection('categories').stream()
+        categories_data = [doc.to_dict() for doc in categories_ref]
+
+        # --- Adverts Logic ---
+        user_id = session.get('user_id')
+        view_following_priority = False
+        followed_user_ids = []
+
+        if user_id:
+            user_settings = get_user_info(user_id)
+            if user_settings and user_settings.get('view_following_users_advert_first'):
+                view_following_priority = True
+                followed_user_ids = get_followers_of_user(user_id)
+
+        # Firestore does not support complex ORDER BY clauses like the SQL `CASE` statement.
+        # Instead, we will fetch all published adverts and then sort them in Python.
+        
+        # Define the visibility order for sorting
+        visibility_order = {
+            'Ultimate': 1,
+            'Premium': 2,
+            'Top': 3,
+            'High': 4,
+            'Standard': 5
+        }
+
+        # Query for all published and non-expired adverts
+        adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
+        all_published_adverts = []
+        now = datetime.now(timezone.utc)
+
+        # Get all published adverts and their associated user data
+        for advert_doc in adverts_ref:
+            advert_data = advert_doc.to_dict()
+            expires_at = advert_data.get('expires_at')
+            if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
+                advert_data['id'] = advert_doc.id # Add document ID
+                
+                # Fetch user data for each advert to get username and role
+                poster_user_ref = db.collection('users').document(advert_data['user_id'])
+                poster_user_doc = poster_user_ref.get()
+                if poster_user_doc.exists:
+                    poster_user_data = poster_user_doc.to_dict()
+                    advert_data['poster_username'] = poster_user_data.get('username')
+                    advert_data['poster_role'] = poster_user_data.get('role')
+                else:
+                    advert_data['poster_username'] = 'Unknown'
+                    advert_data['poster_role'] = 'standard'
+                
+                all_published_adverts.append(advert_data)
+
+        # --- Featured by Admin Ads ---
+        # Filter the fetched data in Python, since we can't do complex `WHERE` clauses in Firestore
+        admin_ads_for_display = [
+            ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
+        ]
+
+        # Sort the admin ads in Python
+        def sort_ads_by_visibility_and_date(ad):
+            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
+            created_at_dt = ad.get('created_at', datetime.min)
+            return (visibility_rank, -created_at_dt.timestamp())
+        
+        admin_ads_for_display.sort(key=sort_ads_by_visibility_and_date)
+        
+        # --- Trending Adverts ---
+        # Sort the main advert list based on the user's preference
+        def sort_trending_ads(ad):
+            # 1. Prioritize adverts from followed users
+            is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
+            # 2. Prioritize by visibility level
+            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
+            # 3. Prioritize by most recent creation date
+            created_at_ts = ad.get('created_at', datetime.min).timestamp()
+            return (is_followed, visibility_rank, -created_at_ts)
+
+        adverts = sorted(all_published_adverts, key=sort_trending_ads)
+        # Limit to the top 20 after sorting
+        adverts = adverts[:20]
+
+        return render_template('home.html',
+                               locations=locations,
+                               categories=categories_data,
+                               admin_ads=admin_ads_for_display,
+                               adverts=adverts)
+
+    except Exception as e:
+        # In a real app, use a proper logger
+        print(f"Error fetching homepage data: {e}")
+        flash("There was an error loading the adverts. Please try again later.", "danger")
+        return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
+
+
 @app.route('/followers')
 @login_required
 def followers():
@@ -1997,110 +2102,6 @@ def get_subcategories_for_category(category_name):
 
 
 
-# --- Home Route - Rewritten for Firestore ---
-@app.route('/')
-def home():
-    try:
-        # --- Fetching Static Data: Locations and Categories ---
-        # The equivalent of `SELECT name FROM location ORDER BY name ASC`
-        locations_ref = admin_db.collection('locations').order_by('name').stream()
-        locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
-
-        # The equivalent of `get_all_categories_with_subcategories`
-        categories_ref = admin_db.collection('categories').stream()
-        categories_data = [doc.to_dict() for doc in categories_ref]
-
-        # --- Adverts Logic ---
-        user_id = session.get('user_id')
-        view_following_priority = False
-        followed_user_ids = []
-
-        if user_id:
-            user_settings = get_user_info(user_id)
-            if user_settings and user_settings.get('view_following_users_advert_first'):
-                view_following_priority = True
-                followed_user_ids = get_followers_of_user(user_id)
-
-        # Firestore does not support complex ORDER BY clauses like the SQL `CASE` statement.
-        # Instead, we will fetch all published adverts and then sort them in Python.
-        
-        # Define the visibility order for sorting
-        visibility_order = {
-            'Ultimate': 1,
-            'Premium': 2,
-            'Top': 3,
-            'High': 4,
-            'Standard': 5
-        }
-
-        # Query for all published and non-expired adverts
-        adverts_ref = admin_db.collection('adverts').where('status', '==', 'published').stream()
-        all_published_adverts = []
-        now = datetime.now(timezone.utc)
-
-        # Get all published adverts and their associated user data
-        for advert_doc in adverts_ref:
-            advert_data = advert_doc.to_dict()
-            expires_at = advert_data.get('expires_at')
-            if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
-                advert_data['id'] = advert_doc.id # Add document ID
-                
-                # Fetch user data for each advert to get username and role
-                poster_user_ref = admin_db.collection('users').document(advert_data['user_id'])
-                poster_user_doc = poster_user_ref.get()
-                if poster_user_doc.exists:
-                    poster_user_data = poster_user_doc.to_dict()
-                    advert_data['poster_username'] = poster_user_data.get('username')
-                    advert_data['poster_role'] = poster_user_data.get('role')
-                else:
-                    advert_data['poster_username'] = 'Unknown'
-                    advert_data['poster_role'] = 'standard'
-                
-                all_published_adverts.append(advert_data)
-
-        # --- Featured by Admin Ads ---
-        # Filter the fetched data in Python, since we can't do complex `WHERE` clauses in Firestore
-        admin_ads_for_display = [
-            ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
-        ]
-
-        # Sort the admin ads in Python
-        def sort_ads_by_visibility_and_date(ad):
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            created_at_dt = ad.get('created_at', datetime.min)
-            return (visibility_rank, -created_at_dt.timestamp())
-        
-        admin_ads_for_display.sort(key=sort_ads_by_visibility_and_date)
-        
-        # --- Trending Adverts ---
-        # Sort the main advert list based on the user's preference
-        def sort_trending_ads(ad):
-            # 1. Prioritize adverts from followed users
-            is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
-            # 2. Prioritize by visibility level
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            # 3. Prioritize by most recent creation date
-            created_at_ts = ad.get('created_at', datetime.min).timestamp()
-            return (is_followed, visibility_rank, -created_at_ts)
-
-        adverts = sorted(all_published_adverts, key=sort_trending_ads)
-        # Limit to the top 20 after sorting
-        adverts = adverts[:20]
-
-        return render_template('home.html',
-                               locations=locations,
-                               categories=categories_data,
-                               admin_ads=admin_ads_for_display,
-                               adverts=adverts)
-
-    except Exception as e:
-        # In a real app, use a proper logger
-        print(f"Error fetching homepage data: {e}")
-        flash("There was an error loading the adverts. Please try again later.", "danger")
-        return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
-
-
-
 
 # Firestore collections. Ad-hoc creation is not needed, Firestore creates them on first write.
 # This serves as a reference for our data model.
@@ -2411,47 +2412,6 @@ def support():
 
 
 
-@app.route('/change-password', methods=['GET', 'POST'])
-@login_required
-def change_password():
-    user_id = session['user_id']
-    
-    # Reference the user's document in the 'users' collection
-    user_ref = db.collection('users').document(user_id)
-    
-    if request.method == 'POST':
-        current_password = request.form['current_password']
-        new_password = request.form['new_password']
-        confirm_password = request.form['confirm_password']
-        
-        # Get the user document data
-        user_doc = user_ref.get()
-        
-        # Check if the document exists and has a password field
-        if not user_doc.exists or 'password' not in user_doc.to_dict():
-            flash('User document not found or password not set.', 'error')
-        else:
-            user_data = user_doc.to_dict()
-            stored_password_hash = user_data.get('password')
-            
-            # Use bcrypt.check_password_hash to securely verify the current password
-            if not check_password_hash(stored_password_hash, current_password):
-                flash('Current password is incorrect.', 'error')
-            elif new_password != confirm_password:
-                flash('New passwords do not match.', 'error')
-            elif len(new_password) < 6:
-                flash('New password must be at least 6 characters.', 'error')
-            else:
-                # Hash the new password before storing it
-                hashed_pw = generate_password_hash(new_password).decode('utf-8')
-                
-                # Update the password field in the user's document
-                user_ref.update({'password': hashed_pw})
-                
-                flash('Password changed successfully!', 'success')
-                return redirect(url_for('profile'))
-
-    return render_template('change_password.html')
 
 
 # Replace the existing `delete_account` function with this one.
@@ -2990,180 +2950,6 @@ def change_phone():
         return render_template('change_phone_number.html', user=user)
 
 
-@app.route('/change-email', methods=['GET', 'POST'])
-@login_required
-def change_email():
-    user_id = session.get('user_id')
-    user_ref = db.collection('users').document(user_id)
-    user_doc = user_ref.get()
-
-    if not user_doc.exists:
-        flash("User not found.", "error")
-        return redirect(url_for('login'))
-
-    user_data = user_doc.to_dict()
-
-    if request.method == 'POST':
-        new_email = request.form.get('email').strip()
-
-        if not new_email:
-            flash("Email cannot be empty.", "danger")
-            return redirect(url_for('change_email'))
-
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", new_email):
-            flash("Please enter a valid email address.", "error")
-            return redirect(url_for('change_email'))
-
-        # Check if email already exists for another user in Firestore
-        users_with_email = db.collection('users').where('email', '==', new_email).limit(1).get()
-        if users_with_email:
-            existing_user_doc = users_with_email[0]
-            if existing_user_doc.id != user_id:
-                flash("This email address is already registered to another account.", "error")
-                return redirect(url_for('change_email'))
-
-        # Check last OTP sent time to enforce cooldown (e.g., 2 min)
-        last_sent_at = user_data.get('last_email_otp_sent_at')
-        now = datetime.now(UTC)
-        if last_sent_at and (now - last_sent_at.replace(tzinfo=None)) < timedelta(minutes=2):
-            flash("Please wait at least 2 minutes before requesting a new OTP.", "warning")
-            return redirect(url_for('change_email'))
-
-        # Generate OTP and expiry
-        otp = generate_otp()
-        expiry_time = now + timedelta(minutes=10)
-
-        try:
-            # Update user with new email, OTP, expiry, and last sent time
-            # Note: We don't set 'is_verified' to False here as this only changes the pending email.
-            # The 'is_verified' field is only updated after successful verification.
-            user_ref.update({
-                'new_email': new_email,  # Store the new email separately
-                'email_verification_code': otp,
-                'email_code_expiry': expiry_time,
-                'last_email_otp_sent_at': now
-            })
-
-            if send_email_otp(new_email, otp):
-                flash("Verification code sent to your email. Please check your inbox.", "info")
-                return redirect(url_for('verify_email'))
-            else:
-                flash("Failed to send email verification code. Please try again.", "danger")
-                return redirect(url_for('change_email'))
-        except Exception as e:
-            flash(f"An unexpected error occurred: {str(e)}", "error")
-            return redirect(url_for('change_email'))
-    else:
-        # GET: load current email info
-        return render_template('change_email.html', user=user_data)
-
-
-@app.route('/verify-email', methods=['GET', 'POST'])
-@login_required
-def verify_email():
-    user_id = session.get('user_id')
-    user_ref = db.collection('users').document(user_id)
-    user_doc = user_ref.get()
-
-    if not user_doc.exists:
-        flash("User not found.", "error")
-        return redirect(url_for('login'))
-
-    user_data = user_doc.to_dict()
-
-    # Check if a verification process is pending
-    if not user_data.get('email_verification_code'):
-        flash('No active verification process found. Please request a new OTP.', 'warning')
-        return redirect(url_for('change_email'))
-
-    if request.method == 'POST':
-        otp_input = request.form.get('otp').strip()
-        now = datetime.now(UTC)
-
-        # Check expiry
-        expiry = user_data.get('email_code_expiry')
-        if not expiry or now > expiry.replace(tzinfo=None):
-            flash('OTP has expired. Please request a new code.', 'danger')
-            # Clear expired OTP fields from DB
-            user_ref.update({
-                'email_verification_code': firestore.DELETE_FIELD,
-                'email_code_expiry': firestore.DELETE_FIELD,
-                'last_email_otp_sent_at': firestore.DELETE_FIELD
-            })
-            return redirect(url_for('change_email'))
-
-        # Verify OTP
-        if otp_input == user_data['email_verification_code']:
-            try:
-                # Atomically update the primary email and verification status, and clear OTP fields.
-                user_ref.update({
-                    'email': user_data['new_email'],  # Update the primary email
-                    'is_verified': True,
-                    'new_email': firestore.DELETE_FIELD,
-                    'email_verification_code': firestore.DELETE_FIELD,
-                    'email_code_expiry': firestore.DELETE_FIELD,
-                    'last_email_otp_sent_at': firestore.DELETE_FIELD
-                })
-                flash('Email verified successfully!', 'success')
-                return redirect(url_for('profile'))
-            except Exception as e:
-                flash(f"An unexpected error occurred during verification: {str(e)}", "error")
-                return redirect(url_for('change_email'))
-        else:
-            flash('Incorrect OTP. Please try again.', 'danger')
-            return redirect(url_for('verify_email'))
-    else:
-        # For GET request, check if an OTP is pending
-        if not user_data.get('email_verification_code'):
-            flash("No active email verification pending. Please request a new OTP.", "info")
-            return redirect(url_for('change_email'))
-        
-        return render_template('verify_email.html', user=user_data)
-
-
-@app.route('/resend-email-otp', methods=['POST'])
-@login_required
-def resend_email_otp():
-    user_id = session.get('user_id')
-    user_ref = db.collection('users').document(user_id)
-    user_doc = user_ref.get()
-
-    if not user_doc.exists:
-        flash("User not found.", "error")
-        return redirect(url_for('login'))
-
-    user_data = user_doc.to_dict()
-
-    if not user_data.get('new_email'):
-        flash('No email found to resend OTP. Please set your email first.', 'warning')
-        return redirect(url_for('change_email'))
-
-    now = datetime.now(UTC)
-    last_sent = user_data.get('last_email_otp_sent_at')
-
-    if last_sent and (now - last_sent.replace(tzinfo=None)) < timedelta(minutes=2):
-        flash('Please wait at least 2 minutes before requesting a new OTP.', 'warning')
-        return redirect(url_for('verify_email'))
-
-    # Generate and send new OTP
-    otp = generate_otp()
-    expiry_time = now + timedelta(minutes=10)
-
-    try:
-        user_ref.update({
-            'email_verification_code': otp,
-            'email_code_expiry': expiry_time,
-            'last_email_otp_sent_at': now
-        })
-
-        if send_email_otp(user_data['new_email'], otp):
-            flash('Verification code resent to your email.', 'success')
-        else:
-            flash('Failed to resend email verification code. Please try again.', 'danger')
-    except Exception as e:
-        flash(f"An unexpected error occurred: {str(e)}", "error")
-    
-    return redirect(url_for('verify_email'))
 
 
 
@@ -8401,6 +8187,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
