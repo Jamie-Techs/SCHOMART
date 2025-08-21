@@ -1190,6 +1190,16 @@ def view_user_profile(user_id):
                            current_user_id=current_user_id)
 
 
+def get_firebase_category_url(filename):
+    """Generates a public URL for a category icon in Firebase Storage."""
+    bucket = storage.bucket()
+    blob = bucket.blob(f'static/category/{filename}')
+    
+    # You can set a long expiration time for static assets like category icons.
+    # The URL will remain valid for the specified duration.
+    url = blob.generate_signed_url(expiration=timedelta(days=365))
+    return url
+
 
 
 # --- Home Route - Rewritten for Firestore ---
@@ -8138,6 +8148,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
