@@ -819,46 +819,6 @@ NIGERIAN_SCHOOLS = {
 
 
 
-# This is the API endpoint to fetch schools, used by the new JavaScript
-
-@app.route('/api/schools/<state>')
-
-def get_schools(state):
-
-    schools = NIGERIAN_SCHOOLS.get(state, [])
-
-    return jsonify(schools)
-    
-
-# This is the API endpoint to validate state and school (optional, for later use)
-
-@app.route('/api/validate/state_and_school', methods=['GET'])
-
-def validate_state_and_school():
-
-    state_name = request.args.get('state')
-
-    school_name = request.args.get('school')
-
-    if not state_name or not school_name:
-
-        return jsonify({"is_valid": False, "message": "State and school are required."})
-
-    schools_in_state = NIGERIAN_SCHOOLS.get(state_name, [])
-
-    is_valid = False
-
-    for school in schools_in_state:
-
-        if school['name'].lower() == school_name.lower() or school['acronym'].lower() == school_name.lower():
-
-            is_valid = True
-
-            break
-
-    return jsonify({"is_valid": is_valid})
-
-
 
 
 
@@ -934,53 +894,50 @@ def profile():
 
 
 
-
 @app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
     """
-    Handles displaying and updating a user's personal details.
+    Handles displaying and updating a user's personal details,
+    including new fields for location, delivery, and working hours.
     """
     try:
-        user_uid = session.get('user_id')
-        if not user_uid:
-            flash("User session expired. Please log in again.", "error")
-            return redirect(url_for('signup'))
-
+        user_uid = current_user.id
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
         if not user_doc.exists:
-            logger.error(f"User document does not exist for UID: {user_uid}")
+            logging.error(f"User document does not exist for UID: {user_uid}")
             flash("User data not found. Please log in again.", "error")
             return redirect(url_for('signup'))
 
         user_data = user_doc.to_dict()
 
         if request.method == 'POST':
-            # Extract form data using the correct field names from the new frontend
+            # Extract form data
             first_name = request.form.get('first_name', '')
             last_name = request.form.get('last_name', '')
             businessname = request.form.get('businessname', '')
-            
-            # These are the new fields for location
             state = request.form.get('state_input', '')
             school = request.form.get('school_input', '')
             location = request.form.get('location_input', '')
-
             birthday = request.form.get('birthday', '')
             sex = request.form.get('sex', '')
+            
+            # Use getlist for multiple checkboxes
             delivery_methods = request.form.getlist('delivery_methods')
             working_days = request.form.getlist('working_days')
             
+            # Process working hours
             working_times = {}
             for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
                 if day in working_days:
-                    working_times[day] = {
-                        'open': request.form.get(f'{day}_open'),
-                        'close': request.form.get(f'{day}_close')
-                    }
-            
+                    open_time = request.form.get(f'{day}_open')
+                    close_time = request.form.get(f'{day}_close')
+                    if open_time and close_time:
+                        working_times[day] = {'open': open_time, 'close': close_time}
+
+            # Process social media links
             social_links = {
                 'website': request.form.get('social_links[website]', ''),
                 'instagram': request.form.get('social_links[instagram]', ''),
@@ -988,11 +945,10 @@ def personal_details():
                 'linkedin': request.form.get('social_links[linkedin]', ''),
                 'twitter': request.form.get('social_links[twitter]', '')
             }
-            
-            # Construct the combined location string as requested
+
+            # Construct the combined location string
             combined_location = f"{state} > {school} > {location}"
-            
-            # Check for empty location parts and handle gracefully
+            # Handle cases where parts of the location are empty
             if not state:
                 combined_location = ''
             elif not school:
@@ -1000,14 +956,15 @@ def personal_details():
             elif not location:
                 combined_location = f"{state} > {school}"
 
+            # Prepare data for Firestore update
             update_data = {
                 'first_name': first_name,
                 'last_name': last_name,
                 'businessname': businessname,
                 'state': state,
-                'school': school, # Save school and location fields separately
+                'school': school,
                 'location': location,
-                'full_location': combined_location, # Save the combined string
+                'full_location': combined_location,
                 'birthday': birthday,
                 'sex': sex,
                 'working_days': working_days,
@@ -1016,26 +973,22 @@ def personal_details():
                 'social_links': social_links,
             }
 
-            try:
-                # Handle image uploads as before
-                profile_picture_file = request.files.get('profile_picture')
-                if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
-                    blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
-                    blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
-                    
-                cover_photo_file = request.files.get('cover_photo')
-                if cover_photo_file and cover_photo_file.filename and allowed_file(cover_photo_file.filename):
-                    blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
-                    blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
+            # Handle file uploads
+            profile_picture_file = request.files.get('profile_picture')
+            if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
+                blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+                blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
+                update_data['profile_picture'] = 'path_or_url_to_profile_pic' # You may want to store a reference
 
-                user_doc_ref.update(update_data)
-                flash('Profile updated successfully!', 'success')
-                return redirect(url_for('personal_details'))
+            cover_photo_file = request.files.get('cover_photo')
+            if cover_photo_file and cover_photo_file.filename and allowed_file(cover_photo_file.filename):
+                blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+                blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
+                update_data['cover_photo'] = 'path_or_url_to_cover_photo' # Store a reference
 
-            except Exception as e:
-                logger.error(f"Error updating user profile for UID {user_uid}: {e}", exc_info=True)
-                flash(f'An error occurred while updating your profile: {e}', 'error')
-                return redirect(url_for('personal_details'))
+            user_doc_ref.update(update_data)
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('personal_details'))
 
         # GET request handling
         # Generate signed URLs for profile and cover photos
@@ -1045,31 +998,37 @@ def personal_details():
         try:
             profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
             if profile_blob.exists():
-                profile_pic_url = profile_blob.generate_signed_url(
-                    timedelta(minutes=15), method='GET'
-                )
+                profile_pic_url = profile_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
-            logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
-            
+            logging.error(f"Error generating profile pic URL for {user_uid}: {e}")
+        
         try:
             cover_blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
             if cover_blob.exists():
-                cover_photo_url = cover_blob.generate_signed_url(
-                    timedelta(minutes=15), method='GET'
-                )
+                cover_photo_url = cover_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
-            logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
+            logging.error(f"Error generating cover photo URL for {user_uid}: {e}")
 
-        # Update the user data with the generated URLs for template rendering
+        # Add the URLs to the user data for rendering
         user_data['profile_picture_url'] = profile_pic_url
         user_data['cover_photo_url'] = cover_photo_url
-
-        return render_template('personal_details.html', user=user_data)
+        
+        # Pass necessary data to the template
+        NIGERIAN_STATES = list(NIGERIAN_SCHOOLS.keys())
+        
+        return render_template(
+            'personal_details.html',
+            user=user_data,
+            NIGERIAN_STATES=NIGERIAN_STATES,
+            NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS
+        )
 
     except Exception as e:
-        logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
+        logging.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
+
 
         
 
@@ -8446,6 +8405,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
