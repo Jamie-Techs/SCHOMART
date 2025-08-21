@@ -4099,60 +4099,6 @@ def admin_required(f):
             
     return wrap
 
-def get_user_info(user_id):
-    """Fetches a user's information from Firestore, including username and role."""
-    try:
-        user_doc = db.collection('users').document(user_id).get()
-        if user_doc.exists:
-            return user_doc.to_dict()
-        return None
-    except Exception as e:
-        logging.error(f"Firestore error getting user info for {user_id}: {e}", exc_info=True)
-        return None
-
-def get_all_categories():
-    """Fetches all main categories from Firestore."""
-    categories = []
-    try:
-        categories_ref = db.collection('categories').order_by('name').stream()
-        categories = [{'id': doc.id, **doc.to_dict()} for doc in categories_ref]
-        return categories
-    except Exception as e:
-        logging.error(f"Firestore error fetching categories: {e}", exc_info=True)
-        return []
-
-def get_subcategories_by_category_id(category_id):
-    """Fetches subcategories for a given category ID from Firestore."""
-    subcategories = []
-    try:
-        subcategories_ref = db.collection('subcategories').where('category_id', '==', category_id).order_by('name').stream()
-        subcategories = [{'id': doc.id, **doc.to_dict()} for doc in subcategories_ref]
-        return subcategories
-    except Exception as e:
-        logging.error(f"Firestore error fetching subcategories for category_id {category_id}: {e}", exc_info=True)
-        return []
-
-def get_plan_details(plan_id):
-    """Fetches a single plan's details from Firestore by ID."""
-    try:
-        plan_doc = db.collection('plans').document(plan_id).get()
-        if plan_doc.exists:
-            return {'id': plan_doc.id, **plan_doc.to_dict()}
-        return None
-    except Exception as e:
-        logging.error(f"Firestore error fetching plan details for plan_id {plan_id}: {e}", exc_info=True)
-        return None
-
-def get_all_plans_from_db():
-    """Fetches all available subscription plans from Firestore."""
-    plans = []
-    try:
-        plans_ref = db.collection('plans').order_by('amount').stream()
-        plans = [{'id': doc.id, **doc.to_dict()} for doc in plans_ref]
-        return plans
-    except Exception as e:
-        logging.error(f"Firestore error fetching all plans: {e}", exc_info=True)
-        return []
 
 def generate_unique_reference():
     """Generates a unique payment reference number."""
@@ -4329,47 +4275,6 @@ def get_user_adverts_count(user_id):
         logging.error(f"Firestore error fetching user published adverts count for user {user_id}: {e}", exc_info=True)
         return 0
 
-def create_advert_db(user_id, subscription_id, category_id, subcategory_id, title, description,
-                     price, negotiable, condition, location_string, main_image, additional_images_string, video,
-                     advert_duration_days, plan_name, visibility_level,
-                     state_id, university_id, sub_location_id):
-    """Creates a new advert document in Firestore."""
-    try:
-        expires_at = datetime.now() + timedelta(days=advert_duration_days)
-        
-        new_advert_data = {
-            'user_id': user_id,
-            'subscription_id': subscription_id,
-            'category_id': category_id,
-            'subcategory_id': subcategory_id,
-            'title': title,
-            'description': description,
-            'price': price,
-            'negotiable': negotiable,
-            'condition': condition,
-            'location': location_string,
-            'main_image': main_image,
-            'additional_images': additional_images_string, # In a real app, this might be a list
-            'video': video,
-            'status': 'pending_review',
-            'created_at': datetime.now(),
-            'expires_at': expires_at,
-            'published_at': datetime.now(), # Or None, if it's pending review
-            'subscription_plan_name': plan_name,
-            'visibility_level': visibility_level,
-            'featured': 0, # Assuming a numeric value
-            'is_admin_featured': 0, # Assuming a numeric value
-            'state_id': state_id,
-            'location_id': university_id, # location_id maps to university_id
-            'sublocation_id': sub_location_id,
-        }
-        
-        # Add a new document to the 'adverts' collection
-        doc_ref = db.collection('adverts').add(new_advert_data)
-        return doc_ref[1].id # doc_ref is a tuple (WriteResult, DocumentReference)
-    except Exception as e:
-        logging.error(f"Firestore error creating advert: {e}", exc_info=True)
-        return None
 
 def get_advert_details(advert_id, user_id=None):
     """
@@ -4463,54 +4368,7 @@ def get_user_adverts(user_id):
 # The send_notification and get_free_advert_plan_details functions do not require changes
 # as they do not interact with the database directly.
 
-def get_referral_benefit_plan(user_referral_count):
-    """
-    Retrieves the highest referral benefit plan a user qualifies for from Firestore.
-    """
-    try:
-        # Query for referral benefits where the count is less than or equal to the user's count,
-        # ordered descending to get the highest one first.
-        query = db.collection('referral_benefits').where('referral_count', '<=', user_referral_count).order_by('referral_count', direction=firestore.Query.DESCENDING).limit(1)
-        benefit_doc = next(query.stream(), None)
-        
-        if benefit_doc:
-            benefit_data = benefit_doc.to_dict()
-            plan_id = benefit_data.get('plan_id')
-            
-            # Fetch the plan details using the plan_id
-            plan_doc = db.collection('plans').document(plan_id).get()
-            if plan_doc.exists:
-                plan_details = plan_doc.to_dict()
-                benefit_data.update({
-                    'plan_name': plan_details.get('name'),
-                    'max_adverts': plan_details.get('max_adverts'),
-                    'advert_duration_days': plan_details.get('advert_duration_days'),
-                    'visibility_level': plan_details.get('visibility_level'),
-                    'plan_id': plan_id,
-                    'type': 'referral',
-                    'label': f"Referral Benefit: {plan_details.get('name')} (Cost: {benefit_data['referral_count']} referrals)",
-                    'cost': benefit_data['referral_count'],
-                    'subscription_id': None
-                })
-                return benefit_data
-        
-        return None
-    except Exception as e:
-        logging.error(f"Firestore error fetching referral benefit plan for count {user_referral_count}: {e}", exc_info=True)
-        return None
-        
-def get_user_referral_count(user_id):
-    """
-    Retrieves the referral count for a given user from Firestore.
-    """
-    try:
-        user_doc = db.collection('users').document(user_id).get()
-        if user_doc.exists:
-            return user_doc.to_dict().get('referral_count', 0)
-        return 0
-    except Exception as e:
-        logging.error(f"Firestore error fetching referral count for user {user_id}: {e}", exc_info=True)
-        return 0
+
 
 def subtract_referral_counts(user_id, count_to_subtract, transaction=None):
     """
@@ -4557,59 +4415,7 @@ def update_advert_status(advert_id, new_status):
         logging.error(f"Failed to update status for advert {advert_id}: {e}", exc_info=True)
         return False
 
-def get_locations_by_state_from_db(state_id):
-    """
-    Returns a list of locations (e.g., universities) for a given state ID from Firestore.
-    """
-    try:
-        locations_ref = db.collection('locations').where('state_id', '==', state_id).order_by('name').stream()
-        locations = [{'id': doc.id, **doc.to_dict()} for doc in locations_ref]
-        return locations
-    except Exception as e:
-        logging.error(f"Firestore error fetching locations for state {state_id}: {e}", exc_info=True)
-        return []
 
-def get_sublocations_for_location_from_db(location_id):
-    """
-    Returns a list of sublocations for a given location ID from Firestore.
-    """
-    try:
-        sublocations_ref = db.collection('sublocations').where('location_id', '==', location_id).order_by('name').stream()
-        sublocations = [{'id': doc.id, **doc.to_dict()} for doc in sublocations_ref]
-        return sublocations
-    except Exception as e:
-        logging.error(f"Firestore error fetching sublocations for location {location_id}: {e}", exc_info=True)
-        return []
-
-def get_location_acronym_and_sub_name(sub_location_id):
-    """
-    Fetches the acronym of the parent location and the name of the sublocation from Firestore.
-    """
-    if not sub_location_id:
-        logging.warning("get_location_acronym_and_sub_name called with empty sub_location_id.")
-        return None
-    
-    try:
-        sublocation_doc = db.collection('sublocations').document(sub_location_id).get()
-        if sublocation_doc.exists:
-            sublocation_data = sublocation_doc.to_dict()
-            location_id = sublocation_data.get('location_id')
-            
-            if location_id:
-                location_doc = db.collection('locations').document(location_id).get()
-                if location_doc.exists:
-                    location_data = location_doc.to_dict()
-                    acronym = location_data.get('acronym')
-                    sub_name = sublocation_data.get('name')
-                    
-                    acronym_part = f"{acronym}>" if acronym else ""
-                    return f"{acronym_part}{sub_name}"
-        
-        logging.warning(f"No result found for sub_location_id: {sub_location_id}")
-        return None
-    except Exception as e:
-        logging.error(f"Firestore error fetching location details for sub-location ID {sub_location_id}: {e}", exc_info=True)
-        return None
 
 
 def send_notification(user_id, message, notification_type="info"):
@@ -8455,6 +8261,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
