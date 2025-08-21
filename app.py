@@ -830,6 +830,7 @@ NIGERIAN_SCHOOLS = {
 
 
 
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -883,11 +884,16 @@ def profile():
         except Exception as e:
             logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
             flash(f"Error loading cover photo: {str(e)}", "error")
+        
+        # New Code Block: Generate the referral link
+        # The URL should match your live site.
+        referral_link = f"https://schomart.onrender.com/signup?ref={user_uid}"
 
         return render_template('profile.html',
                                user=user_data,
                                profile_pic_url=profile_pic_url,
-                               cover_photo_url=cover_photo_url)
+                               cover_photo_url=cover_photo_url,
+                               referral_link=referral_link) # Pass the link to the template
 
     except Exception as e:
         logger.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
@@ -8395,6 +8401,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
