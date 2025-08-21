@@ -1254,15 +1254,23 @@ def add_category():
     return render_template('add_category.html')
 
 
+
+
+
 @app.route('/')
 def home():
     """
     Renders the homepage by fetching data from Firestore and generating
     signed URLs for both advert and category images from Firebase Storage.
+    The page now passes structured location data for client-side rendering.
     """
     try:
-        locations_ref = db.collection('locations').order_by('name').stream()
-        locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
+        # Pass the global NIGERIAN_STATES and NIGERIAN_SCHOOLS to the template
+        # to support the new client-side location logic.
+        locations_data = {
+            'NIGERIAN_STATES': NIGERIAN_STATES,
+            'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
+        }
 
         categories_ref = db.collection('categories').stream()
         categories_data = []
@@ -1286,7 +1294,7 @@ def home():
             category['image_url'] = image_url
             categories_data.append(category)
 
-        # --- Adverts Logic (unchanged from your original code) ---
+        # --- Adverts Logic (remains unchanged) ---
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -1344,19 +1352,18 @@ def home():
         adverts = adverts[:20]
 
         return render_template('home.html',
-                               locations=locations,
+                               locations=locations_data, # Use the new data structure
                                categories=categories_data,
                                admin_ads=admin_ads_for_display,
-                               adverts=adverts)
+                               adverts=adverts,
+                               NIGERIAN_STATES=NIGERIAN_STATES, # Pass NIGERIAN_STATES
+                               NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS # Pass NIGERIAN_SCHOOLS
+                               )
 
     except Exception as e:
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
-
-
-
-
                                              
 
 
@@ -7996,6 +8003,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
