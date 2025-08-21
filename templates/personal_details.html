@@ -133,55 +133,54 @@
                 </section>
 
                 <section>
-                    <h2 class="section-title"><i class="fas fa-user-alt"></i> Personal Information</h2>
-                    <div class="form-group">
-                        <label for="first_name">First Name*</label>
-                        <input type="text" name="first_name" id="first_name" maxlength="20" value="{{ user.first_name or '' }}" onkeyup="updateCharCount('first_name', 20)" />
-                        <div class="char-count" id="first_name_char_count">{{ user.first_name|length if user.first_name else 0 }} / 20</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="last_name">Last Name*</label>
-                        <input type="text" name="last_name" id="last_name" maxlength="20" value="{{ user.last_name or '' }}" onkeyup="updateCharCount('last_name', 20)" />
-                        <div class="char-count" id="last_name_char_count">{{ user.last_name|length if user.last_name else 0 }} / 20</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="businessname">Business Name</label>
-                        <input type="text" name="businessname" id="businessname" value="{{ user.businessname or '' }}" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="state_input">State*</label>
-                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
-                        <datalist id="state-list">
-                            {% for state in NIGERIAN_STATES %}
-                                <option value="{{ state }}">
-                            {% endfor %}
-                        </datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="school_input">School*</label>
-                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
-                        <datalist id="school-list"></datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_input">Location in School</label>
-                        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="Select a school first..." disabled/>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="birthday">Birthday</label>
-                        <input type="date" name="birthday" id="birthday" value="{{ user.birthday if user.birthday else '' }}" />
-                    </div>
-                    <div class="form-group">
-                        <label for="sex">Sex</label>
-                        <select name="sex" id="sex">
-                            <option value="">Do not specify</option>
-                            <option value="male" {% if user.sex == 'male' %}selected{% endif %}>Male</option>
-                            <option value="female" {% if user.sex == 'female' %}selected{% endif %}>Female</option>
-                            <option value="other" {% if user.sex == 'other' %}selected{% endif %}>Other</option>
-                        </select>
-                    </div>
-                </section>
+    <h2 class="section-title"><i class="fas fa-user-alt"></i> Personal Information</h2>
+    <div class="form-group">
+        <label for="first_name">First Name*</label>
+        <input type="text" name="first_name" id="first_name" maxlength="20" value="{{ user.first_name or '' }}" onkeyup="updateCharCount('first_name', 20)" />
+        <div class="char-count" id="first_name_char_count">{{ user.first_name|length if user.first_name else 0 }} / 20</div>
+    </div>
+    <div class="form-group">
+        <label for="last_name">Last Name*</label>
+        <input type="text" name="last_name" id="last_name" maxlength="20" value="{{ user.last_name or '' }}" onkeyup="updateCharCount('last_name', 20)" />
+        <div class="char-count" id="last_name_char_count">{{ user.last_name|length if user.last_name else 0 }} / 20</div>
+    </div>
+    <div class="form-group">
+        <label for="businessname">Business Name</label>
+        <input type="text" name="businessname" id="businessname" value="{{ user.businessname or '' }}" />
+    </div>
+    <div class="form-group">
+        <label for="state_input">State*</label>
+        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
+        <datalist id="state-list">
+            {% for state in NIGERIAN_STATES %}
+                <option value="{{ state }}">
+            {% endfor %}
+        </datalist>
+    </div>
+    <div class="form-group">
+        <label for="school_input">School*</label>
+        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
+        <datalist id="school-list"></datalist>
+    </div>
+    <div class="form-group">
+        <label for="location_input">Location in School</label>
+        <input type="text" name="location" id="location_input" value="{{ user.location or '' }}" placeholder="Select a school first..." disabled/>
+    </div>
+    
+    <div class="form-group">
+        <label for="birthday">Birthday</label>
+        <input type="date" name="birthday" id="birthday" value="{{ user.birthday if user.birthday else '' }}" />
+    </div>
+    <div class="form-group">
+        <label for="sex">Sex</label>
+        <select name="sex" id="sex">
+            <option value="">Do not specify</option>
+            <option value="male" {% if user.sex == 'male' %}selected{% endif %}>Male</option>
+            <option value="female" {% if user.sex == 'female' %}selected{% endif %}>Female</option>
+            <option value="other" {% if user.sex == 'other' %}selected{% endif %}>Other</option>
+        </select>
+    </div>
+</section>
 
                 <section>
                     <h2 class="section-title"><i class="far fa-clock"></i> Working Days & Hours</h2>
