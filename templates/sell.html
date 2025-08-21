@@ -197,28 +197,29 @@
 
         {# Main advert posting options and form - only display if options are available #}
         {% if available_options %}
-            <div class="form-group">
-                <label><i class="fas fa-check-circle"></i> Choose how to post your advert:</label>
-                {% for option in available_options %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="posting_option"
-                               id="{{ option.type }}" value="{{ option.type }}"
-                               {% if form_data.plan_type and form_data.plan_type|string == option.type|string %}checked{% elif loop.first and not form_data.plan_type %}checked{% endif %}>
-                        <label class="form-check-label" for="{{ option.type }}">
-                            {{ option.label }}
-                        </label>
-                    </div>
-                {% endfor %}
-            </div>
-
-            <div class="subscription-info">
-                <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name"></span></p>
-                <p>Max Adverts: <strong><span id="info-max-adverts">0</span></strong>, Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
-                <p>Current active adverts: <strong><span id="info-current-adverts">{{ current_adverts_count }}</span></strong></p>
-                <p>Remaining advert slots: <strong><span id="info-remaining-adverts">0</span></strong></p>
-            </div>
-
             <form id="post-advert-form" method="POST" action="{{ url_for('sell') }}" enctype="multipart/form-data">
+                
+                {# MOVED INTO THE FORM: Advert posting options #}
+                <div class="form-group">
+                    <label><i class="fas fa-check-circle"></i> Choose how to post your advert:</label>
+                    {% for option in available_options %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="posting_option"
+                                   id="{{ option.type }}" value="{{ option.type }}"
+                                   {% if form_data.plan_type and form_data.plan_type|string == option.type|string %}checked{% elif loop.first and not form_data.plan_type %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ option.type }}">
+                                {{ option.label }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="subscription-info">
+                    <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name"></span></p>
+                    <p>Max Adverts: <strong><span id="info-max-adverts">0</span></strong>, Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
+                    <p>Current active adverts: <strong><span id="info-current-adverts">{{ current_adverts_count }}</span></strong></p>
+                    <p>Remaining advert slots: <strong><span id="info-remaining-adverts">0</span></strong></p>
+                </div>
                 
                 {% if advert and is_repost %}
                     <input type="hidden" name="repost_advert_id" value="{{ advert.id }}">
@@ -414,8 +415,7 @@
         }
         
         // Client-side file validation functions
-        function validateFile(file, maxSizeBytes, allowedMimeTypes, errorElement, maxCount = 1) {
-            errorElement.textContent = ''; // Reset error message
+        function validateFile(file, maxSizeBytes, allowedMimeTypes, errorElement) {
             if (!file) return true;
 
             const sizeInBytes = file.size;
@@ -427,38 +427,11 @@
             }
             
             if (allowedMimeTypes && !allowedMimeTypes.includes(fileType)) {
-                errorElement.textContent = `Invalid file type. Please upload a valid ${errorElement.id.replace('-error', '')}.`;
+                errorElement.textContent = `Invalid file type. Please upload a valid image file.`;
                 return false;
             }
             
             return true;
-        }
-
-        function handleFileSelection(event, maxCount = 1) {
-            const input = event.target;
-            const files = input.files;
-            const errorElement = document.getElementById(input.id + '-error');
-            const maxSizeBytes = (input.id === 'video') ? MAX_VIDEO_SIZE_MB * 1024 * 1024 : MAX_IMAGE_SIZE_MB * 1024 * 1024;
-            const allowedMimeTypes = (input.id === 'video') ? ['video/mp4', 'video/mov', 'video/avi'] : ['image/jpeg', 'image/png'];
-
-            // Check number of files first
-            if (files.length > maxCount) {
-                errorElement.textContent = `You can only upload a maximum of ${maxCount} file(s).`;
-                input.value = ''; // Clear the selection
-                return false;
-            }
-
-            let allValid = true;
-            for (let i = 0; i < files.length; i++) {
-                if (!validateFile(files[i], maxSizeBytes, allowedMimeTypes, errorElement)) {
-                    allValid = false;
-                    break;
-                }
-            }
-            
-            if (!allValid) {
-                input.value = '';
-            }
         }
 
         // Event Listeners
@@ -515,25 +488,32 @@
             }
             
             // File input validation event listeners
-            mainImageInput.addEventListener('change', (e) => handleFileSelection(e, 1));
-            additionalImagesInput.addEventListener('change', (e) => handleFileSelection(e, MAX_ADDITIONAL_IMAGES));
-            videoInput.addEventListener('change', (e) => handleFileSelection(e, 1));
+            mainImageInput.addEventListener('change', () => {
+                validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], mainImageError);
+            });
+            videoInput.addEventListener('change', () => {
+                validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError);
+            });
 
             // Form submission listener for final validation
             form.addEventListener('submit', (event) => {
+                // Ensure all form fields are within the form tag
+                
                 let isValid = true;
 
-                // Re-validate all files
+                // Validate main image
                 if (mainImageInput.files.length > 0) {
                     if (!validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], mainImageError)) {
                         isValid = false;
                     }
                 }
                 
+                // Validate additional images count and size
                 if (additionalImagesInput.files.length > MAX_ADDITIONAL_IMAGES) {
                     additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
                     isValid = false;
                 } else {
+                    additionalImagesError.textContent = '';
                     for (let i = 0; i < additionalImagesInput.files.length; i++) {
                         if (!validateFile(additionalImagesInput.files[i], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], additionalImagesError)) {
                             isValid = false;
@@ -542,13 +522,14 @@
                     }
                 }
 
+                // Validate video
                 if (videoInput.files.length > 0) {
                     if (!validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError)) {
                         isValid = false;
                     }
                 }
 
-                if (!isValid) {
+                if (!isValid || !validateSchool()) {
                     event.preventDefault(); // Stop form submission
                 }
             });
