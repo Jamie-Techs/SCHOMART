@@ -3,185 +3,95 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Post Ad - YourApp</title>
+    <title>Post Ad - Schomart</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        /* Modernized and consistent styling */
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
             margin: 0;
             padding: 20px;
+            color: #333;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: #fff;
-            padding: 20px;
-            padding-top: 65px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 2.5rem; /* Increased padding for more space */
+            border-radius: 1rem; /* More rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
             position: relative;
         }
         h2 {
+            font-size: 1.75rem; /* Consistent heading size */
+            font-weight: 700;
             color: #006B3C;
             text-align: center;
             margin-top: 0;
             margin-bottom: 25px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 1.5rem; /* Consistent spacing between form groups */
         }
         label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 5px;
-            display: flex; /* Make labels flex containers to align icon and text */
+            font-weight: 600;
+            display: flex;
             align-items: center;
-            gap: 8px; /* Space between icon and text */
-        }
-        /* Style for required asterisk */
-        label .required {
-            margin-left: 0; /* Remove default margin */
+            gap: 10px; /* Space between icon and text */
+            margin-bottom: 0.5rem;
+            color: #4a5568;
         }
         input, select, textarea {
             width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+            padding: 0.75rem; /* Consistent padding for all inputs */
+            border-radius: 0.5rem; /* Rounded input fields */
+            border: 1px solid #e2e8f0;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out;
+            font-size: 1em; /* Consistent font size */
+        }
+        input[type="file"] {
+            padding: 0.5rem;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #38a169;
+            box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1);
         }
         .required {
             color: red;
+            margin-left: 0.25rem;
         }
         .char-count {
-            font-size: 0.9em;
+            font-size: 0.8em; /* Slightly smaller for info text */
             color: #555;
             text-align: right;
             display: block;
             margin-top: 5px;
         }
-        button {
-            background-color: #006B3C;
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            background-color: #48bb78;
             color: white;
+            font-size: 1rem;
+            font-weight: 700;
             border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
+            border-radius: 0.5rem;
             cursor: pointer;
-            margin-top: 15px;
-            display: inline-flex; /* Make button flex container for icon */
-            align-items: center;
-            gap: 8px; /* Space between icon and text */
             transition: background-color 0.2s ease-in-out;
         }
-        button:hover {
-            background-color: #004d2c; /* Slightly darker green on hover */
+        button[type="submit"]:hover {
+            background-color: #38a169;
         }
-        .subscription-info {
-            background-color: #e9f7ef;
-            border: 1px solid #d4edda;
-            color: #155724;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        .form-check {
+            margin-bottom: 0.5rem;
         }
-        .subscription-info p {
-            margin: 5px 0;
-        }
-        .warning-message {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .error-message {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        .referral-prompt {
-            background-color: #e0ffe0;
-            border: 1px solid #aaddaa;
-            color: #2e8b57;
-            padding: 12px 18px;
-            border-radius: 5px;
-            margin-top: 15px;
-            text-align: center;
-            font-size: 0.95em;
-        }
-        .referral-prompt a {
-            color: #008000;
-            font-weight: bold;
-            text-decoration: none;
-        }
-        .referral-prompt a:hover {
-            text-decoration: underline;
-        }
-        .back-button-top-left {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 8px 15px;
-            background-color: #006B3C;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            text-decoration: none;
-            transition: background-color 0.2s ease-in-out;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .back-button-top-left:hover {
-            background-color: #004d2c;
-        }
-
-        /* Styles for flash messages */
-        .flashes {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 20px 0;
-        }
-        .flashes li {
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            display: flex; /* Make flash messages flex containers */
-            align-items: center;
-            gap: 10px; /* Space between icon and message */
-            opacity: 1; /* Initial opacity */
-            transition: opacity 0.5s ease-in-out;
-        }
-        .flashes li.error-message {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .flashes li.success-message {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        .flashes li.warning-message {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
+        .form-check-input {
+            margin-right: 0.5rem;
         }
         /* Style for the always-visible advert options info */
         .advert-options-info {
@@ -201,9 +111,6 @@
             margin-top: 0;
             margin-bottom: 15px;
         }
-        .advert-options-info p {
-            margin-bottom: 10px;
-        }
         .advert-options-info a {
             display: inline-block;
             background-color: #006B3C;
@@ -214,14 +121,34 @@
             font-weight: bold;
             margin: 5px;
             transition: background-color 0.2s ease-in-out;
-            display: inline-flex; /* For icons in links */
+            display: inline-flex;
             align-items: center;
             gap: 5px;
         }
         .advert-options-info a:hover {
             background-color: #004d2c;
         }
-        /* Style for invalid input fields */
+        .subscription-info {
+            background-color: #e9f7ef;
+            border: 1px solid #d4edda;
+            color: #155724;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        /* All messages have a consistent style now */
+        .alert {
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert.error-message { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .alert.success-message { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .alert.warning-message { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
         .is-invalid {
             border-color: #dc3545;
         }
@@ -231,7 +158,6 @@
             display: block;
             margin-top: 0.25rem;
         }
-        
     </style>
 </head>
 <body>
@@ -275,9 +201,9 @@
                 <label><i class="fas fa-check-circle"></i> Choose how to post your advert:</label>
                 {% for option in available_options %}
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="plan_type"
+                        <input class="form-check-input" type="radio" name="posting_option"
                                id="{{ option.type }}" value="{{ option.type }}"
-                               {% if option.type == form_data.plan_type %}checked{% elif loop.first and not form_data.plan_type %}checked{% endif %}>
+                               {% if form_data.plan_type and form_data.plan_type|string == option.type|string %}checked{% elif loop.first and not form_data.plan_type %}checked{% endif %}>
                         <label class="form-check-label" for="{{ option.type }}">
                             {{ option.label }}
                         </label>
@@ -286,7 +212,6 @@
             </div>
 
             <div class="subscription-info">
-                {# This content will be dynamically updated by JavaScript #}
                 <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name"></span></p>
                 <p>Max Adverts: <strong><span id="info-max-adverts">0</span></strong>, Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
                 <p>Current active adverts: <strong><span id="info-current-adverts">{{ current_adverts_count }}</span></strong></p>
@@ -366,16 +291,18 @@
                 {# END NEW LOCATION INPUT FIELDS #}
 
                 <div class="form-group">
-                    <label for="mainImage"><i class="fas fa-image"></i> Main Image <span class="required">*</span>:</label>
+                    <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
                     <input type="file" id="mainImage" name="main_image" accept="image/*" {% if not advert %}required{% endif %}>
+                    <span id="main-image-error" class="invalid-feedback"></span>
                     {% if advert and advert.main_image %}
                         <p>Current Main Image: <img src="{{ advert.main_image }}" alt="Current Main Image" style="max-width: 100px; max-height: 100px;"></p>
                     {% endif %}
                 </div>
 
                 <div class="form-group">
-                    <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (up to 5):</label>
+                    <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 3, up to 10MB each):</label>
                     <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple>
+                    <span id="additional-images-error" class="invalid-feedback"></span>
                     {% if advert and advert.additional_images %}
                         <p>Current Additional Images:</p>
                         {% for img_url in advert.additional_images %}
@@ -385,8 +312,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="video"><i class="fas fa-video"></i> Upload Video (optional):</label>
+                    <label for="video"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
                     <input type="file" id="video" name="video" accept="video/*">
+                    <span id="video-error" class="invalid-feedback"></span>
                     {% if advert and advert.video %}
                         <p>Current Video: <a href="{{ advert.video }}" target="_blank">View Video <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></p>
                     {% endif %}
@@ -395,7 +323,7 @@
                 <button type="submit"><i class="fas fa-paper-plane"></i> Submit Advert for review</button>
             </form>
         {% else %}
-            <div class="warning-message">
+            <div class="warning-message alert">
                 <p><i class="fas fa-exclamation-triangle"></i> You currently have no available advert posting options. Please use the links above to subscribe or earn referral benefits to post adverts.</p>
             </div>
         {% endif %}
@@ -403,15 +331,28 @@
 
     <script>
         const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
-        const NIGERIAN_STATES = Object.keys(NIGERIAN_SCHOOLS);
         const availableOptions = JSON.parse('{{ available_options | tojson | safe }}');
-
+        
+        // Form field references
+        const form = document.getElementById('post-advert-form');
         const stateInput = document.getElementById('state_input');
         const schoolInput = document.getElementById('school_input');
         const locationInput = document.getElementById('location_input');
         const schoolDatalist = document.getElementById('school-list');
         const schoolError = document.getElementById('school_error');
+        const mainImageInput = document.getElementById('mainImage');
+        const mainImageError = document.getElementById('main-image-error');
+        const additionalImagesInput = document.getElementById('additionalImages');
+        const additionalImagesError = document.getElementById('additional-images-error');
+        const videoInput = document.getElementById('video');
+        const videoError = document.getElementById('video-error');
 
+        // File size and type limits
+        const MAX_IMAGE_SIZE_MB = 10;
+        const MAX_VIDEO_SIZE_MB = 15;
+        const MAX_ADDITIONAL_IMAGES = 3;
+
+        // Function to populate schools datalist based on selected state
         function populateSchools(state) {
             const schools = NIGERIAN_SCHOOLS[state] || [];
             schoolDatalist.innerHTML = '';
@@ -424,6 +365,7 @@
             schoolInput.placeholder = 'Select from the list or type...';
         };
 
+        // Function to validate school selection
         function validateSchool() {
             const stateValue = stateInput.value.trim();
             const schoolValue = schoolInput.value.trim();
@@ -443,16 +385,17 @@
             }
         };
 
+        // Function to update character count for description
         function updateCharCount() {
             const desc = document.getElementById('description');
             document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
         }
 
-        // This function updates the dynamic information box based on the selected advert option.
+        // Function to update the dynamic information box
         function updateSubscriptionInfo(selectedType) {
             const currentAdvertsCount = {{ current_adverts_count }};
             const selectedOption = availableOptions.find(opt => opt.type === selectedType);
-
+            
             const infoPlanName = document.getElementById('info-plan-name');
             const infoMaxAdverts = document.getElementById('info-max-adverts');
             const infoDuration = document.getElementById('info-duration');
@@ -461,22 +404,64 @@
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
 
             if (selectedOption) {
-                infoPlanName.textContent = selectedOption.plan_name;
+                infoPlanName.textContent = selectedOption.label;
                 infoMaxAdverts.textContent = selectedOption.max_adverts;
                 infoDuration.textContent = selectedOption.advert_duration_days;
                 infoCurrentAdverts.textContent = currentAdvertsCount;
                 infoRemainingAdverts.textContent = Math.max(0, selectedOption.max_adverts - currentAdvertsCount);
                 infoVisibilityLevel.textContent = selectedOption.visibility_level;
-            } else {
-                infoPlanName.textContent = 'N/A';
-                infoMaxAdverts.textContent = '0';
-                infoDuration.textContent = '0';
-                infoCurrentAdverts.textContent = currentAdvertsCount;
-                infoRemainingAdverts.textContent = '0';
-                infoVisibilityLevel.textContent = 'N/A';
+            }
+        }
+        
+        // Client-side file validation functions
+        function validateFile(file, maxSizeBytes, allowedMimeTypes, errorElement, maxCount = 1) {
+            errorElement.textContent = ''; // Reset error message
+            if (!file) return true;
+
+            const sizeInBytes = file.size;
+            const fileType = file.type;
+
+            if (sizeInBytes > maxSizeBytes) {
+                errorElement.textContent = `File must be less than ${maxSizeBytes / (1024 * 1024)}MB.`;
+                return false;
+            }
+            
+            if (allowedMimeTypes && !allowedMimeTypes.includes(fileType)) {
+                errorElement.textContent = `Invalid file type. Please upload a valid ${errorElement.id.replace('-error', '')}.`;
+                return false;
+            }
+            
+            return true;
+        }
+
+        function handleFileSelection(event, maxCount = 1) {
+            const input = event.target;
+            const files = input.files;
+            const errorElement = document.getElementById(input.id + '-error');
+            const maxSizeBytes = (input.id === 'video') ? MAX_VIDEO_SIZE_MB * 1024 * 1024 : MAX_IMAGE_SIZE_MB * 1024 * 1024;
+            const allowedMimeTypes = (input.id === 'video') ? ['video/mp4', 'video/mov', 'video/avi'] : ['image/jpeg', 'image/png'];
+
+            // Check number of files first
+            if (files.length > maxCount) {
+                errorElement.textContent = `You can only upload a maximum of ${maxCount} file(s).`;
+                input.value = ''; // Clear the selection
+                return false;
+            }
+
+            let allValid = true;
+            for (let i = 0; i < files.length; i++) {
+                if (!validateFile(files[i], maxSizeBytes, allowedMimeTypes, errorElement)) {
+                    allValid = false;
+                    break;
+                }
+            }
+            
+            if (!allValid) {
+                input.value = '';
             }
         }
 
+        // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             updateCharCount();
 
@@ -485,8 +470,6 @@
             if (NIGERIAN_SCHOOLS[currentState]) {
                 populateSchools(currentState);
             }
-
-            // Event listener for state input
             stateInput.addEventListener('input', () => {
                 const stateValue = stateInput.value.trim();
                 if (NIGERIAN_SCHOOLS[stateValue]) {
@@ -508,30 +491,68 @@
                     schoolError.textContent = '';
                 }
             });
-
-            // Event listener for school input
             schoolInput.addEventListener('input', validateSchool);
             
             // Advert options logic
-            const benefitChoiceRadios = document.querySelectorAll('input[name="plan_type"]');
+            const benefitChoiceRadios = document.querySelectorAll('input[name="posting_option"]');
             benefitChoiceRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     updateSubscriptionInfo(this.value);
                 });
             });
 
-            const initialSelectedOptionType = document.querySelector('input[name="plan_type"]:checked');
+            // Set initial selected option
+            const initialSelectedOptionType = document.querySelector('input[name="posting_option"]:checked');
             if (initialSelectedOptionType) {
                 updateSubscriptionInfo(initialSelectedOptionType.value);
             } else if (availableOptions.length > 0) {
                 const firstOptionType = availableOptions[0].type;
-                const firstOptionRadio = document.querySelector('input[name="plan_type"][value="' + firstOptionType + '"]');
+                const firstOptionRadio = document.querySelector('input[name="posting_option"][value="' + firstOptionType + '"]');
                 if (firstOptionRadio) {
                     firstOptionRadio.checked = true;
                     updateSubscriptionInfo(firstOptionType);
                 }
             }
             
+            // File input validation event listeners
+            mainImageInput.addEventListener('change', (e) => handleFileSelection(e, 1));
+            additionalImagesInput.addEventListener('change', (e) => handleFileSelection(e, MAX_ADDITIONAL_IMAGES));
+            videoInput.addEventListener('change', (e) => handleFileSelection(e, 1));
+
+            // Form submission listener for final validation
+            form.addEventListener('submit', (event) => {
+                let isValid = true;
+
+                // Re-validate all files
+                if (mainImageInput.files.length > 0) {
+                    if (!validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], mainImageError)) {
+                        isValid = false;
+                    }
+                }
+                
+                if (additionalImagesInput.files.length > MAX_ADDITIONAL_IMAGES) {
+                    additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
+                    isValid = false;
+                } else {
+                    for (let i = 0; i < additionalImagesInput.files.length; i++) {
+                        if (!validateFile(additionalImagesInput.files[i], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], additionalImagesError)) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (videoInput.files.length > 0) {
+                    if (!validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError)) {
+                        isValid = false;
+                    }
+                }
+
+                if (!isValid) {
+                    event.preventDefault(); // Stop form submission
+                }
+            });
+
             // Auto-hide flash messages
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
