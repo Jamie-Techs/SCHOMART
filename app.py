@@ -5109,64 +5109,15 @@ def create_advert_db(
         update_time, advert_ref = db.collection("adverts").add(advert_data)
         return advert_ref.id
     except Exception as e:
-        logger.error(f"Error creating advert for user {user_id}: {e}")        return None
+        logger.error(f"Error creating advert for user {user_id}: {e}")
+        
+        return None
 
 
 # --- Sell Route ---
 # This is the main route, now using the Firestore helper functions.
 
-                            "category_id": int(category_id),
-                    "subcategory_id": int(subcategory_id),
-                    "title": title,
-                    "description": description,
-                    "price": price,
-                    "negotiable": negotiable_db_value,
-                    "condition": condition,
-                    "location": formatted_location_string,
-                    "main_image": main_img_filename,
-                    "additional_images": additional_img_filenames, # Storing as a list
-                    "video": video_filename,
-                    "status": "pending_review",
-                    "rejected_reason": None,
-                    "subscription_id": subscription_id_for_ad,
-                    "subscription_plan_name": plan_name_for_advert,
-                    "visibility_level": advert_visibility_level,
-                    "created_at": firestore.SERVER_TIMESTAMP,
-                    "published_at": None,
-                    "expires_at": None,
-                    "state_id": int(state_id_from_form),
-                    "location_id": int(location_id_from_form),
-                    "sublocation_id": int(sub_location_id_from_form)
-                }
-                advert_ref.update(advert_data)
-                flash("Your advert has been successfully resubmitted for review and will be live once approved by an administrator.", "info")
-                logger.info(f"Advert {repost_advert_id} by user {user_id} successfully reposted for review.")
-            else:
-                new_advert_id = create_advert_db(
-                    user_id, subscription_id_for_ad, category_id, subcategory_id, title, description,
-                    price, negotiable_db_value, condition, formatted_location_string, main_img_filename,
-                    additional_img_filenames, video_filename,
-                    advert_duration_days, plan_name_for_advert, advert_visibility_level,
-                    state_id_from_form, location_id_from_form, sub_location_id_from_form
-                )
-                if not new_advert_id:
-                    raise Exception("Failed to create advert in database.")
-
-                flash("Your advert has been successfully submitted for review and will be live once approved by an administrator.", "info")
-                logger.info(f"New advert {new_advert_id} by user {user_id} submitted for review.")
-            
-            return redirect(url_for("list_adverts"))
-
-        except Exception as e:
-            flash(f"An error occurred during advert submission: {str(e)}. Please try again.", "error")
-            logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
-            return render_sell_template(
-                user_data, available_options, current_adverts_count,
-                benefit_choice_type, request.form.to_dict(),
-                advert=get_advert_details(repost_advert_id, user_id) if repost_advert_id else None,
-                is_repost=(repost_advert_id is not None)
-            )
-
+                            
 @app.route('/get_subcategories/<int:category_id>')
 def get_subcategories(category_id):
     subcategories = get_subcategories_by_category_id(category_id)
@@ -8187,6 +8138,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
