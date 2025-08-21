@@ -1446,6 +1446,24 @@ FREE_ADVERT_PLAN = {
 
 
 
+
+
+# app.py (Part to replace)
+
+def get_referral_plan(user_id):
+    """
+    Fetches the referral benefit plan for a user.
+    """
+    try:
+        # Use .get() as recommended by the Firestore error.
+        subscriptions_ref = db.collection("subscriptions").where("user_id", "==", user_id).where("is_active", "==", True).get()
+        if subscriptions_ref:
+            # Your existing logic to handle the query results
+            ...
+    except Exception as e:
+        logger.error(f"Error fetching referral benefit plan: {e}", exc_info=True)
+        return None
+
 def get_document(collection_name, doc_id):
     """Fetches a single document from a Firestore collection."""
     try:
@@ -1717,6 +1735,100 @@ def validate_sell_form(form_data, files, repost_advert_id=None, existing_advert=
         
     return errors
 
+
+# app.py (add_advert route - complete corrected function)
+
+@app.route('/add_advert', methods=['GET', 'POST'])
+@login_required
+def add_advert():
+    if request.method == 'POST':
+        try:
+            # Existing data parsing
+            advert_data = {
+                'title': request.form.get('title'),
+                'description': request.form.get('description'),
+                'category': request.form.get('category'),
+                'location': request.form.get('location'),
+                'contact_info': request.form.get('contact_info'),
+                'visibility_level': request.form.get('visibility_level', 'Standard'),
+                'expires_at': datetime.now(timezone.utc) + timedelta(days=30),
+                'user_id': session.get('user_id'),
+                'status': 'published',
+                'created_at': datetime.now(timezone.utc),
+                'price': request.form.get('price'),
+                'posting_option': request.form.get('posting_option')
+            }
+
+            # New: Correct posting option validation
+            if not advert_data['posting_option']:
+                flash("A posting option must be selected.", "error")
+                return redirect(url_for('add_advert'))
+
+            # New: Handle files and implement validation
+            advert_images = request.files.getlist('advert_images[]')
+            advert_video = request.files.get('advert_video')
+            
+            image_urls = []
+            video_url = ''
+
+            # Define allowed extensions and max sizes
+            ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+            ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi'}
+            MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+            MAX_VIDEO_SIZE = 15 * 1024 * 1024  # 15 MB
+
+            def is_allowed_image(filename):
+                return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+            def is_allowed_video(filename):
+                return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+
+            # Handle and validate additional images (limited to 3)
+            for i, file in enumerate(advert_images):
+                if i >= 3: # Enforce the limit of 3 images
+                    break
+                if file and is_allowed_image(file.filename):
+                    if len(file.read()) > MAX_IMAGE_SIZE:
+                        flash(f"Image '{file.filename}' exceeds the 10MB size limit.", "error")
+                        file.seek(0) # Reset file pointer for next checks
+                        continue
+                    file.seek(0)
+                    
+                    filename = secure_filename(file.filename)
+                    blob_path = f"adverts/{advert_data['user_id']}/images/{filename}"
+                    blob = admin_storage.blob(blob_path)
+                    blob.upload_from_file(file)
+                    image_urls.append(blob_path)
+            
+            # Handle and validate video file
+            if advert_video and is_allowed_video(advert_video.filename):
+                if len(advert_video.read()) > MAX_VIDEO_SIZE:
+                    flash(f"Video '{advert_video.filename}' exceeds the 15MB size limit.", "error")
+                    advert_video.seek(0)
+                else:
+                    advert_video.seek(0)
+                    filename = secure_filename(advert_video.filename)
+                    blob_path = f"adverts/{advert_data['user_id']}/videos/{filename}"
+                    blob = admin_storage.blob(blob_path)
+                    blob.upload_from_file(advert_video)
+                    video_url = blob_path
+            
+            # Your existing Firestore save logic
+            advert_data['images'] = image_urls
+            advert_data['video'] = video_url
+            db.collection('adverts').add(advert_data)
+            
+            flash("Advert posted successfully!", "success")
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            logger.error(f"Error posting advert: {e}", exc_info=True)
+            flash(f"An unexpected error occurred: {str(e)}", "error")
+            return redirect(url_for('add_advert'))
+            
+    # Your GET request logic
+    return render_template('add_advert.html')
+    
 
 @app.route("/sell", methods=["GET", "POST"])
 def sell():
@@ -8343,6 +8455,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
