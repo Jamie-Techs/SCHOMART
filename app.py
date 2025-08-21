@@ -1440,21 +1440,18 @@ FREE_ADVERT_PLAN = {
 
 
 
-
-# app.py (Part to replace)
-
 def get_referral_plan(user_id):
     """
     Fetches the referral benefit plan for a user.
     """
     try:
-        # Use keyword arguments for filters to avoid warnings
+        # Correctly using positional arguments for the where method
         subscriptions_ref = (
             db.collection("subscriptions")
-.where(filter=("user_id", "==", user_id))
-.where(filter=("is_active", "==", True))
-.get()
-)
+            .where("user_id", "==", user_id)
+            .where("is_active", "==", True)
+            .get()
+        )
 
         if subscriptions_ref:
             for doc in subscriptions_ref:
@@ -1463,6 +1460,10 @@ def get_referral_plan(user_id):
                 return plan_data
 
         return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
 
 def get_document(collection_name, doc_id):
     """Fetches a single document from a Firestore collection."""
@@ -7884,6 +7885,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
