@@ -4433,30 +4433,6 @@ def send_notification(user_id, message, notification_type="info"):
 
 
 
-def get_states_from_db():
-    """
-    Fetches all states from the 'states' collection in Firestore.
-    """
-    try:
-        states_ref = db.collection('states').order_by('name').stream()
-        states = [{'id': doc.id, **doc.to_dict()} for doc in states_ref]
-        logging.info(f"{len(states)} states retrieved from the database.")
-        return states
-    except Exception as e:
-        logging.error(f"Firestore error fetching states: {e}", exc_info=True)
-        return []
-
-# --- Flask Context Processor ---
-@app.context_processor
-def inject_utility_functions():
-    """
-    Injects Firestore-based utility functions into templates.
-    """
-    return dict(
-        get_subcategories=get_subcategories_by_category_id,
-        get_locations_by_state=get_locations_by_state_from_db,
-        get_sublocations_for_location=get_sublocations_for_location_from_db
-    )
 
 # --- Flask Routes ---
 @app.route('/adverts')
@@ -4583,96 +4559,6 @@ def resume_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
-# --- Flask Routes (cont.) ---
-@app.route('/verify_referral', methods=['GET', 'POST'])
-def verify_referral():
-    if 'user_id' not in session:
-        flash("You must be logged in to verify your referral.", "warning")
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    user_doc_ref = db.collection('users').document(user_id)
-
-    try:
-        user_doc = user_doc_ref.get()
-        if not user_doc.exists:
-            flash("User not found.", "danger")
-            return redirect(url_for('login'))
-        
-        user_data = user_doc.to_dict()
-
-        if user_data.get('is_referral_verified'):
-            flash("Your device is already verified for referral benefits.", "info")
-            return redirect(url_for('profile'))
-
-        user_ip = request.remote_addr
-
-        # Use a transaction for the update to ensure atomicity
-        transaction = db.transaction()
-        @firestore.transactional
-        def update_user_referral_status(transaction, user_ref, user_ip):
-            transaction.update(user_ref, {
-                'is_referral_verified': True,
-                'last_referral_verification_at': datetime.now(),
-                'last_referral_verification_ip': user_ip
-            })
-        
-        update_user_referral_status(transaction, user_doc_ref, user_ip)
-        
-        flash("Your device has been successfully verified for referral benefits!", "success")
-        return redirect(url_for('profile'))
-
-    except Exception as e:
-        flash(f"An error occurred during referral verification: {e}", "error")
-        logging.error(f"Error during referral verification for user {user_id}: {e}", exc_info=True)
-        return redirect(url_for('profile'))
-
-
-@app.route('/referral-benefit')
-def referral_benefit():
-    if 'user_id' not in session:
-        flash("Please log in to use your referral benefit.", "error")
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    user_referral_count = get_user_referral_count(user_id)
-
-    referral_benefits_list = []
-    try:
-        # Fetch all referral benefits and join with plans in Python
-        referral_benefits_refs = db.collection('referral_benefits').order_by('referral_count').stream()
-        for rb_doc in referral_benefits_refs:
-            rb_data = rb_doc.to_dict()
-            plan_doc = db.collection('plans').document(rb_data.get('plan_id')).get()
-            if plan_doc.exists:
-                plan_data = plan_doc.to_dict()
-                referral_benefits_list.append({
-                    'referral_count': rb_data.get('referral_count'),
-                    'plan_name': plan_data.get('name'),
-                    'max_adverts': plan_data.get('max_adverts'),
-                    'advert_duration_days': plan_data.get('advert_duration_days')
-                })
-    except Exception as e:
-        logging.error(f"Firestore error fetching all referral benefits: {e}", exc_info=True)
-
-    current_benefit = None
-    next_benefit = None
-
-    for benefit in reversed(referral_benefits_list):
-        if user_referral_count >= benefit['referral_count']:
-            current_benefit = benefit
-            break
-            
-    for benefit in referral_benefits_list:
-        if benefit['referral_count'] > user_referral_count:
-            next_benefit = benefit
-            break
-
-    return render_template('referral_benefit.html',
-                           user_referral_count=user_referral_count,
-                           referral_benefits_list=referral_benefits_list,
-                           current_benefit=current_benefit,
-                           next_benefit=next_benefit)
 
 
 
@@ -8003,6 +7889,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
