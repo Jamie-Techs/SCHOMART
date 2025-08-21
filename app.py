@@ -895,9 +895,6 @@ def profile():
         return redirect(url_for('signup'))
 
 
-
-
-
 @app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
@@ -926,9 +923,12 @@ def personal_details():
             first_name = request.form.get('first_name', '')
             last_name = request.form.get('last_name', '')
             businessname = request.form.get('businessname', '')
-            state = request.form.get('state_input', '')
-            school = request.form.get('school_input', '')
-            location = request.form.get('location_input', '')
+            
+            # 🐞 CORRECTED: Use the `name` attributes from the form
+            state = request.form.get('state', '')
+            school = request.form.get('school', '')
+            location = request.form.get('location', '')
+
             birthday = request.form.get('birthday', '')
             sex = request.form.get('sex', '')
             delivery_methods = request.form.getlist('delivery_methods')
@@ -1030,6 +1030,7 @@ def personal_details():
         logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
 
 @app.route('/profile/<username>')
 def profile_by_username(username):
@@ -8394,6 +8395,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
