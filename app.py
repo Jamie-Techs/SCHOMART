@@ -1205,12 +1205,12 @@ def get_firebase_category_url(filename):
 # --- Home Route - Rewritten for Firestore ---
 
 
-
 @app.route('/')
 def home():
     """
     Renders the homepage by fetching data from Firestore and generating
-    signed URLs for both advert and category images from Firebase Storage.
+    signed URLs for advert and category images from Firebase Storage.
+    Includes detailed error logging for debugging.
     """
     try:
         # --- Fetching Static Data: Locations and Categories ---
@@ -1223,21 +1223,31 @@ def home():
             category = doc.to_dict()
             category['id'] = doc.id
             
-            # Construct the exact path in your Firebase Storage bucket.
-            # This assumes filenames match category names (e.g., 'electronics.jpg').
             category_name = category['name'].replace(' ', '_').lower()
             
-            # Try to get .jpg, .jpeg, and .png as fallbacks
             image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
-            blob_found = False
+            
+            # Use a try-except block specifically for the image fetching part
+            # to provide more granular error messages.
+            try:
+                # Try to get .jpg, .jpeg, and .png as fallbacks
+                blob_found = False
+                for extension in ['jpg', 'jpeg', 'png']:
+                    blob_path = f"static/category/{category_name}.{extension}"
+                    
+                    # Log the path being checked for debugging
+                    logger.info(f"Checking for blob at path: {blob_path}")
 
-            for extension in ['jpg', 'jpeg', 'png']:
-                blob_path = f"static/category/{category_name}.{extension}"
-                blob = storage.bucket().blob(blob_path)
-                if blob.exists():
-                    image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-                    blob_found = True
-                    break
+                    blob = storage.bucket().blob(blob_path)
+                    if blob.exists():
+                        image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
+                        blob_found = True
+                        break
+            
+            except Exception as image_e:
+                # Log and set a placeholder URL if an error occurs during image fetching
+                logger.error(f"Error fetching image for category '{category_name}': {image_e}")
+                image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=Error'
             
             category['image_url'] = image_url
             categories_data.append(category)
@@ -1306,15 +1316,9 @@ def home():
                                adverts=adverts)
 
     except Exception as e:
-        logger.error(f"Error fetching homepage data: {e}", exc_info=True)
-        flash("There was an error loading the page. Please try again later.", "danger")
+        logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
+        flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
-
-
-
-
-
-
 
 
 
@@ -8161,6 +8165,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
