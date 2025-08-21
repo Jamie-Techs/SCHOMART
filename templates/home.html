@@ -665,18 +665,20 @@
 </section>
 
 <section class="category-grid container">
-    {% for category in categories %}
-    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
-        <div class="category-box">
-            <img src="{{ get_firebase_category_url(category.name|replace(' ', '_') + '.png') }}"
-                 alt="{{ category.name }}"
-                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
-            <span>{{ category.name }}</span>
-        </div>
-    </a>
-    {% endfor %}
+    <!-- Loop through the categories with the new 'image_url' -->
+    {% for category in categories %}
+    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
+        <div class="category-box">
+            <!-- Use the signed URL directly from the category object -->
+            <img src="{{ category.image_url }}"
+                 alt="{{ category.name }}"
+                 onerror="this.onerror=null; this.src='[https://placehold.co/100x100/e0e0e0/777777?text=No+Image](https://placehold.co/100x100/e0e0e0/777777?text=No+Image)';">
+            <span>{{ category.name }}</span>
+        </div>
+    </a>
+    {% endfor %}
 </section>
-
+    
 <section class="products-section container">
     <h3>Trending Adverts</h3>
     <div class="product-grid">
@@ -917,5 +919,6 @@
 </script>
 </body>
 </html>
+
 
 
