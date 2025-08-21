@@ -1190,30 +1190,77 @@ def view_user_profile(user_id):
                            current_user_id=current_user_id)
 
 
-def get_firebase_category_url(filename):
-    """Generates a public URL for a category icon in Firebase Storage."""
-    bucket = storage.bucket()
-    blob = bucket.blob(f'static/category/{filename}')
+
+
+
+
+def get_user_info(user_id):
+    """Fetches user info from Firestore."""
+    user_doc = db.collection('users').document(user_id).get()
+    return user_doc.to_dict() if user_doc.exists else None
+
+def get_followers_of_user(user_id):
+    """Fetches list of user's followers."""
+    # Placeholder for your actual logic
+    return []
+
+
+@app.route('/add_category', methods=['GET', 'POST'])
+@login_required # Assuming only logged-in users or admins can add categories
+def add_category():
+    """
+    Handles adding a new category and uploading its image to Firebase Storage.
+    """
+    if request.method == 'POST':
+        category_name = request.form.get('category_name')
+        file = request.files.get('category_image')
+
+        if not category_name or not file:
+            flash("Category name and image are required.", "error")
+            return redirect(url_for('add_category'))
+
+        if file.filename == '' or not allowed_file(file.filename):
+            flash("Invalid or missing image file. Please upload a .jpg, .jpeg, or .png file.", "error")
+            return redirect(url_for('add_category'))
+        
+        try:
+            # Sanitize the category name to create a safe filename
+            base_filename = secure_filename(category_name.replace(' ', '_').lower())
+            file_extension = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{base_filename}.{file_extension}"
+            
+            # The path where the file will be stored in your bucket
+            blob_path = f"static/category/{filename}"
+            blob = admin_storage.blob(blob_path)
+            
+            # Upload the file to Firebase Storage
+            blob.upload_from_file(file)
+            
+            # Add or update the category in Firestore
+            db.collection('categories').document(category_name).set({
+                'name': category_name,
+                'image_filename': filename,
+                'created_at': datetime.now(timezone.utc)
+            })
+
+            flash(f"Category '{category_name}' added successfully!", "success")
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            logger.error(f"Error uploading category image: {e}", exc_info=True)
+            flash(f"An error occurred during upload: {str(e)}", "error")
+            return redirect(url_for('add_category'))
     
-    # You can set a long expiration time for static assets like category icons.
-    # The URL will remain valid for the specified duration.
-    url = blob.generate_signed_url(expiration=timedelta(days=365))
-    return url
-
-
-
-# --- Home Route - Rewritten for Firestore ---
+    return render_template('add_category.html')
 
 
 @app.route('/')
 def home():
     """
     Renders the homepage by fetching data from Firestore and generating
-    signed URLs for advert and category images from Firebase Storage.
-    Includes detailed error logging for debugging.
+    signed URLs for both advert and category images from Firebase Storage.
     """
     try:
-        # --- Fetching Static Data: Locations and Categories ---
         locations_ref = db.collection('locations').order_by('name').stream()
         locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
 
@@ -1223,36 +1270,23 @@ def home():
             category = doc.to_dict()
             category['id'] = doc.id
             
-            category_name = category['name'].replace(' ', '_').lower()
-            
+            # Fetch the filename from Firestore, which was saved during upload
+            image_filename = category.get('image_filename')
             image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
             
-            # Use a try-except block specifically for the image fetching part
-            # to provide more granular error messages.
-            try:
-                # Try to get .jpg, .jpeg, and .png as fallbacks
-                blob_found = False
-                for extension in ['jpg', 'jpeg', 'png']:
-                    blob_path = f"static/category/{category_name}.{extension}"
-                    
-                    # Log the path being checked for debugging
-                    logger.info(f"Checking for blob at path: {blob_path}")
-
-                    blob = storage.bucket().blob(blob_path)
-                    if blob.exists():
-                        image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-                        blob_found = True
-                        break
-            
-            except Exception as image_e:
-                # Log and set a placeholder URL if an error occurs during image fetching
-                logger.error(f"Error fetching image for category '{category_name}': {image_e}")
-                image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=Error'
+            if image_filename:
+                # Construct the blob path using the saved filename
+                blob_path = f"static/category/{image_filename}"
+                blob = admin_storage.blob(blob_path)
+                
+                # Check if the blob exists and then generate a signed URL
+                if blob.exists():
+                    image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
             
             category['image_url'] = image_url
             categories_data.append(category)
 
-        # --- Adverts Logic (unchanged) ---
+        # --- Adverts Logic (unchanged from your original code) ---
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -1319,6 +1353,11 @@ def home():
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
+
+
+
+
+                                             
 
 
 
@@ -8165,6 +8204,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
