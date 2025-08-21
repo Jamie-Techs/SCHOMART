@@ -817,20 +817,6 @@ NIGERIAN_SCHOOLS = {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @app.route('/profile')
 @login_required
 def profile():
@@ -1462,13 +1448,20 @@ def get_referral_plan(user_id):
     Fetches the referral benefit plan for a user.
     """
     try:
-        # Use .get() as recommended by the Firestore error.
-        subscriptions_ref = db.collection("subscriptions").where("user_id", "==", user_id).where("is_active", "==", True).get()
+        # Use keyword arguments for filters to avoid warnings
+        subscriptions_ref = (
+            db.collection("subscriptions")
+.where(filter=("user_id", "==", user_id))
+.where(filter=("is_active", "==", True))
+.get()
+)
+
         if subscriptions_ref:
-            # Your existing logic to handle the query results
-            ...
-    except Exception as e:
-        logger.error(f"Error fetching referral benefit plan: {e}", exc_info=True)
+            for doc in subscriptions_ref:
+                plan_data = doc.to_dict()
+                # Do something with plan_data
+                return plan_data
+
         return None
 
 def get_document(collection_name, doc_id):
@@ -2000,7 +1993,9 @@ def sell():
 
 
 
-
+@app.route('/referral-benefit')
+def referral_benefit():
+    return render_template('referral_benefit.html')
 
 
 
@@ -7889,6 +7884,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
