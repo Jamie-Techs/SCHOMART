@@ -1203,19 +1203,45 @@ def get_firebase_category_url(filename):
 
 
 # --- Home Route - Rewritten for Firestore ---
+
+
 @app.route('/')
 def home():
+    """
+    Renders the homepage by fetching data from Firestore and generating
+    signed URLs for both advert and category images from Firebase Storage.
+    """
     try:
         # --- Fetching Static Data: Locations and Categories ---
-        # The equivalent of `SELECT name FROM location ORDER BY name ASC`
         locations_ref = db.collection('locations').order_by('name').stream()
         locations = [{'name': doc.to_dict()['name']} for doc in locations_ref]
 
-        # The equivalent of `get_all_categories_with_subcategories`
         categories_ref = db.collection('categories').stream()
-        categories_data = [doc.to_dict() for doc in categories_ref]
+        categories_data = []
+        for doc in categories_ref:
+            category = doc.to_dict()
+            category['id'] = doc.id  # Add the document ID
+            
+            # Use a try-except block to handle missing category images
+            # Check for different file extensions as a fallback
+            image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
+            
+            # Let's try to get a .jpg image first
+            blob_path = f"categories/{category['name'].replace(' ', '_').lower()}.jpg"
+            blob = storage.bucket().blob(blob_path)
+            if blob.exists():
+                image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
+            else:
+                # If .jpg doesn't exist, try .png
+                blob_path = f"categories/{category['name'].replace(' ', '_').lower()}.png"
+                blob = storage.bucket().blob(blob_path)
+                if blob.exists():
+                    image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
+                
+            category['image_url'] = image_url
+            categories_data.append(category)
 
-        # --- Adverts Logic ---
+        # --- Adverts Logic (unchanged from your original code) ---
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -1226,31 +1252,20 @@ def home():
                 view_following_priority = True
                 followed_user_ids = get_followers_of_user(user_id)
 
-        # Firestore does not support complex ORDER BY clauses like the SQL `CASE` statement.
-        # Instead, we will fetch all published adverts and then sort them in Python.
-        
-        # Define the visibility order for sorting
         visibility_order = {
-            'Ultimate': 1,
-            'Premium': 2,
-            'Top': 3,
-            'High': 4,
-            'Standard': 5
+            'Ultimate': 1, 'Premium': 2, 'Top': 3, 'High': 4, 'Standard': 5
         }
 
-        # Query for all published and non-expired adverts
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
 
-        # Get all published adverts and their associated user data
         for advert_doc in adverts_ref:
             advert_data = advert_doc.to_dict()
             expires_at = advert_data.get('expires_at')
             if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
-                advert_data['id'] = advert_doc.id # Add document ID
+                advert_data['id'] = advert_doc.id
                 
-                # Fetch user data for each advert to get username and role
                 poster_user_ref = db.collection('users').document(advert_data['user_id'])
                 poster_user_doc = poster_user_ref.get()
                 if poster_user_doc.exists:
@@ -1263,13 +1278,10 @@ def home():
                 
                 all_published_adverts.append(advert_data)
 
-        # --- Featured by Admin Ads ---
-        # Filter the fetched data in Python, since we can't do complex `WHERE` clauses in Firestore
         admin_ads_for_display = [
             ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
         ]
 
-        # Sort the admin ads in Python
         def sort_ads_by_visibility_and_date(ad):
             visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
             created_at_dt = ad.get('created_at', datetime.min)
@@ -1277,19 +1289,13 @@ def home():
         
         admin_ads_for_display.sort(key=sort_ads_by_visibility_and_date)
         
-        # --- Trending Adverts ---
-        # Sort the main advert list based on the user's preference
         def sort_trending_ads(ad):
-            # 1. Prioritize adverts from followed users
             is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
-            # 2. Prioritize by visibility level
             visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            # 3. Prioritize by most recent creation date
             created_at_ts = ad.get('created_at', datetime.min).timestamp()
             return (is_followed, visibility_rank, -created_at_ts)
 
         adverts = sorted(all_published_adverts, key=sort_trending_ads)
-        # Limit to the top 20 after sorting
         adverts = adverts[:20]
 
         return render_template('home.html',
@@ -1299,10 +1305,16 @@ def home():
                                adverts=adverts)
 
     except Exception as e:
-        # In a real app, use a proper logger
-        print(f"Error fetching homepage data: {e}")
-        flash("There was an error loading the adverts. Please try again later.", "danger")
+        logger.error(f"Error fetching homepage data: {e}", exc_info=True)
+        flash("There was an error loading the page. Please try again later.", "danger")
         return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
+
+
+
+
+
+
+
 
 
 @app.route('/followers')
@@ -8148,6 +8160,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
