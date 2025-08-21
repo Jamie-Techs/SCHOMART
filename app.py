@@ -210,8 +210,8 @@ def api_signup():
             'last_active': firestore.SERVER_TIMESTAMP,
             'profile_picture': '',
             'cover_photo': '',
-            'state':,
-            'school':,
+            'state': '',
+            'school': '',
             'location': '',
             'first_name': '',
             'last_name': '',
@@ -8394,6 +8394,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
