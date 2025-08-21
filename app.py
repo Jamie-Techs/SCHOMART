@@ -5090,7 +5090,7 @@ def create_advert_db(
             "description": description,
             "price": price,
             "negotiable": negotiable,
-       ⁷    "condition": condition,
+            "condition": condition,
             "location": location_string,
             "main_image": main_img,
             "additional_images": additional_imgs,
@@ -8187,6 +8187,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
