@@ -668,10 +668,9 @@
     {% for category in categories %}
     <a class="category-link" href="{{ url_for('search', category=category.name) }}">
         <div class="category-box">
-            <img src="{{ url_for('static', filename='media/' + category.name|replace(' ', '_') + '.jpg') }}"
-                 alt="{{ category.name }}"
-                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='media/' + category.name|replace(' ', '_') + '.jpeg') }}'; if (this.src === '{{ url_for('static', filename='media/' + category.name|replace(' ', '_') + '.jpeg') }}') this.src='{{ url_for('static', filename='media/' + category.name|replace(' ', '_') + '.png') }}'; if (this.src === '{{ url_for('static', filename='media/' + category.name|replace(' ', '_') + '.png') }}') this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
-
+            <img src="{{ url_for('static', filename='category/' + category.name|replace(' ', '_') + '.png') }}"
+                 alt="{{ category.name }} icon"
+                 onerror="this.onerror=null; this.src='{{ url_for('static', filename='category/default_icon.png') }}';">
             <span>{{ category.name }}</span>
         </div>
     </a>
@@ -918,3 +917,4 @@
 </script>
 </body>
 </html>
+
