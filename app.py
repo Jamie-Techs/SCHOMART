@@ -1780,22 +1780,28 @@ def handle_file_uploads(files, user_id, existing_advert):
 
 
 
-
-
-# The change is here
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required
 def sell():
-    user_data = get_user_data()
-    user_id = user_data.get("id")
-    available_options = get_advert_options(user_id)
+    # Retrieve user_id from the session. The @login_required decorator ensures it exists.
+    user_id = session.get('user_id')
+    if not user_id:
+        # This is a fallback in case the session is unexpectedly empty.
+        flash("You must be logged in to post an advert.", "error")
+        return redirect(url_for('login')) 
+
+    # Correctly call get_user_info with the user_id.
+    user_data = get_user_info(user_id)
+    available_options = get_advert_options(user_id) 
 
     if request.method == 'POST':
         form_data = request.form
         files = request.files
         repost_advert_id = form_data.get('repost_advert_id')
         repost_advert = None
+        # You would need to fetch the existing advert from the database here if repost_advert_id is present.
 
+        # Validate the form data, including the new 'posting_option' check.
         errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
         
         if errors:
@@ -1808,9 +1814,10 @@ def sell():
             selected_plan = next((option for option in available_options if option.get('type') == posting_option_type), None)
 
             if not selected_plan:
-                flash("Invalid posting option selected.", "error")
+                flash("You must select a valid posting option.", "error")
                 return render_sell_page(user_data, available_options, form_data)
 
+            # Handle file uploads and get the URLs.
             main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
             
             advert_data = {
@@ -1850,11 +1857,17 @@ def sell():
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             return render_sell_page(user_data, available_options, form_data)
             
+    # GET request handler
     return render_sell_page(
         user_data=user_data,
         available_options=available_options,
-        form_data=request.form,
+        form_data=request.form, # This will be an empty ImmutableMultiDict for GET requests
     )
+
+
+
+
+
 
 
 
@@ -7750,6 +7763,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
