@@ -1711,6 +1711,7 @@ def validate_sell_form(form_data, files):
     return errors
 
 
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1721,18 +1722,19 @@ def sell(advert_id=None):
     
     advert_data = {}
     is_repost = False
+    
     if advert_id:
         advert_doc = get_document("adverts", advert_id)
-        if advert_doc and advert_doc['user_id'] == user_id:
-            advert_data = advert_doc
-            is_repost = True
-        else:
+        if not advert_doc or advert_doc.get('user_id') != user_id:
             flash("Advert not found or you don't have permission to edit.", "error")
             return redirect(url_for('list_adverts'))
+        
+        advert_data = advert_doc
+        is_repost = True
     
-    form_data = request.form.to_dict() if request.method == 'POST' else advert_data
-
+    # Check if the request is a POST request first
     if request.method == 'POST':
+        form_data = request.form.to_dict()
         files = request.files
         
         errors = validate_sell_form(form_data, files)
@@ -1746,6 +1748,8 @@ def sell(advert_id=None):
         if errors:
             for error_msg in errors:
                 flash(error_msg, 'error')
+            
+            # The function returns a template here, which is correct
             return render_template(
                 "sell.html",
                 user_data=user_data,
@@ -1808,7 +1812,24 @@ def sell(advert_id=None):
         except Exception as e:
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             flash("An unexpected error occurred. Please try again.", "error")
-            return redirect(url_for('sell'))
+            return redirect(url_for('sell')) # Ensure this path has a return
+
+    # This is the return for GET requests, which was missing
+    return render_template(
+        "sell.html",
+        user_data=user_data,
+        categories=get_all_categories(),
+        NIGERIAN_STATES=NIGERIAN_STATES,
+        NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS,
+        available_options=available_options,
+        form_data=form_data,
+        advert_data=advert_data,
+        is_repost=is_repost
+    )
+
+
+
+
 
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
@@ -7594,6 +7615,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
