@@ -250,21 +250,21 @@
                 
                 <div class="form-group">
                     <label for="description"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
-                    <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert.description or '' }}</textarea>
+                    <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
                     <span id="charCount" class="char-count">0/2000</span>
                 </div>
                 
                 <div class="form-group">
                     <label for="price"><i class="fas fa-dollar-sign"></i> Price (₦) <span class="required">*</span>:</label>
-                    <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert.price or '' }}">
+                    <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert_data.price or '' }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="negotiable"><i class="fas fa-handshake"></i> Is the price negotiable?</label>
                     <select id="negotiable" name="negotiable">
                         <option value="">Select</option>
-                        <option value="Yes" {% if (form_data.negotiable == 'Yes') or (advert and advert.negotiable == 'Yes') %}selected{% endif %}>Yes</option>
-                        <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert.negotiable == 'No') %}selected{% endif %}>No</option>
+                        <option value="Yes" {% if (form_data.negotiable == 'Yes') or (advert and advert_data.negotiable == 'Yes') %}selected{% endif %}>Yes</option>
+                        <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert_data.negotiable == 'No') %}selected{% endif %}>No</option>
                     </select>
                 </div>
                 
@@ -272,14 +272,14 @@
                     <label for="condition"><i class="fas fa-box-open"></i> Condition:</label>
                     <select id="condition" name="condition">
                         <option value="">Select condition</option>
-                        <option value="new" {% if (form_data.condition == 'new') or (advert and advert.condition == 'new') %}selected{% endif %}>New</option>
-                        <option value="used" {% if (form_data.condition == 'used') or (advert and advert.condition == 'used') %}selected{% endif %}>Used</option>
+                        <option value="new" {% if (form_data.condition == 'new') or (advert and advert_data.condition == 'new') %}selected{% endif %}>New</option>
+                        <option value="used" {% if (form_data.condition == 'used') or (advert and advert_data.condition == 'used') %}selected{% endif %}>Used</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
-                    <input type="text" name="state" id="state_input" value="{{ form_data.state or advert.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
+                    <input type="text" name="state" id="state_input" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
                     <datalist id="state-list">
                         {% for state in NIGERIAN_STATES %}
                             <option value="{{ state }}">
@@ -289,14 +289,14 @@
 
                 <div class="form-group">
                     <label for="school_input"><i class="fas fa-university"></i> School<span class="required">*</span></label>
-                    <input type="text" name="school" id="school_input" value="{{ form_data.school or advert.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
+                    <input type="text" name="school" id="school_input" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
                     <span id="school_error" class="invalid-feedback"></span>
                     <datalist id="school-list"></datalist>
                 </div>
 
                 <div class="form-group">
                     <label for="location_input"><i class="fas fa-building"></i> Specific Location in School</label>
-                    <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert.specific_location or '' }}" placeholder="Select a school first..." disabled/>
+                    <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
                 </div>
                 
                 <div class="form-group">
