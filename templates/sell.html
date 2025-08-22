@@ -20,13 +20,13 @@
             max-width: 800px;
             margin: 0 auto;
             background: #fff;
-            padding: 2.5rem; /* Increased padding for more space */
-            border-radius: 1rem; /* More rounded corners */
+            padding: 2.5rem;
+            border-radius: 1rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
             position: relative;
         }
         h2 {
-            font-size: 1.75rem; /* Consistent heading size */
+            font-size: 1.75rem;
             font-weight: 700;
             color: #006B3C;
             text-align: center;
@@ -34,24 +34,24 @@
             margin-bottom: 25px;
         }
         .form-group {
-            margin-bottom: 1.5rem; /* Consistent spacing between form groups */
+            margin-bottom: 1.5rem;
         }
         label {
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px; /* Space between icon and text */
+            gap: 10px;
             margin-bottom: 0.5rem;
             color: #4a5568;
         }
         input, select, textarea {
             width: 100%;
-            padding: 0.75rem; /* Consistent padding for all inputs */
-            border-radius: 0.5rem; /* Rounded input fields */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
             border: 1px solid #e2e8f0;
             box-sizing: border-box;
             transition: border-color 0.2s ease-in-out;
-            font-size: 1em; /* Consistent font size */
+            font-size: 1em;
         }
         input[type="file"] {
             padding: 0.5rem;
@@ -66,7 +66,7 @@
             margin-left: 0.25rem;
         }
         .char-count {
-            font-size: 0.8em; /* Slightly smaller for info text */
+            font-size: 0.8em;
             color: #555;
             text-align: right;
             display: block;
@@ -93,7 +93,6 @@
         .form-check-input {
             margin-right: 0.5rem;
         }
-        /* Style for the always-visible advert options info */
         .advert-options-info {
             background-color: #f0f8ff;
             border: 1px solid #cce7ff;
@@ -136,7 +135,6 @@
             border-radius: 5px;
             margin-bottom: 20px;
         }
-        /* All messages have a consistent style now */
         .alert {
             padding: 10px 15px;
             border-radius: 5px;
@@ -216,9 +214,7 @@
 
                 <div class="subscription-info">
                     <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name"></span></p>
-                    <p>Max Adverts: <strong><span id="info-max-adverts">0</span></strong>, Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
-                    <p>Current active adverts: <strong><span id="info-current-adverts">{{ current_adverts_count }}</span></strong></p>
-                    <p>Remaining advert slots: <strong><span id="info-remaining-adverts">0</span></strong></p>
+                    <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
                 </div>
                 
                 {% if advert and is_repost %}
@@ -325,7 +321,8 @@
             </form>
         {% else %}
             <div class="warning-message alert">
-                <p><i class="fas fa-exclamation-triangle"></i> You currently have no available advert posting options. Please use the links above to subscribe or earn referral benefits to post adverts.</p>
+                <p><i class="fas fa-exclamation-triangle"></i> You currently have no available advert posting options. Please use the links below to subscribe or earn referral benefits to post adverts.</p>
+                <a href="{{ url_for('subscribe') }}"><button type="button">Go to Subscriptions</button></a>
             </div>
         {% endif %}
     </div>
@@ -394,43 +391,40 @@
 
         // Function to update the dynamic information box
         function updateSubscriptionInfo(selectedType) {
-            const currentAdvertsCount = {{ current_adverts_count }};
             const selectedOption = availableOptions.find(opt => opt.type === selectedType);
             
             const infoPlanName = document.getElementById('info-plan-name');
-            const infoMaxAdverts = document.getElementById('info-max-adverts');
             const infoDuration = document.getElementById('info-duration');
-            const infoCurrentAdverts = document.getElementById('info-current-adverts');
-            const infoRemainingAdverts = document.getElementById('info-remaining-adverts');
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
 
             if (selectedOption) {
                 infoPlanName.textContent = selectedOption.label;
-                infoMaxAdverts.textContent = selectedOption.max_adverts;
                 infoDuration.textContent = selectedOption.advert_duration_days;
-                infoCurrentAdverts.textContent = currentAdvertsCount;
-                infoRemainingAdverts.textContent = Math.max(0, selectedOption.max_adverts - currentAdvertsCount);
                 infoVisibilityLevel.textContent = selectedOption.visibility_level;
             }
         }
         
         // Client-side file validation functions
         function validateFile(file, maxSizeBytes, allowedMimeTypes, errorElement) {
-            if (!file) return true;
+            if (!file) {
+                if (errorElement) errorElement.textContent = '';
+                return true;
+            }
 
             const sizeInBytes = file.size;
             const fileType = file.type;
 
             if (sizeInBytes > maxSizeBytes) {
-                errorElement.textContent = `File must be less than ${maxSizeBytes / (1024 * 1024)}MB.`;
+                if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes / (1024 * 1024)}MB.`;
                 return false;
             }
             
             if (allowedMimeTypes && !allowedMimeTypes.includes(fileType)) {
-                errorElement.textContent = `Invalid file type. Please upload a valid image file.`;
+                if (errorElement) errorElement.textContent = `Invalid file type. Please upload a valid image file.`;
                 return false;
             }
             
+            if (errorElement) errorElement.textContent = '';
             return true;
         }
 
@@ -489,7 +483,7 @@
             
             // File input validation event listeners
             mainImageInput.addEventListener('change', () => {
-                validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], mainImageError);
+                validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], mainImageError);
             });
             videoInput.addEventListener('change', () => {
                 validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError);
@@ -497,15 +491,11 @@
 
             // Form submission listener for final validation
             form.addEventListener('submit', (event) => {
-                // Ensure all form fields are within the form tag
-                
                 let isValid = true;
 
-                // Validate main image
-                if (mainImageInput.files.length > 0) {
-                    if (!validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], mainImageError)) {
-                        isValid = false;
-                    }
+                // Validate main image (only if a new one is being uploaded)
+                if (mainImageInput.files.length > 0 && !validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], mainImageError)) {
+                    isValid = false;
                 }
                 
                 // Validate additional images count and size
@@ -515,18 +505,16 @@
                 } else {
                     additionalImagesError.textContent = '';
                     for (let i = 0; i < additionalImagesInput.files.length; i++) {
-                        if (!validateFile(additionalImagesInput.files[i], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png'], additionalImagesError)) {
+                        if (!validateFile(additionalImagesInput.files[i], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], additionalImagesError)) {
                             isValid = false;
                             break;
                         }
                     }
                 }
 
-                // Validate video
-                if (videoInput.files.length > 0) {
-                    if (!validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError)) {
-                        isValid = false;
-                    }
+                // Validate video (only if one is being uploaded)
+                if (videoInput.files.length > 0 && !validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError)) {
+                    isValid = false;
                 }
 
                 if (!isValid || !validateSchool()) {
