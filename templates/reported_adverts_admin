@@ -142,8 +142,7 @@
                 <tr>
                     <td>{{ report.report_id }}</td>
                     <td>{{ report.advert_id }}</td>
-                    {# MAKE ADVERT TITLE CLICKABLE TO THE NEW DETAIL PAGE #}
-                    <td><a href="{{ url_for('admin_reported_advert_detail', report_id=report.report_id) }}" target="_blank">{{ report.advert_title }}</a></td>
+                    <td><a href="{{ url_for('reported_advert_details', report_id=report.report_id) }}" target="_blank">{{ report.advert_title }}</a></td>
                     <td>{{ report.reporter_id }}</td>
                     <td><a href="{{ url_for('profile', user_id=report.reporter_id) if report.reporter_id else '#' }}" target="_blank">{{ report.reporter_username }}</a></td>
                     <td>{{ report.reason }}</td>
