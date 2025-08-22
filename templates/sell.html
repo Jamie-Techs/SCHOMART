@@ -156,6 +156,14 @@
             display: block;
             margin-top: 0.25rem;
         }
+        .back-button-top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            color: #006B3C;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -165,7 +173,6 @@
         </a>
         
         <h2><i class="fas fa-bullhorn"></i> Post Your Advert</h2>
-
         {# Flash Messages #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -184,7 +191,6 @@
             {% endif %}
         {% endwith %}
         {# End Flash Messages #}
-
         {# Always visible options for subscriptions and referrals (Moved to top) #}
         <div class="advert-options-info">
             <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
@@ -192,82 +198,85 @@
             <a href="{{ url_for('subscribe') }}"><i class="fas fa-crown"></i> Explore Subscription Plans</a>
             <a href="{{ url_for('referral_benefit') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
-
         {# Main advert posting options and form - only display if options are available #}
         {% if available_options %}
-            <form id="post-advert-form" method="POST" action="{{ url_for('sell') }}" enctype="multipart/form-data">
+            <form id="post-advert-form" method="POST" action="{{ url_for('sell', advert_id=advert.id) if advert else url_for('sell') }}" enctype="multipart/form-data">
+                {{ form.csrf_token }}
                 
-                {# MOVED INTO THE FORM: Advert posting options #}
-                <div class="form-group">
-                    <label><i class="fas fa-check-circle"></i> Choose how to post your advert:</label>
-                    {% for option in available_options %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="posting_option"
-                                   id="{{ option.type }}" value="{{ option.type }}"
-                                   {% if form_data.plan_type and form_data.plan_type|string == option.type|string %}checked{% elif loop.first and not form_data.plan_type %}checked{% endif %}>
-                            <label class="form-check-label" for="{{ option.type }}">
-                                {{ option.label }}
-                            </label>
-                        </div>
-                    {% endfor %}
+                <div class="form-group mb-3">
+                    <label for="posting_option" class="form-label font-weight-bold">Choose your Advert Plan <span class="text-danger">*</span></label>
+                    <select name="posting_option" id="posting_option" class="form-control" required>
+                        <option value="">-- Select a Plan --</option>
+                        {% for option in available_options %}
+                        <option value="{{ option.type }}" data-plan-cost="{{ option.cost_naira | default('Free') }}" data-duration="{{ option.advert_duration_days }}" data-visibility="{{ option.visibility_level }}"
+                            {% if (advert and advert.plan_type|string == option.type|string) or (form_data.posting_option|string == option.type|string) %}selected{% elif loop.first %}selected{% endif %}>
+                            {{ option.label }}
+                            {% if 'cost_naira' in option %}
+                                (₦{{ "{:,.0f}".format(option.cost_naira) }})
+                            {% else %}
+                                ({{ option.cost_description }})
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Select an advert plan to define its duration and visibility.</small>
                 </div>
-
+                
                 <div class="subscription-info">
                     <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name"></span></p>
                     <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
                 </div>
-                
+
                 {% if advert and is_repost %}
                     <input type="hidden" name="repost_advert_id" value="{{ advert.id }}">
                 {% endif %}
-
+                
                 <div class="form-group">
-                    <label for="category" class="form-label">Category</label>
-<select class="form-select form-control" id="category" name="category" required>
-    <option value="">Select Category</option>
-    {% for cat in categories %}
-        <option value="{{ cat.id }}" {% if form_data.category|string == cat.id|string %}selected{% endif %}>
-            {{ cat.name }}
-        </option>
-    {% endfor %}
-</select>
+                    <label for="category" class="form-label"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
+                    <select class="form-select form-control" id="category" name="category" required>
+                        <option value="">Select Category</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if (form_data.category|string == cat.id|string) or (advert and advert.category_id|string == cat.id|string) %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="title"><i class="fas fa-pen-alt"></i> Ad Title <span class="required">*</span>:</label>
                     <input type="text" id="title" name="title" required value="{{ form_data.title or advert.title or '' }}">
                 </div>
-
+                
                 <div class="form-group">
                     <label for="description"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
                     <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert.description or '' }}</textarea>
                     <span id="charCount" class="char-count">0/2000</span>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="price"><i class="fas fa-dollar-sign"></i> Price (₦) <span class="required">*</span>:</label>
                     <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert.price or '' }}">
                 </div>
-
+                
                 <div class="form-group">
                     <label for="negotiable"><i class="fas fa-handshake"></i> Is the price negotiable?</label>
                     <select id="negotiable" name="negotiable">
                         <option value="">Select</option>
-                        <option value="Yes" {% if form_data.negotiable == 'Yes' %}selected{% elif advert and advert.negotiable == 'Yes' %}selected{% endif %}>Yes</option>
-                        <option value="No" {% if form_data.negotiable == 'No' %}selected{% elif advert and advert.negotiable == 'No' %}selected{% endif %}>No</option>
+                        <option value="Yes" {% if (form_data.negotiable == 'Yes') or (advert and advert.negotiable == 'Yes') %}selected{% endif %}>Yes</option>
+                        <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert.negotiable == 'No') %}selected{% endif %}>No</option>
                     </select>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="condition"><i class="fas fa-box-open"></i> Condition:</label>
                     <select id="condition" name="condition">
                         <option value="">Select condition</option>
-                        <option value="new" {% if form_data.condition == 'new' %}selected{% elif advert and advert.condition == 'new' %}selected{% endif %}>New</option>
-                        <option value="used" {% if form_data.condition == 'used' %}selected{% elif advert and advert.condition == 'used' %}selected{% endif %}>Used</option>
+                        <option value="new" {% if (form_data.condition == 'new') or (advert and advert.condition == 'new') %}selected{% endif %}>New</option>
+                        <option value="used" {% if (form_data.condition == 'used') or (advert and advert.condition == 'used') %}selected{% endif %}>Used</option>
                     </select>
                 </div>
-
-                {# NEW LOCATION INPUT FIELDS #}
+                
                 <div class="form-group">
                     <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
                     <input type="text" name="state" id="state_input" value="{{ form_data.state or advert.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
@@ -277,27 +286,29 @@
                         {% endfor %}
                     </datalist>
                 </div>
+
                 <div class="form-group">
                     <label for="school_input"><i class="fas fa-university"></i> School<span class="required">*</span></label>
                     <input type="text" name="school" id="school_input" value="{{ form_data.school or advert.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
                     <span id="school_error" class="invalid-feedback"></span>
                     <datalist id="school-list"></datalist>
                 </div>
-                <div class="form-group">
-                    <label for="location_input"><i class="fas fa-building"></i> Location in School<span class="required">*</span></label>
-                    <input type="text" name="location" id="location_input" value="{{ form_data.specific_location or advert.specific_location or '' }}" placeholder="Select a school first..." disabled/>
-                </div>
-                {# END NEW LOCATION INPUT FIELDS #}
 
+                <div class="form-group">
+                    <label for="location_input"><i class="fas fa-building"></i> Specific Location in School</label>
+                    <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert.specific_location or '' }}" placeholder="Select a school first..." disabled/>
+                </div>
+                
                 <div class="form-group">
                     <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
                     <input type="file" id="mainImage" name="main_image" accept="image/*" {% if not advert %}required{% endif %}>
                     <span id="main-image-error" class="invalid-feedback"></span>
                     {% if advert and advert.main_image %}
                         <p>Current Main Image: <img src="{{ advert.main_image }}" alt="Current Main Image" style="max-width: 100px; max-height: 100px;"></p>
+                        <input type="hidden" name="existing_main_image" value="{{ advert.main_image }}">
                     {% endif %}
                 </div>
-
+                
                 <div class="form-group">
                     <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 3, up to 10MB each):</label>
                     <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple>
@@ -309,7 +320,7 @@
                         {% endfor %}
                     {% endif %}
                 </div>
-
+                
                 <div class="form-group">
                     <label for="video"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
                     <input type="file" id="video" name="video" accept="video/*">
@@ -318,7 +329,7 @@
                         <p>Current Video: <a href="{{ advert.video }}" target="_blank">View Video <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></p>
                     {% endif %}
                 </div>
-
+                
                 <button type="submit"><i class="fas fa-paper-plane"></i> Submit Advert for review</button>
             </form>
         {% else %}
@@ -328,13 +339,14 @@
             </div>
         {% endif %}
     </div>
-
+    
     <script>
         const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
-        const availableOptions = JSON.parse('{{ available_options | tojson | safe }}');
-        
+        const availableOptions = {{ available_options | tojson | safe }};
+
         // Form field references
         const form = document.getElementById('post-advert-form');
+        const postingOptionSelect = document.getElementById('posting_option');
         const stateInput = document.getElementById('state_input');
         const schoolInput = document.getElementById('school_input');
         const locationInput = document.getElementById('location_input');
@@ -363,34 +375,8 @@
             });
             schoolInput.disabled = false;
             schoolInput.placeholder = 'Select from the list or type...';
-        };
-
-        // Function to validate school selection
-        function validateSchool() {
-            const stateValue = stateInput.value.trim();
-            const schoolValue = schoolInput.value.trim();
-            const schoolsForState = (NIGERIAN_SCHOOLS[stateValue] || []).map(s => s.name);
-            
-            if (schoolValue && !schoolsForState.includes(schoolValue)) {
-                schoolInput.classList.add('is-invalid');
-                schoolError.textContent = 'Please select a valid school from the list.';
-                locationInput.disabled = true;
-                return false;
-            } else {
-                schoolInput.classList.remove('is-invalid');
-                schoolError.textContent = '';
-                locationInput.disabled = false;
-                locationInput.placeholder = 'e.g., Faculty of Engineering';
-                return true;
-            }
-        };
-
-        // Function to update character count for description
-        function updateCharCount() {
-            const desc = document.getElementById('description');
-            document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
         }
-
+        
         // Function to update the dynamic information box
         function updateSubscriptionInfo(selectedType) {
             const selectedOption = availableOptions.find(opt => opt.type === selectedType);
@@ -406,133 +392,108 @@
             }
         }
         
+        // Function to update character count for description
+        function updateCharCount() {
+            const desc = document.getElementById('description');
+            document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
+        }
+
         // Client-side file validation functions
-        function validateFile(file, maxSizeBytes, allowedMimeTypes, errorElement) {
+        function validateFile(file, maxSizeBytes, errorElement) {
             if (!file) {
                 if (errorElement) errorElement.textContent = '';
                 return true;
             }
-
+            
             const sizeInBytes = file.size;
-            const fileType = file.type;
+            const sizeInMB = sizeInBytes / (1024 * 1024);
 
-            if (sizeInBytes > maxSizeBytes) {
-                if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes / (1024 * 1024)}MB.`;
+            if (sizeInMB > maxSizeBytes) {
+                if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
                 return false;
             }
             
-            if (allowedMimeTypes && !allowedMimeTypes.includes(fileType)) {
-                if (errorElement) errorElement.textContent = `Invalid file type. Please upload a valid image file.`;
-                return false;
-            }
-            
-            if (errorElement) errorElement.textContent = '';
             return true;
         }
 
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCharCount();
-
-            // Location Logic
-            const currentState = stateInput.value.trim();
-            if (NIGERIAN_SCHOOLS[currentState]) {
-                populateSchools(currentState);
+        // Initial setup and event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial school population if a state is pre-selected
+            if (stateInput.value) {
+                populateSchools(stateInput.value);
             }
-            stateInput.addEventListener('input', () => {
-                const stateValue = stateInput.value.trim();
-                if (NIGERIAN_SCHOOLS[stateValue]) {
-                    populateSchools(stateValue);
-                    schoolInput.value = '';
-                    locationInput.disabled = true;
-                    locationInput.value = '';
-                    locationInput.placeholder = 'Select a school first...';
-                    schoolInput.classList.remove('is-invalid');
-                    schoolError.textContent = '';
-                } else {
-                    schoolInput.disabled = true;
-                    schoolInput.placeholder = 'Select a state from the list.';
-                    schoolDatalist.innerHTML = '';
-                    locationInput.disabled = true;
-                    locationInput.value = '';
-                    locationInput.placeholder = 'Select a school first...';
-                    schoolInput.classList.remove('is-invalid');
-                    schoolError.textContent = '';
-                }
-            });
-            schoolInput.addEventListener('input', validateSchool);
-            
-            // Advert options logic
-            const benefitChoiceRadios = document.querySelectorAll('input[name="posting_option"]');
-            benefitChoiceRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    updateSubscriptionInfo(this.value);
-                });
-            });
 
-            // Set initial selected option
-            const initialSelectedOptionType = document.querySelector('input[name="posting_option"]:checked');
-            if (initialSelectedOptionType) {
-                updateSubscriptionInfo(initialSelectedOptionType.value);
-            } else if (availableOptions.length > 0) {
-                const firstOptionType = availableOptions[0].type;
-                const firstOptionRadio = document.querySelector('input[name="posting_option"][value="' + firstOptionType + '"]');
-                if (firstOptionRadio) {
-                    firstOptionRadio.checked = true;
-                    updateSubscriptionInfo(firstOptionType);
-                }
+            // Update plan info on initial page load
+            const initialPlan = postingOptionSelect.value;
+            if (initialPlan) {
+                updateSubscriptionInfo(initialPlan);
             }
-            
-            // File input validation event listeners
-            mainImageInput.addEventListener('change', () => {
-                validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], mainImageError);
-            });
-            videoInput.addEventListener('change', () => {
-                validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError);
-            });
+        });
 
-            // Form submission listener for final validation
-            form.addEventListener('submit', (event) => {
-                let isValid = true;
+        stateInput.addEventListener('change', function() {
+            const state = this.value;
+            schoolInput.value = ''; // Clear school input when state changes
+            locationInput.value = ''; // Clear location when state changes
+            locationInput.disabled = true;
+            populateSchools(state);
+        });
 
-                // Validate main image (only if a new one is being uploaded)
-                if (mainImageInput.files.length > 0 && !validateFile(mainImageInput.files[0], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], mainImageError)) {
-                    isValid = false;
-                }
-                
-                // Validate additional images count and size
-                if (additionalImagesInput.files.length > MAX_ADDITIONAL_IMAGES) {
-                    additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
-                    isValid = false;
-                } else {
-                    additionalImagesError.textContent = '';
-                    for (let i = 0; i < additionalImagesInput.files.length; i++) {
-                        if (!validateFile(additionalImagesInput.files[i], MAX_IMAGE_SIZE_MB * 1024 * 1024, ['image/jpeg', 'image/png', 'image/jpg'], additionalImagesError)) {
-                            isValid = false;
-                            break;
-                        }
+        schoolInput.addEventListener('change', function() {
+            locationInput.disabled = !this.value;
+            if (this.value) {
+                locationInput.placeholder = 'e.g., Faculty of Engineering';
+            } else {
+                locationInput.placeholder = 'Select a school first...';
+            }
+        });
+
+        postingOptionSelect.addEventListener('change', function() {
+            updateSubscriptionInfo(this.value);
+        });
+
+        // Form submission and file validation
+        form.addEventListener('submit', function(event) {
+            let isValid = true;
+
+            // Validate Main Image
+            const mainImageFile = mainImageInput.files[0];
+            const hasExistingMainImage = document.querySelector('input[name="existing_main_image"]');
+            if (!hasExistingMainImage && !mainImageFile) {
+                mainImageError.textContent = 'A main image is required.';
+                isValid = false;
+            } else if (mainImageFile && !validateFile(mainImageFile, MAX_IMAGE_SIZE_MB, mainImageError)) {
+                isValid = false;
+            } else {
+                mainImageError.textContent = '';
+            }
+
+            // Validate Additional Images
+            const additionalImagesFiles = additionalImagesInput.files;
+            if (additionalImagesFiles.length > MAX_ADDITIONAL_IMAGES) {
+                additionalImagesError.textContent = `You can only upload up to ${MAX_ADDITIONAL_IMAGES} additional images.`;
+                isValid = false;
+            } else {
+                for (let i = 0; i < additionalImagesFiles.length; i++) {
+                    if (!validateFile(additionalImagesFiles[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
+                        isValid = false;
+                        break;
                     }
                 }
+            }
 
-                // Validate video (only if one is being uploaded)
-                if (videoInput.files.length > 0 && !validateFile(videoInput.files[0], MAX_VIDEO_SIZE_MB * 1024 * 1024, ['video/mp4', 'video/mov', 'video/avi'], videoError)) {
-                    isValid = false;
-                }
+            // Validate Video
+            const videoFile = videoInput.files[0];
+            if (videoFile && !validateFile(videoFile, MAX_VIDEO_SIZE_MB, videoError)) {
+                isValid = false;
+            }
 
-                if (!isValid || !validateSchool()) {
-                    event.preventDefault(); // Stop form submission
-                }
-            });
-
-            // Auto-hide flash messages
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                setTimeout(() => {
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500);
-                }, 5000);
-            });
+            if (!isValid) {
+                event.preventDefault();
+            }
         });
+
+        // Initial character count update
+        updateCharCount();
     </script>
 </body>
 </html>
