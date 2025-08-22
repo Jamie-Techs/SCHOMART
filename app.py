@@ -1431,13 +1431,28 @@ REFERRAL_PLANS = {
 FREE_ADVERT_PLAN = {
     "plan_name": "Free Advert",
     "advert_duration_days": 7,
-    "max_adverts": 1,
     "visibility_level": "Standard"
 }
 
 
 
-
+CATEGORIES = {
+    "Accomodations": {"id": 1},
+    "Electronics": {"id": 2},
+    "Employment": {"id": 3},
+    "Equipments": {"id": 4},
+    "Fashion": {"id": 5},
+    "Food & Agriculture": {"id": 6},
+    "Furniture & Appliances": {"id": 7},
+    "Mobile Devices": {"id": 8},
+    "Parenting": {"id": 9},
+    "Pets": {"id": 10},
+    "Real Estate": {"id": 11},
+    "Recreation": {"id": 12},
+    "Services": {"id": 13},
+    "Transportation": {"id": 14},
+    "Wellness": {"id": 15}
+}
 
 
 def get_referral_plan(user_id):
@@ -1524,14 +1539,6 @@ def get_referral_benefit_plan(referral_count):
         return max(eligible_plans, key=lambda p: p['advert_duration_days'])
     return None
 
-def get_all_categories():
-    """Fetches all categories from Firestore."""
-    try:
-        categories_ref = db.collection("categories").order_by("name")
-        return [doc.to_dict() for doc in categories_ref.get()]
-    except Exception as e:
-        logger.error(f"Error fetching categories: {e}")
-    return []
 
 def get_advert_details(advert_id, user_id):
     """Fetches details of a specific advert, ensuring it belongs to the user."""
@@ -1587,415 +1594,343 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
 
 
 
-def create_advert_db(data):
-    """Creates a new advert document in Firestore."""
-    try:
-        required_fields = ["user_id", "category_id", "title", "price", "plan_name"]
-        if not all(field in data for field in required_fields):
-            raise KeyError("One or more required fields are missing.")
 
-        # Get the current time and duration
-        current_time = datetime.now()
-        advert_duration_days = data.get("advert_duration_days")
-        expires_at = None
 
-        if advert_duration_days:
-            try:
-                # Calculate the expiration time
-                expires_at = current_time + timedelta(days=advert_duration_days)
-            except (ValueError, TypeError):
-                # Handle cases where advert_duration_days is invalid
-                logger.error("Invalid advert duration provided.")
-                expires_at = None
 
-        advert_data = {
-            "user_id": data["user_id"],
-            "category_id": int(data["category_id"]),
-            "title": data["title"],
-            "description": data.get("description"),
-            "price": float(data["price"]),
-            "negotiable": data.get("negotiable"),
-            "condition": data.get("condition"),
-            "location": data.get("location"),
-            "main_image": data.get("main_image"),
-            "additional_images": data.get("additional_images", []),
-            "video": data.get("video"),
-            "status": "pending_review",
-            "rejected_reason": None,
-            "subscription_id": data.get("subscription_id"),
-            "subscription_plan_name": data.get("plan_name"),
-            "visibility_level": data.get("visibility_level"),
-            "created_at": current_time,
-            "published_at": None,
-            "expires_at": expires_at,
-            "state": data.get("state"),
-            "school": data.get("school"),
-            "specific_location": data.get("specific_location")
-        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_all_categories():
+    # Placeholder for fetching categories from a database if they are not static
+    categories_list = []
+    for name, data in CATEGORIES.items():
+        categories_list.append({"id": data["id"], "name": name})
+    return categories_list
+
+def get_category_name(category_id):
+    for name, data in CATEGORIES.items():
+        if data["id"] == category_id:
+            return name
+    return "Unknown"
+
+def get_subscription_plan(plan_type):
+    return SUBSCRIPTION_PLANS.get(plan_type)
+
+def get_user_advert_options(user_id):
+    options = []
+    
+    # Add all subscription plans as a permanent option
+    for plan_type, plan_details in SUBSCRIPTION_PLANS.items():
+        options.append({
+            "type": plan_type,
+            "label": f"Subscription: {plan_details['plan_name']}",
+            "plan_name": plan_details['plan_name'],
+            "cost_naira": plan_details['cost_naira'],
+            "advert_duration_days": plan_details['advert_duration_days'],
+            "visibility_level": plan_details['visibility_level'],
+            "cost_description": f"₦{plan_details['cost_naira']}"
+        })
+
+    # Check for one-time free advert benefit.
+    user_info = get_user_info(user_id)
+    if not user_info.get("has_posted_free_ad", False):
+        options.append({
+            "type": "free_advert",
+            "label": f"Free Advert",
+            "plan_name": FREE_ADVERT_PLAN["plan_name"],
+            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
+            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
+            "cost_description": "One-time Free"
+        })
+
+    # Check for referral-based options.
+    referral_count = get_user_referral_count(user_id)
+    for cost, plan_details in REFERRAL_PLANS.items():
+        if referral_count >= cost and not user_info.get(f"used_referral_{cost}_benefit", False):
+            options.append({
+                "type": f"referral_{cost}",
+                "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
+                "plan_name": plan_details['plan_name'],
+                "advert_duration_days": plan_details['advert_duration_days'],
+                "visibility_level": plan_details['visibility_level'],
+                "cost_description": f"{cost} Referrals"
+            })
             
-        doc_ref = db.collection("adverts").document()
-        doc_ref.set(advert_data)
-        logger.info(f"New advert created with ID: {doc_ref.id}")
-        return doc_ref.id
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error creating advert in database. Data integrity issue: {e}", exc_info=True)
-        return None
-    except Exception as e:
-        logger.error(f"An unexpected error occurred while creating an advert: {e}", exc_info=True)
-        return None
+    return options
 
-
-
-def update_advert_db(advert_id, data):
-    """Updates an existing advert document in Firestore."""
-    try:
-        required_fields = ["category_id", "title", "price", "plan_name"]
-        if not all(field in data for field in required_fields):
-            raise KeyError("One or more required fields are missing for the update.")
-            
-        update_data = {
-            "category_id": int(data["category_id"]),
-            "title": data["title"],
-            "description": data.get("description"),
-            "price": float(data["price"]),
-            "negotiable": data.get("negotiable"),
-            "condition": data.get("condition"),
-            "location": data.get("location"),
-            "main_image": data.get("main_image"),
-            "additional_images": data.get("additional_images", []),
-            "video": data.get("video"),
-            "status": "pending_review",
-            "rejected_reason": None,
-            "updated_at": firestore.SERVER_TIMESTAMP,
-            "published_at": None,
-            "expires_at": None,
-            "state": data.get("state"),
-            "school": data.get("school"),
-            "specific_location": data.get("specific_location")
-        }
-        
-        advert_duration_days = data.get("advert_duration_days")
-        if advert_duration_days:
-            update_data["expires_at"] = firestore.SERVER_TIMESTAMP + firestore.timedelta(days=advert_duration_days)
-
-        doc_ref = db.collection("adverts").document(advert_id)
-        doc_ref.update(update_data)
-        logger.info(f"Advert {advert_id} updated successfully.")
-        return True
-    except (KeyError, ValueError, TypeError) as e:
-        logger.error(f"Error updating advert {advert_id}. Data integrity issue: {e}", exc_info=True)
-        return False
-    except Exception as e:
-        logger.error(f"An unexpected error occurred while updating advert {advert_id}: {e}", exc_info=True)
-        return False
-
-
-
-
-def render_sell_page(user_data, available_options, form_data=None, advert=None, is_repost=False, errors=None):
-    """Renders the sell page with all necessary data."""
-    if form_data is None:
-        form_data = {}
-    
-    selected_option_type = form_data.get("posting_option")
-    
-    return render_template(
-        "sell.html",
-        user_data=user_data,
-        categories=get_all_categories(),
-        NIGERIAN_STATES=list(NIGERIAN_SCHOOLS.keys()),
-        NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS,
-        available_options=available_options,
-        current_adverts_count=user_data.get("adverts_count", 0),
-        selected_option_type=selected_option_type,
-        form_data=form_data,
-        advert=advert,
-        is_repost=is_repost,
-        errors=errors
-    )
-
-
-
-
-
-def validate_sell_form(form_data, files, repost_advert_id=None, existing_advert=None):
-    """
-    Validates form data and files, returning a list of errors.
-    
-    Returns: A list of error strings.
-    """
-    errors = []
-    
-    # 1. Required text fields
-    if not form_data.get("category"): errors.append("Category is required.")
-    if not form_data.get("title", "").strip(): errors.append("Ad Title is required.")
-    if not form_data.get("description", "").strip(): errors.append("Ad Description is required.")
-    if not form_data.get("price", "").strip(): errors.append("Price is required.")
-    if not form_data.get("state", "").strip(): errors.append("State selection is required.")
-    if not form_data.get("school", "").strip(): errors.append("School selection is required.")
-    # Add validation for the posting option
-    if not form_data.get("posting_option"): errors.append("You must select a valid posting option.")
-    
-    # 2. Price validation
-    try:
-        price = float(form_data.get("price"))
-        if price < 0:
-            errors.append("Price cannot be negative.")
-    except (ValueError, TypeError):
-        errors.append("Invalid price format.")
-    
-    # 3. Location validation (against hardcoded data)
-    state_value = form_data.get("state", "").strip()
-    school_value = form_data.get("school", "").strip()
-    
-    if state_value not in NIGERIAN_SCHOOLS:
-        errors.append("Please select a valid state from the list.")
-    else:
-        school_names_for_state = [s["name"] for s in NIGERIAN_SCHOOLS.get(state_value, [])]
-        if school_value not in school_names_for_state:
-            errors.append("Please select a valid school from the list.")
-    
-    # 4. File validation
-    main_image = files.get("main_image")
-    
-    if repost_advert_id:
-        if (not main_image or main_image.filename == "") and (not existing_advert or not existing_advert.get('main_image')):
-            errors.append("Main Image is required if not provided previously.")
-    else:
-        if not main_image or main_image.filename == "":
-            errors.append("Main Image is required.")
-            
-    if main_image and main_image.filename and not allowed_file(main_image.filename):
-        errors.append("Main image has an unsupported format.")
-        
-    for img in files.getlist("additional_images"):
-        if img.filename and not allowed_file(img.filename):
-            errors.append(f"Additional image '{img.filename}' has an unsupported format.")
-            break
-            
-    video = files.get("video")
-    if video and video.filename and not allowed_file(video.filename):
-        errors.append("Video file has an unsupported format.")
-        
-    return errors
-
-def handle_file_uploads(files, user_id, existing_advert):
-    """Handles file uploads to Firebase Storage, returning URLs."""
+def handle_file_uploads(files, user_id, existing_advert=None):
     main_img_url = existing_advert.get('main_image') if existing_advert else None
     additional_img_urls = existing_advert.get('additional_images', []) if existing_advert else []
     video_url = existing_advert.get('video') if existing_advert else None
 
-    if files.get('main_image') and files.get('main_image').filename:
-        main_img_url, _ = upload_file_to_firebase(files['main_image'], 'adverts')
+    if files.get('main_image') and files['main_image'].filename:
+        main_img_url, _ = upload_file_to_firebase(files['main_image'], f'adverts/{user_id}/images')
 
-    for img in files.getlist("additional_images"):
-        if img.filename and allowed_file(img.filename):
-            url, _ = upload_file_to_firebase(img, 'adverts')
-            if url:
-                additional_img_urls.append(url)
+    if files.getlist("additional_images"):
+        for img in files.getlist("additional_images"):
+            if img.filename:
+                url, _ = upload_file_to_firebase(img, f'adverts/{user_id}/images')
+                if url:
+                    additional_img_urls.append(url)
     
-    if files.get('video') and files.get('video').filename and allowed_file(files['video'].filename):
-        video_url, _ = upload_file_to_firebase(files['video'], 'adverts/videos')
+    if files.get('video') and files['video'].filename:
+        video_url, _ = upload_file_to_firebase(files['video'], f'adverts/{user_id}/videos')
     
     return main_img_url, additional_img_urls, video_url
 
-
-
-def get_user_advert_options(user_id):
-    """
-    Determines and returns all advert posting options available to a user.
-    """
-    options = []
+def validate_sell_form(form_data, files):
+    errors = []
+    if not form_data.get('title'):
+        errors.append("Advert title is required.")
+    if not form_data.get('category'):
+        errors.append("Category is required.")
+    if not form_data.get('description'):
+        errors.append("Description is required.")
+    if not form_data.get('price'):
+        errors.append("Price is required.")
+    if not form_data.get('state'):
+        errors.append("State is required.")
+    if not form_data.get('school'):
+        errors.append("School is required.")
+    if not files.get('main_image') and not form_data.get('existing_main_image'):
+        errors.append("A main image is required.")
     
-    # Check for an active paid subscription first.
-    active_sub = get_active_subscription(user_id)
-    if active_sub:
-        options.append({
-            "type": "subscription",
-            "label": f"Active Subscription: {active_sub['plan_name']}",
-            "plan_name": active_sub['plan_name'],
-            "advert_duration_days": active_sub['advert_duration_days'],
-            "visibility_level": active_sub['visibility_level']
-        })
-        # If a user has a subscription, this is their only option for the post
-        return options 
-
-    # If no active subscription, check for referral benefits.
-    referral_count = get_user_referral_count(user_id)
-    referral_plan = get_referral_benefit_plan(referral_count)
-    if referral_plan:
-        options.append({
-            "type": "referral",
-            "label": f"Referral Benefit: {referral_plan['plan_name']}",
-            "plan_name": referral_plan['plan_name'],
-            "advert_duration_days": referral_plan['advert_duration_days'],
-            "visibility_level": referral_plan['visibility_level']
-        })
-        # If they have a referral benefit, that's their option.
-        return options 
-
-    # ✅ CORRECTION: If no subscription or referral, check for the one-time free advert.
-    try:
-        # Use a more robust check for existing free adverts.
-        # This query counts the number of adverts with the free plan name.
-        free_advert_posted_ref = (
-            db.collection("adverts")
-            .where("user_id", "==", user_id)
-            .where("plan_name", "==", FREE_ADVERT_PLAN["plan_name"])
-            .stream()
-        )
-        # Convert the generator to a list to check its length
-        free_adverts = list(free_advert_posted_ref)
-        
-        # If the list is empty, the user has not posted a free advert yet.
-        if not free_adverts:
-            options.append({
-                "type": "free_advert",
-                "label": f"Free Advert ({FREE_ADVERT_PLAN['advert_duration_days']} days)",
-                "plan_name": FREE_ADVERT_PLAN['plan_name'],
-                "advert_duration_days": FREE_ADVERT_PLAN['advert_duration_days'],
-                "visibility_level": FREE_ADVERT_PLAN['visibility_level']
-            })
-    except Exception as e:
-        logger.error(f"Error checking for existing free advert for user {user_id}: {e}")
-
-    # If no options are available, return an empty list.
-    return options
-
-
+    return errors
 
 
 @app.route('/sell', methods=['GET', 'POST'])
-@login_required 
-def sell():
-    user_id = session.get('user_id')
-    if not user_id:
-        flash("You must be logged in to post an advert.", "error")
-        return redirect(url_for('login')) 
-
+@app.route('/sell/<advert_id>', methods=['GET', 'POST'])
+@login_required
+def sell(advert_id=None):
+    user_id = current_user.id
     user_data = get_user_info(user_id)
-    available_options = get_user_advert_options(user_id) 
-
-    if request.method == 'GET':
-        if not available_options:
-            flash("You are not currently eligible for an advert post. Please subscribe to a plan.", "info")
-            return redirect(url_for('subscribe'))
-        
-        return render_sell_page(
-            user_data=user_data,
-            available_options=available_options,
-        )
+    available_options = get_user_advert_options(user_id)
+    
+    advert_data = {}
+    is_repost = False
+    if advert_id:
+        advert_doc = get_document("adverts", advert_id)
+        if advert_doc and advert_doc['user_id'] == user_id:
+            advert_data = advert_doc
+            is_repost = True
+        else:
+            flash("Advert not found or you don't have permission to edit.", "error")
+            return redirect(url_for('list_adverts'))
+    
+    form_data = request.form.to_dict() if request.method == 'POST' else advert_data
 
     if request.method == 'POST':
-        form_data = request.form
         files = request.files
-        repost_advert_id = form_data.get('repost_advert_id')
-        repost_advert = None
         
-        errors = {}
+        errors = validate_sell_form(form_data, files)
         
-        # ✅ FINAL CORRECTION: Proper validation for category field
-        category_id_str = form_data.get('category')
-        if not category_id_str:
-            errors['category'] = "Category is required."
-        else:
-            try:
-                category_id = int(category_id_str)
-            except (ValueError, TypeError):
-                errors['category'] = "Invalid category selected."
+        selected_option_type = form_data.get("posting_option")
+        selected_option = next((opt for opt in available_options if opt['type'] == selected_option_type), None)
         
-        # ✅ Other validations
-        title = form_data.get('title')
-        if not title:
-            errors['title'] = "Ad Title is required."
-
-        price_str = form_data.get('price')
-        if not price_str:
-            errors['price'] = "Price is required."
-        else:
-            try:
-                price = float(price_str)
-                if price < 0:
-                    errors['price'] = "Price cannot be negative."
-            except (ValueError, TypeError):
-                errors['price'] = "Invalid price format."
-
-        state = form_data.get('state')
-        school = form_data.get('school')
-        if not state or not school:
-            errors['location'] = "State and School are required."
-
-        main_image_file = files.get('main_image')
-        is_repost = repost_advert_id is not None
-        if not is_repost and not main_image_file:
-            errors['main_image'] = "A main image is required for new adverts."
-        
-        posting_option_type = form_data.get('posting_option')
-        selected_plan = next((option for option in available_options if option.get('type') == posting_option_type), None)
-        if not selected_plan:
-            errors['posting_option'] = "You are not eligible to select this posting option."
-
-        # Aggregate additional errors from your separate validation function
-        external_errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
-        if external_errors:
-            for error in external_errors:
-                flash(f"Error: {error}", "error")
+        if not selected_option:
+            errors.append("Invalid advert plan selected. Please choose a valid plan.")
 
         if errors:
-            for key, msg in errors.items():
-                flash(f"Error in {key.replace('_', ' ').title()}: {msg}", "error")
-            
-            return render_sell_page(
+            for error_msg in errors:
+                flash(error_msg, 'error')
+            return render_template(
+                "sell.html",
                 user_data=user_data,
+                categories=get_all_categories(),
+                NIGERIAN_STATES=NIGERIAN_STATES,
+                NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS,
                 available_options=available_options,
                 form_data=form_data,
-                advert=repost_advert,
-                is_repost=(repost_advert is not None),
+                advert_data=advert_data,
+                is_repost=is_repost,
                 errors=errors
             )
         
         try:
-            main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
+            main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
-            # Use the validated category_id from the form
-            advert_data = {
+            advert_payload = {
                 "user_id": user_id,
-                "category_id": category_id,
-                "title": title,
+                "category_id": int(form_data.get('category')),
+                "title": form_data.get('title'),
                 "description": form_data.get("description"),
-                "price": price,
-                "negotiable": "Yes" if form_data.get("negotiable") == "on" else "No",
+                "price": float(form_data.get('price')),
+                "negotiable": form_data.get("negotiable") == "on",
                 "condition": form_data.get("condition"),
-                "location": f"{get_school_acronym(state, school)}, {form_data.get('specific_location', '')}",
-                "main_image": main_img_url,
-                "additional_images": additional_img_urls,
+                "state": form_data.get('state'),
+                "school": form_data.get('school'),
+                "specific_location": form_data.get("specific_location"),
+                "main_image": main_image_url,
+                "additional_images": additional_images_urls,
                 "video": video_url,
-                "subscription_id": None,
-                "plan_name": selected_plan.get("label"),
-                "advert_duration_days": selected_plan.get("advert_duration_days"),
-                "visibility_level": selected_plan.get("visibility_level"),
-                "state": state,
-                "school": school,
-                "specific_location": form_data.get("specific_location", "")
+                "plan_name": selected_option.get("plan_name"),
+                "advert_duration_days": selected_option.get("advert_duration_days"),
+                "visibility_level": selected_option.get("visibility_level"),
+                "created_at": firestore.SERVER_TIMESTAMP
             }
+
+            is_subscription = "cost_naira" in selected_option
             
-            if is_repost:
-                if update_advert_db(repost_advert_id, advert_data):
-                    flash("Your advert has been successfully resubmitted for review.", "info")
-                    return redirect(url_for("list_adverts"))
+            if is_subscription:
+                advert_payload["status"] = "pending_payment"
+                new_advert_ref = db.collection("adverts").document()
+                new_advert_ref.set(advert_payload)
+                advert_id_for_payment = new_advert_ref.id
+                
+                return redirect(url_for('payment', advert_id=advert_id_for_payment, plan_name=selected_option['plan_name']))
             else:
-                if create_advert_db(advert_data):
-                    flash("Your advert has been successfully submitted for review.", "info")
-                    return redirect(url_for("list_adverts"))
-            
-            flash("Advert submission failed. Please try again.", "error")
-
+                advert_payload["status"] = "pending_review"
+                new_advert_ref = db.collection("adverts").document()
+                new_advert_ref.set(advert_payload)
+                
+                if selected_option_type == "free_advert":
+                    db.collection("users").document(user_id).update({"has_posted_free_ad": True})
+                elif selected_option_type.startswith("referral_"):
+                    cost = int(selected_option_type.split('_')[1])
+                    db.collection("users").document(user_id).update({f"used_referral_{cost}_benefit": True})
+                
+                flash("Your advert has been submitted for review.", "success")
+                return redirect(url_for('list_adverts'))
+        
         except Exception as e:
-            flash(f"An unexpected error occurred: {e}. Please try again.", "error")
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
-            
-        return render_sell_page(user_data, available_options, form_data)
+            flash("An unexpected error occurred. Please try again.", "error")
+            return redirect(url_for('sell'))
 
+@app.route('/payment/<advert_id>', methods=['GET'])
+@login_required
+def payment(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'pending_payment':
+        flash("Invalid payment request.", "error")
+        return redirect(url_for('list_adverts'))
+
+    plan_name = advert.get('plan_name')
+    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
+    if not plan:
+        flash("Invalid subscription plan.", "error")
+        return redirect(url_for('list_adverts'))
+        
+    payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
+    
+    db.collection("adverts").document(advert_id).update({
+        "payment_reference": payment_reference,
+        "payment_status": "awaiting_confirmation",
+        "plan_cost": plan['cost_naira']
+    })
+    
+    account_details = {
+        "account_name": "Your Company Name",
+        "account_number": "1234567890",
+        "bank_name": "Your Bank",
+        "currency": "NGN"
+    }
+
+    return render_template(
+        "payment.html",
+        plan_name=plan_name,
+        amount=plan['cost_naira'],
+        payment_reference=payment_reference,
+        account_details=account_details,
+        advert_id=advert_id
+    )
+
+@app.route('/submit-advert/<advert_id>', methods=['POST'])
+@login_required
+def submit_advert(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'pending_payment':
+        flash("Invalid submission.", "error")
+        return redirect(url_for('list_adverts'))
+    
+    db.collection("adverts").document(advert_id).update({
+        "status": "pending_review",
+        "published_at": firestore.SERVER_TIMESTAMP,
+        "expires_at": firestore.SERVER_TIMESTAMP + timedelta(days=advert.get("advert_duration_days"))
+    })
+    
+    flash("Your advert has been submitted for review. Thank you for your payment!", "success")
+    return redirect(url_for('list_adverts'))
+
+@app.route('/adverts')
+@login_required
+def list_adverts():
+    user_id = current_user.id
+    adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
+    adverts = []
+    
+    for doc in adverts_ref:
+        advert_data = doc.to_dict()
+        advert_data['id'] = doc.id
+        # Assuming get_category_name and other helpers exist to enrich data
+        advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
+        advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
+        
+        if 'created_at' in advert_data and advert_data['created_at']:
+            advert_data['created_at'] = advert_data['created_at'].strftime('%Y-%m-%d %H:%M')
+        else:
+            advert_data['created_at'] = 'N/A'
+            
+        adverts.append(advert_data)
+        
+    return render_template("list_adverts.html", adverts=adverts)
+
+@app.route('/advert/delete/<advert_id>', methods=['POST'])
+@login_required
+def delete_advert(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id:
+        flash("Advert not found or you don't have permission to delete it.", "error")
+    else:
+        db.collection("adverts").document(advert_id).delete()
+        flash("Advert deleted successfully.", "success")
+    return redirect(url_for('list_adverts'))
+
+@app.route('/advert/pause/<advert_id>', methods=['POST'])
+@login_required
+def pause_advert(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'published':
+        flash("Cannot pause this advert.", "error")
+    else:
+        db.collection("adverts").document(advert_id).update({"status": "paused"})
+        flash("Advert paused successfully.", "success")
+    return redirect(url_for('list_adverts'))
+
+@app.route('/advert/resume/<advert_id>', methods=['POST'])
+@login_required
+def resume_advert(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'paused':
+        flash("Cannot resume this advert.", "error")
+    else:
+        db.collection("adverts").document(advert_id).update({"status": "pending_review"})
+        flash("Advert submitted for review. It will be live again shortly.", "success")
+    return redirect(url_for('list_adverts'))
+
+@app.route('/advert/repost/<advert_id>')
+@login_required
+def repost_advert(advert_id):
+    advert = get_document("adverts", advert_id)
+    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'expired':
+        flash("This advert cannot be reposted.", "error")
+        return redirect(url_for('list_adverts'))
+    
+    # Prefill the form with existing advert data
+    return redirect(url_for('sell', advert_id=advert_id))
 
 
 
@@ -7899,6 +7834,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
