@@ -1209,7 +1209,7 @@ def get_followers_of_user(user_id):
 
 @app.route('/add_category', methods=['GET', 'POST'])
 @login_required 
-@admin_required.
+@admin_required
 def add_category():
     """
     Handles adding a new category and uploading its image to Firebase Storage.
@@ -7664,6 +7664,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
