@@ -343,69 +343,57 @@ def api_verify_user():
         return jsonify({'error': 'Failed to update user verification status.'}), 500
 
 
+
+
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
-    Verifies Firebase ID token, fetches user data from Firestore,
-    updates online status, and stores session data for global access.
+    Verifies a Firebase ID token and logs the user into the Flask session
+    using Flask-Login.
     """
     if db is None:
-        logger.error("Firestore admin client is not initialized.")
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
     data = request.get_json()
     id_token = data.get('idToken')
 
     if not id_token:
-        logger.warning("Missing ID token in login request.")
         return jsonify({'error': 'Missing ID token'}), 400
 
     try:
-        # Verify the Firebase ID token
+        # 1. Verify the Firebase ID token for authenticity.
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
 
-        # Fetch user document from Firestore
+        # 2. Fetch the user's data from your Firestore database.
         user_doc = db.collection('users').document(uid).get()
         if not user_doc.exists:
-            logger.warning(f"User data not found in Firestore for UID: {uid}")
             return jsonify({'error': 'User data not found in Firestore'}), 404
 
         user_data = user_doc.to_dict()
 
-        # Update online status
+        # 3. Create a User object from your data.
+        # This assumes your User class is correctly updated to inherit from UserMixin.
+        user_object = User(uid, user_data)
+        
+        # 4. Use Flask-Login to log the user in. This is the crucial step
+        # that creates the session and makes `current_user` available.
+        login_user(user_object)
+
+        # 5. Update user status and return a successful response.
         db.collection('users').document(uid).update({
             'is_online': True,
             'last_online': firestore.SERVER_TIMESTAMP
-})
+        })
+        
+        return jsonify({'message': 'Login successful'}), 200
 
-        # Sanitize user data before storing in session (optional)
-        safe_user_data = {
-            'email': user_data.get('email'),
-            'username': user_data.get('username'),
-            'is_verified': user_data.get('is_verified', False),
-            'created_at_timestamp': user_data.get('created_at_timestamp'),
-            'last_active_timestamp': user_data.get('last_active_timestamp')
-}
-
-        # Store session data
-        session.permanent = True  # Enables session expiration
-        session['user_id'] = uid
-        session['user_data'] = safe_user_data
-
-        logger.info(f"User {uid} logged in successfully.")
-
-        return jsonify({
-            'message': 'Login successful',
-            'uid': uid,
-            'data': safe_user_data
-}), 200
-
-    except Exception as e:
-        logger.error(f"Login verification error: {e}", exc_info=True)
+    except auth.InvalidIdTokenError:
+        return jsonify({'error': 'Invalid ID token'}), 401
+    except Exception:
+        # Catch other potential errors, like network issues or database errors.
         return jsonify({'error': 'Authentication failed.'}), 401
-
-
       
 
 
@@ -499,14 +487,11 @@ def account_settings():
 
 
 
-
-
-
-
 # --- User Model Class ---
-class User:
+class User(UserMixin):
     """
     User data model that retrieves and represents a user from Firestore.
+    Inherits from UserMixin to integrate with Flask-Login.
     """
     def __init__(self, uid, data):
         self.id = str(uid)
@@ -557,8 +542,18 @@ class User:
                 return User(doc.id, doc.to_dict())
             return None
         except Exception as e:
+            # You should import current_app to use this
+            # from flask import current_app 
             current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
+
+    # This method is crucial for Flask-Login to work
+    @property
+    def is_active(self):
+        """
+        Returns True if the user is active, False otherwise.
+        """
+        return True # Assuming all your users are active
 
 
 
@@ -7597,6 +7592,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
