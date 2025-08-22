@@ -2099,6 +2099,182 @@ def reject_advert(advert_id):
 
 
 
+@app.route('/admin/reported_advert/<report_id>')
+@admin_required
+def reported_advert_details(report_id):
+    """
+    Displays detailed information about a single reported advert for admin review.
+    """
+    # 1. Fetch the report document
+    report_doc = db.collection('reports').document(report_id).get()
+    
+    if not report_doc.exists:
+        flash("Report not found.", "error")
+        return redirect(url_for('reported_adverts_admin'))
+
+    report = report_doc.to_dict()
+    report['report_id'] = report_doc.id
+
+    # 2. Fetch the advert and its owner's information
+    advert_id = report.get('advert_id')
+    advert_doc = db.collection('adverts').document(advert_id).get()
+    
+    if advert_doc.exists:
+        advert = advert_doc.to_dict()
+        report['advert_title'] = advert.get('title')
+        report['advert_description'] = advert.get('description')
+        report['advert_price'] = advert.get('price')
+        report['advert_status'] = advert.get('status')
+        report['advert_owner_id'] = advert.get('user_id')
+    else:
+        # Handle cases where the advert was already deleted
+        report['advert_title'] = 'Advert Not Found'
+        report['advert_description'] = 'N/A'
+        report['advert_price'] = 0
+        report['advert_status'] = 'deleted'
+        report['advert_owner_id'] = None
+
+    # 3. Fetch the advert owner's information
+    owner_info = get_user_info(report.get('advert_owner_id'))
+    if owner_info:
+        report['advert_owner_username'] = owner_info.get('username')
+        report['advert_owner_email'] = owner_info.get('email')
+        report['advert_owner_account_status'] = owner_info.get('account_status', 'active')
+    else:
+        report['advert_owner_username'] = 'N/A'
+        report['advert_owner_email'] = 'N/A'
+        report['advert_owner_account_status'] = 'N/A'
+
+    # 4. Fetch the reporter's information
+    reporter_id = report.get('reporter_id')
+    reporter_info = get_user_info(reporter_id)
+    if reporter_info:
+        report['reporter_username'] = reporter_info.get('username')
+        report['reporter_email'] = reporter_info.get('email')
+        report['reporter_account_status'] = reporter_info.get('account_status', 'active')
+    else:
+        report['reporter_username'] = 'N/A'
+        report['reporter_email'] = 'N/A'
+        report['reporter_account_status'] = 'N/A'
+        
+    return render_template('admin_reported_advert_details.html', report=report)
+
+@app.route('/admin/action/mark_resolved/<report_id>', methods=['POST'])
+@admin_required
+def mark_report_resolved(report_id):
+    """Admin action to mark a report as resolved."""
+    report_ref = db.collection('reports').document(report_id)
+    report_doc = report_ref.get()
+
+    if not report_doc.exists:
+        return jsonify({"message": "Report not found."}), 404
+
+    report_ref.update({
+        'status': 'resolved',
+        'resolved_at': firestore.SERVER_TIMESTAMP
+    })
+
+    return jsonify({"message": "Report marked as resolved successfully!"}), 200
+
+
+@app.route('/admin/action/suspend_user/<user_id>', methods=['POST'])
+@admin_required
+def suspend_user_account(user_id):
+    """Admin action to suspend a user's account."""
+    user_ref = db.collection('users').document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return jsonify({"message": "User not found."}), 404
+        
+    user_ref.update({
+        'is_active': False,
+        'account_status': 'suspended'
+    })
+    
+    return jsonify({"message": "User account suspended successfully!"}), 200
+
+
+@app.route('/admin/action/take_down_advert/<advert_id>', methods=['POST'])
+@admin_required
+def take_down_advert(advert_id):
+    """Admin action to take down an advert."""
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists:
+        return jsonify({"message": "Advert not found."}), 404
+
+    advert_ref.update({
+        'status': 'taken_down',
+        'taken_down_at': firestore.SERVER_TIMESTAMP
+    })
+    
+    return jsonify({"message": "Advert taken down successfully!"}), 200
+
+
+
+
+
+
+
+
+@app.route('/admin/reported_adverts')
+@admin_required
+def reported_adverts_admin():
+    """
+    Renders a page with a list of all reported adverts awaiting admin review.
+    """
+    reports_ref = db.collection('reports')
+    
+    # Fetch all reports that are 'pending'
+    # This is the default status for a new report
+    query = reports_ref.where('status', '==', 'pending').stream()
+    
+    reported_adverts = []
+    for doc in query:
+        report = doc.to_dict()
+        report['report_id'] = doc.id
+        
+        # Fetch the advert details
+        advert_doc = db.collection('adverts').document(report.get('advert_id')).get()
+        if advert_doc.exists:
+            advert_data = advert_doc.to_dict()
+            report['advert_title'] = advert_data.get('title', 'N/A')
+            report['advert_owner_id'] = advert_data.get('user_id')
+        else:
+            report['advert_title'] = 'Advert Not Found'
+            report['advert_owner_id'] = None
+
+        # Fetch the reporter's username
+        reporter_info = get_user_info(report.get('reporter_id'))
+        if reporter_info:
+            report['reporter_username'] = reporter_info.get('username', 'N/A')
+        else:
+            report['reporter_username'] = 'N/A'
+            
+        reported_adverts.append(report)
+    
+    return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @app.route('/referral-benefit')
 def referral_benefit():
     return render_template('referral_benefit.html')
@@ -7750,6 +7926,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
