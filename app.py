@@ -1817,7 +1817,8 @@ def get_user_advert_options(user_id):
             "advert_duration_days": active_sub['advert_duration_days'],
             "visibility_level": active_sub['visibility_level']
         })
-        return options  # If a user has a subscription, they can't use other options for this post.
+        # If a user has a subscription, this is their only option for the post
+        return options 
 
     # If no active subscription, check for referral benefits.
     referral_count = get_user_referral_count(user_id)
@@ -1830,17 +1831,24 @@ def get_user_advert_options(user_id):
             "advert_duration_days": referral_plan['advert_duration_days'],
             "visibility_level": referral_plan['visibility_level']
         })
-        return options # If they have a referral benefit, that's their option.
+        # If they have a referral benefit, that's their option.
+        return options 
 
-    # If no subscription or referral benefit, check for the one-time free advert.
+    # ✅ CORRECTION: If no subscription or referral, check for the one-time free advert.
     try:
+        # Use a more robust check for existing free adverts.
+        # This query counts the number of adverts with the free plan name.
         free_advert_posted_ref = (
             db.collection("adverts")
             .where("user_id", "==", user_id)
             .where("plan_name", "==", FREE_ADVERT_PLAN["plan_name"])
-            .limit(1).get()
+            .stream()
         )
-        if not free_advert_posted_ref:
+        # Convert the generator to a list to check its length
+        free_adverts = list(free_advert_posted_ref)
+        
+        # If the list is empty, the user has not posted a free advert yet.
+        if not free_adverts:
             options.append({
                 "type": "free_advert",
                 "label": f"Free Advert ({FREE_ADVERT_PLAN['advert_duration_days']} days)",
@@ -1848,14 +1856,11 @@ def get_user_advert_options(user_id):
                 "advert_duration_days": FREE_ADVERT_PLAN['advert_duration_days'],
                 "visibility_level": FREE_ADVERT_PLAN['visibility_level']
             })
-            return options # They can only use the free advert.
     except Exception as e:
         logger.error(f"Error checking for existing free advert for user {user_id}: {e}")
 
     # If no options are available, return an empty list.
-    return []
-
-
+    return options
 
 
 
@@ -7894,6 +7899,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
