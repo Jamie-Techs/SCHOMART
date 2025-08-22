@@ -175,18 +175,20 @@ def login_with_firebase():
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # First, ensure the user is logged in
         if not current_user.is_authenticated:
-            # If the user is not logged in, redirect to the login page
             flash("Please log in to access this page.", "error")
             return redirect(url_for('login'))
         
-        # Check if the user's role is 'admin'
-        if current_user.role != 'admin':
+        # Now, check if the user has is_admin set to True
+        # Using .get() for safety in case the attribute is missing
+        if not getattr(current_user, 'is_admin', False):
             flash("You do not have permission to access this page.", "error")
-            return redirect(url_for('home'))
+            return redirect(url_for('list_adverts')) # or a suitable landing page
         
         return f(*args, **kwargs)
     return decorated_function
+
 
 
 
@@ -7664,6 +7666,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
