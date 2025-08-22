@@ -78,11 +78,16 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
+
 
 try:
     # Load Firebase credentials from environment
@@ -130,6 +135,37 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
+
+
+
+# This function is required by Flask-Login.
+@login_manager.user_loader
+def load_user(user_id):
+    # This function should load a user from your database
+    # based on their ID.
+    return User.get(user_id) # Replace with your actual user loading logic
+
+# A Flask route to handle the Firebase ID token
+@app.route('/login_with_firebase', methods=['POST'])
+def login_with_firebase():
+    id_token = request.json['idToken']
+    try:
+        # Verify the Firebase ID token
+        decoded_token = auth.verify_id_token(id_token)
+        user_id = decoded_token['uid']
+        
+        # Load the user from your database
+        user = User.get(user_id)
+        if user:
+            # This logs the user into the Flask session
+            login_user(user)
+            return jsonify({'message': 'Login successful'})
+        else:
+            return jsonify({'message': 'User not found'}), 404
+    except ValueError as e:
+        return jsonify({'message': f'Invalid token: {e}'}), 401
+    except Exception as e:
+        return jsonify({'message': 'Authentication failed'}), 500
 
 
 @app.route('/signup')
@@ -7594,6 +7630,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
