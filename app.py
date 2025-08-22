@@ -1862,13 +1862,11 @@ def sell():
     if request.method == 'GET':
         if not available_options:
             flash("You are not currently eligible for an advert post. Please subscribe to a plan.", "info")
-            return redirect(url_for('subscribe')) # Redirect to a specific subscription page
+            return redirect(url_for('subscribe'))
         
-        # This will render the page with the form since there are available options
         return render_sell_page(
             user_data=user_data,
             available_options=available_options,
-            # No form_data on GET request, so it will be empty
         )
 
     if request.method == 'POST':
@@ -1877,11 +1875,9 @@ def sell():
         repost_advert_id = form_data.get('repost_advert_id')
         repost_advert = None
         
-        # --- Start of New Validation Logic ---
-        
-        # Check for required fields with specific error messages
         errors = {}
         
+        # ✅ FIX: Robust validation for category and other inputs
         title = form_data.get('title')
         if not title:
             errors['title'] = "Ad Title is required."
@@ -1891,7 +1887,6 @@ def sell():
             errors['category'] = "Category is required."
         else:
             try:
-                # This conversion is crucial to prevent the error you're seeing
                 category_id = int(category_id_str)
             except (ValueError, TypeError):
                 errors['category'] = "Invalid category selected."
@@ -1913,50 +1908,40 @@ def sell():
             errors['location'] = "State and School are required."
 
         main_image_file = files.get('main_image')
-        # Check if an advert is being reposted (advert will exist) or a new one is being created.
         is_repost = repost_advert_id is not None
         if not is_repost and not main_image_file:
             errors['main_image'] = "A main image is required for new adverts."
         
-        # Check posting option
         posting_option_type = form_data.get('posting_option')
         selected_plan = next((option for option in available_options if option.get('type') == posting_option_type), None)
         if not selected_plan:
             errors['posting_option'] = "You are not eligible to select this posting option."
 
-        # Aggregate additional errors from your separate validation function
-        external_errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
-        if external_errors:
-            # You can decide how to merge these, for now, just flash them.
-            for error in external_errors:
-                flash(error, "error")
-
+        # ✅ Check for any validation errors and re-render the form
         if errors:
-            # Flash all specific errors
             for key, msg in errors.items():
                 flash(f"Error: {msg}", "error")
             
-            # Re-render the page with the user's form data to prevent them from losing their input
             return render_sell_page(
                 user_data=user_data,
                 available_options=available_options,
                 form_data=form_data,
                 advert=repost_advert,
-                is_repost=is_repost,
-                errors=errors  # Pass specific errors to the template for field highlighting
+                is_repost=(repost_advert is not None),
+                errors=errors
             )
         
-        # --- End of New Validation Logic ---
-
+        # If no errors, proceed with processing the form data
         try:
+            # ✅ The category_id and price variables are now guaranteed to be valid integers/floats
             main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
             
             advert_data = {
                 "user_id": user_id,
-                "category_id": category_id,  # Use the validated integer here
+                "category_id": category_id,
                 "title": title,
                 "description": form_data.get("description"),
-                "price": price, # Use the validated float here
+                "price": price,
                 "negotiable": "Yes" if form_data.get("negotiable") == "on" else "No",
                 "condition": form_data.get("condition"),
                 "location": f"{get_school_acronym(state, school)}, {form_data.get('specific_location', '')}",
@@ -7886,6 +7871,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
