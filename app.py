@@ -1712,6 +1712,8 @@ def validate_sell_form(form_data, files):
 
 
 
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1723,17 +1725,24 @@ def sell(advert_id=None):
     advert_data = {}
     is_repost = False
     
+    # Initialize form_data for both GET and POST requests
+    form_data = {}
+
     if advert_id:
         advert_doc = get_document("adverts", advert_id)
+        # Use .get() for safe access to avoid KeyError
         if not advert_doc or advert_doc.get('user_id') != user_id:
             flash("Advert not found or you don't have permission to edit.", "error")
             return redirect(url_for('list_adverts'))
         
         advert_data = advert_doc
         is_repost = True
+        # If editing an existing advert (GET request with advert_id),
+        # populate the form_data with the advert's data.
+        form_data = advert_doc
     
-    # Check if the request is a POST request first
     if request.method == 'POST':
+        # Overwrite form_data with POST data
         form_data = request.form.to_dict()
         files = request.files
         
@@ -1743,13 +1752,14 @@ def sell(advert_id=None):
         selected_option = next((opt for opt in available_options if opt['type'] == selected_option_type), None)
         
         if not selected_option:
+            # Append the error message to the list of errors
             errors.append("Invalid advert plan selected. Please choose a valid plan.")
 
         if errors:
             for error_msg in errors:
                 flash(error_msg, 'error')
             
-            # The function returns a template here, which is correct
+            # Re-render the form with the user's input and errors
             return render_template(
                 "sell.html",
                 user_data=user_data,
@@ -1797,8 +1807,12 @@ def sell(advert_id=None):
                 return redirect(url_for('payment', advert_id=advert_id_for_payment, plan_name=selected_option['plan_name']))
             else:
                 advert_payload["status"] = "pending_review"
-                new_advert_ref = db.collection("adverts").document()
-                new_advert_ref.set(advert_payload)
+                # Use update() if reposting, set() for a new post
+                if is_repost:
+                    db.collection("adverts").document(advert_id).update(advert_payload)
+                else:
+                    new_advert_ref = db.collection("adverts").document()
+                    new_advert_ref.set(advert_payload)
                 
                 if selected_option_type == "free_advert":
                     db.collection("users").document(user_id).update({"has_posted_free_ad": True})
@@ -1812,9 +1826,9 @@ def sell(advert_id=None):
         except Exception as e:
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             flash("An unexpected error occurred. Please try again.", "error")
-            return redirect(url_for('sell')) # Ensure this path has a return
+            return redirect(url_for('sell'))
 
-    # This is the return for GET requests, which was missing
+    # This is the return for GET requests, which was the original missing piece
     return render_template(
         "sell.html",
         user_data=user_data,
@@ -1825,9 +1839,7 @@ def sell(advert_id=None):
         form_data=form_data,
         advert_data=advert_data,
         is_repost=is_repost
-    )
-
-
+)
 
 
 
@@ -7615,6 +7627,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
