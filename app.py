@@ -2258,9 +2258,88 @@ def reported_adverts_admin():
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
 
+@app.route('/admin/post_airtime', methods=['GET', 'POST'])
+@admin_required
+def admin_post_airtime():
+    """
+    Handles the creation of a new airtime post by an admin.
+    """
+    if request.method == 'POST':
+        network = request.form.get('network')
+        amount = request.form.get('amount')
+        digits = request.form.get('digits')
+        instructions = request.form.get('instructions')
+        duration_value = request.form.get('duration_value')
+        duration_unit = request.form.get('duration_unit')
+        
+        # Validation checks
+        if not digits and not 'airtime_image' in request.files:
+            flash("You must provide either the airtime digits or an image.", "error")
+            return redirect(url_for('admin_post_airtime'))
 
+        if not duration_value or not duration_unit:
+            flash("Duration value and unit are required.", "error")
+            return redirect(url_for('admin_post_airtime'))
 
+        # Calculate expiry time based on duration
+        try:
+            duration_value = int(duration_value)
+            now = datetime.datetime.utcnow()
+            if duration_unit == 'seconds':
+                expiry_time = now + datetime.timedelta(seconds=duration_value)
+            elif duration_unit == 'minutes':
+                expiry_time = now + datetime.timedelta(minutes=duration_value)
+            elif duration_unit == 'hours':
+                expiry_time = now + datetime.timedelta(hours=duration_value)
+            elif duration_unit == 'days':
+                expiry_time = now + datetime.timedelta(days=duration_value)
+            else:
+                flash("Invalid duration unit.", "error")
+                return redirect(url_for('admin_post_airtime'))
+        except (ValueError, TypeError):
+            flash("Invalid duration value.", "error")
+            return redirect(url_for('admin_post_airtime'))
 
+        # Handle image upload
+        image_url = None
+        if 'airtime_image' in request.files:
+            file = request.files['airtime_image']
+            if file and file.filename != '':
+                try:
+                    # Generate a unique filename to prevent conflicts
+                    filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4()}_{filename}"
+                    blob = bucket.blob(f"airtime_images/{unique_filename}")
+                    blob.upload_from_file(file, content_type=file.content_type)
+                    
+                    # Make the image publicly accessible
+                    blob.make_public()
+                    image_url = blob.public_url
+                except Exception as e:
+                    flash(f"Error uploading image: {e}", "error")
+                    return redirect(url_for('admin_post_airtime'))
+
+        # Create a new document in the 'airtime_posts' collection
+        new_post_ref = db.collection('airtime_posts').document()
+        
+        post_data = {
+            'network': network,
+            'amount': amount,
+            'digits': digits,
+            'instructions': instructions,
+            'image_url': image_url,
+            'created_at': firestore.SERVER_TIMESTAMP,
+            'expires_at': expiry_time,
+            'is_active': True,
+            'posted_by': g.user['id'] # Assumes g.user is set by the login manager
+        }
+        
+        new_post_ref.set(post_data)
+
+        flash("Airtime post created successfully!", "success")
+        return redirect(url_for('admin_post_airtime'))
+
+    return render_template('admin_post_airtime.html')
 
 
 
@@ -7926,6 +8005,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
