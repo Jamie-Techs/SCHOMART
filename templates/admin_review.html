@@ -126,6 +126,14 @@
         .btn-back-custom i {
             margin-right: .5rem;
         }
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            color: white;
+            padding: 0;
+            margin-left: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -167,8 +175,14 @@
                 {% for advert in adverts %}
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
-                        <div class="card-header bg-primary text-white">
-                            Advert ID: {{ advert.id }} - Status: {{ advert.status.replace('_', ' ').title() }}
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <div>
+                                Advert ID: {{ advert.id }}
+                                <button class="copy-btn" onclick="copyToClipboard('{{ advert.id }}')" title="Copy ID">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <span>Status: {{ advert.status.replace('_', ' ').title() }}</span>
                         </div>
                         <div class="card-body">
                             <h5 class="card-title">{{ advert.title }}</h5>
@@ -224,7 +238,6 @@
                                     {% if advert.rejected_reason %}
                                         <p class="text-muted small mt-2">Reason: {{ advert.rejected_reason }}</p>
                                     {% endif %}
-                                    {# Assuming 'repost_advert' route exists and logic is in place #}
                                     <form action="{{ url_for('repost_advert', advert_id=advert.id) }}" method="GET" class="d-inline mt-2">
                                         <button type="submit" class="btn btn-warning btn-sm">Repost Advert</button>
                                     </form>
@@ -248,8 +261,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
-
+    
     <script>
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Advert ID copied to clipboard!");
+            }).catch(err => {
+                console.error("Failed to copy text: ", err);
+                alert("Failed to copy the Advert ID.");
+            });
+        }
+
+        // Optional: Fade out flash messages after a few seconds
         document.addEventListener('DOMContentLoaded', () => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
