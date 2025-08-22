@@ -140,12 +140,11 @@ def allowed_file(filename):
 
 @login_manager.user_loader
 def load_user(user_id):
-    # This function must return an object that implements the UserMixin interface
-    # or None if the user does not exist.
     user_doc_ref = db.collection('users').document(user_id)
     user_data = user_doc_ref.get().to_dict()
     if user_data:
-        return User(user_id, **user_data) # Assuming you have a User class
+        # Pass the unpacked dictionary
+        return User(user_id, **user_data)
     return None
 
 # A Flask route to handle the Firebase ID token
@@ -487,15 +486,18 @@ def account_settings():
 
 
 
+ 
+
 # --- User Model Class ---
 class User(UserMixin):
     """
     User data model that retrieves and represents a user from Firestore.
     Inherits from UserMixin to integrate with Flask-Login.
     """
-    def __init__(self, uid, data):
+    def __init__(self, uid, **data): # Corrected: Use **data to accept keyword arguments
         self.id = str(uid)
-        self.data = data
+        
+        # Now, populate the attributes directly from the 'data' dictionary
         self.username = data.get('username', '')
         self.email = data.get('email', '')
         self.profile_picture = data.get('profile_picture')
@@ -539,7 +541,8 @@ class User(UserMixin):
             doc_ref = db.collection('users').document(str(uid))
             doc = doc_ref.get()
             if doc.exists:
-                return User(doc.id, doc.to_dict())
+                # Correctly unpack the Firestore data and pass it to the constructor
+                return User(doc.id, **doc.to_dict())
             return None
         except Exception as e:
             # You should import current_app to use this
@@ -547,7 +550,6 @@ class User(UserMixin):
             current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
 
-    # This method is crucial for Flask-Login to work
     @property
     def is_active(self):
         """
@@ -7592,6 +7594,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
