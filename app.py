@@ -1720,7 +1720,7 @@ def validate_sell_form(form_data, files):
 def sell(advert_id=None):
     advert = None
     if advert_id:
-    advert = db.get_advert(advert_id)
+        advert = db.get_advert(advert_id)
     user_id = current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
@@ -7630,6 +7630,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
