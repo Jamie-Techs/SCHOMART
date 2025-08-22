@@ -1696,7 +1696,7 @@ def render_sell_page(user_data, available_options, form_data=None, advert=None, 
         selected_option_type=selected_option_type,
         form_data=form_data,
         advert=advert,
-        is_repost=is_repost,
+        advert=is_repost,
         errors=errors
                     )
 
@@ -7879,6 +7879,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
