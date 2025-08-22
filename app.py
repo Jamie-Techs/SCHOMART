@@ -2008,6 +2008,90 @@ def repost_advert(advert_id):
 
 
 
+@app.route('/admin/adverts/review')
+@admin_required
+def admin_advert_review():
+    """Renders the admin review page with adverts awaiting review."""
+    adverts_ref = db.collection("adverts")
+    
+    # Get adverts with a status of 'pending_review'
+    query = adverts_ref.where("status", "==", "pending_review").stream()
+    
+    pending_adverts = []
+    for doc in query:
+        advert = doc.to_dict()
+        advert['id'] = doc.id
+        
+        # Add a way to get the seller's username and email
+        user_info = get_user_info(advert['user_id'])
+        advert['seller_username'] = user_info.get('username', 'N/A')
+        advert['seller_email'] = user_info.get('email', 'N/A')
+        
+        # Add category name for display
+        advert['category_name'] = get_category_name(advert.get('category_id'))
+        
+        # If there's a duration, calculate a theoretical expiry for display
+        duration_days = advert.get("advert_duration_days")
+        if duration_days and advert.get("created_at"):
+            # Use current time as a baseline for the calculation
+            advert['calculated_expiry'] = datetime.now() + timedelta(days=duration_days)
+        else:
+            advert['calculated_expiry'] = None
+            
+        pending_adverts.append(advert)
+    
+    return render_template('admin_review.html', adverts=pending_adverts)
+
+
+@app.route('/admin/adverts/publish/<advert_id>', methods=['POST'])
+@admin_required
+def publish_advert(advert_id):
+    """Marks an advert as published and sets its publication and expiry dates."""
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert = advert_ref.get().to_dict()
+    
+    if not advert or advert.get('status') != 'pending_review':
+        flash("Invalid advert status. Cannot publish.", "error")
+        return redirect(url_for('admin_advert_review'))
+
+    duration_days = advert.get("advert_duration_days", 0)
+    expires_at = datetime.now() + timedelta(days=duration_days)
+
+    advert_ref.update({
+        "status": "published",
+        "published_at": firestore.SERVER_TIMESTAMP,
+        "expires_at": expires_at
+    })
+    
+    flash("Advert has been successfully published!", "success")
+    return redirect(url_for('admin_advert_review'))
+
+
+@app.route('/admin/adverts/reject/<advert_id>', methods=['POST'])
+@admin_required
+def reject_advert(advert_id):
+    """Marks an advert as rejected and records the reason."""
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert = advert_ref.get().to_dict()
+
+    if not advert or advert.get('status') != 'pending_review':
+        flash("Invalid advert status. Cannot reject.", "error")
+        return redirect(url_for('admin_advert_review'))
+
+    rejected_reason = request.form.get("rejected_reason")
+    
+    advert_ref.update({
+        "status": "rejected",
+        "rejected_at": firestore.SERVER_TIMESTAMP,
+        "rejected_reason": rejected_reason
+    })
+    
+    # Optional: Send a notification to the user about the rejection
+    # e.g., send_rejection_email(advert['user_id'], advert_id, rejected_reason)
+
+    flash("Advert has been successfully rejected.", "success")
+    return redirect(url_for('admin_advert_review'))
+
 
 
 
@@ -7666,6 +7750,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
