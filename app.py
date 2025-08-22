@@ -1833,9 +1833,9 @@ def payment(advert_id):
     })
     
     account_details = {
-        "account_name": "Your Company Name",
-        "account_number": "1234567890",
-        "bank_name": "Your Bank",
+        "account_name": "James Nwoke",
+        "account_number": "2266701415",
+        "bank_name": "ZENITH",
         "currency": "NGN"
     }
 
@@ -4183,32 +4183,7 @@ def admin_adverts_review():
         logging.error(f"Firestore error loading admin adverts review page: {e}", exc_info=True)
         return redirect(url_for('home'))
 
-@app.route('/adverts/repost/<string:advert_id>', methods=['GET'])
-def repost_advert(advert_id):
-    """
-    Redirects to the create advert page, optionally pre-filling with old advert data.
-    Note: advert_id is now treated as a string to match Firestore document IDs.
-    """
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to repost adverts.', 'error')
-        return redirect(url_for('login'))
 
-    try:
-        advert_doc = db.collection('adverts').document(advert_id).get()
-        advert = advert_doc.to_dict() if advert_doc.exists else None
-
-        if not advert or advert.get('user_id') != user_id:
-            flash('Advert not found or you do not have permission to repost it.', 'error')
-            return redirect(url_for('list_adverts'))
-        
-        # ... logic for pre-filling the form with advert data ...
-        # e.g., session['repost_advert_data'] = advert
-        # return redirect(url_for('create_advert_page'))
-    except Exception as e:
-        logging.error(f"Firestore error fetching advert for repost: {e}", exc_info=True)
-        flash('An error occurred while fetching advert details.', 'error')
-        return redirect(url_for('list_adverts'))
 
 def get_user_adverts_count(user_id):
     """
@@ -4227,98 +4202,6 @@ def get_user_adverts_count(user_id):
         logging.error(f"Firestore error fetching user published adverts count for user {user_id}: {e}", exc_info=True)
         return 0
 
-
-def get_advert_details(advert_id, user_id=None):
-    """
-    Fetches an advert's details from Firestore by ID.
-    If user_id is provided, it verifies ownership.
-    """
-    logging.info(f"Getting advert details for advert_id: {advert_id}, user_id: {user_id}")
-    try:
-        advert_doc = db.collection('adverts').document(advert_id).get()
-        
-        if advert_doc.exists:
-            advert_data = advert_doc.to_dict()
-            advert_data['id'] = advert_doc.id # Add the document ID to the dictionary
-            
-            # If a user_id is provided, check for ownership
-            if user_id and advert_data.get('user_id') != user_id:
-                return None
-                
-            return advert_data
-            
-        return None
-    except Exception as e:
-        logging.error(f"Firestore error fetching advert details for {advert_id}: {e}", exc_info=True)
-        return None
-
-# The render_sell_template function is a wrapper and does not require changes itself,
-# but it relies on the refactored helper functions to work correctly.
-
-def update_advert_db(advert_id, user_id, title, description, image_url, status):
-    """
-    Updates an existing advert document in Firestore.
-    """
-    try:
-        # Check if the advert exists and belongs to the user
-        advert_doc_ref = db.collection('adverts').document(advert_id)
-        advert_doc = advert_doc_ref.get()
-        
-        if not advert_doc.exists or advert_doc.to_dict().get('user_id') != user_id:
-            logging.warning(f"Attempted to update advert {advert_id} by unauthorized user {user_id}.")
-            return False
-        
-        update_data = {
-            'title': title,
-            'description': description,
-            'main_image': image_url,
-            'status': status
-        }
-        
-        advert_doc_ref.update(update_data)
-        
-        logging.info(f"Advert ID: {advert_id} updated by user {user_id}.")
-        return True
-    except Exception as e:
-        logging.error(f"Firestore error updating advert {advert_id} for user {user_id}: {e}", exc_info=True)
-        return False
-
-def delete_advert_db(advert_id, user_id):
-    """
-    Deletes an advert document from Firestore.
-    """
-    try:
-        # Check if the advert exists and belongs to the user
-        advert_doc_ref = db.collection('adverts').document(advert_id)
-        advert_doc = advert_doc_ref.get()
-        
-        if not advert_doc.exists or advert_doc.to_dict().get('user_id') != user_id:
-            logging.warning(f"Attempted to delete advert {advert_id} by unauthorized user {user_id}.")
-            return False
-            
-        advert_doc_ref.delete()
-        
-        logging.info(f"Advert ID: {advert_id} deleted by user {user_id}.")
-        return True
-    except Exception as e:
-        logging.error(f"Firestore error deleting advert {advert_id} for user {user_id}: {e}", exc_info=True)
-        return False
-        
-def get_user_adverts(user_id):
-    """
-    Fetches all adverts for a specific user from Firestore.
-    """
-    adverts_list = []
-    try:
-        adverts_ref = db.collection('adverts').where('user_id', '==', user_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
-        adverts_list = [{'id': doc.id, **doc.to_dict()} for doc in adverts_ref]
-        return adverts_list
-    except Exception as e:
-        logging.error(f"Firestore error fetching adverts for user {user_id}: {e}", exc_info=True)
-        return []
-        
-# The send_notification and get_free_advert_plan_details functions do not require changes
-# as they do not interact with the database directly.
 
 
 
@@ -4379,129 +4262,6 @@ def send_notification(user_id, message, notification_type="info"):
 
 
 
-# --- Flask Routes ---
-@app.route('/adverts')
-def list_adverts():
-    """Displays a list of adverts for the logged-in user, showing all statuses."""
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to view your adverts.', 'error')
-        return redirect(url_for('login'))
-
-    adverts = get_user_adverts(user_id) 
-    
-    def sort_key(advert):
-        status = advert.get('status', '')
-        if status == 'rejected':
-            return 0
-        if status == 'pending_review':
-            return 1
-        if status == 'published':
-            return 2
-        return 3
-
-    adverts.sort(key=sort_key)
-
-    return render_template('adverts/list.html', adverts=adverts)
-
-@app.route('/adverts/edit/<string:advert_id>', methods=['GET', 'POST'])
-def edit_advert(advert_id):
-    """Allows a user to edit an existing advert."""
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to edit adverts.', 'error')
-        return redirect(url_for('login'))
-
-    advert = get_advert_details(advert_id, user_id)
-    if not advert:
-        flash('Advert not found or you do not have permission to edit it.', 'error')
-        return redirect(url_for('list_adverts'))
-
-    if advert['status'] in ['deleted', 'expired']:
-        flash('Cannot edit an expired or deleted advert. Please create a new one.', 'warning')
-        return redirect(url_for('list_adverts'))
-
-    if request.method == 'POST':
-        title = request.form.get('title')
-        description = request.form.get('description')
-        # Assuming other fields are also handled
-        
-        if not title or not description:
-            flash('Title and description are required.', 'error')
-            return render_template('sell.html', advert=advert)
-
-        if update_advert_db(advert_id, user_id, title, description, advert['main_image'], advert['status']):
-            flash('Advert updated successfully!', 'success')
-            send_notification(user_id, f"Your advert '{title}' was updated.")
-            return redirect(url_for('list_adverts'))
-        else:
-            flash('Failed to update advert. Please try again.', 'error')
-
-    categories = get_all_categories()
-    subcategories = get_subcategories_by_category_id(advert.get('category_id')) if advert.get('category_id') else []
-    return render_template('sell.html', advert=advert, categories=categories, subcategories=subcategories)
-
-
-@app.route('/adverts/delete/<string:advert_id>', methods=['POST'])
-def delete_advert(advert_id):
-    """Allows a user to delete an advert."""
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to delete adverts.', 'error')
-        return redirect(url_for('login'))
-
-    advert = get_advert_details(advert_id, user_id)
-    if not advert:
-        flash('Advert not found or you do not have permission to delete it.', 'error')
-        return redirect(url_for('list_adverts'))
-
-    if delete_advert_db(advert_id, user_id):
-        flash('Advert deleted successfully!', 'success')
-        send_notification(user_id, f"Your advert '{advert['title']}' was deleted.")
-    else:
-        flash('Failed to delete advert. Please try again.', 'error')
-
-    return redirect(url_for('list_adverts'))
-
-@app.route('/adverts/pause/<string:advert_id>', methods=['POST'])
-def pause_advert(advert_id):
-    """Allows a user to pause a published advert."""
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to manage your adverts.', 'error')
-        return redirect(url_for('login'))
-
-    advert = get_advert_details(advert_id, user_id)
-    if not advert or advert.get('status') != 'published':
-        flash('Advert not found or cannot be paused.', 'error')
-        return redirect(url_for('list_adverts'))
-
-    if update_advert_status(advert_id, 'paused'):
-        flash(f"Advert '{advert['title']}' has been paused.", 'success')
-        send_notification(user_id, f"Your advert '{advert['title']}' was paused.")
-    else:
-        flash('Failed to pause advert. Please try again.', 'error')
-    return redirect(url_for('list_adverts'))
-
-@app.route('/adverts/resume/<string:advert_id>', methods=['POST'])
-def resume_advert(advert_id):
-    """Allows a user to resume a paused advert."""
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login to manage your adverts.', 'error')
-        return redirect(url_for('login'))
-
-    advert = get_advert_details(advert_id, user_id)
-    if not advert or advert.get('status') != 'paused':
-        flash('Advert not found or cannot be resumed.', 'error')
-        return redirect(url_for('list_adverts'))
-
-    if update_advert_status(advert_id, 'published'):
-        flash(f"Advert '{advert['title']}' has been resumed.", 'success')
-        send_notification(user_id, f"Your advert '{advert['title']}' was resumed.")
-    else:
-        flash('Failed to resume advert. Please try again.', 'error')
-    return redirect(url_for('list_adverts'))
 
 
 
@@ -7834,6 +7594,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
