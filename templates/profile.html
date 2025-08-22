@@ -115,39 +115,54 @@
             </div>
 
             <!-- Business & Social Section -->
-            <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
-                <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Business & Social</h3>
-                {% if user.social_links %}
-                    <h4 class="font-semibold mb-2 text-sm">Social Links</h4>
-                    <ul class="list-none p-0 mb-4">
-                        {% for platform, link in user.social_links.items() %}
-                            <li class="mb-1 text-sm"><strong class="font-bold">{{ platform | title }}:</strong> <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline transition-colors duration-200">{{ link }} <i class="fas fa-external-link-alt text-xs ml-1"></i></a></li>
-                        {% endfor %}
-                    </ul>
-                {% else %}<p class="text-sm mb-4">No social links set.</p>{% endif %}
+            
+    <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
+        <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Business & Social</h3>
+        
+        {% if user.social_links %}
+            <h4 class="font-semibold mb-2 text-sm">Social Links</h4>
+            <ul class="list-none p-0 mb-4">
+                {% for platform, link in user.social_links.items() %}
+                    <li class="mb-1 text-sm">
+                        <strong class="font-bold">{{ platform | title }}:</strong> 
+                        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline transition-colors duration-200">
+                            {{ link }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-sm mb-4">No social links set.</p>
+        {% endif %}
 
-                {% if user.working_days %}
-                    <h4 class="font-semibold mb-2 text-sm">Working Hours</h4>
-                    <ul class="list-none p-0 mb-4">
-                        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-                            <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}<p class="text-sm mb-4">No working hours set.</p>{% endif %}
+        <h4 class="font-semibold mb-2 text-sm">Delivery Methods</h4>
+        {% if user.delivery_methods %}
+            <ul class="list-none p-0">
+                {% for method in user.delivery_methods %}
+                    <li class="mb-1 text-sm"><i class="fas fa-check-square text-green-600 mr-2"></i> {{ method }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-sm">No delivery methods set.</p>
+        {% endif %}
+    </div>
 
-                <h4 class="font-semibold mb-2 text-sm">Delivery Methods</h4>
-                {% if user.delivery_methods %}
-                    <ul class="list-none p-0">
-                        {% for method in user.delivery_methods %}
-                            <li class="mb-1 text-sm"><i class="fas fa-check-square text-green-600 mr-2"></i> {{ method }}</li>
-                        {% endfor %}
-                    </ul>
-                {% else %}<p class="text-sm">No delivery methods set.</p>{% endif %}
+    <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
+        <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Working Hours</h3>
 
-                <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-briefcase mr-2"></i> Edit Business & Social</a></p>
-            </div>
-        </main>
+        {% if user.working_days %}
+            <ul class="list-none p-0 mb-4">
+                {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                    <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-sm mb-4">No working hours set.</p>
+        {% endif %}
 
+        <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-briefcase mr-2"></i> Edit Business & Social</a></p>
+    </div>
+</main>
         <!-- Profile Options Grid -->
         <section class="sections-container grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-100">
             <!-- Regular User Options -->
