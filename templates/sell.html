@@ -201,7 +201,7 @@
         {# Main advert posting options and form - only display if options are available #}
         {% if available_options %}
             <form id="post-advert-form" method="POST" action="{{ url_for('sell', advert_id=advert.id) if advert else url_for('sell') }}" enctype="multipart/form-data">
-                {{ form.csrf_token }}
+                
                 
                 <div class="form-group mb-3">
                     <label for="posting_option" class="form-label font-weight-bold">Choose your Advert Plan <span class="text-danger">*</span></label>
