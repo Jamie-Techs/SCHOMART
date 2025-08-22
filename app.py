@@ -1780,17 +1780,38 @@ def handle_file_uploads(files, user_id, existing_advert):
 
 
 
-
-
-
-# This is the new function to determine available advert options for a user.
 def get_user_advert_options(user_id):
     """
     Determines and returns all advert posting options available to a user.
     """
     options = []
     
-    # Check if the user has already posted a free advert.
+    # Check for an active paid subscription first.
+    active_sub = get_active_subscription(user_id)
+    if active_sub:
+        options.append({
+            "type": "subscription",
+            "label": f"Active Subscription: {active_sub['plan_name']}",
+            "plan_name": active_sub['plan_name'],
+            "advert_duration_days": active_sub['advert_duration_days'],
+            "visibility_level": active_sub['visibility_level']
+        })
+        return options  # If a user has a subscription, they can't use other options for this post.
+
+    # If no active subscription, check for referral benefits.
+    referral_count = get_user_referral_count(user_id)
+    referral_plan = get_referral_benefit_plan(referral_count)
+    if referral_plan:
+        options.append({
+            "type": "referral",
+            "label": f"Referral Benefit: {referral_plan['plan_name']}",
+            "plan_name": referral_plan['plan_name'],
+            "advert_duration_days": referral_plan['advert_duration_days'],
+            "visibility_level": referral_plan['visibility_level']
+        })
+        return options # If they have a referral benefit, that's their option.
+
+    # If no subscription or referral benefit, check for the one-time free advert.
     try:
         free_advert_posted_ref = (
             db.collection("adverts")
@@ -1806,71 +1827,53 @@ def get_user_advert_options(user_id):
                 "advert_duration_days": FREE_ADVERT_PLAN['advert_duration_days'],
                 "visibility_level": FREE_ADVERT_PLAN['visibility_level']
             })
+            return options # They can only use the free advert.
     except Exception as e:
         logger.error(f"Error checking for existing free advert for user {user_id}: {e}")
 
-    # Add the referral plan benefit if the user has one.
-    referral_count = get_user_referral_count(user_id)
-    referral_plan = get_referral_benefit_plan(referral_count)
-    if referral_plan:
-        options.append({
-            "type": "referral",
-            "label": f"Referral Benefit: {referral_plan['plan_name']}",
-            "plan_name": referral_plan['plan_name'],
-            "advert_duration_days": referral_plan['advert_duration_days'],
-            "visibility_level": referral_plan['visibility_level']
-        })
+    # If no options are available, return an empty list.
+    return []
 
-    # Add all paid subscription options.
-    for key, plan in SUBSCRIPTION_PLANS.items():
-        options.append({
-            "type": key,
-            "label": f"{plan['plan_name']} (₦{plan['cost_naira']})",
-            "plan_name": plan['plan_name'],
-            "advert_duration_days": plan['advert_duration_days'],
-            "visibility_level": plan['visibility_level']
-        })
-        
-    return options
+
+
 
 @app.route('/sell', methods=['GET', 'POST'])
-# Assuming you have a login_required decorator
-# @login_required 
+@login_required 
 def sell():
-    # Retrieve user_id from the session.
     user_id = session.get('user_id')
     if not user_id:
         flash("You must be logged in to post an advert.", "error")
         return redirect(url_for('login')) 
 
-    # Correctly call the function to get user info.
     user_data = get_user_info(user_id)
-    # Use the new function to get available advert options.
     available_options = get_user_advert_options(user_id) 
+
+    if not available_options and request.method == 'GET':
+        flash("You are not currently eligible for an advert post. Please subscribe to a plan.", "info")
+        return render_template("subscribe.html", user_data=user_data, plans=SUBSCRIPTION_PLANS)
 
     if request.method == 'POST':
         form_data = request.form
         files = request.files
         repost_advert_id = form_data.get('repost_advert_id')
         repost_advert = None
-        
-        # Validate the form data, including the 'posting_option' check.
+
+        posting_option_type = form_data.get('posting_option')
+        selected_plan = next((option for option in available_options if option.get('type') == posting_option_type), None)
+
+        if not selected_plan:
+            flash("You are not eligible to select this posting option. Please try again or subscribe.", "error")
+            return redirect(url_for('sell'))
+
+        # This will be handled by a separate function
+        # Errors will be handled by the validate function
         errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
-        
         if errors:
             for error in errors:
                 flash(error, "error")
             return render_sell_page(user_data, available_options, form_data, repost_advert, (repost_advert is not None), errors)
 
         try:
-            posting_option_type = form_data.get('posting_option')
-            selected_plan = next((option for option in available_options if option.get('type') == posting_option_type), None)
-
-            if not selected_plan:
-                flash("You must select a valid posting option.", "error")
-                return render_sell_page(user_data, available_options, form_data)
-
-            # Handle file uploads and get the URLs.
             main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
             
             advert_data = {
@@ -1878,7 +1881,7 @@ def sell():
                 "category_id": int(form_data["category"]),
                 "title": form_data["title"],
                 "description": form_data["description"],
-                "price": float(form_data["price"]), # Correctly convert to float here
+                "price": float(form_data["price"]),
                 "negotiable": "Yes" if form_data.get("negotiable") == "on" else "No",
                 "condition": form_data.get("condition"),
                 "location": f"{get_school_acronym(form_data['state'], form_data['school'])}, {form_data['specific_location']}",
@@ -1916,6 +1919,11 @@ def sell():
         available_options=available_options,
         form_data=request.form,
     )
+
+
+
+
+
 
 
 
@@ -7810,6 +7818,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
