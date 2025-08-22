@@ -1693,12 +1693,21 @@ def handle_file_uploads(files, user_id, existing_advert=None):
 
 
 
+
 def validate_sell_form(form_data, files):
     errors = []
     if not form_data.get('title'):
         errors.append("Advert title is required.")
-    if not form_data.get('category'): # This line is the cause of the error.
+
+    category_name = form_data.get('category')
+    if not category_name:
         errors.append("Category is required.")
+    else:
+        # This checks if the submitted category name exists in your CATEGORIES data
+        category_id = get_category_id_from_name(category_name)
+        if not category_id:
+            errors.append("Invalid category selected. Please choose from the list.")
+
     if not form_data.get('description'):
         errors.append("Description is required.")
     if not form_data.get('price'):
@@ -1711,6 +1720,7 @@ def validate_sell_form(form_data, files):
         errors.append("A main image is required.")
     
     return errors
+
 
 
 
@@ -1779,9 +1789,14 @@ def sell(advert_id=None):
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
+            # --- START of the updated section ---
+            # Get the category ID from the submitted category name
+            category_name = form_data.get('category')
+            category_id = get_category_id_from_name(category_name)
+
             advert_payload = {
                 "user_id": user_id,
-                "category_id": int(form_data.get('category')),
+                "category_id": category_id, # Use the new category_id here
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
                 "price": float(form_data.get('price')),
@@ -1798,6 +1813,7 @@ def sell(advert_id=None):
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP
             }
+            # --- END of the updated section ---
 
             is_subscription = "cost_naira" in selected_option
             
@@ -1843,6 +1859,7 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
 )
+
 
 
 
@@ -7630,6 +7647,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
