@@ -1780,28 +1780,81 @@ def handle_file_uploads(files, user_id, existing_advert):
 
 
 
+
+
+
+# This is the new function to determine available advert options for a user.
+def get_user_advert_options(user_id):
+    """
+    Determines and returns all advert posting options available to a user.
+    """
+    options = []
+    
+    # Check if the user has already posted a free advert.
+    try:
+        free_advert_posted_ref = (
+            db.collection("adverts")
+            .where("user_id", "==", user_id)
+            .where("plan_name", "==", FREE_ADVERT_PLAN["plan_name"])
+            .limit(1).get()
+        )
+        if not free_advert_posted_ref:
+            options.append({
+                "type": "free_advert",
+                "label": f"Free Advert ({FREE_ADVERT_PLAN['advert_duration_days']} days)",
+                "plan_name": FREE_ADVERT_PLAN['plan_name'],
+                "advert_duration_days": FREE_ADVERT_PLAN['advert_duration_days'],
+                "visibility_level": FREE_ADVERT_PLAN['visibility_level']
+            })
+    except Exception as e:
+        logger.error(f"Error checking for existing free advert for user {user_id}: {e}")
+
+    # Add the referral plan benefit if the user has one.
+    referral_count = get_user_referral_count(user_id)
+    referral_plan = get_referral_benefit_plan(referral_count)
+    if referral_plan:
+        options.append({
+            "type": "referral",
+            "label": f"Referral Benefit: {referral_plan['plan_name']}",
+            "plan_name": referral_plan['plan_name'],
+            "advert_duration_days": referral_plan['advert_duration_days'],
+            "visibility_level": referral_plan['visibility_level']
+        })
+
+    # Add all paid subscription options.
+    for key, plan in SUBSCRIPTION_PLANS.items():
+        options.append({
+            "type": key,
+            "label": f"{plan['plan_name']} (₦{plan['cost_naira']})",
+            "plan_name": plan['plan_name'],
+            "advert_duration_days": plan['advert_duration_days'],
+            "visibility_level": plan['visibility_level']
+        })
+        
+    return options
+
 @app.route('/sell', methods=['GET', 'POST'])
-@login_required
+# Assuming you have a login_required decorator
+# @login_required 
 def sell():
-    # Retrieve user_id from the session. The @login_required decorator ensures it exists.
+    # Retrieve user_id from the session.
     user_id = session.get('user_id')
     if not user_id:
-        # This is a fallback in case the session is unexpectedly empty.
         flash("You must be logged in to post an advert.", "error")
         return redirect(url_for('login')) 
 
-    # Correctly call get_user_info with the user_id.
+    # Correctly call the function to get user info.
     user_data = get_user_info(user_id)
-    available_options = get_advert_options(user_id) 
+    # Use the new function to get available advert options.
+    available_options = get_user_advert_options(user_id) 
 
     if request.method == 'POST':
         form_data = request.form
         files = request.files
         repost_advert_id = form_data.get('repost_advert_id')
         repost_advert = None
-        # You would need to fetch the existing advert from the database here if repost_advert_id is present.
-
-        # Validate the form data, including the new 'posting_option' check.
+        
+        # Validate the form data, including the 'posting_option' check.
         errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
         
         if errors:
@@ -1825,7 +1878,7 @@ def sell():
                 "category_id": int(form_data["category"]),
                 "title": form_data["title"],
                 "description": form_data["description"],
-                "price": form_data["price"],
+                "price": float(form_data["price"]), # Correctly convert to float here
                 "negotiable": "Yes" if form_data.get("negotiable") == "on" else "No",
                 "condition": form_data.get("condition"),
                 "location": f"{get_school_acronym(form_data['state'], form_data['school'])}, {form_data['specific_location']}",
@@ -1857,18 +1910,12 @@ def sell():
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             return render_sell_page(user_data, available_options, form_data)
             
-    # GET request handler
+    # GET request handler.
     return render_sell_page(
         user_data=user_data,
         available_options=available_options,
-        form_data=request.form, # This will be an empty ImmutableMultiDict for GET requests
+        form_data=request.form,
     )
-
-
-
-
-
-
 
 
 
@@ -7763,6 +7810,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
