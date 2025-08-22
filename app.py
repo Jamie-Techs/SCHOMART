@@ -1848,6 +1848,8 @@ def get_user_advert_options(user_id):
 
 
 
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required 
 def sell():
@@ -1877,7 +1879,7 @@ def sell():
         
         errors = {}
         
-        # ✅ FIX: Robust validation for category and other inputs
+        # ✅ Updated: Validate and provide specific error messages
         title = form_data.get('title')
         if not title:
             errors['title'] = "Ad Title is required."
@@ -1917,10 +1919,15 @@ def sell():
         if not selected_plan:
             errors['posting_option'] = "You are not eligible to select this posting option."
 
-        # ✅ Check for any validation errors and re-render the form
+        # Aggregate additional errors from your separate validation function
+        external_errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
+        if external_errors:
+            for error in external_errors:
+                flash(f"Error: {error}", "error")
+
         if errors:
             for key, msg in errors.items():
-                flash(f"Error: {msg}", "error")
+                flash(f"Error in {key.replace('_', ' ').title()}: {msg}", "error")
             
             return render_sell_page(
                 user_data=user_data,
@@ -1931,9 +1938,7 @@ def sell():
                 errors=errors
             )
         
-        # If no errors, proceed with processing the form data
         try:
-            # ✅ The category_id and price variables are now guaranteed to be valid integers/floats
             main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
             
             advert_data = {
@@ -1973,6 +1978,8 @@ def sell():
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             
         return render_sell_page(user_data, available_options, form_data)
+
+
 
 
 
@@ -7871,6 +7878,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
