@@ -5379,16 +5379,6 @@ def report_advert(advert_id):
 
 
 
-def get_user_adverts_count(user_id):
-    """Count the number of active adverts for a user."""
-    try:
-        # 'status' is now a field in the advert document
-        adverts_ref = db.collection("adverts").where("user_id", "==", user_id).where("status", "==", "active")
-        adverts_count = len(adverts_ref.stream())
-        return adverts_count
-    except Exception as e:
-        logger.error(f"Error counting adverts for user {user_id}: {e}")
-        return 0
 
 
 
@@ -5396,51 +5386,6 @@ def get_user_adverts_count(user_id):
  
 
 
-
-
-
-
-def get_media_type_from_extension(file_path):
-    # This function is already database-agnostic and does not need changes.
-    if not file_path:
-        return 'text'
-
-    if file_path.startswith(('http://', 'https://')):
-        extension = os.path.splitext(urlparse(file_path).path)[1].lower()
-    else:
-        extension = os.path.splitext(file_path)[1].lower()
-
-    if extension in ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'):
-        return 'image'
-    elif extension in ('.mp4', '.webm', '.ogg', '.avi', '.mov', '.flv'):
-        return 'video'
-    elif extension in ('.mp3', '.wav', '.ogg', '.aac', '.flac'):
-        return 'audio'
-    elif extension in ('.pdf', '.doc', '.docx', '.txt', '.ppt', '.pptx', '.xls', '.xlsx', '.zip', '.rar'):
-        return 'document'
-    else:
-        return 'other'
-
-def get_current_user_id():
-    # This function is fine as it relies on the Flask session object.
-    from flask import session # Assuming Flask is being used
-    return session.get('user_id')
-
-def get_current_username():
-    # This function is fine as it relies on the Flask session object.
-    from flask import session
-    return session.get('username', 'Anonymous')
-
-def get_user_role(user_id):
-    """Fetches the role of a user from the 'users' collection."""
-    if not user_id:
-        return None
-    user_doc = get_document("users", user_id)
-    return user_doc.get('role') if user_doc else None
-
-def is_admin(user_id):
-    """Checks if a user is an admin."""
-    return get_user_role(user_id) == 'admin'
 
 
 def get_user_profile_info_by_username(username):
@@ -5472,6 +5417,9 @@ def get_user_profile_info(user_id):
             'profile_picture_url': user_doc.get('profile_picture', '/static/default_avatar.png')
         }
     return {'username': 'Unknown User', 'profile_picture_url': '/static/default_avatar.png'}
+        
+
+
 
 
 def get_user_followers_count(user_id):
@@ -7133,160 +7081,6 @@ def api_calculate_cgpa():
 
 
 
-@app.route('/admin/post-airtime', methods=['GET', 'POST'])
-def admin_post_airtime():
-    if 'loggedin' not in session or 'user_id' not in session:
-        flash('You need to be logged in to access this page.', 'error')
-        return redirect(url_for('login'))
-
-    if session.get('role') != 'admin':
-        flash('You do not have permission to access this page.', 'error')
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        network = request.form.get('network')
-        amount_raw = request.form.get('amount')
-        digits = request.form.get('digits')
-        instructions = request.form.get('instructions')
-        duration_value = request.form.get('duration_value', type=int)
-        duration_unit = request.form.get('duration_unit')
-
-        # --- Input Validation and Cleaning ---
-        amount = None
-        if amount_raw:
-            cleaned_amount = re.sub(r'[^\d]', '', amount_raw)
-            if cleaned_amount.isdigit():
-                amount = int(cleaned_amount)
-            else:
-                flash('Invalid amount format. Please enter numbers only (e.g., 500, 1000).', 'error')
-                return render_template('admin_post_airtime.html')
-
-        cleaned_digits = None
-        if digits:
-            cleaned_digits = re.sub(r'[^\d]', '', digits)
-            if not cleaned_digits.isdigit():
-                flash('Airtime Digits must contain only numbers if provided.', 'error')
-                return render_template('admin_post_airtime.html')
-
-        if not duration_value or not duration_unit:
-            flash('Duration Value and Duration Unit are required.', 'error')
-            return render_template('admin_post_airtime.html')
-
-        # Calculate expires_at
-        expires_at = datetime.now(UTC)
-        if duration_unit == 'seconds':
-            expires_at += timedelta(seconds=duration_value)
-        elif duration_unit == 'minutes':
-            expires_at += timedelta(minutes=duration_value)
-        elif duration_unit == 'hours':
-            expires_at += timedelta(hours=duration_value)
-        elif duration_unit == 'days':
-            expires_at += timedelta(days=duration_value)
-        else:
-            flash('Invalid duration unit provided.', 'error')
-            return render_template('admin_post_airtime.html')
-
-        image_url = None
-        if 'airtime_image' in request.files:
-            file = request.files['airtime_image']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
-                image_url = url_for('static', filename=f'uploads/{filename}')
-
-        # --- Firestore database interaction ---
-        try:
-            airtime_post_data = {
-                'network': network,
-                'amount': amount,
-                'digits': cleaned_digits,
-                'instructions': instructions,
-                'image_url': image_url,
-                'created_at': firestore.SERVER_TIMESTAMP,
-                'expires_at': expires_at
-            }
-            db.collection('airtime_post').add(airtime_post_data)
-
-            flash('Airtime post created successfully!', 'success')
-            return redirect(url_for('home'))
-        except Exception as e:
-            flash(f'Error creating airtime post: {str(e)}', 'error')
-            logger.error(f"Error posting airtime: {e}")
-            return render_template('admin_post_airtime.html')
-
-    return render_template('admin_post_airtime.html')
-
-
-# --- API Route to Fetch Active Airtime Posts (MODIFIED) ---
-# --- API Route to Fetch Active Airtime Posts (Modified for new syntax) ---
-@app.route('/api/airtime-posts', methods=['GET'])
-def get_airtime_posts():
-    try:
-        now = datetime.now(UTC)
-        # Using the recommended 'filter' keyword argument to avoid the UserWarning.
-        # This still avoids the composite index and sorts in memory.
-        posts_ref = db.collection('airtime_post')\
-            .where(filter=firestore.FieldFilter('expires_at', '>', now))
-
-        docs = posts_ref.stream()
-        posts_data = []
-
-        for doc in docs:
-            post = doc.to_dict()
-            post['id'] = doc.id
-            post['digits'] = str(post.get('digits')) if post.get('digits') is not None else ''
-
-            if 'created_at' in post and isinstance(post['created_at'], firestore.Timestamp):
-                post['created_at'] = post['created_at'].isoformat()
-            if 'expires_at' in post and isinstance(post['expires_at'], firestore.Timestamp):
-                post['expires_at'] = post['expires_at'].isoformat()
-
-            posts_data.append(post)
-
-        # Manually sort the posts by created_at in descending order after fetching them
-        sorted_posts = sorted(posts_data, key=lambda p: p['created_at'], reverse=True)
-
-        # Return only the single most recent post
-        if sorted_posts:
-            return jsonify([sorted_posts[0]])
-        else:
-            return jsonify([])
-
-    except Exception as e:
-        logger.error(f"Error fetching airtime posts: {e}")
-        return jsonify({'message': 'Error fetching posts'}), 500
-
-# The other routes remain unchanged.
-# ... (admin_post_airtime, delete_expired_airtime_post)
-
-
-# --- API Route to Delete Expired Airtime Posts (Triggered by Frontend JS) ---
-@app.route('/api/airtime-posts/<string:post_id>/delete', methods=['POST'])
-def delete_expired_airtime_post(post_id):
-    if 'loggedin' not in session or 'user_id' not in session or session.get('role') != 'admin':
-        return jsonify({'message': 'Unauthorized'}), 403
-
-    try:
-        post_ref = db.collection('airtime_post').document(post_id)
-        post = post_ref.get()
-
-        if not post.exists:
-            return jsonify({'message': 'Post not found'}), 404
-
-        post_data = post.to_dict()
-        if post_data.get('image_url'):
-            base_filename = os.path.basename(post_data['image_url'])
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], base_filename)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                logger.info(f"Deleted image file: {file_path}")
-
-        post_ref.delete()
-        return jsonify({'message': 'Airtime post deleted successfully'}), 200
-    except Exception as e:
-        logger.error(f"Error deleting post {post_id}: {e}")
-        return jsonify({'message': f'Error deleting post: {str(e)}'}), 500
 
 
 # --- NEW CUSTOMER CARE CHAT ROUTES ---
@@ -7530,73 +7324,6 @@ def admin_inbox():
                             current_user_id=current_user_id,
                             current_username=session.get('username'),
                             current_user_profile_picture_url=session.get('profile_picture_url'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-         
-            
-            
-            
-            
-            
-            
-            
-
-
-
-
-
-
-
-
 
 
 
@@ -7898,135 +7625,13 @@ def send_message():
         flash('Recipient not found.', 'error')
     return redirect(url_for('some_page')) 
 
-@app.route('/admin/adverts/publish/<int:advert_id>', methods=['POST'])
-def publish_advert(advert_id):
-    # ... existing authorization and data retrieval ...
 
-    # The code below assumes you have functions to get advert data, etc. from Firestore.
-    # The original SQL queries here have been replaced with a more direct example.
-    advert_data = get_advert_info_from_firestore(advert_id)
-    if not advert_data:
-        flash('Advert not found or not in pending review status.', 'danger')
-        return redirect(url_for('admin_adverts_review'))
 
-    post_owner_id = advert_data.get('user_id')
-    advert_title = advert_data.get('title')
 
-    # Update advert status in Firestore
-    db.collection('adverts').document(str(advert_id)).update({
-        'status': 'published', 
-        'published_at': firestore.SERVER_TIMESTAMP
-    })
-    
-    # --- NOTIFICATION LOGIC ---
-    # 1. Notify the Post Owner (the user who created the advert)
-    create_notification(
-        post_owner_id,
-        'advert_published',
-        f"Your advert '{advert_title}' has been approved and published!",
-        related_id=advert_id
-    )
-
-    # 2. Notify Followers of the Post Owner (seller)
-    seller_info = get_user_info(str(post_owner_id))
-    if seller_info:
-        seller_username = seller_info.get('username', 'A seller')
-        followers_ids = get_followers_of_user(post_owner_id)
-
-        notification_message_for_followers = f"New advert from your followed seller, {seller_username}: '{advert_title}'. Check it out!"
-        
-        for follower_id in followers_ids:
-            create_notification(
-                int(follower_id), # Cast to int if needed by your notification function
-                'new_advert_from_followed_seller',
-                notification_message_for_followers,
-                related_id=advert_id
-            )
-
-    flash('Advert published successfully and users notified!', 'success')
-    return redirect(url_for('admin_adverts_review'))
-
-# --- NEW ROUTE: Reject Advert ---
-@app.route('/admin/adverts/reject/<int:advert_id>', methods=['POST'])
-def reject_advert(advert_id):
-    current_admin_user_id = get_current_user_id()
-    if not current_admin_user_id or not is_admin(current_admin_user_id):
-        flash('Unauthorized access.', 'error')
-        return redirect(url_for('home'))
-
-    rejected_reason = request.form.get('rejected_reason')
-    
-    advert_data = get_advert_info_from_firestore(advert_id)
-    if not advert_data:
-        flash('Advert not found or not in pending review status.', 'error')
-        return redirect(url_for('admin_adverts_review'))
-
-    user_id = advert_data.get('user_id')
-    advert_title = advert_data.get('title')
-    plan_name = advert_data.get('subscription_plan_name', 'Unknown Plan')
-    
-    # Update advert status in Firestore
-    db.collection('adverts').document(str(advert_id)).update({
-        'status': 'rejected',
-        'rejected_reason': rejected_reason
-    })
-    
-    # Logic for refunding advert slots/benefits needs to be adapted for Firestore
-    # This is a conceptual example based on your original SQL logic
-    if plan_name == "One-Time Free Advert":
-        db.collection('users').document(str(user_id)).update({
-            'has_used_free_advert': False
-        })
-    # Add other refund logic here based on your data structure
-
-    notification_message = f"Your advert '{advert_title}' ({plan_name}) has been rejected."
-    if rejected_reason:
-        notification_message += f" Reason: {rejected_reason}."
-    notification_message += " You can edit and resubmit it."
-    
-    create_notification(
-        user_id,
-        'advert_rejected',
-        notification_message,
-        related_id=advert_id
-    )
-
-    flash('Advert rejected successfully! User has been notified and their advert slot/benefit refunded.', 'success')
-    return redirect(url_for('admin_adverts_review'))
-
-# --- Mock functions for demonstration. You should replace these with your actual Firestore retrieval functions.
-def get_advert_info_from_firestore(advert_id):
-    advert_ref = db.collection('adverts').document(str(advert_id))
-    advert_doc = advert_ref.get()
-    if advert_doc.exists and advert_doc.to_dict().get('status') == 'pending_review':
-        return advert_doc.to_dict()
-    return None
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
