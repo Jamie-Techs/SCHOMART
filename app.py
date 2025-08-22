@@ -1709,15 +1709,18 @@ def validate_sell_form(form_data, files):
 
 
 
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
 def sell(advert_id=None):
     advert = None
     if advert_id:
-        advert = db.get_advert(advert_id)
+        # Corrected line to get the advert from Firestore
+        advert_doc_ref = db.collection("adverts").document(advert_id)
+        advert_doc = advert_doc_ref.get()
+        if advert_doc.exists:
+            advert = advert_doc.to_dict()
+    
     user_id = current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
@@ -1729,17 +1732,16 @@ def sell(advert_id=None):
     form_data = {}
 
     if advert_id:
-        advert_doc = get_document("adverts", advert_id)
-        # Use .get() for safe access to avoid KeyError
-        if not advert_doc or advert_doc.get('user_id') != user_id:
+        # This part is redundant as we already got the advert
+        if not advert or advert.get('user_id') != user_id:
             flash("Advert not found or you don't have permission to edit.", "error")
             return redirect(url_for('list_adverts'))
         
-        advert_data = advert_doc
+        advert_data = advert
         is_repost = True
         # If editing an existing advert (GET request with advert_id),
         # populate the form_data with the advert's data.
-        form_data = advert_doc
+        form_data = advert
     
     if request.method == 'POST':
         # Overwrite form_data with POST data
@@ -1846,6 +1848,7 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
 )
+
 
 
 
@@ -7644,6 +7647,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
