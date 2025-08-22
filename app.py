@@ -1860,7 +1860,6 @@ def get_user_advert_options(user_id):
 
 
 
-
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required 
 def sell():
@@ -1888,15 +1887,19 @@ def sell():
         repost_advert_id = form_data.get('repost_advert_id')
         repost_advert = None
         
-        # --- NEW APPROACH: TEMPORARILY BYPASS CATEGORY VALIDATION ---
-        
-        # We will use a hardcoded category ID to test the submission.
-        # This will bypass the "category is required" error entirely.
-        category_id = 1  # You can change this to any valid category ID in your database.
-        
         errors = {}
         
-        # ✅ FIX: Validate other required fields.
+        # ✅ FINAL CORRECTION: Proper validation for category field
+        category_id_str = form_data.get('category')
+        if not category_id_str:
+            errors['category'] = "Category is required."
+        else:
+            try:
+                category_id = int(category_id_str)
+            except (ValueError, TypeError):
+                errors['category'] = "Invalid category selected."
+        
+        # ✅ Other validations
         title = form_data.get('title')
         if not title:
             errors['title'] = "Ad Title is required."
@@ -1927,6 +1930,7 @@ def sell():
         if not selected_plan:
             errors['posting_option'] = "You are not eligible to select this posting option."
 
+        # Aggregate additional errors from your separate validation function
         external_errors = validate_sell_form(form_data, files, repost_advert_id, repost_advert)
         if external_errors:
             for error in external_errors:
@@ -1948,7 +1952,7 @@ def sell():
         try:
             main_img_url, additional_img_urls, video_url = handle_file_uploads(files, user_id, repost_advert)
             
-            # ✅ The category_id is now a hardcoded integer, bypassing the form data.
+            # Use the validated category_id from the form
             advert_data = {
                 "user_id": user_id,
                 "category_id": category_id,
@@ -1986,6 +1990,10 @@ def sell():
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             
         return render_sell_page(user_data, available_options, form_data)
+
+
+
+
 
 
 
@@ -7886,6 +7894,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
