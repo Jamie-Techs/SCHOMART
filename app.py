@@ -1941,7 +1941,7 @@ def sell():
                 user_data=user_data,
                 available_options=available_options,
                 form_data=form_data,
-                repost_advert=repost_advert,
+                advert=repost_advert,
                 is_repost=is_repost,
                 errors=errors  # Pass specific errors to the template for field highlighting
             )
@@ -7886,6 +7886,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
