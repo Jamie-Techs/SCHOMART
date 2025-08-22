@@ -1678,8 +1678,11 @@ def update_advert_db(advert_id, data):
         logger.error(f"An unexpected error occurred while updating advert {advert_id}: {e}", exc_info=True)
         return False
 
-def render_sell_page(user_data, available_options, form_data, advert=None, is_repost=False, errors=None):
+def render_sell_page(user_data, available_options, form_data=None, advert=None, is_repost=False, errors=None):
     """Renders the sell page with all necessary data."""
+    if form_data is None:
+        form_data = {}
+    
     selected_option_type = form_data.get("posting_option")
     
     return render_template(
@@ -1695,7 +1698,7 @@ def render_sell_page(user_data, available_options, form_data, advert=None, is_re
         advert=advert,
         is_repost=is_repost,
         errors=errors
-    )
+                    )
 
 def validate_sell_form(form_data, files, repost_advert_id=None, existing_advert=None):
     """
@@ -7876,6 +7879,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
