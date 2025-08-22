@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
     <style>
+        /* CSS from your provided HTML is included here. */
         :root {
             --primary-green: #006B3C;
             --secondary-yellow: #FDB813;
@@ -302,8 +303,8 @@
                 font-size: 1.2em; /* Relative to alert font size */
             }
              .amount-input-group .naira-sign {
-                padding: 10px 6px 10px 12px; /* Adjust padding for smaller screens */
-            }
+                 padding: 10px 6px 10px 12px; /* Adjust padding for smaller screens */
+             }
         }
 
         @media(max-width: 480px) {
@@ -329,7 +330,12 @@
     </style>
 </head>
 <body>
+    {# The base template is assumed to be `base.html` from your previous prompts. Adjust if necessary. #}
+    {% extends "base.html" %}
 
+    {% block title %}Admin Post Airtime{% endblock %}
+
+    {% block content %}
     <div class="container">
         <header>
             <button type="button" class="back-button" onclick="history.back()" title="Go back to Admin Profile">
@@ -447,5 +453,7 @@
             });
         });
     </script>
+    {% endblock %}
+
 </body>
 </html>
