@@ -1691,11 +1691,13 @@ def handle_file_uploads(files, user_id, existing_advert=None):
     
     return main_img_url, additional_img_urls, video_url
 
+
+
 def validate_sell_form(form_data, files):
     errors = []
     if not form_data.get('title'):
         errors.append("Advert title is required.")
-    if not form_data.get('category'):
+    if not form_data.get('category'): # This line is the cause of the error.
         errors.append("Category is required.")
     if not form_data.get('description'):
         errors.append("Description is required.")
@@ -1709,8 +1711,6 @@ def validate_sell_form(form_data, files):
         errors.append("A main image is required.")
     
     return errors
-
-
 
 
 
@@ -7630,6 +7630,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
