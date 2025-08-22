@@ -1710,6 +1710,7 @@ def validate_sell_form(form_data, files):
 
 
 
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1775,14 +1776,14 @@ def sell(advert_id=None):
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
-            # --- START of the updated section ---
+            # --- The updated section to use the new category logic ---
             # Get the category ID from the submitted category name
             category_name = form_data.get('category')
             category_id = get_category_id_from_name(category_name)
-
+            
             advert_payload = {
                 "user_id": user_id,
-                "category_id": category_id, # Use the new category_id here
+                "category_id": category_id, # This is the corrected line
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
                 "price": float(form_data.get('price')),
@@ -1799,7 +1800,7 @@ def sell(advert_id=None):
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP
             }
-            # --- END of the updated section ---
+            # --- End of updated section ---
 
             is_subscription = "cost_naira" in selected_option
             
@@ -1849,6 +1850,8 @@ def sell(advert_id=None):
 
 
 
+
+
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -1887,6 +1890,9 @@ def payment(advert_id):
         advert_id=advert_id
     )
 
+
+
+
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
 @login_required
 def submit_advert(advert_id):
@@ -1895,14 +1901,19 @@ def submit_advert(advert_id):
         flash("Invalid submission.", "error")
         return redirect(url_for('list_adverts'))
     
+    # Calculate the expiration date
+    duration_days = advert.get("advert_duration_days", 0) # Use .get() for safety and a default value
+    expires_at = datetime.now() + timedelta(days=duration_days)
+    
     db.collection("adverts").document(advert_id).update({
         "status": "pending_review",
         "published_at": firestore.SERVER_TIMESTAMP,
-        "expires_at": firestore.SERVER_TIMESTAMP + timedelta(days=advert.get("advert_duration_days"))
+        "expires_at": expires_at
     })
     
     flash("Your advert has been submitted for review. Thank you for your payment!", "success")
     return redirect(url_for('list_adverts'))
+
 
 @app.route('/adverts')
 @login_required
@@ -7633,6 +7644,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
