@@ -1592,26 +1592,12 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def get_category_id_from_name(category_name):
+    # This logic assumes your CATEGORIES variable is a dictionary where keys are category names
+    for name, data in CATEGORIES.items():
+        if name == category_name:
+            return data["id"]
+    return None
 
 def get_all_categories():
     # Placeholder for fetching categories from a database if they are not static
@@ -7647,6 +7633,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
