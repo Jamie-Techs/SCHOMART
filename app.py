@@ -81,7 +81,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'signup'
 
 bcrypt = Bcrypt(app)
 mail = Mail(app)
@@ -177,7 +177,7 @@ def signup():
 
 @app.route('/login')
 def login():
-    return render_template('login.html')
+    return render_template('signup.html')
 
 
 
@@ -7597,6 +7597,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
