@@ -170,6 +170,26 @@ def login_with_firebase():
         return jsonify({'message': 'Authentication failed'}), 500
 
 
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            # If the user is not logged in, redirect to the login page
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for('login'))
+        
+        # Check if the user's role is 'admin'
+        if current_user.role != 'admin':
+            flash("You do not have permission to access this page.", "error")
+            return redirect(url_for('home'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+
 @app.route('/signup')
 def signup():
     return render_template('signup.html')
@@ -178,10 +198,6 @@ def signup():
 def login():
     return render_template('signup.html')
 
-
-
-
-  
 
 # --- Helper Functions for Referral Code Generation ---
 def generate_referral_code():
@@ -1192,7 +1208,8 @@ def get_followers_of_user(user_id):
 
 
 @app.route('/add_category', methods=['GET', 'POST'])
-@login_required # Assuming only logged-in users or admins can add categories
+@login_required 
+@admin_required.
 def add_category():
     """
     Handles adding a new category and uploading its image to Firebase Storage.
@@ -7647,6 +7664,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
