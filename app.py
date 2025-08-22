@@ -138,12 +138,15 @@ def allowed_file(filename):
 
 
 
-# This function is required by Flask-Login.
 @login_manager.user_loader
 def load_user(user_id):
-    # This function should load a user from your database
-    # based on their ID.
-    return User.get(user_id) # Replace with your actual user loading logic
+    # This function must return an object that implements the UserMixin interface
+    # or None if the user does not exist.
+    user_doc_ref = db.collection('users').document(user_id)
+    user_data = user_doc_ref.get().to_dict()
+    if user_data:
+        return User(user_id, **user_data) # Assuming you have a User class
+    return None
 
 # A Flask route to handle the Firebase ID token
 @app.route('/login_with_firebase', methods=['POST'])
@@ -596,43 +599,7 @@ def get_cover_photo_url(cover_photo_filename_str):
 
 
 
-@app.context_processor
-def inject_user_into_templates():
-    """Makes the current user object available to all templates."""
-    return {'current_user': g.user}
 
-
-
-
-
-
-
-@app.before_request
-def load_logged_in_user():
-    """Loads user data from session into Flask's global `g` object."""
-    g.user = None
-    user_data = session.get('user_data')
-    if user_data:
-        g.user = user_data.copy()  # Avoid modifying session directly
-    g.client_ip = request.remote_addr
-
-
-
-
-
-
-
-
-
-# A decorator to ensure a user is logged in before accessing a route.
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash("You must be logged in to view this page.", "error")
-            return redirect(url_for('signup'))  # Redirect to your login route
-        return f(*args, **kwargs)
-    return decorated_function
 
 # Helper function to format Firestore Timestamps
 def format_timestamp(ts):
@@ -7630,6 +7597,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
