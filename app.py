@@ -1587,13 +1587,26 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
 
 
 
-
 def create_advert_db(data):
     """Creates a new advert document in Firestore."""
     try:
         required_fields = ["user_id", "category_id", "title", "price", "plan_name"]
         if not all(field in data for field in required_fields):
             raise KeyError("One or more required fields are missing.")
+
+        # Get the current time and duration
+        current_time = datetime.now()
+        advert_duration_days = data.get("advert_duration_days")
+        expires_at = None
+
+        if advert_duration_days:
+            try:
+                # Calculate the expiration time
+                expires_at = current_time + timedelta(days=advert_duration_days)
+            except (ValueError, TypeError):
+                # Handle cases where advert_duration_days is invalid
+                logger.error("Invalid advert duration provided.")
+                expires_at = None
 
         advert_data = {
             "user_id": data["user_id"],
@@ -1612,17 +1625,13 @@ def create_advert_db(data):
             "subscription_id": data.get("subscription_id"),
             "subscription_plan_name": data.get("plan_name"),
             "visibility_level": data.get("visibility_level"),
-            "created_at": firestore.SERVER_TIMESTAMP,
+            "created_at": current_time,
             "published_at": None,
-            "expires_at": None,
+            "expires_at": expires_at,
             "state": data.get("state"),
             "school": data.get("school"),
             "specific_location": data.get("specific_location")
         }
-
-        advert_duration_days = data.get("advert_duration_days")
-        if advert_duration_days:
-            advert_data["expires_at"] = firestore.SERVER_TIMESTAMP + firestore.timedelta(days=advert_duration_days)
             
         doc_ref = db.collection("adverts").document()
         doc_ref.set(advert_data)
@@ -1634,6 +1643,8 @@ def create_advert_db(data):
     except Exception as e:
         logger.error(f"An unexpected error occurred while creating an advert: {e}", exc_info=True)
         return None
+
+
 
 def update_advert_db(advert_id, data):
     """Updates an existing advert document in Firestore."""
@@ -7875,6 +7886,7 @@ def get_advert_info_from_firestore(advert_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
