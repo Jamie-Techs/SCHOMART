@@ -2258,94 +2258,240 @@ def reported_adverts_admin():
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
 
+
+
+
+
+
+
+
+# --- Admin Function to Post New Airtime ---
 @app.route('/admin/post_airtime', methods=['GET', 'POST'])
 @admin_required
 def admin_post_airtime():
     """
     Handles the creation of a new airtime post by an admin.
+    Processes form data, uploads an optional image to Firebase Storage,
+    and saves the post details to Firestore with a calculated expiry time.
     """
     if request.method == 'POST':
         network = request.form.get('network')
-        amount = request.form.get('amount')
+        amount_raw = request.form.get('amount')
         digits = request.form.get('digits')
         instructions = request.form.get('instructions')
-        duration_value = request.form.get('duration_value')
-        duration_unit = request.form.get('duration_unit')
         
-        # Validation checks
-        if not digits and not 'airtime_image' in request.files:
+        # Using a type conversion to handle duration_value directly
+        duration_value = request.form.get('duration_value', type=int)
+        duration_unit = request.form.get('duration_unit')
+
+        # --- Input Validation and Cleaning ---
+        amount = None
+        if amount_raw:
+            # Clean non-digit characters from the amount input
+            cleaned_amount = re.sub(r'[^\d]', '', amount_raw)
+            if cleaned_amount.isdigit():
+                amount = int(cleaned_amount)
+            else:
+                flash('Invalid amount format. Please enter numbers only (e.g., 500, 1000).', 'error')
+                return render_template('admin_post_airtime.html')
+
+        cleaned_digits = None
+        if digits:
+            # Clean non-digit characters from the digits input
+            cleaned_digits = re.sub(r'[^\d\s]', '', digits)
+
+        # Check if at least one of digits or image is provided
+        if not cleaned_digits and not 'airtime_image' in request.files:
             flash("You must provide either the airtime digits or an image.", "error")
             return redirect(url_for('admin_post_airtime'))
 
         if not duration_value or not duration_unit:
-            flash("Duration value and unit are required.", "error")
+            flash('Duration value and unit are required.', 'error')
             return redirect(url_for('admin_post_airtime'))
 
-        # Calculate expiry time based on duration
-        try:
-            duration_value = int(duration_value)
-            now = datetime.datetime.utcnow()
-            if duration_unit == 'seconds':
-                expiry_time = now + datetime.timedelta(seconds=duration_value)
-            elif duration_unit == 'minutes':
-                expiry_time = now + datetime.timedelta(minutes=duration_value)
-            elif duration_unit == 'hours':
-                expiry_time = now + datetime.timedelta(hours=duration_value)
-            elif duration_unit == 'days':
-                expiry_time = now + datetime.timedelta(days=duration_value)
-            else:
-                flash("Invalid duration unit.", "error")
-                return redirect(url_for('admin_post_airtime'))
-        except (ValueError, TypeError):
-            flash("Invalid duration value.", "error")
+        # Calculate expiry time
+        now = datetime.datetime.utcnow()
+        if duration_unit == 'seconds':
+            expiry_time = now + datetime.timedelta(seconds=duration_value)
+        elif duration_unit == 'minutes':
+            expiry_time = now + datetime.timedelta(minutes=duration_value)
+        elif duration_unit == 'hours':
+            expiry_time = now + datetime.timedelta(hours=duration_value)
+        elif duration_unit == 'days':
+            expiry_time = now + datetime.timedelta(days=duration_value)
+        else:
+            flash('Invalid duration unit provided.', 'error')
             return redirect(url_for('admin_post_airtime'))
 
-        # Handle image upload
+        # Handle image upload to Firebase Storage
         image_url = None
         if 'airtime_image' in request.files:
             file = request.files['airtime_image']
-            if file and file.filename != '':
+            if file and allowed_file(file.filename):
                 try:
-                    # Generate a unique filename to prevent conflicts
+                    # Generate a unique filename using UUID to prevent conflicts
                     filename = secure_filename(file.filename)
                     unique_filename = f"{uuid.uuid4()}_{filename}"
                     blob = bucket.blob(f"airtime_images/{unique_filename}")
+                    
+                    # Upload file from the in-memory stream
                     blob.upload_from_file(file, content_type=file.content_type)
                     
                     # Make the image publicly accessible
                     blob.make_public()
                     image_url = blob.public_url
+                    logger.info(f"Image uploaded to: {image_url}")
                 except Exception as e:
                     flash(f"Error uploading image: {e}", "error")
+                    logger.error(f"Image upload failed: {e}")
                     return redirect(url_for('admin_post_airtime'))
 
         # Create a new document in the 'airtime_posts' collection
-        new_post_ref = db.collection('airtime_posts').document()
-        
-        post_data = {
+        airtime_post_data = {
             'network': network,
             'amount': amount,
-            'digits': digits,
+            'digits': cleaned_digits,
             'instructions': instructions,
             'image_url': image_url,
             'created_at': firestore.SERVER_TIMESTAMP,
             'expires_at': expiry_time,
             'is_active': True,
-            'posted_by': g.user['id'] # Assumes g.user is set by the login manager
+            'posted_by': g.user['id'] if g.user and 'id' in g.user else None  # Safely access user id
         }
-        
-        new_post_ref.set(post_data)
 
-        flash("Airtime post created successfully!", "success")
+        db.collection('airtime_posts').add(airtime_post_data)
+
+        flash('Airtime post created successfully!', 'success')
         return redirect(url_for('admin_post_airtime'))
 
+    # If it's a GET request, render the template
     return render_template('admin_post_airtime.html')
 
 
+# --- API Route to Fetch Active Airtime Posts ---
+@app.route('/api/airtime-posts', methods=['GET'])
+def get_airtime_posts():
+    """
+    Fetches the single most recent active airtime post.
+    Filters by expiry time and sorts manually to get the newest post.
+    """
+    try:
+        now = datetime.datetime.utcnow()
+        
+        # Use a Firestore query to get active posts
+        # We need to filter for posts that have not expired.
+        # Note: 'created_at' and 'expires_at' fields must be indexed in Firestore.
+        posts_ref = db.collection('airtime_posts')\
+            .where(filter=firestore.FieldFilter('expires_at', '>', now))
+        
+        docs = posts_ref.stream()
+        posts_data = []
+
+        for doc in docs:
+            post = doc.to_dict()
+            post['id'] = doc.id
+            post['digits'] = str(post.get('digits')) if post.get('digits') is not None else ''
+
+            if 'created_at' in post and isinstance(post['created_at'], firestore.Timestamp):
+                post['created_at'] = post['created_at'].isoformat()
+            if 'expires_at' in post and isinstance(post['expires_at'], firestore.Timestamp):
+                post['expires_at'] = post['expires_at'].isoformat()
+            
+            posts_data.append(post)
+
+        # Manually sort the posts by created_at in descending order
+        # This is required because we cannot filter and order by different fields in Firestore
+        sorted_posts = sorted(posts_data, key=lambda p: p['created_at'], reverse=True)
+
+        # Return only the single most recent post
+        if sorted_posts:
+            return jsonify([sorted_posts[0]])
+        else:
+            return jsonify([])
+
+    except Exception as e:
+        logger.error(f"Error fetching airtime posts: {e}")
+        return jsonify({'message': f'Error fetching posts: {str(e)}'}), 500
 
 
+# --- API Route to Delete Expired Airtime Posts (Triggered by Frontend JS) ---
+@app.route('/api/airtime-posts/<string:post_id>/delete', methods=['POST'])
+@admin_required
+def delete_airtime_post_api(post_id):
+    """
+    Deletes an airtime post from Firestore and its associated image from Firebase Storage.
+    This is an API endpoint typically triggered by a frontend script.
+    """
+    try:
+        post_ref = db.collection('airtime_posts').document(post_id)
+        post = post_ref.get()
 
+        if not post.exists:
+            logger.warning(f"Attempted to delete non-existent post: {post_id}")
+            return jsonify({'message': 'Post not found'}), 404
 
+        post_data = post.to_dict()
+        
+        # Delete the image from Firebase Storage if it exists
+        if post_data.get('image_url'):
+            try:
+                # The filename is the last part of the URL before any query parameters
+                image_path = post_data['image_url'].split('?')[0].split('/')[-1]
+                # Reconstruct the blob path (it's in the 'airtime_images' folder)
+                blob = bucket.blob(f"airtime_images/{image_path}")
+                blob.delete()
+                logger.info(f"Deleted image from storage: {post_data['image_url']}")
+            except Exception as e:
+                logger.error(f"Error deleting image from storage: {e}")
+                # We log the error but continue to delete the document to maintain data consistency
+
+        # Delete the Firestore document
+        post_ref.delete()
+        logger.info(f"Deleted Firestore document: {post_id}")
+        return jsonify({'message': 'Airtime post deleted successfully'}), 200
+    
+    except Exception as e:
+        logger.error(f"Error deleting post {post_id}: {e}")
+        return jsonify({'message': f'Error deleting post: {str(e)}'}), 500
+
+# --- Function to Clean Up Expired Posts from the Backend ---
+@app.route('/admin/clean_expired_posts', methods=['POST'])
+@admin_required
+def clean_expired_posts():
+    """
+    A backend endpoint for the admin to manually trigger the cleanup
+    of all expired airtime posts. This is an alternative to a cron job.
+    """
+    try:
+        now = datetime.datetime.utcnow()
+        expired_posts_ref = db.collection('airtime_posts').where(filter=firestore.FieldFilter('expires_at', '<', now))
+        expired_docs = expired_posts_ref.stream()
+        
+        deleted_count = 0
+        for doc in expired_docs:
+            post_id = doc.id
+            post_data = doc.to_dict()
+            
+            # Delete the image from Firebase Storage if it exists
+            if post_data.get('image_url'):
+                try:
+                    image_path = post_data['image_url'].split('?')[0].split('/')[-1]
+                    blob = bucket.blob(f"airtime_images/{image_path}")
+                    blob.delete()
+                except Exception as e:
+                    logger.error(f"Error deleting image for post {post_id}: {e}")
+            
+            # Delete the Firestore document
+            db.collection('airtime_posts').document(post_id).delete()
+            deleted_count += 1
+        
+        flash(f'Successfully cleaned up {deleted_count} expired airtime posts.', 'success')
+        return redirect(url_for('admin_post_airtime'))
+
+    except Exception as e:
+        logger.error(f"Error during expired post cleanup: {e}")
+        flash(f'An error occurred during cleanup: {str(e)}', 'error')
+        return redirect(url_for('admin_post_airtime'))
 
 
 
@@ -7632,6 +7778,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
