@@ -182,6 +182,43 @@ def update_online_status(user_id, is_online):
      
 
 
+
+# Place this route in your Flask app.py file
+
+
+# =========================================================================
+# New endpoint to handle login redirect
+# =========================================================================
+@app.route('/login_redirect', methods=['POST'])
+def login_redirect():
+    """
+    Receives the ID token from the hidden form and performs a redirect.
+    """
+    # The token is sent as form data, not in the header
+    id_token = request.form.get('id_token')
+
+    if not id_token:
+        # No token provided, redirect to home with an error
+        flash("Authentication failed. No token provided.", "error")
+        return redirect(url_for('home'))
+
+    try:
+        # Verify the ID token and get the user's UID
+        decoded_token = auth.verify_id_token(id_token)
+        
+        # You can add logic here to create a session if needed,
+        # but for a direct redirect, this is enough to verify the user.
+        
+        # Redirect the user to the profile page
+        return redirect(url_for('profile'))
+
+    except auth.InvalidIdTokenError:
+        flash("Invalid login session. Please log in again.", "error")
+        return redirect(url_for('home'))
+    except Exception as e:
+        flash("Authentication failed. Please try again.", "error")
+        return redirect(url_for('home'))
+
 @app.route('/signup')
 def signup():
     return render_template('signup.html')
@@ -7272,6 +7309,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
