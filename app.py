@@ -1725,6 +1725,34 @@ def validate_sell_form(form_data, files):
 
 
 
+from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud.firestore_v1 import aggregation
+
+# db is your Firestore client object, e.g., db = firestore.client()
+
+def get_advert_count(user_id):
+    """
+    Returns the number of adverts for a given user using an aggregation query.
+    """
+    # 1. Create a query to filter adverts by user_id
+    query = db.collection("adverts").where(filter=FieldFilter("user_id", "==", user_id))
+
+    # 2. Build an aggregation query using the count() function
+    aggregate_query = aggregation.AggregationQuery(query)
+    aggregate_query.count(alias="count_of_adverts")
+
+    # 3. Get the results from the aggregation query
+    results = aggregate_query.get()
+
+    # 4. Extract the count from the results
+    for result in results:
+        return result.value
+
+    # Return 0 if no results are found
+    return 0
+
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2121,6 +2149,8 @@ def delete_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
+
+# The corrected Python function to handle image URLs
 @app.route('/admin/adverts/review')
 @admin_required
 def admin_advert_review():
@@ -2151,7 +2181,13 @@ def admin_advert_review():
         else:
             advert['calculated_expiry'] = None
 
-        advert['image_url'] = advert.get('image_url', 'no_image_found.jpg')
+        # Correct image display logic: Check for 'images' list and assign the first one
+        images = advert.get('images', [])
+        if images:
+            advert['main_image'] = images[0]
+        else:
+            advert['main_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image' # Placeholder if no images exist
+
         advert['payment_reference'] = advert.get('payment_reference', 'N/A')
         
         pending_adverts.append(advert)
@@ -7329,6 +7365,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
