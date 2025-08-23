@@ -211,14 +211,15 @@ def generate_unique_referral_code(db):
             return code
 
 
-# --- API Routes ---
 
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
     """
     Handles a request from the frontend to create a user document in Firestore.
+    The frontend must make a subsequent call to the login API to complete authentication.
     """
     if db is None:
+        logger.error("Backend services are unavailable: Firestore DB object is None.")
         return jsonify({'error': 'Backend services are unavailable.'}), 503
 
     data = request.get_json()
@@ -228,8 +229,8 @@ def api_signup():
     referral_code_used = data.get('referralCode')
 
     if not all([uid, email, username]):
-        logger.warning("Missing UID, email, or username in signup request.")
-        return jsonify({'error': 'Missing UID, email, or username'}), 400
+        logger.warning("Missing required fields (UID, email, or username) in signup request.")
+        return jsonify({'error': 'Missing required fields'}), 400
 
     try:
         user_ref = db.collection('users').document(uid)
@@ -239,11 +240,12 @@ def api_signup():
             logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
             return jsonify({'error': 'User data already exists in Firestore'}), 409
 
-        # Generate a unique referral code and link
+        # Generate a unique referral code
         referral_code = generate_unique_referral_code(db)
-        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}" # Replace 'your-domain.com' with your actual domain
+        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
 
-        # Initialize and save the new user data
+        # Initialize and save the new user data with all fields from your User model
+        # This prevents 'KeyError' issues on the frontend or during login.
         new_user_data = {
             'email': email,
             'username': username,
@@ -276,42 +278,29 @@ def api_signup():
             'working_days': [],
             'working_times': {},
             'delivery_methods': [],
+            # It's good practice to add any other fields you expect to use
+            # to prevent potential KeyErrors on the frontend or during login.
         }
 
         user_ref.set(new_user_data)
-        logger.info(f"User data for {uid} created in Firestore with referral code: {referral_code}")
+        logger.info(f"User data for {uid} created in Firestore.")
         
-        # Check if a referral code was used and update the referrer's count
+        # Update the referrer's count if a referral code was used
         if referral_code_used:
-            logger.info(f"Referral code used: {referral_code_used}. Searching for referrer.")
+            logger.info(f"Referral code used: {referral_code_used}. Attempting to update referrer's count.")
             referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
-            referrer_docs = referrer_query.stream()
             
-            for doc in referrer_docs:
+            # The for loop correctly handles the query result
+            for doc in referrer_query.stream():
                 referrer_ref = doc.reference
-                
-                # Retrieve the current referral count to ensure it's an integer
-                referrer_data = doc.to_dict()
-                current_count = referrer_data.get('referral_count', 0)
-                
-                # Check if the existing value is a string and convert it if necessary
-                if not isinstance(current_count, int):
-                    try:
-                        current_count = int(current_count)
-                        logger.warning(f"Converted referrer's referral_count from string to integer for UID: {referrer_ref.id}")
-                    except (ValueError, TypeError):
-                        logger.error(f"Could not convert referrer's referral_count to integer for UID: {referrer_ref.id}")
-                        current_count = 0 # Default to 0 to prevent further errors
-                
-                # Now, safely increment the count
                 referrer_ref.update({
                     'referral_count': firestore.Increment(1)
                 })
                 logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
-                break
+                break # Stop after finding the first match
 
         return jsonify({
-            'message': 'User data saved to Firestore successfully.',
+            'message': 'User data saved to Firestore successfully. Please proceed to login.',
             'uid': uid
         }), 201
 
@@ -319,35 +308,7 @@ def api_signup():
         logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
         return jsonify({'error': 'Failed to save user data.'}), 500
 
-@app.route('/api/verify_user', methods=['POST'])
-def api_verify_user():
-    """
-    Updates the is_verified status for a user after they successfully log in
-    with a verified email address.
-    """
-    if db is None:
-        return jsonify({'error': 'Backend services are unavailable.'}), 503
 
-    data = request.get_json()
-    uid = data.get('uid')
-
-    if not uid:
-        logger.warning("Missing UID in verify user request.")
-        return jsonify({'error': 'Missing UID'}), 400
-
-    try:
-        user_ref = db.collection('users').document(uid)
-        
-        user_ref.update({
-            'is_verified': True
-        })
-        logger.info(f"User {uid} email verified status updated to True.")
-
-        return jsonify({'message': 'User verified status updated successfully.'}), 200
-
-    except Exception as e:
-        logger.error(f"Error updating verified status for UID {uid}: {e}", exc_info=True)
-        return jsonify({'error': 'Failed to update user verification status.'}), 500
 
 
  
@@ -7294,6 +7255,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
