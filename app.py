@@ -72,48 +72,68 @@ import tempfile
 
 
  
-
-
 load_dotenv()
 
-
-# Initialize Flask and extensions
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
+# Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'home'
+login_manager.login_view = 'signup'
+
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
 
-# Initialize Firebase Admin SDK
+
 try:
+    # Load Firebase credentials from environment
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     if not raw_json:
         raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
+
+    # Write credentials to a temporary file
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
         temp.write(raw_json)
         temp.flush()
         temp_path = temp.name
+
+    # Initialize Firebase Admin SDK with correct bucket name
     cred = credentials.Certificate(temp_path)
     firebase_admin.initialize_app(cred, {
         'storageBucket': 'schomart-7a743.firebasestorage.app'
     })
-    db = firestore.client()
+
+    # Initialize Firestore and Storage clients
+    db = admin_firestore.client()
+    # Corrected line: Explicitly get the bucket using its name
     admin_storage = storage.bucket('schomart-7a743.firebasestorage.app')
+
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
+
 except Exception as e:
     logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
     raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+
 finally:
+    # Clean up the temporary credentials file
     if 'temp_path' in locals() and os.path.exists(temp_path):
         os.remove(temp_path)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Allowed file types for uploads
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
+
+def allowed_file(filename):
+    """Checks if the uploaded file has an allowed extension."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+
+
 
 
 
@@ -7262,6 +7282,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
