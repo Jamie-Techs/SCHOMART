@@ -212,11 +212,52 @@ def generate_unique_referral_code(db):
 
 
 
+
+
+
+# A decorator to protect routes by verifying the ID token
+def login_required(f):
+    """
+    Decorator that checks for a valid Firebase ID token in the Authorization header.
+    This is required for accessing protected routes.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        id_token = None
+        # Check for Authorization header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            # Expected format: "Bearer <ID_TOKEN>"
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split(' ')[1]
+
+        if not id_token:
+            logger.warning("No ID token found in Authorization header. Denying access.")
+            return jsonify({'error': 'Unauthorized: Login required. Token not provided'}), 401
+
+        try:
+            # Verify the ID token with Firebase Admin SDK
+            decoded_token = auth.verify_id_token(id_token)
+            request.uid = decoded_token['uid']
+            return f(*args, **kwargs)
+        except auth.InvalidIdTokenError as e:
+            # Handle invalid tokens
+            logger.warning(f"Invalid ID token provided: {e}")
+            return jsonify({'error': 'Unauthorized: Invalid token'}), 401
+        except Exception as e:
+            # Handle other verification errors
+            logger.error(f"Token verification failed: {e}")
+            return jsonify({'error': 'Unauthorized: Failed to verify token'}), 401
+
+    return decorated_function
+
+# =========================================================================
+# The updated /api/signup endpoint
+# =========================================================================
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
     """
     Handles a request from the frontend to create a user document in Firestore.
-    The frontend must make a subsequent call to the login API to complete authentication.
     """
     if db is None:
         logger.error("Backend services are unavailable: Firestore DB object is None.")
@@ -235,17 +276,13 @@ def api_signup():
     try:
         user_ref = db.collection('users').document(uid)
         
-        # Check if the user document already exists
         if user_ref.get().exists:
             logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
             return jsonify({'error': 'User data already exists in Firestore'}), 409
 
-        # Generate a unique referral code
         referral_code = generate_unique_referral_code(db)
         referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
 
-        # Initialize and save the new user data with all fields from your User model
-        # This prevents 'KeyError' issues on the frontend or during login.
         new_user_data = {
             'email': email,
             'username': username,
@@ -278,29 +315,25 @@ def api_signup():
             'working_days': [],
             'working_times': {},
             'delivery_methods': [],
-            # It's good practice to add any other fields you expect to use
-            # to prevent potential KeyErrors on the frontend or during login.
         }
 
         user_ref.set(new_user_data)
         logger.info(f"User data for {uid} created in Firestore.")
         
-        # Update the referrer's count if a referral code was used
         if referral_code_used:
             logger.info(f"Referral code used: {referral_code_used}. Attempting to update referrer's count.")
             referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
             
-            # The for loop correctly handles the query result
             for doc in referrer_query.stream():
                 referrer_ref = doc.reference
                 referrer_ref.update({
                     'referral_count': firestore.Increment(1)
                 })
                 logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
-                break # Stop after finding the first match
+                break
 
         return jsonify({
-            'message': 'User data saved to Firestore successfully. Please proceed to login.',
+            'message': 'User data saved to Firestore successfully.',
             'uid': uid
         }), 201
 
@@ -308,56 +341,34 @@ def api_signup():
         logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
         return jsonify({'error': 'Failed to save user data.'}), 500
 
-
-
-
- 
+# =========================================================================
+# The /api/login endpoint no longer creates a session, just verifies
+# and returns a success message for the frontend to handle.
+# =========================================================================
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
-    Verifies a Firebase ID token and logs the user into the Flask session
-    using Flask-Login.
+    Verifies the ID token and returns a success message. The frontend
+    will handle storing the token and redirecting.
     """
-    if db is None:
-        return jsonify({'error': 'Backend services are unavailable.'}), 503
-
     data = request.get_json()
     id_token = data.get('idToken')
-
+    
     if not id_token:
-        return jsonify({'error': 'Missing ID token'}), 400
-
+        logger.warning("No ID token provided for login.")
+        return jsonify({'error': 'ID token is required'}), 400
+    
     try:
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
-
-        user_doc = db.collection('users').document(uid).get()
-        if not user_doc.exists:
-            return jsonify({'error': 'User data not found in Firestore'}), 404
-
-        user_data = user_doc.to_dict()
-
-        # Corrected line: Unpack the user_data dictionary
-        # The ** operator unpacks the dictionary into keyword arguments
-        user_object = User(uid, **user_data)
-        
-        login_user(user_object)
-
-        db.collection('users').document(uid).update({
-            'is_online': True,
-            'last_online': firestore.SERVER_TIMESTAMP
-        })
-        
+        auth.verify_id_token(id_token)
+        logger.info("ID token verified successfully. Frontend can now proceed.")
         return jsonify({'message': 'Login successful'}), 200
 
     except auth.InvalidIdTokenError:
+        logger.warning("Invalid ID token provided.")
         return jsonify({'error': 'Invalid ID token'}), 401
     except Exception as e:
-        # A more specific error message will help with debugging
-        logger.error(f"Login failed: An unexpected error occurred. {e}", exc_info=True)
-        return jsonify({'error': 'Authentication failed.'}), 401
-
-
+        logger.error(f"Failed to verify ID token: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to verify token'}), 500
 
 
 
@@ -7255,6 +7266,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
