@@ -2008,25 +2008,30 @@ def repost_advert(advert_id):
 @app.route('/admin/adverts/review')
 @admin_required
 def admin_advert_review():
-    """Renders the admin review page with adverts awaiting review."""
+    """
+    Renders the admin review page with adverts awaiting review.
+
+    This route has been updated to also fetch and display the
+    advert's reference number and image URL for the admin to review.
+    """
     adverts_ref = db.collection("adverts")
-    
+
     # Get adverts with a status of 'pending_review'
     query = adverts_ref.where("status", "==", "pending_review").stream()
-    
+
     pending_adverts = []
     for doc in query:
         advert = doc.to_dict()
         advert['id'] = doc.id
-        
+
         # Add a way to get the seller's username and email
         user_info = get_user_info(advert['user_id'])
         advert['seller_username'] = user_info.get('username', 'N/A')
         advert['seller_email'] = user_info.get('email', 'N/A')
-        
+
         # Add category name for display
         advert['category_name'] = get_category_name(advert.get('category_id'))
-        
+
         # If there's a duration, calculate a theoretical expiry for display
         duration_days = advert.get("advert_duration_days")
         if duration_days and advert.get("created_at"):
@@ -2034,61 +2039,75 @@ def admin_advert_review():
             advert['calculated_expiry'] = datetime.now() + timedelta(days=duration_days)
         else:
             advert['calculated_expiry'] = None
-            
+
+        # --- NEW CODE: Fetch the image URL and a reference number ---
+        # Assuming the image URL is stored under the field 'image_url' and
+        # a unique reference number is stored under 'reference_number'
+        advert['image_url'] = advert.get('image_url', 'no_image_found.jpg')
+        advert['reference_number'] = advert.get('reference_number', 'N/A')
+        # -----------------------------------------------------------
+
         pending_adverts.append(advert)
-    
+
     return render_template('admin_review.html', adverts=pending_adverts)
 
 
-@app.route('/admin/adverts/publish/<advert_id>', methods=['POST'])
+@app.route('/admin/adverts/approve', methods=['POST'])
 @admin_required
-def publish_advert(advert_id):
-    """Marks an advert as published and sets its publication and expiry dates."""
-    advert_ref = db.collection("adverts").document(advert_id)
-    advert = advert_ref.get().to_dict()
-    
-    if not advert or advert.get('status') != 'pending_review':
-        flash("Invalid advert status. Cannot publish.", "error")
+def admin_advert_approve():
+    """
+    Handles the approval of an advert.
+
+    Updates the advert's status to 'approved', sets the publication date,
+    and calculates the final expiry date.
+    """
+    advert_id = request.form.get('advert_id')
+    if not advert_id:
         return redirect(url_for('admin_advert_review'))
 
-    duration_days = advert.get("advert_duration_days", 0)
-    expires_at = datetime.now() + timedelta(days=duration_days)
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert_doc = advert_ref.get()
 
-    advert_ref.update({
-        "status": "published",
-        "published_at": firestore.SERVER_TIMESTAMP,
-        "expires_at": expires_at
-    })
-    
-    flash("Advert has been successfully published!", "success")
+    if advert_doc.exists:
+        advert_data = advert_doc.to_dict()
+        duration_days = advert_data.get("advert_duration_days", 30) # Default to 30 days if not set
+
+        advert_ref.update({
+            'status': 'approved',
+            'is_published': True,
+            'published_at': datetime.now(),
+            'expiry_date': datetime.now() + timedelta(days=duration_days)
+        })
+
     return redirect(url_for('admin_advert_review'))
 
 
-@app.route('/admin/adverts/reject/<advert_id>', methods=['POST'])
+@app.route('/admin/adverts/reject', methods=['POST'])
 @admin_required
-def reject_advert(advert_id):
-    """Marks an advert as rejected and records the reason."""
-    advert_ref = db.collection("adverts").document(advert_id)
-    advert = advert_ref.get().to_dict()
+def admin_advert_reject():
+    """
+    Handles the rejection of an advert.
 
-    if not advert or advert.get('status') != 'pending_review':
-        flash("Invalid advert status. Cannot reject.", "error")
+    Updates the advert's status to 'rejected' and stores the reason
+    provided by the admin for the user to see.
+    """
+    advert_id = request.form.get('advert_id')
+    rejection_reason = request.form.get('rejection_reason', 'No reason provided.')
+
+    if not advert_id:
         return redirect(url_for('admin_advert_review'))
 
-    rejected_reason = request.form.get("rejected_reason")
-    
-    advert_ref.update({
-        "status": "rejected",
-        "rejected_at": firestore.SERVER_TIMESTAMP,
-        "rejected_reason": rejected_reason
-    })
-    
-    # Optional: Send a notification to the user about the rejection
-    # e.g., send_rejection_email(advert['user_id'], advert_id, rejected_reason)
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert_doc = advert_ref.get()
 
-    flash("Advert has been successfully rejected.", "success")
+    if advert_doc.exists:
+        advert_ref.update({
+            'status': 'rejected',
+            'rejection_reason': rejection_reason,
+            'is_published': False
+        })
+
     return redirect(url_for('admin_advert_review'))
-
 
 
 
@@ -7202,6 +7221,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
