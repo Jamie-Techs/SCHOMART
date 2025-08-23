@@ -201,12 +201,12 @@
     <h5 class="card-title">{{ advert.title }}</h5>
     <p class="card-text">{{ advert.description[:150] }}...</p>
     
-    {# Corrected image display line #}
     {% if advert.main_image %}
-    <img src="{{ advert.main_image }}" class="img-fluid mb-2 advert-image" alt="{{ advert.title }} Image">
+        <img src="{{ advert.main_image }}" class="img-fluid mb-2 advert-image" alt="{{ advert.title }} Image">
     {% else %}
-    <img src="https://placehold.co/400x250/E0E0E0/333333?text=No+Image+Available" class="img-fluid mb-2 advert-image" alt="No image available">
+        <img src="https://placehold.co/400x250/E0E0E0/333333?text=No+Image+Available" class="img-fluid mb-2 advert-image" alt="No image available">
     {% endif %}
+    
     
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
