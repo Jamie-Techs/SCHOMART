@@ -414,17 +414,22 @@ def api_login():
       
 
 
+
 @app.route('/logout')
-@login_required
 def logout():
     """Logs the user out and updates their online status."""
-    if g.user:
-        User.update_online_status(g.user.id, False)
+    
+    # Check if a user is currently logged in using Flask-Login's current_user
+    if current_user.is_authenticated:
+        # Update the user's online status
+        User.update_online_status(current_user.id, False)
 
-    session.pop('user_id', None)
+    # Use Flask-Login's built-in logout function to handle session cleanup
+    logout_user()
+
+    # Flash a success message and redirect
     flash("You have been logged out.", "success")
     return redirect(url_for('home'))
-
 
 
 
@@ -7349,6 +7354,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
