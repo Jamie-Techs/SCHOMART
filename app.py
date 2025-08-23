@@ -2490,10 +2490,11 @@ def clean_expired_posts():
         flash(f'An error occurred during cleanup: {str(e)}', 'error')
         return redirect(url_for('admin_post_airtime'))
 
-
-
-
-
+    
+@app.route('/admin_users_management')
+@admin_required
+def admin_users_management():
+    return render_template('admin_users_management.html')
 
 
 
@@ -3260,77 +3261,6 @@ def get_subcategories_for_category(category_name):
 
 
 
-
-
-
-# Firestore collections. Ad-hoc creation is not needed, Firestore creates them on first write.
-# This serves as a reference for our data model.
-USERS_COLLECTION = 'users'
-ADVERTS_COLLECTION = 'adverts'
-STATES_COLLECTION = 'states'
-LOCATIONS_COLLECTION = 'locations'
-SUBLOCATIONS_COLLECTION = 'sublocations'
-CATEGORIES_COLLECTION = 'categories'
-
-# ====================================================================
-# Helper Functions to interact with Firestore
-# These replace the direct SQL queries from your original code.
-# ====================================================================
-
-def get_all_states():
-    """Fetches all states from the 'states' collection."""
-    states_ref = db.collection(STATES_COLLECTION)
-    docs = states_ref.stream()
-    return [{'id': doc.id, 'name': doc.to_dict().get('name', '')} for doc in docs]
-
-def get_all_categories_with_subcategories():
-    """Fetches all categories and their subcategories."""
-    categories_ref = db.collection(CATEGORIES_COLLECTION)
-    docs = categories_ref.stream()
-    return [doc.to_dict() for doc in docs]
-
-def get_subcategories_for_category(category_name):
-    """Fetches subcategories for a given category name."""
-    if not category_name:
-        return []
-    
-    category_ref = db.collection(CATEGORIES_COLLECTION).document(category_name)
-    doc = category_ref.get()
-    if doc.exists:
-        return doc.to_dict().get('subcategories', [])
-    return []
-
-def get_state_info(state_id):
-    """Fetches state information by ID."""
-    if not state_id:
-        return None
-    state_ref = db.collection(STATES_COLLECTION).document(str(state_id))
-    doc = state_ref.get()
-    return doc.to_dict() if doc.exists else None
-
-def get_location_info(location_id):
-    """Fetches location information by ID."""
-    if not location_id:
-        return None
-    location_ref = db.collection(LOCATIONS_COLLECTION).document(str(location_id))
-    doc = location_ref.get()
-    return doc.to_dict() if doc.exists else None
-
-def get_sub_location_info(sublocation_id):
-    """Fetches sub-location information by ID."""
-    if not sublocation_id:
-        return None
-    sublocation_ref = db.collection(SUBLOCATIONS_COLLECTION).document(str(sublocation_id))
-    doc = sublocation_ref.get()
-    return doc.to_dict() if doc.exists else None
-
-def get_user_info(user_id):
-    """Fetches user information by ID."""
-    if not user_id:
-        return None
-    user_ref = db.collection(USERS_COLLECTION).document(str(user_id))
-    doc = user_ref.get()
-    return doc.to_dict() if doc.exists else None
     
 def get_followers_of_user(user_id):
     """Fetches the user IDs that the given user is following."""
@@ -3340,29 +3270,6 @@ def get_followers_of_user(user_id):
     # In a real app, you would query a 'following' collection for documents where the 'follower_id' is the current user's ID.
     return []
 
-# ====================================================================
-# API Endpoints for dynamic dropdowns (replaces your old API routes)
-# ====================================================================
-
-@app.route('/api/locations_by_state/<state_id>')
-def api_locations_by_state(state_id):
-    """API endpoint to get locations for a specific state."""
-    locations_ref = db.collection(LOCATIONS_COLLECTION).where('state_id', '==', str(state_id))
-    docs = locations_ref.stream()
-    locations = [{'id': doc.id, 'name': doc.to_dict().get('name', '')} for doc in docs]
-    return jsonify(locations)
-
-@app.route('/api/sublocations/<location_id>')
-def api_sublocations_by_location(location_id):
-    """API endpoint to get sublocations for a specific location."""
-    sublocations_ref = db.collection(SUBLOCATIONS_COLLECTION).where('location_id', '==', str(location_id))
-    docs = sublocations_ref.stream()
-    sublocations = [{'id': doc.id, 'name': doc.to_dict().get('name', '')} for doc in docs]
-    return jsonify(sublocations)
-
-# ====================================================================
-# Main Search Route (Completely rewritten for Firestore)
-# ====================================================================
 
 @app.route('/search')
 def search():
@@ -7295,6 +7202,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
