@@ -101,7 +101,7 @@
         .btn-navigation i {
             margin-right: 5px;
         }
-        /* Advert list and item styling - inspired by saved_adverts */
+        /* Advert list and item styling */
         .advert-list {
             display: grid;
             gap: 25px;
@@ -110,8 +110,8 @@
         .advert-item-link {
             text-decoration: none;
             color: inherit;
-            display: block; /* Make the entire link block-level */
-            height: 100%; /* Ensure link takes full height of its grid cell */
+            display: block;
+            height: 100%;
         }
         .advert-item {
             background: var(--light-text);
@@ -129,7 +129,7 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
         .advert-status-header {
-            background-color: var(--primary-color); /* Default for all */
+            background-color: var(--primary-color);
             color: var(--light-text);
             font-weight: bold;
             padding: 0.8rem 1.2rem;
@@ -140,14 +140,14 @@
             align-items: center;
         }
         /* Specific status header colors */
-        .advert-item.status-rejected .advert-status-header { background-color: #dc3545; } /* Red */
-        .advert-item.status-pending_review .advert-status-header { background-color: #ffc107; color: var(--dark-text); } /* Yellow */
-        .advert-item.status-published .advert-status-header { background-color: #28a745; } /* Green */
+        .advert-item.status-rejected .advert-status-header { background-color: #dc3545; }
+        .advert-item.status-pending_review .advert-status-header { background-color: #ffc107; color: var(--dark-text); }
+        .advert-item.status-published .advert-status-header { background-color: #28a745; }
         .advert-item.status-expired .advert-status-header,
-        .advert-item.status-paused .advert-status-header { background-color: #6c757d; } /* Gray */
+        .advert-item.status-paused .advert-status-header { background-color: #6c757d; }
         .advert-content {
             padding: 1.25rem;
-            flex-grow: 1; /* Allow content to grow */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
         }
@@ -184,10 +184,10 @@
             color: var(--dark-text);
         }
         .rejection-reason {
-            background-color: #f8d7da; /* Light red */
-            color: #721c24; /* Dark red */
+            background-color: #f8d7da;
+            color: #721c24;
             padding: 10px;
-            border-left: 5px solid #dc3545; /* Red border */
+            border-left: 5px solid #dc3545;
             border-radius: 5px;
             margin-top: 10px;
             font-size: 0.9em;
@@ -200,9 +200,9 @@
             background-color: var(--light-bg);
             border-top: 1px solid var(--border-color);
             display: flex;
-            justify-content: flex-end; /* Align buttons to the right */
+            justify-content: flex-end;
             gap: 10px;
-            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+            flex-wrap: wrap;
         }
         .advert-actions-footer .btn {
             background-color: var(--primary-color);
@@ -214,18 +214,18 @@
             text-decoration: none;
             font-size: 0.9em;
             transition: background-color 0.3s ease, color 0.3s ease;
-            flex-shrink: 0; /* Prevent buttons from shrinking too much */
+            flex-shrink: 0;
         }
         .advert-actions-footer .btn:hover {
             background-color: var(--secondary-color);
             color: var(--dark-text);
         }
-        /* Specific button colors (retaining some semantic Bootstrap-like colors for clarity) */
-        .btn.btn-danger { background-color: #dc3545; } /* Red for Delete */
+        /* Specific button colors */
+        .btn.btn-danger { background-color: #dc3545; }
         .btn.btn-danger:hover { background-color: #c82333; }
-        .btn.btn-warning { background-color: var(--secondary-color); color: var(--dark-text); } /* Yellow for Repost/Edit */
-        .btn.btn-warning:hover { background-color: #e0a800; } /* Darker yellow */
-        .btn.btn-info { background-color: #17a2b8; } /* Light blue for Pause/Resume */
+        .btn.btn-warning { background-color: var(--secondary-color); color: var(--dark-text); }
+        .btn.btn-warning:hover { background-color: #e0a800; }
+        .btn.btn-info { background-color: #17a2b8; }
         .btn.btn-info:hover { background-color: #138496; }
         .no-adverts {
             text-align: center;
@@ -246,7 +246,7 @@
                 font-size: 2em;
             }
             .advert-list {
-                grid-template-columns: 1fr; /* Single column on small screens */
+                grid-template-columns: 1fr;
             }
             .navigation-buttons {
                 flex-direction: column;
@@ -257,7 +257,7 @@
                 text-align: center;
             }
             .advert-actions-footer {
-                justify-content: center; /* Center buttons on small screens */
+                justify-content: center;
             }
         }
         .copy-btn {
@@ -273,9 +273,9 @@
             color: #0056b3;
         }
         .advert-item-link {
-            text-decoration: none; /* Remove underline from the link */
-            color: inherit; /* Inherit text color from parent */
-                          }
+            text-decoration: none;
+            color: inherit;
+        }
     </style>
 </head>
 <body>
@@ -348,13 +348,16 @@
                                 <li><strong>Location:</strong> {{ advert.location }}</li>
                                 <li><strong>Plan:</strong> {{ advert.plan_name }} (Visibility: {{ advert.visibility_level }})</li>
                                 <li><strong>Submitted On:</strong> {{ advert.created_at }}</li>
-                                
+                                {# NEW CODE: Display the expiration date if available #}
+                                {% if advert.expires_at %}
+                                <li><strong>Expires On:</strong> {{ advert.expires_at }}</li>
+                                {% endif %}
                                 {% if advert.status == 'rejected' and advert.rejected_reason %}
-                                    <li>
-                                        <div class="rejection-reason">
-                                            <strong>Rejection Reason:</strong> {{ advert.rejected_reason }}
-                                        </div>
-                                    </li>
+                                <li>
+                                    <div class="rejection-reason">
+                                        <strong>Rejection Reason:</strong> {{ advert.rejected_reason }}
+                                    </div>
+                                </li>
                                 {% endif %}
                                 {% if advert.status == 'expired' %}
                                     <li class="expired-message">
@@ -375,7 +378,7 @@
                             </form>
                         {% elif advert.status == 'rejected' %}
                             <span class="btn btn-danger">Rejected</span>
-                            <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a> {# Allow editing rejected adverts directly #}
+                            <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
                             <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
