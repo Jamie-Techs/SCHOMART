@@ -76,65 +76,44 @@ import tempfile
 
 load_dotenv()
 
+
+# Initialize Flask and extensions
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
-# Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'signup'
-
+login_manager.login_view = 'home'
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
 
-
+# Initialize Firebase Admin SDK
 try:
-    # Load Firebase credentials from environment
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     if not raw_json:
         raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
-
-    # Write credentials to a temporary file
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
         temp.write(raw_json)
         temp.flush()
         temp_path = temp.name
-
-    # Initialize Firebase Admin SDK with correct bucket name
     cred = credentials.Certificate(temp_path)
     firebase_admin.initialize_app(cred, {
         'storageBucket': 'schomart-7a743.firebasestorage.app'
     })
-
-    # Initialize Firestore and Storage clients
-    db = admin_firestore.client()
-    # Corrected line: Explicitly get the bucket using its name
+    db = firestore.client()
     admin_storage = storage.bucket('schomart-7a743.firebasestorage.app')
-
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
-
 except Exception as e:
     logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
     raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
-
 finally:
-    # Clean up the temporary credentials file
     if 'temp_path' in locals() and os.path.exists(temp_path):
         os.remove(temp_path)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-
-# Allowed file types for uploads
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
-
-def allowed_file(filename):
-    """Checks if the uploaded file has an allowed extension."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
-
 
 
 
@@ -183,139 +162,80 @@ def update_online_status(user_id, is_online):
 
 
 
-# Place this route in your Flask app.py file
-
-
-# =========================================================================
-# New endpoint to handle login redirect
-# =========================================================================
-@app.route('/login_redirect', methods=['POST'])
-def login_redirect():
-    """
-    Receives the ID token from the hidden form and performs a redirect.
-    """
-    # The token is sent as form data, not in the header
-    id_token = request.form.get('id_token')
-
-    if not id_token:
-        # No token provided, redirect to home with an error
-        flash("Authentication failed. No token provided.", "error")
-        return redirect(url_for('home'))
-
-    try:
-        # Verify the ID token and get the user's UID
-        decoded_token = auth.verify_id_token(id_token)
-        
-        # You can add logic here to create a session if needed,
-        # but for a direct redirect, this is enough to verify the user.
-        
-        # Redirect the user to the profile page
-        return redirect(url_for('profile'))
-
-    except auth.InvalidIdTokenError:
-        flash("Invalid login session. Please log in again.", "error")
-        return redirect(url_for('home'))
-    except Exception as e:
-        flash("Authentication failed. Please try again.", "error")
-        return redirect(url_for('home'))
-
-@app.route('/signup')
-def signup():
-    return render_template('signup.html')
-
-@app.route('/login')
-def login():
-    return render_template('signup.html')
-
-
-# --- Helper Functions for Referral Code Generation ---
-def generate_referral_code():
-    """
-    Generates a 6-digit numeric referral code as a string.
-    """
-    return f"{random.randint(0, 999999):06d}"
-
-def generate_unique_referral_code(db):
-    """
-    Generates a unique 6-digit numeric referral code.
-    It checks Firestore to ensure the code does not already exist.
-    """
-    while True:
-        code = generate_referral_code()
-        # Check if the code already exists in the 'users' collection
-        existing = db.collection('users').where('referral_code', '==', code).limit(1).stream()
-        if not any(existing):
-            return code
 
 
 
 
 
+
+
+
+
+# User loader for Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    user_doc_ref = db.collection('users').document(user_id)
+    user_data = user_doc_ref.get().to_dict()
+    if user_data:
+        return User(user_id, **user_data)
+    return None
+    
+# Corrected login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         id_token = None
-
-        # Extract token from Authorization header
+        # Extract token from Authorization header (for API calls)
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             if auth_header.startswith('Bearer '): 
                 id_token = auth_header.split(' ')[1]
-
+        
         if not id_token:
-            # No token provided — redirect to home
+            # If a direct browser GET request is made without a token,
+            # this check will fail. This is the root of your problem.
             flash("You must be logged in to access this page.", "error")
             return redirect(url_for('home'))
 
         try:
-            # Verify token
             decoded_token = auth.verify_id_token(id_token)
             request.uid = decoded_token['uid']
             return f(*args, **kwargs)
-
         except auth.InvalidIdTokenError:
             flash("Invalid login session. Please log in again.", "error")
             return redirect(url_for('home'))
-
         except Exception as e:
             flash("Authentication failed. Please try again.", "error")
             return redirect(url_for('home'))
-
     return decorated_function
 
+# =========================================================================
+# FLASK ROUTES
+# =========================================================================
 
-# =========================================================================
-# The updated /api/signup endpoint
-# =========================================================================
+
+# API endpoint for user signup
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
-    """
-    Handles a request from the frontend to create a user document in Firestore.
-    """
     if db is None:
         logger.error("Backend services are unavailable: Firestore DB object is None.")
         return jsonify({'error': 'Backend services are unavailable.'}), 503
-
     data = request.get_json()
     uid = data.get('uid')
     email = data.get('email')
     username = data.get('username')
     referral_code_used = data.get('referralCode')
-
     if not all([uid, email, username]):
         logger.warning("Missing required fields (UID, email, or username) in signup request.")
         return jsonify({'error': 'Missing required fields'}), 400
-
     try:
         user_ref = db.collection('users').document(uid)
         
         if user_ref.get().exists:
             logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
             return jsonify({'error': 'User data already exists in Firestore'}), 409
-
         referral_code = generate_unique_referral_code(db)
         referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
-
         new_user_data = {
             'email': email,
             'username': username,
@@ -349,7 +269,6 @@ def api_signup():
             'working_times': {},
             'delivery_methods': [],
         }
-
         user_ref.set(new_user_data)
         logger.info(f"User data for {uid} created in Firestore.")
         
@@ -364,44 +283,90 @@ def api_signup():
                 })
                 logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
                 break
-
         return jsonify({
             'message': 'User data saved to Firestore successfully.',
             'uid': uid
         }), 201
-
     except Exception as e:
         logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
         return jsonify({'error': 'Failed to save user data.'}), 500
 
-# =========================================================================
-# The /api/login endpoint no longer creates a session, just verifies
-# and returns a success message for the frontend to handle.
-# =========================================================================
-@app.route('/api/login', methods=['POST'])
-def api_login():
+# NEW endpoint to handle login redirect
+@app.route('/login_redirect', methods=['POST'])
+def login_redirect():
     """
-    Verifies the ID token and returns a success message. The frontend
-    will handle storing the token and redirecting.
+    Receives the ID token from the hidden form and performs a redirect.
     """
-    data = request.get_json()
-    id_token = data.get('idToken')
-    
+    id_token = request.form.get('id_token')
     if not id_token:
-        logger.warning("No ID token provided for login.")
-        return jsonify({'error': 'ID token is required'}), 400
-    
-    try:
-        auth.verify_id_token(id_token)
-        logger.info("ID token verified successfully. Frontend can now proceed.")
-        return jsonify({'message': 'Login successful'}), 200
+        flash("Authentication failed. No token provided.", "error")
+        return redirect(url_for('home'))
 
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        # We can safely assume the user is authenticated at this point
+        # The user is now officially authenticated.
+        return redirect(url_for('profile'))
     except auth.InvalidIdTokenError:
-        logger.warning("Invalid ID token provided.")
-        return jsonify({'error': 'Invalid ID token'}), 401
+        flash("Invalid login session. Please log in again.", "error")
+        return redirect(url_for('home'))
     except Exception as e:
-        logger.error(f"Failed to verify ID token: {e}", exc_info=True)
-        return jsonify({'error': 'Failed to verify token'}), 500
+        flash("Authentication failed. Please try again.", "error")
+        return redirect(url_for('home'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+@app.route('/login')
+def login():
+    return render_template('signup.html')
+
+
+# --- Helper Functions for Referral Code Generation ---
+def generate_referral_code():
+    """
+    Generates a 6-digit numeric referral code as a string.
+    """
+    return f"{random.randint(0, 999999):06d}"
+
+def generate_unique_referral_code(db):
+    """
+    Generates a unique 6-digit numeric referral code.
+    It checks Firestore to ensure the code does not already exist.
+    """
+    while True:
+        code = generate_referral_code()
+        # Check if the code already exists in the 'users' collection
+        existing = db.collection('users').where('referral_code', '==', code).limit(1).stream()
+        if not any(existing):
+            return code
+
+
+
+
+
+
 
 
 
@@ -424,18 +389,6 @@ def logout():
         return redirect(url_for('home'))
 
 
-
-# In your Flask app
-@app.route('/api/protected_data', methods=['GET'])
-@login_required
-def protected_data():
-    """An example of a protected route that requires a valid ID token."""
-    # The uid is attached to the request object by the decorator
-    uid = request.uid
-    return jsonify({
-        'message': 'Welcome! This is protected data.',
-        'user_id': uid
-    }), 200
 
 
 
@@ -510,7 +463,7 @@ def account_settings():
 
 
 
- 
+
 
 # --- User Model Class ---
 class User(UserMixin):
@@ -518,7 +471,7 @@ class User(UserMixin):
     User data model that retrieves and represents a user from Firestore.
     Inherits from UserMixin to integrate with Flask-Login.
     """
-    def __init__(self, uid, **data): # Corrected: Use **data to accept keyword arguments
+    def __init__(self, uid, **kwargs): # Corrected: Use **data to accept keyword arguments
         self.id = str(uid)
         
         # Now, populate the attributes directly from the 'data' dictionary
@@ -7309,6 +7262,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
