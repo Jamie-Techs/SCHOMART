@@ -6,6 +6,7 @@
     <title>Schomart - Login/Signup</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <!-- Use the latest Firebase SDK version for best practice -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -203,13 +204,24 @@
             });
 
             if (response.ok) {
-                // Flash the message before changing sections
-                showMessageBox(msgBoxSignup, 'Account created successfully! Please check your email for a verification link.', false);
-                signupForm.reset();
-                // Change sections after a short delay to allow message to show
-                setTimeout(() => {
-                    showSection('login-section');
-                }, 2000); 
+                // Step 4: After successful signup, call the backend login API to establish a session
+                const idToken = await user.getIdToken();
+                const sessionResponse = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json'},
+                    body: JSON.stringify({ idToken })
+                });
+
+                if (sessionResponse.ok) {
+                    // Step 5: If login is successful, redirect the user
+                    showMessageBox(msgBoxSignup, 'Account created and logged in successfully!', false);
+                    setTimeout(() => {
+                        window.location.assign('/profile');
+                    }, 1000);
+                } else {
+                    const errorData = await sessionResponse.json();
+                    throw new Error(errorData.error || 'Failed to establish session after signup.');
+                }
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Failed to save user data on the backend.');
@@ -293,4 +305,3 @@
 </script>
 </body>
 </html>
-                
