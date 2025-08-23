@@ -190,7 +190,22 @@ def admin_required(f):
     return decorated_function
 
 
+def update_online_status(user_id, is_online):
+    """
+    Updates a user's online status in the Firestore database.
 
+    Args:
+        user_id (str): The ID of the user to update.
+        is_online (bool): The new online status (True or False).
+    """
+    try:
+        user_ref = db.collection('users').document(user_id)
+        user_ref.update({'is_online': is_online})
+        logger.info(f"User {user_id} online status updated to {is_online}.")
+    except Exception as e:
+        logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
+        # You can handle this error as needed, e.g., by logging it
+        # without failing the entire logout process.
 
 @app.route('/signup')
 def signup():
@@ -415,12 +430,6 @@ def api_login():
 
 
 
-# In your app.py file
-
-# Make sure you import the function correctly, e.g., from a user_model.py file
-# from .user_model import update_online_status 
-# Or if it's in the same file, just call it directly.
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -428,10 +437,7 @@ def logout():
     Logs out the user and updates their online status to False.
     """
     try:
-        # Assuming `update_online_status` is a standalone function
-        # that takes the user ID and the status.
         update_online_status(current_user.id, False)
-        
         logout_user()  # Flask-Login's logout function
         flash("You have been logged out.", "success")
         return redirect(url_for('home'))
@@ -7316,6 +7322,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
