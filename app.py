@@ -2149,8 +2149,7 @@ def delete_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
-
-# The corrected Python function to handle image URLs
+# The corrected Python function with the essential backend update
 @app.route('/admin/adverts/review')
 @admin_required
 def admin_advert_review():
@@ -2181,7 +2180,8 @@ def admin_advert_review():
         else:
             advert['calculated_expiry'] = None
 
-        # Correct image display logic: Check for 'images' list and assign the first one
+        # This is the backend update you need.
+        # It assigns the correct image URL from the 'images' list.
         images = advert.get('images', [])
         if images:
             advert['main_image'] = images[0]
@@ -2193,6 +2193,7 @@ def admin_advert_review():
         pending_adverts.append(advert)
 
     return render_template('admin_review.html', adverts=pending_adverts)
+
 
 
 
@@ -7365,6 +7366,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
