@@ -1916,15 +1916,28 @@ def payment(advert_id):
 @login_required
 def submit_advert(advert_id):
     advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'pending_payment':
+    if not advert or advert.get('user_id') != current_user.id:
         flash("Invalid submission.", "error")
         return redirect(url_for('list_adverts'))
     
-    # Calculate the expiration date
-    duration_days = advert.get("advert_duration_days", 0) # Use .get() for safety and a default value
+    # Check if the advert is in a valid state to be submitted for review
+    if advert.get('status') != 'pending_payment':
+        flash("Advert is not in a valid state for submission.", "error")
+        return redirect(url_for('list_adverts'))
+
+    # Get the plan duration for expiration calculation
+    plan_name = advert.get('plan_name')
+    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
+    
+    if not plan:
+        flash("Invalid subscription plan details.", "error")
+        return redirect(url_for('list_adverts'))
+
+    duration_days = plan.get("advert_duration_days", 0) 
     expires_at = datetime.now() + timedelta(days=duration_days)
     
     db.collection("adverts").document(advert_id).update({
+        # Only update the status and expiration date
         "status": "pending_review",
         "published_at": firestore.SERVER_TIMESTAMP,
         "expires_at": expires_at
@@ -2108,15 +2121,13 @@ def delete_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
-
 @app.route('/admin/adverts/review')
 @admin_required
 def admin_advert_review():
     """
     Renders the admin review page with adverts awaiting review.
-
-    This route has been updated to also fetch and display the
-    advert's reference number and image URL for the admin to review.
+    It now correctly fetches the payment reference number for
+    adverts that have a 'pending_payment' status.
     """
     adverts_ref = db.collection("adverts")
 
@@ -2128,32 +2139,25 @@ def admin_advert_review():
         advert = doc.to_dict()
         advert['id'] = doc.id
 
-        # Add a way to get the seller's username and email
         user_info = get_user_info(advert['user_id'])
         advert['seller_username'] = user_info.get('username', 'N/A')
         advert['seller_email'] = user_info.get('email', 'N/A')
 
-        # Add category name for display
         advert['category_name'] = get_category_name(advert.get('category_id'))
 
-        # If there's a duration, calculate a theoretical expiry for display
         duration_days = advert.get("advert_duration_days")
         if duration_days and advert.get("created_at"):
-            # Use current time as a baseline for the calculation
             advert['calculated_expiry'] = datetime.now() + timedelta(days=duration_days)
         else:
             advert['calculated_expiry'] = None
 
-        # --- NEW CODE: Fetch the image URL and a reference number ---
-        # Assuming the image URL is stored under the field 'image_url' and
-        # a unique reference number is stored under 'reference_number'
         advert['image_url'] = advert.get('image_url', 'no_image_found.jpg')
-        advert['reference_number'] = advert.get('reference_number', 'N/A')
-        # -----------------------------------------------------------
-
+        advert['payment_reference'] = advert.get('payment_reference', 'N/A')
+        
         pending_adverts.append(advert)
 
     return render_template('admin_review.html', adverts=pending_adverts)
+
 
 
 @app.route('/admin/adverts/approve', methods=['POST'])
@@ -7325,6 +7329,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
