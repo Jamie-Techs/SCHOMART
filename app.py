@@ -1962,12 +1962,13 @@ def list_adverts():
                 published_at = advert_data['published_at']
                 
                 # Check if published_at is a datetime object, convert if necessary
-                if not isinstance(published_at, datetime.datetime):
+                if not isinstance(published_at, datetime):
                     # Assuming it's a Firestore Timestamp, convert it
                     published_at = published_at.to_datetime()
                 
+                # Use timedelta correctly
                 expiration_date = published_at + timedelta(days=duration_days)
-                now = datetime.datetime.now(datetime.timezone.utc) # Ensure timezone awareness
+                now = datetime.now(timezone.utc) # Ensure timezone awareness
                 
                 if now > expiration_date:
                     # Update status to 'expired' in Firestore
@@ -1978,7 +1979,7 @@ def list_adverts():
         if status == 'expired' and 'expired_at' in advert_data and advert_data['expired_at']:
             expired_at = advert_data['expired_at'].to_datetime()
             deletion_date = expired_at + timedelta(days=2)
-            now = datetime.datetime.now(datetime.timezone.utc)
+            now = datetime.now(timezone.utc)
             
             if now > deletion_date:
                 # Add to a list for batch deletion
@@ -1991,8 +1992,10 @@ def list_adverts():
         # Enrich advert data for display
         advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
         advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
+        
+        # Check and format 'created_at' using the correct datetime reference
         advert_data['created_at'] = advert_data.get('created_at', 'N/A')
-        if advert_data['created_at'] != 'N/A' and isinstance(advert_data['created_at'], datetime.datetime):
+        if advert_data['created_at'] != 'N/A' and isinstance(advert_data['created_at'], datetime):
             advert_data['created_at'] = advert_data['created_at'].strftime('%Y-%m-%d %H:%M')
             
         adverts.append(advert_data)
@@ -7322,6 +7325,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
