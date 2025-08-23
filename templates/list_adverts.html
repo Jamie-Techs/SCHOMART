@@ -352,10 +352,10 @@
                                 {% if advert.expires_at %}
                                 <li><strong>Expires On:</strong> {{ advert.expires_at }}</li>
                                 {% endif %}
-                                {% if advert.status == 'rejected' and advert.rejected_reason %}
+                                {% if advert.status == 'rejected' and advert.rejection_reason %}
                                 <li>
                                     <div class="rejection-reason">
-                                        <strong>Rejection Reason:</strong> {{ advert.rejected_reason }}
+                                        <strong>Rejection Reason:</strong> {{ advert.rejection_reason }}
                                     </div>
                                 </li>
                                 {% endif %}
