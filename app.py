@@ -351,16 +351,15 @@ def api_verify_user():
 
 
  
-
-
-
-
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
-    Verifies a Firebase ID token, logs the user in, and updates their online status.
-    This consolidated function handles all login logic in one place.
+    Verifies a Firebase ID token and logs the user into the Flask session
+    using Flask-Login.
     """
+    if db is None:
+        return jsonify({'error': 'Backend services are unavailable.'}), 503
+
     data = request.get_json()
     id_token = data.get('idToken')
 
@@ -368,37 +367,35 @@ def api_login():
         return jsonify({'error': 'Missing ID token'}), 400
 
     try:
-        # 1. Verify the Firebase ID token for authenticity.
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
 
-        # 2. Fetch the user's data from your Firestore database.
         user_doc = db.collection('users').document(uid).get()
         if not user_doc.exists:
             return jsonify({'error': 'User data not found in Firestore'}), 404
 
         user_data = user_doc.to_dict()
 
-        # 3. Create a User object from your data.
-        user_object = User(uid, user_data)
+        # Corrected line: Unpack the user_data dictionary
+        # The ** operator unpacks the dictionary into keyword arguments
+        user_object = User(uid, **user_data)
         
-        # 4. Use Flask-Login to log the user in.
         login_user(user_object)
 
-        # 5. Update user status and return a successful response.
-        update_online_status(uid, True)
+        db.collection('users').document(uid).update({
+            'is_online': True,
+            'last_online': firestore.SERVER_TIMESTAMP
+        })
         
         return jsonify({'message': 'Login successful'}), 200
 
     except auth.InvalidIdTokenError:
-        logger.warning("Login failed: Invalid Firebase ID token.")
-        return jsonify({'error': 'Invalid ID token.'}), 401
-    except ValueError as e:
-        logger.error(f"Login failed: Value error with token. {e}", exc_info=True)
-        return jsonify({'error': 'Invalid token format.'}), 401
+        return jsonify({'error': 'Invalid ID token'}), 401
     except Exception as e:
+        # A more specific error message will help with debugging
         logger.error(f"Login failed: An unexpected error occurred. {e}", exc_info=True)
-        return jsonify({'error': 'Authentication failed.'}), 500
+        return jsonify({'error': 'Authentication failed.'}), 401
+
 
 
 
@@ -7297,6 +7294,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
