@@ -1260,16 +1260,17 @@ def add_category():
 
 
 
+
+
+
 @app.route('/')
 def home():
     """
-    Renders the homepage by fetching data from Firestore and generating
-    signed URLs for both advert and category images from Firebase Storage.
-    The page now passes structured location data for client-side rendering.
+    Renders the homepage, fetches data, generates signed URLs for images,
+    and sorts adverts based on new priority rules.
     """
     try:
         # Pass the global NIGERIAN_STATES and NIGERIAN_SCHOOLS to the template
-        # to support the new client-side location logic.
         locations_data = {
             'NIGERIAN_STATES': NIGERIAN_STATES,
             'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
@@ -1290,14 +1291,13 @@ def home():
                 blob_path = f"static/category/{image_filename}"
                 blob = admin_storage.blob(blob_path)
                 
-                # Check if the blob exists and then generate a signed URL
                 if blob.exists():
                     image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
             
             category['image_url'] = image_url
             categories_data.append(category)
 
-        # --- Adverts Logic (remains unchanged) ---
+        # --- Adverts Logic ---
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -1308,20 +1308,21 @@ def home():
                 view_following_priority = True
                 followed_user_ids = get_followers_of_user(user_id)
 
-        visibility_order = {
-            'Ultimate': 1, 'Premium': 2, 'Top': 3, 'High': 4, 'Standard': 5
-        }
-
+        # Get the visibility order from SUBSCRIPTION_PLANS
+        visibility_order = {plan['visibility_level']: i for i, plan in enumerate(SUBSCRIPTION_PLANS.values())}
+        
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
 
         for advert_doc in adverts_ref:
             advert_data = advert_doc.to_dict()
+            advert_data['id'] = advert_doc.id
+            
             expires_at = advert_data.get('expires_at')
             if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
-                advert_data['id'] = advert_doc.id
                 
+                # Fetch poster user data
                 poster_user_ref = db.collection('users').document(advert_data['user_id'])
                 poster_user_doc = poster_user_ref.get()
                 if poster_user_doc.exists:
@@ -1332,41 +1333,50 @@ def home():
                     advert_data['poster_username'] = 'Unknown'
                     advert_data['poster_role'] = 'standard'
                 
+                # Correctly fetch the image URL from the 'main_image' key
+                main_image_url = advert_data.get('main_image')
+                if main_image_url:
+                    advert_data['display_image'] = main_image_url
+                else:
+                    advert_data['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
+                
                 all_published_adverts.append(advert_data)
 
-        admin_ads_for_display = [
+        # Separate admin/featured ads and general ads
+        admin_ads_for_display = sorted([
             ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
+        ], key=lambda ad: visibility_order.get(ad.get('visibility_level', 'Standard'), 99))
+        
+        # Sort remaining adverts based on visibility and followed users
+        regular_adverts = [
+            ad for ad in all_published_adverts if not ad.get('featured') and ad.get('poster_role') != 'admin'
         ]
 
-        def sort_ads_by_visibility_and_date(ad):
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            created_at_dt = ad.get('created_at', datetime.min)
-            return (visibility_rank, -created_at_dt.timestamp())
-        
-        admin_ads_for_display.sort(key=sort_ads_by_visibility_and_date)
-        
         def sort_trending_ads(ad):
             is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
             visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
             created_at_ts = ad.get('created_at', datetime.min).timestamp()
             return (is_followed, visibility_rank, -created_at_ts)
 
-        adverts = sorted(all_published_adverts, key=sort_trending_ads)
-        adverts = adverts[:20]
-
+        adverts = sorted(regular_adverts, key=sort_trending_ads)
+        
+        # Merge the lists, giving admin ads top priority
+        final_adverts_list = admin_ads_for_display + adverts
+        
         return render_template('home.html',
-                               locations=locations_data, # Use the new data structure
+                               locations=locations_data,
                                categories=categories_data,
-                               admin_ads=admin_ads_for_display,
-                               adverts=adverts,
-                               NIGERIAN_STATES=NIGERIAN_STATES, # Pass NIGERIAN_STATES
-                               NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS # Pass NIGERIAN_SCHOOLS
+                               adverts=final_adverts_list,
+                               NIGERIAN_STATES=NIGERIAN_STATES,
+                               NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS
                                )
 
     except Exception as e:
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
-        return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
+        return render_template('home.html', adverts=[], categories=[], locations=[])
+
+
 
 
 
@@ -7339,6 +7349,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
