@@ -143,6 +143,14 @@
             justify-content: space-between;
             align-items: center;
         }
+        .advert-item .advert-image {
+            max-width: 100%;
+            height: 200px; /* Consistent image height */
+            object-fit: cover; /* Correct object-fit */
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #eee; /* Light border for visual separation */
+        }
     </style>
 </head>
 <body>
@@ -193,7 +201,7 @@
                             <h5 class="card-title">{{ advert.title }}</h5>
                             <p class="card-text">{{ advert.description[:150] }}...</p>
                             
-                            <img src="{{ advert.image_url }}" onerror="this.src='https://placehold.co/400x250/E0E0E0/333333?text=Image+Not+Found';" class="img-fluid mb-2" alt="{{ advert.title }} Image" style="max-height: 200px; object-fit: contain;">
+                            <img src="{{ advert.image_url }}" onerror="this.src='https://placehold.co/400x250/E0E0E0/333333?text=Image+Not+Found';" class="img-fluid mb-2 advert-image" alt="{{ advert.title }} Image">
                             
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">
@@ -249,7 +257,7 @@
                                 {% elif advert.status == 'rejected' %}
                                     <span class="badge bg-danger">Rejected</span>
                                     {% if advert.rejection_reason %}
-                                        <p class="text-muted small mt-2">Reason: {{ advert.rejection_reason }}</p>
+                                    <p class="text-muted small mt-2">Reason: {{ advert.rejection_reason }}</p>
                                     {% endif %}
                                     <form action="{{ url_for('repost_advert', advert_id=advert.id) }}" method="GET" class="d-inline mt-2">
                                         <button type="submit" class="btn btn-warning btn-sm">Repost Advert</button>
