@@ -1725,31 +1725,7 @@ def validate_sell_form(form_data, files):
 
 
 
-from google.cloud.firestore_v1.base_query import FieldFilter
-from google.cloud.firestore_v1 import aggregation
 
-# db is your Firestore client object, e.g., db = firestore.client()
-
-def get_advert_count(user_id):
-    """
-    Returns the number of adverts for a given user using an aggregation query.
-    """
-    # 1. Create a query to filter adverts by user_id
-    query = db.collection("adverts").where(filter=FieldFilter("user_id", "==", user_id))
-
-    # 2. Build an aggregation query using the count() function
-    aggregate_query = aggregation.AggregationQuery(query)
-    aggregate_query.count(alias="count_of_adverts")
-
-    # 3. Get the results from the aggregation query
-    results = aggregate_query.get()
-
-    # 4. Extract the count from the results
-    for result in results:
-        return result.value
-
-    # Return 0 if no results are found
-    return 0
 
 
 
@@ -7366,6 +7342,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
