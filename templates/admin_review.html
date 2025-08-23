@@ -198,18 +198,24 @@
                             <span>Status: {{ advert.status.replace('_', ' ').title() }}</span>
                         </div>
                         <div class="card-body">
-                            <h5 class="card-title">{{ advert.title }}</h5>
-                            <p class="card-text">{{ advert.description[:150] }}...</p>
-                            
-                            <img src="{{ advert.image_url }}" onerror="this.src='https://placehold.co/400x250/E0E0E0/333333?text=Image+Not+Found';" class="img-fluid mb-2 advert-image" alt="{{ advert.title }} Image">
-                            
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item">
-                                    <span><strong>Payment Ref:</strong> {{ advert.payment_reference }}</span>
-                                    <button class="copy-btn" onclick="copyToClipboard('{{ advert.payment_reference }}', this)" title="Copy Reference">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </li>
+    <h5 class="card-title">{{ advert.title }}</h5>
+    <p class="card-text">{{ advert.description[:150] }}...</p>
+    
+    {# Corrected image display line #}
+    {% if advert.main_image %}
+    <img src="{{ advert.main_image }}" class="img-fluid mb-2 advert-image" alt="{{ advert.title }} Image">
+    {% else %}
+    <img src="https://placehold.co/400x250/E0E0E0/333333?text=No+Image+Available" class="img-fluid mb-2 advert-image" alt="No image available">
+    {% endif %}
+    
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+            <span><strong>Payment Ref:</strong> {{ advert.payment_reference }}</span>
+            <button class="copy-btn" onclick="copyToClipboard('{{ advert.payment_reference }}', this)" title="Copy Reference">
+                <i class="fas fa-copy"></i>
+            </button>
+        </li>
+        
                                 <li class="list-group-item"><strong>Seller:</strong> {{ advert.seller_username }} ({{ advert.seller_email }})</li>
                                 <li class="list-group-item"><strong>Category:</strong> {{ advert.category_name }}</li>
                                 <li class="list-group-item"><strong>Price:</strong> ₦{{ "{:,.2f}".format(advert.price) }} {% if advert.negotiable %}(Negotiable){% endif %}</li>
