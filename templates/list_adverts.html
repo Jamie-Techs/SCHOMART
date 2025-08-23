@@ -260,6 +260,22 @@
                 justify-content: center; /* Center buttons on small screens */
             }
         }
+        .copy-btn {
+            background-color: transparent;
+            border: none;
+            color: #007bff;
+            padding: 0;
+            margin-left: 5px;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+        .copy-btn:hover {
+            color: #0056b3;
+        }
+        .advert-item-link {
+            text-decoration: none; /* Remove underline from the link */
+            color: inherit; /* Inherit text color from parent */
+                          }
     </style>
 </head>
 <body>
@@ -318,6 +334,14 @@
                                 <img src="{{ advert.main_image }}" alt="Main Image">
                             {% endif %}
                             <ul class="advert-details-list">
+                                {% if advert.payment_reference %}
+                                <li>
+                                    <strong>Payment Ref:</strong> {{ advert.payment_reference }}
+                                    <button class="copy-btn" onclick="copyToClipboard('{{ advert.payment_reference }}', this)" title="Copy Reference">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </li>
+                                {% endif %}
                                 <li><strong>Category:</strong> {{ advert.category_name }}</li>
                                 <li><strong>Price:</strong> ₦{{ "{:,.2f}".format(advert.price) }} {% if advert.negotiable == 'yes' %}(Negotiable){% endif %}</li>
                                 <li><strong>Condition:</strong> {{ advert.condition.replace('_', ' ').title() }}</li>
@@ -431,6 +455,17 @@
                 }
             });
         });
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(function() {
+                const originalIcon = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    button.innerHTML = originalIcon;
+                }, 2000);
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>
