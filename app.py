@@ -1486,6 +1486,34 @@ CATEGORIES = {
 }
 
 
+
+# Assuming this is the function causing the error
+def get_advert_count(user_id):
+    """
+    Counts the number of active adverts for a specific user.
+    """
+    try:
+        # Check for active adverts
+        now = datetime.now(timezone.utc)
+        
+        # Use a proper query to get documents
+        active_adverts = db.collection('adverts').where('user_id', '==', user_id).stream()
+        
+        count = 0
+        for advert_doc in active_adverts:
+            advert_data = advert_doc.to_dict()
+            expires_at = advert_data.get('expires_at')
+            # Only count adverts that have not expired
+            if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
+                count += 1
+
+        return count
+    except Exception as e:
+        logger.error(f"Error getting advert count for user {user_id}: {e}", exc_info=True)
+        return 0
+
+
+
 def get_referral_plan(user_id):
     """
     Fetches the referral benefit plan for a user.
@@ -4604,84 +4632,10 @@ def bank_transfer_webhook():
 
 
 
-def get_followers_of_user(user_id):
-    """
-    Retrieves the user IDs of all users who are following the given user
-    using Firestore. Assumes a 'followers' collection where each document
-    has 'follower_id' and 'followed_id' fields.
-    """
-    followers_ids = []
-    try:
-        # Query Firestore for all documents where 'followed_id' matches the user_id
-        followers_ref = db.collection('followers').where('followed_id', '==', user_id).stream()
-        for doc in followers_ref:
-            followers_ids.append(doc.to_dict()['follower_id'])
-    except Exception as e:
-        logging.error(f"Firestore error getting followers for user {user_id}: {e}", exc_info=True)
-    return followers_ids
-
-
-
-def generate_unique_reference():
-    """Generates a unique payment reference number."""
-    return f"REF-{uuid.uuid4().hex[:10].upper()}-{int(time.time())}"
-
-
-# --- Refactored Routes (Firestore) ---
 
 
 
 
-def get_user_adverts_count(user_id):
-    """
-    Fetches the number of currently 'published' adverts for a given user from Firestore.
-    """
-    try:
-        # Query Firestore for all documents where user_id and status match.
-        adverts_ref = db.collection('adverts').where('user_id', '==', user_id).where('status', '==', 'published').stream()
-        
-        # Count the documents returned by the stream.
-        count = sum(1 for _ in adverts_ref)
-        
-        logging.info(f"Successfully fetched user published adverts count for user {user_id}: {count}")
-        return count
-    except Exception as e:
-        logging.error(f"Firestore error fetching user published adverts count for user {user_id}: {e}", exc_info=True)
-        return 0
-
-
-
-
-def subtract_referral_counts(user_id, count_to_subtract, transaction=None):
-    """
-    Subtracts a specified number of referral counts from a user's total in a transaction.
-    """
-    def _update_in_transaction(transaction, user_doc_ref):
-        user_doc = user_doc_ref.get(transaction=transaction)
-        if not user_doc.exists:
-            raise ValueError(f"User document with ID {user_id} not found.")
-
-        current_count = user_doc.to_dict().get('referral_count', 0)
-        new_count = max(0, current_count - count_to_subtract)
-        
-        transaction.update(user_doc_ref, {'referral_count': new_count})
-        logging.info(f"Updated referral counts for user {user_id} by -{count_to_subtract} in transaction.")
-    
-    try:
-        user_doc_ref = db.collection('users').document(user_id)
-        if transaction:
-            # Use the provided transaction
-            _update_in_transaction(transaction, user_doc_ref)
-        else:
-            # Create a new transaction if one isn't provided
-            new_transaction = db.transaction()
-            new_transaction.run(_update_in_transaction, user_doc_ref)
-
-        return True
-    except Exception as e:
-        logging.error(f"Firestore error subtracting referral counts for user {user_id}: {e}", exc_info=True)
-        return False
-           
             
             
 def update_advert_status(advert_id, new_status):
@@ -7354,6 +7308,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
