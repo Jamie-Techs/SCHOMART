@@ -138,14 +138,6 @@ def allowed_file(filename):
 
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    user_doc_ref = db.collection('users').document(user_id)
-    user_data = user_doc_ref.get().to_dict()
-    if user_data:
-        # Pass the unpacked dictionary
-        return User(user_id, **user_data)
-    return None
 
 
 
@@ -392,7 +384,17 @@ def logout():
 
 
 
-
+# In your Flask app
+@app.route('/api/protected_data', methods=['GET'])
+@login_required
+def protected_data():
+    """An example of a protected route that requires a valid ID token."""
+    # The uid is attached to the request object by the decorator
+    uid = request.uid
+    return jsonify({
+        'message': 'Welcome! This is protected data.',
+        'user_id': uid
+    }), 200
 
 
 
@@ -7266,6 +7268,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
