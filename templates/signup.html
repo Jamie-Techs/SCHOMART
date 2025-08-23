@@ -96,23 +96,13 @@
                 <a id="back-to-login" href="#" class="text-sm text-primary hover:underline font-medium transition-colors duration-200">Back to Log In</a>
             </div>
         </form>
-
-        <!-- Protected Content Section (hidden by default) -->
-        <div id="protected-content" class="hidden text-center mt-6">
-            <h3 class="text-2xl font-bold text-primary mb-4">Welcome!</h3>
-            <p class="text-gray-700 mb-4">You are successfully logged in. Click the button below to see a protected resource.</p>
-            <button id="access-protected" class="w-full py-3 font-bold rounded-lg color-secondary text-white text-lg hover:bg-opacity-90 transition-all duration-300 shadow-md">
-                Access Profile Page (API)
-            </button>
-            <p id="profile-message" class="mt-4 text-sm text-gray-600"></p>
-        </div>
     </div>
 
     <!-- Firebase and Authentication scripts -->
     <script type="module">
         // Import Firebase modules from CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
         // === CONFIGURATION ===
         // Your Firebase project configuration
@@ -152,16 +142,12 @@
         const showSignupBtn = document.getElementById('show-signup');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
         const backToLoginLink = document.getElementById('back-to-login');
-        const protectedContent = document.getElementById('protected-content');
-        const accessProtectedBtn = document.getElementById('access-protected');
-        const profileMessage = document.getElementById('profile-message');
 
         // Function to toggle between forms
         function toggleForms(formToShow, buttonToShow) {
             loginForm.classList.add('hidden');
             signupForm.classList.add('hidden');
             forgotPasswordForm.classList.add('hidden');
-            protectedContent.classList.add('hidden');
             formToShow.classList.remove('hidden');
 
             showLoginBtn.classList.remove('color-primary', 'text-white');
@@ -265,34 +251,31 @@
 
                 // 2. Check if the email is verified
                 if (!user.emailVerified) {
+                    // Sign out the user immediately if the email is not verified
                     await signOut(auth);
                     showMessage('Your email is not verified. Please check your inbox for the verification link.', 'error');
-                    return;
+                    return; // Stop the process here
                 }
 
-                // 3. Get the ID token and save it locally
+                // 3. Get the ID token for backend verification
                 const idToken = await user.getIdToken();
-                localStorage.setItem('idToken', idToken);
-
-                // 4. Send the ID token to your Flask backend for verification (as a check)
-                const backendResponse = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken })
-                });
-
-                if (!backendResponse.ok) {
-                    localStorage.removeItem('idToken');
-                    await signOut(auth);
-                    throw new Error('Backend failed to verify login session.');
-                }
                 
-                // 5. On successful login, hide the forms and show the protected content section
-                showMessage('Login successful!', 'success');
-                toggleForms(protectedContent);
+                // 4. Dynamically create and submit a form with the ID token
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/login_redirect'; // A new Flask route you need to create
+                
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'id_token';
+                hiddenInput.value = idToken;
+                
+                form.appendChild(hiddenInput);
+                document.body.appendChild(form);
+                form.submit();
 
             } catch (error) {
-                // Handle Firebase and backend errors
+                // Handle Firebase errors
                 console.error("Login error:", error);
                 let errorMessage = 'Login failed. Please check your credentials and try again.';
                 if (error.code) {
@@ -326,43 +309,6 @@
                     errorMessage = 'There is no account with that email address.';
                 }
                 showMessage(errorMessage, 'error');
-            }
-        });
-
-        // === NEW CODE FOR ACCESSING PROTECTED ROUTES ===
-        accessProtectedBtn.addEventListener('click', async () => {
-            const idToken = localStorage.getItem('idToken');
-            if (!idToken) {
-                showMessage('You are not logged in. Please log in first.', 'error');
-                return;
-            }
-
-            try {
-                // Make a request to the Flask backend, including the ID token in the header
-                // NOTE: For this to work, you will need a corresponding Flask route:
-                // @app.route('/api/protected_profile', methods=['GET'])
-                // @login_required
-                // def protected_profile():
-                //     return jsonify({'message': 'Welcome to your profile!'})
-                const response = await fetch('/api/protected_profile', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${idToken}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to access protected resource.');
-                }
-
-                const data = await response.json();
-                profileMessage.textContent = data.message;
-                profileMessage.classList.add('text-primary');
-                
-            } catch (error) {
-                console.error("Protected access error:", error);
-                profileMessage.textContent = `Error: ${error.message}`;
-                profileMessage.classList.add('text-red-700');
             }
         });
     </script>
