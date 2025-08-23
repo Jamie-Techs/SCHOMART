@@ -1261,45 +1261,29 @@ def add_category():
 
 
 
-
 @app.route('/')
 def home():
     """
-    Renders the homepage by fetching data from Firestore and generating
-    signed URLs for both advert and category images from Firebase Storage.
-    The page now passes structured location data for client-side rendering.
+    Renders the homepage by fetching all published adverts from Firestore
+    and sorting them based on a priority order that includes visibility level,
+    recency, and user-specific preferences.
     """
     try:
         # Pass the global NIGERIAN_STATES and NIGERIAN_SCHOOLS to the template
-        # to support the new client-side location logic.
+        # for client-side location logic.
         locations_data = {
             'NIGERIAN_STATES': NIGERIAN_STATES,
             'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
         }
 
-        categories_ref = db.collection('categories').stream()
+        # Fetch and process categories from the global CATEGORIES variable.
         categories_data = []
-        for doc in categories_ref:
-            category = doc.to_dict()
-            category['id'] = doc.id
-            
-            # Fetch the filename from Firestore, which was saved during upload
-            image_filename = category.get('image_filename')
-            image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
-            
-            if image_filename:
-                # Construct the blob path using the saved filename
-                blob_path = f"static/category/{image_filename}"
-                blob = admin_storage.blob(blob_path)
-                
-                # Check if the blob exists and then generate a signed URL
-                if blob.exists():
-                    image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-            
-            category['image_url'] = image_url
-            categories_data.append(category)
+        for name, data in CATEGORIES.items():
+            category_item = {"id": data["id"], "name": name, "image_url": data.get("image_url", "https://placehold.co/100x100/e0e0e0/777777?text=No+Image")}
+            categories_data.append(category_item)
 
-        # --- Adverts Logic (remains unchanged) ---
+        # --- Adverts Logic ---
+        # Fetch user-specific settings for advert prioritization.
         user_id = session.get('user_id')
         view_following_priority = False
         followed_user_ids = []
@@ -1308,68 +1292,87 @@ def home():
             user_settings = get_user_info(user_id)
             if user_settings and user_settings.get('view_following_users_advert_first'):
                 view_following_priority = True
-                followed_user_ids = get_followers_of_user(user_id)
+                followed_user_ids = get_followed_users_of_user(user_id)
 
+        # Define the priority order for sorting based on your provided visibility levels.
+        # This dictionary ensures numerical sorting based on the plan type.
         visibility_order = {
-            'Ultimate': 1, 'Premium': 2, 'Top': 3, 'High': 4, 'Standard': 5
+            'Premium': 1,      # Top priority
+            'Featured': 2,
+            'Standard': 3,
+            # A fallback for any unexpected values
+            'default': 99 
         }
 
+        # Fetch all published adverts.
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
 
         for advert_doc in adverts_ref:
             advert_data = advert_doc.to_dict()
+            
+            # Check for advert expiration.
             expires_at = advert_data.get('expires_at')
+            # Assuming 'expires_at' is a datetime object or can be converted.
             if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
                 advert_data['id'] = advert_doc.id
                 
+                # Fetch poster's username and role.
                 poster_user_ref = db.collection('users').document(advert_data['user_id'])
                 poster_user_doc = poster_user_ref.get()
                 if poster_user_doc.exists:
                     poster_user_data = poster_user_doc.to_dict()
-                    advert_data['poster_username'] = poster_user_data.get('username')
-                    advert_data['poster_role'] = poster_user_data.get('role')
+                    advert_data['poster_username'] = poster_user_data.get('username', 'Unknown')
+                    advert_data['poster_role'] = poster_user_data.get('role', 'standard')
                 else:
                     advert_data['poster_username'] = 'Unknown'
                     advert_data['poster_role'] = 'standard'
                 
                 all_published_adverts.append(advert_data)
 
+        # Separate admin/featured ads for top display.
         admin_ads_for_display = [
             ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
         ]
 
         def sort_ads_by_visibility_and_date(ad):
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
+            """Sorts by visibility rank (lower is better) and then by newest first."""
+            # Use the new visibility_order, with a default for safety.
+            visibility_rank = visibility_order.get(ad.get('visibility_level'), visibility_order['default'])
             created_at_dt = ad.get('created_at', datetime.min)
             return (visibility_rank, -created_at_dt.timestamp())
         
+        # Sort the admin/featured ads.
         admin_ads_for_display.sort(key=sort_ads_by_visibility_and_date)
-        
+
+        # Sort the remaining adverts based on the trending algorithm.
         def sort_trending_ads(ad):
+            """Sorts by followed status, then visibility, then recency."""
+            # Give followed users a rank of 0, others 1
             is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
+            # Use the new visibility_order, with a default for safety.
+            visibility_rank = visibility_order.get(ad.get('visibility_level'), visibility_order['default'])
             created_at_ts = ad.get('created_at', datetime.min).timestamp()
+            # The negative timestamp ensures newest ads come first
             return (is_followed, visibility_rank, -created_at_ts)
 
+        # Sort all published ads based on the trending algorithm.
         adverts = sorted(all_published_adverts, key=sort_trending_ads)
+        # Limit the number of adverts to be displayed.
         adverts = adverts[:20]
 
         return render_template('home.html',
-                               locations=locations_data, # Use the new data structure
-                               categories=categories_data,
-                               admin_ads=admin_ads_for_display,
-                               adverts=adverts,
-                               NIGERIAN_STATES=NIGERIAN_STATES, # Pass NIGERIAN_STATES
-                               NIGERIAN_SCHOOLS=NIGERIAN_SCHOOLS # Pass NIGERIAN_SCHOOLS
-                               )
+                                locations=locations_data,
+                                categories=categories_data,
+                                admin_ads=admin_ads_for_display,
+                                adverts=adverts)
 
     except Exception as e:
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
-        flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
+        flash("An unexpected error occurred. Please try again later.", "danger")
         return render_template('home.html', admin_ads=[], adverts=[], locations=[], categories=[])
-                                             
+
 
 
 
@@ -7778,6 +7781,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
