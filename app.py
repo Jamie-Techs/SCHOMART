@@ -147,28 +147,6 @@ def load_user(user_id):
         return User(user_id, **user_data)
     return None
 
-# A Flask route to handle the Firebase ID token
-@app.route('/login_with_firebase', methods=['POST'])
-def login_with_firebase():
-    id_token = request.json['idToken']
-    try:
-        # Verify the Firebase ID token
-        decoded_token = auth.verify_id_token(id_token)
-        user_id = decoded_token['uid']
-        
-        # Load the user from your database
-        user = User.get(user_id)
-        if user:
-            # This logs the user into the Flask session
-            login_user(user)
-            return jsonify({'message': 'Login successful'})
-        else:
-            return jsonify({'message': 'User not found'}), 404
-    except ValueError as e:
-        return jsonify({'message': f'Invalid token: {e}'}), 401
-    except Exception as e:
-        return jsonify({'message': 'Authentication failed'}), 500
-
 
 
 
@@ -190,22 +168,19 @@ def admin_required(f):
     return decorated_function
 
 
-def update_online_status(user_id, is_online):
-    """
-    Updates a user's online status in the Firestore database.
 
-    Args:
-        user_id (str): The ID of the user to update.
-        is_online (bool): The new online status (True or False).
-    """
+
+def update_online_status(user_id, is_online):
+    # This is the function we generated previously
     try:
         user_ref = db.collection('users').document(user_id)
-        user_ref.update({'is_online': is_online})
+        user_ref.update({'is_online': is_online, 'last_online': firestore.SERVER_TIMESTAMP})
         logger.info(f"User {user_id} online status updated to {is_online}.")
     except Exception as e:
         logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
-        # You can handle this error as needed, e.g., by logging it
-        # without failing the entire logout process.
+
+     
+
 
 @app.route('/signup')
 def signup():
@@ -375,18 +350,17 @@ def api_verify_user():
         return jsonify({'error': 'Failed to update user verification status.'}), 500
 
 
+ 
+
 
 
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
-    Verifies a Firebase ID token and logs the user into the Flask session
-    using Flask-Login.
+    Verifies a Firebase ID token, logs the user in, and updates their online status.
+    This consolidated function handles all login logic in one place.
     """
-    if db is None:
-        return jsonify({'error': 'Backend services are unavailable.'}), 503
-
     data = request.get_json()
     id_token = data.get('idToken')
 
@@ -406,27 +380,28 @@ def api_login():
         user_data = user_doc.to_dict()
 
         # 3. Create a User object from your data.
-        # This assumes your User class is correctly updated to inherit from UserMixin.
         user_object = User(uid, user_data)
         
-        # 4. Use Flask-Login to log the user in. This is the crucial step
-        # that creates the session and makes `current_user` available.
+        # 4. Use Flask-Login to log the user in.
         login_user(user_object)
 
         # 5. Update user status and return a successful response.
-        db.collection('users').document(uid).update({
-            'is_online': True,
-            'last_online': firestore.SERVER_TIMESTAMP
-        })
+        update_online_status(uid, True)
         
         return jsonify({'message': 'Login successful'}), 200
 
     except auth.InvalidIdTokenError:
-        return jsonify({'error': 'Invalid ID token'}), 401
-    except Exception:
-        # Catch other potential errors, like network issues or database errors.
-        return jsonify({'error': 'Authentication failed.'}), 401
-      
+        logger.warning("Login failed: Invalid Firebase ID token.")
+        return jsonify({'error': 'Invalid ID token.'}), 401
+    except ValueError as e:
+        logger.error(f"Login failed: Value error with token. {e}", exc_info=True)
+        return jsonify({'error': 'Invalid token format.'}), 401
+    except Exception as e:
+        logger.error(f"Login failed: An unexpected error occurred. {e}", exc_info=True)
+        return jsonify({'error': 'Authentication failed.'}), 500
+
+
+
 
 
 
@@ -7322,6 +7297,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
