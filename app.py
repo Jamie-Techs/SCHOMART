@@ -1934,6 +1934,7 @@ def submit_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
+
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -1941,32 +1942,101 @@ def list_adverts():
     adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
     adverts = []
     
+    # Get a list of advert IDs to process for deletion
+    adverts_to_delete = []
+
     for doc in adverts_ref:
         advert_data = doc.to_dict()
         advert_data['id'] = doc.id
-        # Assuming get_category_name and other helpers exist to enrich data
+        
+        # Determine the advert status based on new logic
+        status = advert_data.get('status', 'pending_review') # Default to pending_review
+        
+        # Check for expiration if the advert is published
+        if status == 'published' and 'published_at' in advert_data and advert_data['published_at']:
+            plan_name = advert_data.get('plan_name')
+            plan_details = SUBSCRIPTION_PLANS.get(plan_name)
+            
+            if plan_details:
+                duration_days = plan_details.get('advert_duration_days', 0)
+                published_at = advert_data['published_at']
+                
+                # Check if published_at is a datetime object, convert if necessary
+                if not isinstance(published_at, datetime.datetime):
+                    # Assuming it's a Firestore Timestamp, convert it
+                    published_at = published_at.to_datetime()
+                
+                expiration_date = published_at + timedelta(days=duration_days)
+                now = datetime.datetime.now(datetime.timezone.utc) # Ensure timezone awareness
+                
+                if now > expiration_date:
+                    # Update status to 'expired' in Firestore
+                    doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
+                    status = 'expired'
+            
+        # Check if the advert is expired and passed the 2-day grace period
+        if status == 'expired' and 'expired_at' in advert_data and advert_data['expired_at']:
+            expired_at = advert_data['expired_at'].to_datetime()
+            deletion_date = expired_at + timedelta(days=2)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            
+            if now > deletion_date:
+                # Add to a list for batch deletion
+                adverts_to_delete.append(doc.id)
+                # Skip this advert in the display list as it will be deleted
+                continue
+            
+        advert_data['status'] = status
+        
+        # Enrich advert data for display
         advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
         advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
-        
-        if 'created_at' in advert_data and advert_data['created_at']:
+        advert_data['created_at'] = advert_data.get('created_at', 'N/A')
+        if advert_data['created_at'] != 'N/A' and isinstance(advert_data['created_at'], datetime.datetime):
             advert_data['created_at'] = advert_data['created_at'].strftime('%Y-%m-%d %H:%M')
-        else:
-            advert_data['created_at'] = 'N/A'
             
         adverts.append(advert_data)
+    
+    # Process the batch deletion of expired adverts
+    for advert_id in adverts_to_delete:
+        delete_advert_and_data(advert_id) # Call a new helper function
         
     return render_template("list_adverts.html", adverts=adverts)
+    
+def delete_advert_and_data(advert_id):
+    """Deletes an advert document and its associated images."""
+    try:
+        advert_ref = db.collection('adverts').document(advert_id)
+        advert_doc = advert_ref.get()
+        if not advert_doc.exists:
+            return False, 'Advert not found.'
 
-@app.route('/advert/delete/<advert_id>', methods=['POST'])
-@login_required
-def delete_advert(advert_id):
-    advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id:
-        flash("Advert not found or you don't have permission to delete it.", "error")
-    else:
-        db.collection("adverts").document(advert_id).delete()
-        flash("Advert deleted successfully.", "success")
-    return redirect(url_for('list_adverts'))
+        advert_data = advert_doc.to_dict()
+        main_image = advert_data.get('main_image')
+        other_images = advert_data.get('other_images', [])
+
+        bucket = storage.bucket()
+        # Delete main image if it exists
+        if main_image:
+            main_image_path = main_image.split('/')[-1]
+            blob = bucket.blob(main_image_path)
+            if blob.exists():
+                blob.delete()
+        
+        # Delete other images
+        for img_url in other_images:
+            img_path = img_url.split('/')[-1]
+            blob = bucket.blob(img_path)
+            if blob.exists():
+                blob.delete()
+        
+        # Delete Firestore document
+        advert_ref.delete()
+        return True, 'Advert and images deleted successfully.'
+
+    except Exception as e:
+        print(f"Error deleting advert {advert_id}: {e}")
+        return False, f'An error occurred: {e}'
 
 @app.route('/advert/pause/<advert_id>', methods=['POST'])
 @login_required
@@ -1990,18 +2060,49 @@ def resume_advert(advert_id):
         flash("Advert submitted for review. It will be live again shortly.", "success")
     return redirect(url_for('list_adverts'))
 
-@app.route('/advert/repost/<advert_id>')
+
+# A new route for reposting an advert
+@app.route('/repost_advert/<advert_id>', methods=['GET', 'POST'])
 @login_required
 def repost_advert(advert_id):
-    advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'expired':
-        flash("This advert cannot be reposted.", "error")
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != current_user.id:
+        flash('Advert not found or you do not have permission to repost it.', 'error')
         return redirect(url_for('list_adverts'))
+        
+    try:
+        # Update the advert's status and timestamp
+        advert_ref.update({
+            'status': 'published',
+            'published_at': firestore.SERVER_TIMESTAMP,
+            'expired_at': firestore.DELETE_FIELD # Remove the expired_at field
+        })
+        flash('Advert successfully reposted!', 'success')
+    except Exception as e:
+        flash(f'An error occurred while reposting the advert: {e}', 'error')
+
+    return redirect(url_for('list_adverts'))
+
+# The delete route should be modified to use the new helper function
+@app.route('/delete_advert/<advert_id>', methods=['POST'])
+@login_required
+def delete_advert(advert_id):
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
     
-    # Prefill the form with existing advert data
-    return redirect(url_for('sell', advert_id=advert_id))
+    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != current_user.id:
+        flash('Advert not found or you do not have permission to delete it.', 'error')
+        return redirect(url_for('list_adverts'))
 
-
+    success, message = delete_advert_and_data(advert_id)
+    if success:
+        flash('Advert and associated data deleted successfully!', 'success')
+    else:
+        flash(message, 'error')
+        
+    return redirect(url_for('list_adverts'))
 
 
 
@@ -7221,6 +7322,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
