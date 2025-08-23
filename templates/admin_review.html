@@ -129,24 +129,19 @@
         .copy-btn {
             background-color: transparent;
             border: none;
-            color: #fff; /* Changed color to white for visibility on the primary header */
+            color: #007bff;
             padding: 0;
             margin-left: 5px;
             cursor: pointer;
             transition: color 0.2s ease-in-out;
         }
         .copy-btn:hover {
-            color: #d1d1d1;
+            color: #0056b3;
         }
-        .ref-row {
+        .list-group-item {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-        }
-        .ref-num {
-            font-weight: bold;
-            color: #333;
-            flex-grow: 1;
+            align-items: center;
         }
     </style>
 </head>
@@ -166,7 +161,6 @@
 
         <h2>Adverts Awaiting Review</h2>
 
-        {# Display Flash messages - kept similar to your base.html's flash message handling #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -192,9 +186,6 @@
                         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                             <div>
                                 Advert ID: {{ advert.id }}
-                                <button class="copy-btn" onclick="copyToClipboard('{{ advert.id }}', this)" title="Copy ID">
-                                    <i class="fas fa-copy"></i>
-                                </button>
                             </div>
                             <span>Status: {{ advert.status.replace('_', ' ').title() }}</span>
                         </div>
@@ -205,10 +196,9 @@
                             <img src="{{ advert.image_url }}" onerror="this.src='https://placehold.co/400x250/E0E0E0/333333?text=Image+Not+Found';" class="img-fluid mb-2" alt="{{ advert.title }} Image" style="max-height: 200px; object-fit: contain;">
                             
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item ref-row">
-                                    <strong>Reference:</strong> 
-                                    <span id="refNum-{{ advert.id }}" class="ref-num">{{ advert.reference_number }}</span>
-                                    <button class="copy-btn text-primary" onclick="copyToClipboard('{{ advert.reference_number }}', this)" title="Copy Reference">
+                                <li class="list-group-item">
+                                    <span><strong>Payment Ref:</strong> {{ advert.payment_reference }}</span>
+                                    <button class="copy-btn" onclick="copyToClipboard('{{ advert.payment_reference }}', this)" title="Copy Reference">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </li>
@@ -286,6 +276,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
     
     <script>
+        // Copy to clipboard function
         function copyToClipboard(text, button) {
             navigator.clipboard.writeText(text).then(function() {
                 // Success feedback
