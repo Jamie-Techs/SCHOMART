@@ -415,22 +415,30 @@ def api_login():
 
 
 
+# In your app.py file
+
+# Make sure you import the function correctly, e.g., from a user_model.py file
+# from .user_model import update_online_status 
+# Or if it's in the same file, just call it directly.
+
 @app.route('/logout')
+@login_required
 def logout():
-    """Logs the user out and updates their online status."""
-    
-    # Check if a user is currently logged in using Flask-Login's current_user
-    if current_user.is_authenticated:
-        # Update the user's online status
-        User.update_online_status(current_user.id, False)
-
-    # Use Flask-Login's built-in logout function to handle session cleanup
-    logout_user()
-
-    # Flash a success message and redirect
-    flash("You have been logged out.", "success")
-    return redirect(url_for('home'))
-
+    """
+    Logs out the user and updates their online status to False.
+    """
+    try:
+        # Assuming `update_online_status` is a standalone function
+        # that takes the user ID and the status.
+        update_online_status(current_user.id, False)
+        
+        logout_user()  # Flask-Login's logout function
+        flash("You have been logged out.", "success")
+        return redirect(url_for('home'))
+    except Exception as e:
+        logger.error(f"Exception on /logout [GET]: {e}", exc_info=True)
+        flash("An error occurred during logout. Please try again.", "danger")
+        return redirect(url_for('home'))
 
 
 
@@ -7308,6 +7316,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
