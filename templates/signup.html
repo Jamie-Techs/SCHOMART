@@ -263,7 +263,7 @@
                 // 4. Dynamically create and submit a form with the ID token
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '/login_redirect'; // A new Flask route you need to create
+                form.action = '/profile'; // A new Flask route you need to create
                 
                 const hiddenInput = document.createElement('input');
                 hiddenInput.type = 'hidden';
