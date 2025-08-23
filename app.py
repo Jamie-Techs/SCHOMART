@@ -214,42 +214,38 @@ def generate_unique_referral_code(db):
 
 
 
-
-# A decorator to protect routes by verifying the ID token
 def login_required(f):
-    """
-    Decorator that checks for a valid Firebase ID token in the Authorization header.
-    This is required for accessing protected routes.
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         id_token = None
-        # Check for Authorization header
+
+        # Extract token from Authorization header
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
-            # Expected format: "Bearer <ID_TOKEN>"
-            if auth_header.startswith('Bearer '):
+            if auth_header.startswith('Bearer '): 
                 id_token = auth_header.split(' ')[1]
 
         if not id_token:
-            logger.warning("No ID token found in Authorization header. Denying access.")
-            return jsonify({'error': 'Unauthorized: Login required. Token not provided'}), 401
+            # No token provided — redirect to home
+            flash("You must be logged in to access this page.", "error")
+            return redirect(url_for('home'))
 
         try:
-            # Verify the ID token with Firebase Admin SDK
+            # Verify token
             decoded_token = auth.verify_id_token(id_token)
             request.uid = decoded_token['uid']
             return f(*args, **kwargs)
-        except auth.InvalidIdTokenError as e:
-            # Handle invalid tokens
-            logger.warning(f"Invalid ID token provided: {e}")
-            return jsonify({'error': 'Unauthorized: Invalid token'}), 401
+
+        except auth.InvalidIdTokenError:
+            flash("Invalid login session. Please log in again.", "error")
+            return redirect(url_for('home'))
+
         except Exception as e:
-            # Handle other verification errors
-            logger.error(f"Token verification failed: {e}")
-            return jsonify({'error': 'Unauthorized: Failed to verify token'}), 401
+            flash("Authentication failed. Please try again.", "error")
+            return redirect(url_for('home'))
 
     return decorated_function
+
 
 # =========================================================================
 # The updated /api/signup endpoint
@@ -7276,6 +7272,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
