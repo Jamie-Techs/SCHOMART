@@ -162,79 +162,62 @@ def update_online_status(user_id, is_online):
 
      
 
+
+
+
+
+
+
+
+# Your custom `login_required` decorator.
 def login_required(f):
-    """
-    A custom decorator that validates a Firebase ID token from the request header.
-    It does not use Flask-Login. If the token is valid, it makes the user's
-    information available in Flask's `g` object.
-    
-    Args:
-        f (function): The view function to be decorated.
-    
-    Returns:
-        function: The decorated function.
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # 1. Check for the 'Authorization' header in the request
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return jsonify({'error': 'Authorization header is missing.'}), 401
-
-        # 2. Extract the ID token from the header
-        try:
-            id_token = auth_header.split(' ')[1]
-        except IndexError:
-            return jsonify({'error': 'Invalid Authorization header format. Must be "Bearer <token>"'}), 401
-
-        # 3. Verify the Firebase ID token
-        try:
-            # This is where the magic happens. The Firebase Admin SDK validates the token.
-            decoded_token = auth.verify_id_token(id_token)
-            
-            # Store the user's data in the `g` object for access in the view function
-            g.user = decoded_token
-
-        except auth.ExpiredIdTokenError:
-            return jsonify({'error': 'Firebase ID token has expired.'}), 401
-        except auth.InvalidIdTokenError:
-            return jsonify({'error': 'Invalid Firebase ID token.'}), 401
-        except Exception as e:
-            # A general exception handler for any other errors
-            return jsonify({'error': f'Authentication failed: {e}'}), 401
-
-        # 4. If the token is valid, proceed to the protected route function
+        user_id = session.get('user')
+        if not user_id:
+            flash('You must be logged in to access this page.', 'warning')
+            return redirect(url_for('signup'))
         return f(*args, **kwargs)
     return decorated_function
 
+# --- Routes for Authentication ---
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.route('/login')
-def login():
+@app.route('/login', methods=['GET'])
+def login_page():
+    """Serves the login/signup HTML page."""
+    if session.get('user'):
+        return redirect(url_for('index')) # If already logged in, redirect to index
     return render_template('signup.html')
-    
+
+@app.route('/login', methods=['POST'])
+def login_session():
+    """
+    Receives the Firebase ID Token from the frontend and verifies it.
+    If the token is valid, it creates a secure Flask session.
+    """
+    try:
+        id_token = request.json['idToken']
+        
+        # Verify the Firebase ID Token using the Admin SDK
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+
+        # The token is valid. Now, create the Flask session.
+        session['user'] = uid
+        return jsonify({'message': 'Session created successfully'}), 200
+
+    except Exception as e:
+        logging.error(f"Failed to create session: {e}")
+        return jsonify({'error': 'Failed to authenticate. Please try again.'}), 401
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/signup')
@@ -265,13 +248,16 @@ def generate_unique_referral_code(db):
 
 
 
-@app.route('/logout')
+
+
+@app.route('/logout', methods=['POST'])
 def logout():
-    resp = make_response(redirect(url_for('home')))
-    # Remove id_token cookie
-    resp.set_cookie('id_token', '', expires=0)
-    flash("You have been logged out.", "info")
-    return resp
+    """
+    Clears the Flask session, effectively logging the user out.
+    """
+    session.pop('user', None)
+    flash('You have been logged out.', 'info')
+    return jsonify({'message': 'Logged out successfully'}), 200
 
 
 
@@ -7099,6 +7085,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
