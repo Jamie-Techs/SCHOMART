@@ -429,6 +429,36 @@ def account_settings():
 
 
 
+def get_user_info(user_id):
+    """
+    Fetches user information, including calculated rating and review count.
+    """
+    if not user_id:
+        return None
+
+    user_doc = db.collection('users').document(user_id).get()
+
+    if not user_doc.exists:
+        return None
+
+    user_data = user_doc.to_dict()
+    user_data['id'] = user_doc.id  # Ensure the ID is part of the dictionary
+
+    # Fetch and calculate user's rating and review count
+    reviews_query = db.collection('reviews').where('reviewee_id', '==', user_id).stream()
+    total_rating = 0
+    review_count = 0
+    for review_doc in reviews_query:
+        review_data = review_doc.to_dict()
+        total_rating += review_data.get('rating', 0)
+        review_count += 1
+
+    # Add rating and review count to the user data
+    user_data['rating'] = total_rating / review_count if review_count > 0 else 0.0
+    user_data['review_count'] = review_count
+
+    return user_data
+
 
 
 
@@ -1061,11 +1091,6 @@ def view_user_profile(user_id):
 
 
 
-
-def get_user_info(user_id):
-    """Fetches user info from Firestore."""
-    user_doc = db.collection('users').document(user_id).get()
-    return user_doc.to_dict() if user_doc.exists else None
 
 def get_followers_of_user(user_id):
     """Fetches list of user's followers."""
@@ -6897,6 +6922,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
