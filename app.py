@@ -1522,9 +1522,6 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
         return None, None
 
 
-
-
-
 def get_category_id_from_name(category_name):
     # This logic assumes your CATEGORIES variable is a dictionary where keys are category names
     for name, data in CATEGORIES.items():
@@ -1639,6 +1636,41 @@ def validate_sell_form(form_data, files):
         errors.append("A main image is required.")
     
     return errors
+
+
+def check_if_following(follower_id, followee_id):
+    """
+    Checks if a user is following another user.
+    """
+    if not follower_id or not followee_id:
+        return False
+    
+    # Follower documents are named using the pattern "follower_id_followee_id"
+    doc_id = f"{follower_id}_{followee_id}"
+    follower_doc = db.collection('followers').document(doc_id).get()
+    
+    return follower_doc.exists
+
+def check_if_saved(user_id, advert_id):
+    """
+    Checks if a user has saved a specific advert.
+    """
+    if not user_id or not advert_id:
+        return False
+
+    # Saved advert documents are named using the pattern "user_id_advert_id"
+    doc_id = f"{user_id}_{advert_id}"
+    saved_advert_doc = db.collection('saved_adverts').document(doc_id).get()
+    
+    return saved_advert_doc.exists
+
+
+
+
+
+
+
+
 
 
 
@@ -6865,6 +6897,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
