@@ -192,7 +192,7 @@
 
         if (response.ok) {
           // Redirect to profile page
-          window.location.href = '/profile';
+          window.location.href = '/';
         } else {
           const data = await response.json();
           errorMessage.innerText = data.error || 'Login failed.';
