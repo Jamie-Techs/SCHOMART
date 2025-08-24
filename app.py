@@ -213,7 +213,7 @@ def login_required(f):
                 return redirect(url_for('login'))
                 
             # Now Python knows what 'User' is because the class is defined above
-            g.current_user = User(user_doc.id, user_doc.to_dict())
+            g.current_user = User(user_doc.id, **user_doc.to_dict())
 
         return f(*args, **kwargs)
     return decorated_function
@@ -7163,6 +7163,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
