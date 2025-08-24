@@ -130,8 +130,6 @@ def allowed_file(filename):
 
 
 
-
-
 # --- User Model Class ---
 class User:
     """
@@ -211,12 +209,18 @@ def login_required(f):
                 flash('User data not found. Please log in again.', 'error')
                 session.pop('user', None)
                 return redirect(url_for('login'))
-                
-            # Now Python knows what 'User' is because the class is defined above
-            g.current_user = User(user_doc.id, **user_doc.to_dict())
+            
+            # Get the dictionary from Firestore
+            user_data = user_doc.to_dict()
+            # Safely remove the 'uid' key from the dictionary before unpacking
+            user_data.pop('uid', None)
+
+            # Now, call the constructor with the cleaned dictionary
+            g.current_user = User(user_doc.id, **user_data)
 
         return f(*args, **kwargs)
     return decorated_function
+
 
 
 
@@ -7163,6 +7167,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
