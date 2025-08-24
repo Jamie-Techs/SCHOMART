@@ -178,44 +178,39 @@ def update_online_status(user_id, is_online):
 
 
 
-
-
-
-
-
 def session_required(f):
-    """
-    A decorator to protect routes by checking for a valid Firebase session cookie.
-    If no valid cookie is found, it redirects the user to the login page.
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Get the session cookie from the request
-        session_cookie = request.cookies.get('__session')
-
-        # If there's no cookie, the user is not authenticated
+        # Check for the session cookie
+        session_cookie = flask.request.cookies.get('__session__')
         if not session_cookie:
-            return redirect(url_for('signup'))
-
-        # Verify the session cookie with Firebase Admin SDK
+            # If no session cookie, redirect to the login page
+            return flask.redirect(flask.url_for('login'))
+        
         try:
-            # check_revoked=True adds an extra layer of security
+            # Verify the session cookie to get the decoded user claims
             decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-            # You can now access user data via decoded_claims, e.g., decoded_claims['uid']
-            # We can store the user data in the Flask global object 'g' for easy access
+            
+            # **IMPORTANT:** Safely get the UID from the claims dictionary
+            uid = decoded_claims.get('uid')
+            if not uid:
+                # This should not happen, but it's a good practice to check
+                raise ValueError("UID not found in session claims.")
+
+            # Store the user claims in Flask's global object for easy access
             flask.g.user = decoded_claims
-        except auth.InvalidIdTokenError:
-            # The cookie is invalid or expired, redirect to login
-            return redirect(url_for('signup'))
-        except Exception as e:
-            # Handle other potential errors gracefully
+            return f(*args, **kwargs)
+        except (auth.InvalidSessionCookieError, ValueError) as e:
+            # If the cookie is invalid, revoked, or the UID is missing, redirect to login
             print(f"Error verifying session cookie: {e}")
-            return redirect(url_for('signup'))
-
-        # If the cookie is valid, proceed to the protected route
-        return f(*args, **kwargs)
-
+            return flask.redirect(flask.url_for('login'))
     return decorated_function
+
+
+
+
+
+
 
 
 
@@ -832,6 +827,8 @@ NIGERIAN_SCHOOLS = {
 }
 
 
+
+
 @app.route('/profile')
 @session_required
 def profile():
@@ -840,15 +837,22 @@ def profile():
     and generating signed URLs for profile pictures.
     """
     try:
-        user_uid = session.get('user_id')
+        # CORRECTED: Get the user's UID from the Flask global 'g' object, not 'session'
+        user_uid = flask.g.user.get('uid')
         
+        if not user_uid:
+            # This check is a failsafe; the decorator should prevent this.
+            flash("User authentication failed. Please log in again.", "error")
+            return redirect(url_for('signup'))
+            
         # Fetch the latest user data from Firestore to avoid using stale session data.
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
         if not user_doc.exists:
             flash("User data not found. Please log in again.", "error")
-            logger.error(f"User document does not exist for UID: {user_uid}")
+            # Use the logger you've defined
+            logging.error(f"User document does not exist for UID: {user_uid}")
             return redirect(url_for('signup'))
 
         user_data = user_doc.to_dict()
@@ -856,9 +860,10 @@ def profile():
         # Check email verification status from the most recent data
         if not user_data.get('is_verified', False):
             flash("Your email is not verified. Please check your inbox.", "error")
-            return redirect(url_for('email_verification')) # Redirect to your email verification route
+            return redirect(url_for('email_verification'))
 
         # Format timestamps for display
+        # You'll need to define a format_timestamp function
         user_data['last_active'] = format_timestamp(user_data.get('last_active'))
         user_data['created_at'] = format_timestamp(user_data.get('created_at'))
 
@@ -873,7 +878,7 @@ def profile():
                     timedelta(minutes=15), method='GET'
                 )
         except Exception as e:
-            logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
+            logging.error(f"Error generating profile pic URL for {user_uid}: {e}")
             flash(f"Error loading profile picture: {str(e)}", "error")
 
         try:
@@ -883,21 +888,19 @@ def profile():
                     timedelta(minutes=15), method='GET'
                 )
         except Exception as e:
-            logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
+            logging.error(f"Error generating cover photo URL for {user_uid}: {e}")
             flash(f"Error loading cover photo: {str(e)}", "error")
         
-        # New Code Block: Generate the referral link
-        # The URL should match your live site.
         referral_link = f"https://schomart.onrender.com/signup?ref={user_uid}"
 
         return render_template('profile.html',
                                user=user_data,
                                profile_pic_url=profile_pic_url,
                                cover_photo_url=cover_photo_url,
-                               referral_link=referral_link) # Pass the link to the template
+                               referral_link=referral_link)
 
     except Exception as e:
-        logger.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
+        logging.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
 
@@ -7304,6 +7307,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
