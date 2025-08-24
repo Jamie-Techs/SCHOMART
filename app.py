@@ -639,7 +639,7 @@ def profile():
         # Check email verification status from the most recent data
         if not user_data.get('is_verified', False):
             flash("Your email is not verified. Please check your inbox.", "error")
-            return redirect(url_for('email_verification'))
+            return redirect(url_for('signup'))
 
         # Assuming you have a format_timestamp function defined somewhere
         user_data['last_active'] = format_timestamp(user_data.get('last_active'))
@@ -7090,6 +7090,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
