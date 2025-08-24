@@ -391,9 +391,6 @@ class User:
 def signup():
     return render_template('signup.html')
 
-@app.route('/login')
-def login():
-    return render_template('signup.html')
 
 
 # --- Helper Functions for Referral Code Generation ---
@@ -7252,6 +7249,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
