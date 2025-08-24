@@ -63,7 +63,14 @@
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                 <div class="mt-1">
-                    <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                    <input id="password" name="password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+            </div>
+
+            <div id="confirm-password-field" class="hidden">
+                <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <div class="mt-1">
+                    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                 </div>
             </div>
 
@@ -91,6 +98,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <script>
         const firebaseConfig = {
@@ -105,10 +113,13 @@
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.firestore();
 
         const form = document.getElementById('auth-form');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
+        const confirmPasswordField = document.getElementById('confirm-password-field');
+        const confirmPasswordInput = document.getElementById('confirm-password');
         const messageDiv = document.getElementById('message');
         const authTitle = document.getElementById('auth-title');
         const authSubtitle = document.getElementById('auth-subtitle');
@@ -138,11 +149,10 @@
 
                     if (!user.emailVerified) {
                         showMessage('Your email is not verified. Please check your inbox for a verification link.', true);
-                        await auth.signOut(); // Sign out unverified user to prevent access
+                        await auth.signOut();
                         return;
                     }
 
-                    // On successful login, get the ID token and send it to the backend
                     const idToken = await user.getIdToken();
                     const response = await fetch('/login', {
                         method: 'POST',
@@ -163,8 +173,61 @@
                     }
 
                 } else { // Signup flow
+                    // ADDED: Check if passwords match
+                    const confirmPassword = confirmPasswordInput.value;
+                    if (password !== confirmPassword) {
+                        showMessage('Passwords do not match.', true);
+                        return;
+                    }
+
                     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    await userCredential.user.sendEmailVerification();
+                    const user = userCredential.user;
+                    
+                    const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+                    await db.collection('users').doc(user.uid).set({
+                        uid: user.uid,
+                        email: email,
+                        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                        last_active: firebase.firestore.FieldValue.serverTimestamp(),
+                        last_online: firebase.firestore.FieldValue.serverTimestamp(),
+                        token_created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                        
+                        first_name: "",
+                        last_name: "",
+                        phone_number: "",
+                        sex: "",
+                        birthday: "",
+                        businessname: "",
+                        location: "",
+                        state: "",
+                        school: "",
+                        full_location: "",
+                        sublocation: "",
+                        cover_photo: "",
+                        profile_picture: "",
+                        has_posted_free_ad: false,
+                        is_admin: false,
+                        is_online: true,
+                        is_referral_verified: false,
+                        is_verified: false,
+                        referral_code: referralCode,
+                        referral_count: 0,
+                        referral_link: `https://schomart.onrender.com/signup?ref=${referralCode}`,
+                        delivery_methods: ["Pickup"],
+                        social_links: {
+                            facebook: "",
+                            instagram: "",
+                            linkedin: "",
+                            twitter: "",
+                            website: ""
+                        },
+                        last_email_otp_sent_at: null,
+                        email_code_expiry: null,
+                        last_referral_verification_at: null,
+                    });
+
+                    await user.sendEmailVerification();
                     showMessage('Signup successful! Please check your email for a verification link before logging in.', false);
                 }
             } catch (error) {
@@ -201,12 +264,14 @@
                 mainAuthButton.textContent = 'Log In';
                 toggleAuthButton.textContent = "Don't have an account? Sign Up";
                 forgotPasswordContainer.style.display = 'block';
+                confirmPasswordField.classList.add('hidden');
             } else {
                 authTitle.textContent = 'Schomart';
                 authSubtitle.textContent = 'Create your account';
                 mainAuthButton.textContent = 'Sign Up';
                 toggleAuthButton.textContent = "Already have an account? Log In";
                 forgotPasswordContainer.style.display = 'none';
+                confirmPasswordField.classList.remove('hidden');
             }
             showMessage('', false);
         });
@@ -227,7 +292,6 @@
                 showMessage('Failed to send password reset email. Please ensure the email is correct and try again.', true);
             }
         });
-
     </script>
 </body>
 </html>
