@@ -164,47 +164,13 @@ def update_online_status(user_id, is_online):
 
 
 
-
-
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        user_id = session.get('user')
-        if not user_id:
-            flash('You must be logged in to access this page.', 'warning')
-            return redirect(url_for('login'))
-        
-        # Check if the user object is already in the global 'g' object
-        # This prevents redundant Firestore calls if the decorator is used multiple times
-        # in a single request.
-        if 'current_user' not in g or g.current_user.id != user_id:
-            # Fetch the user document from Firestore
-            user_doc_ref = db.collection('users').document(user_id)
-            user_doc = user_doc_ref.get()
-
-            if not user_doc.exists:
-                logging.error(f"User document does not exist for UID: {user_id}")
-                flash('User data not found. Please log in again.', 'error')
-                session.pop('user', None)
-                return redirect(url_for('login'))
-                
-            # Create a User object and store it in the Flask global 'g' object
-            g.current_user = User(user_doc.id, user_doc.to_dict())
-
-        return f(*args, **kwargs)
-    return decorated_function
-
-
-
-
-
-
-
+from functools import wraps
+from flask import session, redirect, url_for, flash, g
+import logging
+# Make sure to import your Firestore client here
+# from your_firestore_module import db 
 
 # --- User Model Class ---
-# Removed UserMixin since it's not needed for your custom auth system.
 class User:
     """
     User data model that retrieves and represents a user from Firestore.
@@ -263,6 +229,34 @@ class User:
             # import logging
             # logging.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
+
+# --- login_required Decorator ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user_id = session.get('user')
+        if not user_id:
+            flash('You must be logged in to access this page.', 'warning')
+            return redirect(url_for('login'))
+        
+        # Check if the user object is already in the global 'g' object
+        if 'current_user' not in g or g.current_user.id != user_id:
+            user_doc_ref = db.collection('users').document(user_id)
+            user_doc = user_doc_ref.get()
+
+            if not user_doc.exists:
+                logging.error(f"User document does not exist for UID: {user_id}")
+                flash('User data not found. Please log in again.', 'error')
+                session.pop('user', None)
+                return redirect(url_for('login'))
+                
+            # Now Python knows what 'User' is because the class is defined above
+            g.current_user = User(user_doc.id, user_doc.to_dict())
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 
 
 
@@ -7177,6 +7171,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
