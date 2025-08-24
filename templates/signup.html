@@ -216,25 +216,52 @@
             }
         });
 
-        // Listen for authentication state changes
-        auth.onAuthStateChanged(user => {
-            // This is the core logic that ensures smooth redirection and state handling.
-            if (user) {
-                // User is signed in.
-                if (user.emailVerified) {
-                    // User's email is verified. Redirect to the index page.
-                    showMessage('Login successful! Redirecting...', false);
-                    setTimeout(() => {
-                        window.location.href = '/profile'; // Redirects to the root URL
-                    }, 1000);
-                } else {
-                    // User is signed in but email is not verified.
-                    // Keep them on this page and show a message.
-                    showMessage('Your email is not verified. Please check your inbox for the verification link.', true);
-                    auth.signOut(); // Sign them out until they verify
-                }
+
+            // Listen for authentication state changes
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        // User is signed in.
+        // Get the Firebase ID token for the authenticated user.
+        const idToken = await user.getIdToken();
+
+        // Now, you can make a secure request to your protected backend route
+        // by including the token in the 'Authorization' header.
+        fetch('/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
             }
+        })
+        .then(response => {
+            // Check for a 401 Unauthorized error, which would indicate a token issue.
+            if (response.status === 401) {
+                console.error('Authentication failed. The token may have expired.');
+                // Handle a failed authentication, e.g., redirect to login.
+                window.location.href = '/login'; 
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data) {
+                console.log('Profile data:', data);
+                // Now you can update your profile page with this data
+            }
+        })
+        .catch(error => {
+            console.error('An error occurred:', error);
         });
+
+    } else {
+        // User is not signed in or has logged out.
+        console.log('No user signed in.');
+        // Redirect to a public page or login page if the user is not authenticated.
+        window.location.href = '/profile'; 
+    }
+});        
+
+   
     </script>
 </body>
 </html>
