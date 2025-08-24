@@ -177,36 +177,44 @@ def update_online_status(user_id, is_online):
 
 
 
-
-def session_required(f):
+def login_required(f):
+    """
+    A custom decorator that verifies a Firebase session cookie.
+    
+    If the cookie is valid, the decoded claims are stored in flask.g.user.
+    If it's invalid or missing, the user is redirected to the login page.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check for the session cookie
+        # 1. Get the session cookie from the request
         session_cookie = flask.request.cookies.get('__session__')
+        
+        # 2. If no cookie is found, redirect to the login page immediately.
         if not session_cookie:
-            # If no session cookie, redirect to the login page
+            print("No session cookie found. Redirecting to login.")
             return flask.redirect(flask.url_for('login'))
         
         try:
-            # Verify the session cookie to get the decoded user claims
+            # 3. Verify the session cookie with the Firebase Admin SDK.
+            # This will also check if the user is disabled or the token is revoked.
             decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
             
-            # **IMPORTANT:** Safely get the UID from the claims dictionary
-            uid = decoded_claims.get('uid')
-            if not uid:
-                # This should not happen, but it's a good practice to check
-                raise ValueError("UID not found in session claims.")
-
-            # Store the user claims in Flask's global object for easy access
+            # 4. Store the decoded user claims in Flask's global 'g' object.
+            # This makes the user's data (like UID, email) available in your routes.
             flask.g.user = decoded_claims
+            
+            # 5. If everything is valid, proceed to the decorated function.
             return f(*args, **kwargs)
-        except (auth.InvalidSessionCookieError, ValueError) as e:
-            # If the cookie is invalid, revoked, or the UID is missing, redirect to login
-            print(f"Error verifying session cookie: {e}")
-            return flask.redirect(flask.url_for('login'))
+        
+        except auth.InvalidSessionCookieError as e:
+            # 6. Handle invalid or revoked cookies by redirecting to login.
+            print(f"Error verifying session cookie: {e}. Redirecting to login.")
+            # Clear the invalid cookie to ensure the browser doesn't keep trying to use it
+            response = flask.redirect(flask.url_for('login'))
+            response.set_cookie('__session__', '', max_age=0, httpyonly=True)
+            return response
+
     return decorated_function
-
-
 
 
 
@@ -263,6 +271,83 @@ def session_logout():
     response = jsonify({"status": "success", "message": "Logged out successfully."})
     response.set_cookie('__session', '', expires=0) # Clear the cookie by setting expiration to 0
     return response, 200
+
+
+
+
+
+def get_current_user():
+    """
+    A helper function to get the current user's data.
+    Returns the user's claims dictionary or None if not logged in.
+    """
+    return g.get('user', None)
+
+
+
+
+# --- User Model Class ---
+# Removed UserMixin since it's not needed for your custom auth system.
+class User:
+    """
+    User data model that retrieves and represents a user from Firestore.
+    """
+    def __init__(self, uid, **kwargs):
+        self.id = str(uid)
+        
+        # Populate the attributes from the 'kwargs' dictionary
+        self.username = kwargs.get('username', '')
+        self.email = kwargs.get('email', '')
+        self.profile_picture = kwargs.get('profile_picture')
+        self.cover_photo = kwargs.get('cover_photo')
+        self.state = kwargs.get('state', '')
+        self.school = kwargs.get('school', '')
+        self.location = kwargs.get('location', '')
+        self.referral_code = kwargs.get('referral_code', '')
+        self.first_name = kwargs.get('first_name', '')
+        self.last_name = kwargs.get('last_name', '')
+        self.birthday = kwargs.get('birthday')
+        self.sex = kwargs.get('sex', '')
+        self.created_at = kwargs.get('created_at')
+        self.last_active = kwargs.get('last_active')
+        self.referral_count = kwargs.get('referral_count', 0)
+        self.is_verified = bool(kwargs.get('is_verified', False))
+        self.is_admin = bool(kwargs.get('is_admin', False))
+        self.is_referral_verified = bool(kwargs.get('is_referral_verified', False))
+        self.last_referral_verification_at = kwargs.get('last_referral_verification_at')
+        self.businessname = kwargs.get('businessname', '')
+        self.phone_number = kwargs.get('phone_number', '')
+        self.verified_phone = bool(kwargs.get('verified_phone', False))
+        self.last_email_otp_sent_at = kwargs.get('last_email_otp_sent_at')
+        self.email_code_expiry = kwargs.get('email_code_expiry')
+        self.token_created_at = kwargs.get('token_created_at')
+        self.is_online = bool(kwargs.get('is_online', False))
+        self.last_online = kwargs.get('last_online')
+        self.social_links = kwargs.get('social_links') if isinstance(kwargs.get('social_links'), dict) else {}
+        self.working_days = kwargs.get('working_days') if isinstance(kwargs.get('working_days'), list) else []
+        self.working_times = kwargs.get('working_times') if isinstance(kwargs.get('working_times'), dict) else {}
+        self.delivery_methods = kwargs.get('delivery_methods') if isinstance(kwargs.get('delivery_methods'), list) else []
+
+    @staticmethod
+    def get(uid):
+        """
+        Retrieves a user document from Firestore and returns a User object.
+        """
+        if not db or not uid:
+            return None
+        try:
+            doc_ref = db.collection('users').document(str(uid))
+            doc = doc_ref.get()
+            if doc.exists:
+                return User(doc.id, **doc.to_dict())
+            return None
+        except Exception as e:
+            # Note: If you have a logger, ensure it's imported
+            # import logging
+            # logging.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
+            return None
+
+
 
 
 
@@ -346,17 +431,6 @@ def api_signup():
     except Exception as e:
         logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
         return jsonify({'error': 'Failed to save user data.'}), 500
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -498,74 +572,6 @@ def account_settings():
 
 
 
-# --- User Model Class ---
-class User(UserMixin):
-    """
-    User data model that retrieves and represents a user from Firestore.
-    Inherits from UserMixin to integrate with Flask-Login.
-    """
-    def __init__(self, uid, **kwargs): # Corrected: Use **data to accept keyword arguments
-        self.id = str(uid)
-        
-        # Now, populate the attributes directly from the 'data' dictionary
-        self.username = data.get('username', '')
-        self.email = data.get('email', '')
-        self.profile_picture = data.get('profile_picture')
-        self.cover_photo = data.get('cover_photo')
-        self.state = data.get('state', '')
-        self.school = data.get('school', '')
-        self.location = data.get('location', '')
-        self.referral_code = data.get('referral_code', '')
-        self.first_name = data.get('first_name', '')
-        self.last_name = data.get('last_name', '')
-        self.birthday = data.get('birthday')
-        self.sex = data.get('sex', '')
-        self.created_at = data.get('created_at')
-        self.last_active = data.get('last_active')
-        self.referral_count = data.get('referral_count', 0)
-        self.is_verified = bool(data.get('is_verified', False))
-        self.is_admin = bool(data.get('is_admin', False))
-        self.is_referral_verified = bool(data.get('is_referral_verified', False))
-        self.last_referral_verification_at = data.get('last_referral_verification_at')
-        self.businessname = data.get('businessname', '')
-        self.phone_number = data.get('phone_number', '')
-        self.verified_phone = bool(data.get('verified_phone', False))
-        self.last_email_otp_sent_at = data.get('last_email_otp_sent_at')
-        self.email_code_expiry = data.get('email_code_expiry')
-        self.token_created_at = data.get('token_created_at')
-        self.is_online = bool(data.get('is_online', False))
-        self.last_online = data.get('last_online')
-        self.social_links = data.get('social_links') if isinstance(data.get('social_links'), dict) else {}
-        self.working_days = data.get('working_days') if isinstance(data.get('working_days'), list) else []
-        self.working_times = data.get('working_times') if isinstance(data.get('working_times'), dict) else {}
-        self.delivery_methods = data.get('delivery_methods') if isinstance(data.get('delivery_methods'), list) else []
-
-    @staticmethod
-    def get(uid):
-        """
-        Retrieves a user document from Firestore and returns a User object.
-        """
-        if not db or not uid:
-            return None
-        try:
-            doc_ref = db.collection('users').document(str(uid))
-            doc = doc_ref.get()
-            if doc.exists:
-                # Correctly unpack the Firestore data and pass it to the constructor
-                return User(doc.id, **doc.to_dict())
-            return None
-        except Exception as e:
-            # You should import current_app to use this
-            # from flask import current_app 
-            current_app.logger.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
-            return None
-
-    @property
-    def is_active(self):
-        """
-        Returns True if the user is active, False otherwise.
-        """
-        return True # Assuming all your users are active
 
 
 
@@ -830,7 +836,7 @@ NIGERIAN_SCHOOLS = {
 
 
 @app.route('/profile')
-@session_required
+@login_required
 def profile():
     """
     Renders the user's profile page by fetching the latest data from Firestore
@@ -7307,6 +7313,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
