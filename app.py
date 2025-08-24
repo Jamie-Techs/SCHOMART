@@ -233,7 +233,7 @@ def session_login():
 
     try:
         # Set session expiration to 5 days, adjust as needed. Max is 2 weeks.
-        expires_in = datetime.timedelta(days=5)
+        expires_in = timedelta(days=5)
 
         # Create the session cookie with the Firebase Admin SDK.
         # This function also verifies the ID token.
@@ -7300,6 +7300,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
