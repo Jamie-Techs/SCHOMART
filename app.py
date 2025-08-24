@@ -433,13 +433,15 @@ def account_settings():
 
 
 
+
+
 def get_user_info(user_id):
     """
-    Fetches user information and calculates their rating and review count.
-
+    Fetches user information and calculates their rating, review count, and advert count.
+    
     Args:
         user_id (str): The ID of the user to retrieve.
-
+        
     Returns:
         dict: A dictionary containing user data, or None if the user does not exist.
     """
@@ -454,7 +456,7 @@ def get_user_info(user_id):
     user_data = user_doc.to_dict()
     user_data['id'] = user_doc.id
 
-    # Calculate and attach the user's average rating and total review count
+    # 1. Calculate and attach the user's average rating and total review count
     reviews_query = db.collection('reviews').where('reviewee_id', '==', user_id).stream()
     total_rating = 0
     review_count = 0
@@ -462,14 +464,20 @@ def get_user_info(user_id):
         review_data = review_doc.to_dict()
         total_rating += review_data.get('rating', 0)
         review_count += 1
-
-    # Add 'rating' and 'review_count' keys to the dictionary, defaulting to 0.0
+    
     user_data['rating'] = total_rating / review_count if review_count > 0 else 0.0
     user_data['review_count'] = review_count
+
+    # 2. Add advert count
+    adverts_count_query = db.collection('adverts').where('user_id', '==', user_id).stream()
+    adverts_count = sum(1 for _ in adverts_count_query)
+    user_data['adverts_count'] = adverts_count
 
     return user_data
 
 
+
+    
 
 # --- Helper Functions ---
 def get_unique_id():
@@ -2640,43 +2648,85 @@ def referral_benefit():
 
 
 
+from flask import render_template, abort, session
+from datetime import datetime
+from google.cloud import firestore
+import logging
 
+db = firestore.Client()
+logger = logging.getLogger(__name__)
 
+# Assumed utility functions
+def get_document(collection, doc_id):
+    doc_ref = db.collection(collection).document(doc_id)
+    doc = doc_ref.get()
+    if doc.exists:
+        data = doc.to_dict()
+        data['id'] = doc.id
+        return data
+    return None
+
+def get_category_name(category_id):
+    # This is a placeholder. Implement this to get the category name.
+    return "Category Name"
+
+def get_state_name(state_id):
+    # This is a placeholder. Implement this to get the state name.
+    return "State Name"
+
+def check_if_following(follower_id, followee_id):
+    # This is a placeholder. Implement this to check follow status.
+    return False
+
+def check_if_saved(user_id, advert_id):
+    # This is a placeholder. Implement this to check saved status.
+    return False
 
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page, using updated utility functions.
-    - Fetches advert, seller, reviews, and similar adverts from Firestore.
+    Handles displaying a single advert detail page with robust data fetching.
     """
     current_user_id = session.get('user_id')
-    
+
     try:
-        # Step 1: Fetch the advert document using the reusable function
-        advert = get_document("adverts", advert_id)
+        # Step 1: Fetch the advert document directly
+        advert_ref = db.collection('adverts').document(advert_id)
+        advert_doc = advert_ref.get()
 
-        if not advert:
-            # Abort with a 404 error if the advert doesn't exist
+        if not advert_doc.exists:
             abort(404)
+        
+        advert = advert_doc.to_dict()
+        advert['id'] = advert_doc.id
 
-        # Check advert status for public viewing. This logic is still necessary.
         is_owner = current_user_id == advert.get('user_id')
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
-        
-        # Step 2: Fetch seller info using the reusable function
-        seller = get_user_info(advert.get('user_id'))
-        
-        if not seller:
-            # Handle case where seller data might be missing
-            seller = {
-                'id': advert.get('user_id'),
-                'full_name': 'Unknown Seller',
-                'profile_picture': 'https://firebasestorage.googleapis.com/.../default_profile.png', # Placeholder
-                'adverts_count': 0
-            }
 
-        # Step 3: Fetch related data for the advert using the new data structure
+        # Step 2: Fetch seller info and calculate rating directly in the route
+        seller_id = advert.get('user_id')
+        seller_doc = db.collection('users').document(seller_id).get()
+
+        if not seller_doc.exists:
+            seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'profile_picture': 'default_profile.png', 'rating': 0.0, 'review_count': 0}
+        else:
+            seller = seller_doc.to_dict()
+            seller['id'] = seller_doc.id
+            
+            # Calculate and attach the seller's rating and review count
+            reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
+            total_rating = 0
+            review_count = 0
+            for review_doc in reviews_query:
+                review_data = review_doc.to_dict()
+                total_rating += review_data.get('rating', 0)
+                review_count += 1
+            
+            seller['rating'] = total_rating / review_count if review_count > 0 else 0.0
+            seller['review_count'] = review_count
+
+        # Step 3: Fetch related advert data
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
         
@@ -2684,28 +2734,23 @@ def advert_detail(advert_id):
         is_following = check_if_following(current_user_id, seller['id'])
         is_saved = check_if_saved(current_user_id, advert_id)
 
-        # Step 5: Fetch reviews for the advert
+        # Step 5: Fetch reviews for the current advert
         reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
         reviews = []
         for review_doc in reviews_ref:
             review_data = review_doc.to_dict()
-            # We need to fetch reviewer details for each review
-            reviewer_info = get_user_info(review_data['user_id'])
-            if reviewer_info:
-                review_data['reviewer_username'] = reviewer_info.get('full_name', 'Anonymous')
-                review_data['reviewer_profile_picture'] = reviewer_info.get('profile_picture')
+            reviewer_info = db.collection('users').document(review_data['user_id']).get()
+            if reviewer_info.exists:
+                reviewer_data = reviewer_info.to_dict()
+                review_data['reviewer_username'] = reviewer_data.get('full_name', 'Anonymous')
+                review_data['reviewer_profile_picture'] = reviewer_data.get('profile_picture')
             reviews.append(review_data)
-
-        # Step 6: Fetch similar adverts logic (already looks good, just kept it clean)
-        similar_adverts = []
-        # ... (Your existing logic for similar adverts remains here) ...
 
         return render_template(
             'advert_detail.html',
             advert=advert,
             seller=seller,
             reviews=reviews,
-            similar_adverts=similar_adverts,
             is_following=is_following,
             is_saved=is_saved,
             current_user_id=current_user_id
@@ -2713,7 +2758,9 @@ def advert_detail(advert_id):
 
     except Exception as e:
         logger.error(f"Error fetching advert detail: {e}", exc_info=True)
-        return abort(500) # Use abort(500) for internal server errors
+        return abort(500)
+
+
 
 
 
@@ -6927,6 +6974,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
