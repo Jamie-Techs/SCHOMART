@@ -194,6 +194,14 @@ def login_required(f):
 
 
 
+@app.route('/')
+@login_required
+def index():
+    uid = getattr(request, 'uid', None)
+    user_doc = db.collection('users').document(uid).get()
+    user_data = user_doc.to_dict() if user_doc.exists else {}
+    return render_template('index.html', user=user_data)
+
 # =========================================================================
 # The updated /api/signup endpoint
 # =========================================================================
@@ -7229,6 +7237,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
