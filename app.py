@@ -1468,6 +1468,21 @@ def get_advert_details(advert_id, user_id):
         logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
     return None
 
+
+def get_state_name(state_id):
+    """Fetches the name of a state from its ID."""
+    if not state_id:
+        return 'N/A'
+    
+    state_ref = db.collection('states').document(state_id)
+    state_doc = state_ref.get()
+
+    if state_doc.exists:
+        return state_doc.to_dict().get('name', 'Unknown State')
+    else:
+        return 'Unknown State'
+
+
 def get_school_acronym(state, school):
     """Finds the acronym for a school from the hardcoded data."""
     try:
@@ -6850,6 +6865,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
