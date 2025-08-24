@@ -175,14 +175,21 @@ def update_online_status(user_id, is_online):
 
      
 
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        return f(*args, **kwargs)
+        auth_header = request.headers.get('Authorization', None)
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Authorization header missing or invalid'}), 401
+        token = auth_header.split(' ')[1]
+        try:
+            decoded_token = auth.verify_id_token(token)
+            request.uid = decoded_token['uid']
+            return f(*args, **kwargs)
+        except Exception:
+            return jsonify({'error': 'Invalid or expired token'}), 401
     return decorated_function
-
 
 
 
@@ -190,118 +197,91 @@ def login_required(f):
 # =========================================================================
 # The updated /api/signup endpoint
 # =========================================================================
+
+
+# Helper: Generate email verification link
+def generate_email_verification_link(email):
+    link = auth.generate_email_verification_link(email)
+    return link
+
 @app.route('/api/signup', methods=['POST'])
 def api_signup():
-    """
-    Handles a request from the frontend to create a user document in Firestore.
-    """
-    if db is None:
-        logger.error("Backend services are unavailable: Firestore DB object is None.")
-        return jsonify({'error': 'Backend services are unavailable.'}), 503
-
     data = request.get_json()
-    uid = data.get('uid')
     email = data.get('email')
+    password = data.get('password')
     username = data.get('username')
-    referral_code_used = data.get('referralCode')
+    uid = data.get('uid')  # UID from frontend Firebase auth
 
-    if not all([uid, email, username]):
-        logger.warning("Missing required fields (UID, email, or username) in signup request.")
-        return jsonify({'error': 'Missing required fields'}), 400
+    if not all([email, password, username, uid]):
+        return jsonify({'error': 'Missing fields'}), 400
 
     try:
+        # Create Firebase Auth user
+        user_record = auth.create_user(
+            uid=uid,
+            email=email,
+            password=password,
+            email_verified=False
+        )
+        # Generate email verification link
+        verification_link = generate_email_verification_link(email)
+
+        # Save user data in Firestore
         user_ref = db.collection('users').document(uid)
-        
-        if user_ref.get().exists:
-            logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
-            return jsonify({'error': 'User data already exists in Firestore'}), 409
-
-        referral_code = generate_unique_referral_code(db)
-        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
-
-        new_user_data = {
+        user_ref.set({
             'email': email,
             'username': username,
-            'referral_code': referral_code,
-            'referral_link': referral_link,
-            'referral_count': 0,
             'is_verified': False,
-            'is_referral_verified': False,
             'created_at': firestore.SERVER_TIMESTAMP,
-            'last_active': firestore.SERVER_TIMESTAMP,
-            'profile_picture': '',
-            'cover_photo': '',
-            'state': '',
-            'school': '',
-            'location': '',
-            'first_name': '',
-            'last_name': '',
-            'birthday': None,
-            'sex': '',
-            'last_referral_verification_at': None,
-            'businessname': '',
-            'phone_number': '',
-            'verified_phone': False,
-            'last_email_otp_sent_at': None,
-            'email_code_expiry': None,
-            'token_created_at': firestore.SERVER_TIMESTAMP,
-            'is_online': True,
-            'last_online': firestore.SERVER_TIMESTAMP,
-            'social_links': {},
-            'working_days': [],
-            'working_times': {},
-            'delivery_methods': [],
-        }
+            # add other fields as needed
+        })
 
-        user_ref.set(new_user_data)
-        logger.info(f"User data for {uid} created in Firestore.")
-        
-        if referral_code_used:
-            logger.info(f"Referral code used: {referral_code_used}. Attempting to update referrer's count.")
-            referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
-            
-            for doc in referrer_query.stream():
-                referrer_ref = doc.reference
-                referrer_ref.update({
-                    'referral_count': firestore.Increment(1)
-                })
-                logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
-                break
+        # Send verification email (simulate here; in production, send email)
+        print(f'Send this link via email: {verification_link}')
 
-        return jsonify({
-            'message': 'User data saved to Firestore successfully.',
-            'uid': uid
-        }), 201
-
+        return jsonify({'message': 'User created. Please verify your email.'}), 201
     except Exception as e:
-        logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
-        return jsonify({'error': 'Failed to save user data.'}), 500
+        return jsonify({'error': str(e)}), 500
+
 
 # =========================================================================
 # The /api/login endpoint no longer creates a session, just verifies
 # and returns a success message for the frontend to handle.
 # =========================================================================
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    id_token = data.get('idToken')
 
-@app.route("/login", methods=["POST"])
-def login():
-    email = request.form["email"]
-    password = request.form["password"]
+    if not id_token:
+        return jsonify({'error': 'ID token required'}), 400
 
     try:
-        user = firebase_auth.sign_in_with_email_and_password(email, password)
-        # Store the user's ID token in the session
-        session["user_id"] = user["idToken"]
-        return redirect(url_for("protected_route"))
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+
+        # Optional: check if email is verified
+        user_record = auth.get_user(uid)
+        if not user_record.email_verified:
+            return jsonify({'error': 'Email not verified'}), 401
+
+        # Verify in Firestore if needed
+        user_doc = db.collection('users').document(uid).get()
+        if not user_doc.exists:
+            return jsonify({'error': 'User data not found'}), 404
+
+        return jsonify({'message': 'Login successful', 'uid': uid}), 200
+
+    except auth.InvalidIdTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
     except Exception as e:
-        return "Login failed", 401
+        return jsonify({'error': str(e)}), 500
 
 
-
-@app.route("/protected")
-@login_required
-def protected_route():
-    return "Welcome, authenticated user!"
+@app.route('/login')
+def login():
+    return render_template('signup.html')
 
 
 
@@ -770,7 +750,7 @@ NIGERIAN_SCHOOLS = {
 
 
 @app.route('/profile')
-
+@login_required
 def profile():
     """
     Renders the user's profile page by fetching the latest data from Firestore
@@ -7249,6 +7229,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
