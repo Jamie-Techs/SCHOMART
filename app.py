@@ -421,85 +421,6 @@ class User:
 
 
 
-# API endpoint for user signup
-@app.route('/api/signup', methods=['POST'])
-def api_signup():
-    if db is None:
-        logger.error("Backend services are unavailable: Firestore DB object is None.")
-        return jsonify({'error': 'Backend services are unavailable.'}), 503
-    data = request.get_json()
-    uid = data.get('uid')
-    email = data.get('email')
-    username = data.get('username')
-    referral_code_used = data.get('referralCode')
-    if not all([uid, email, username]):
-        logger.warning("Missing required fields (UID, email, or username) in signup request.")
-        return jsonify({'error': 'Missing required fields'}), 400
-    try:
-        user_ref = db.collection('users').document(uid)
-        
-        if user_ref.get().exists:
-            logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
-            return jsonify({'error': 'User data already exists in Firestore'}), 409
-        referral_code = generate_unique_referral_code(db)
-        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
-        new_user_data = {
-            'email': email,
-            'username': username,
-            'referral_code': referral_code,
-            'referral_link': referral_link,
-            'referral_count': 0,
-            'is_verified': False,
-            'is_referral_verified': False,
-            'created_at': firestore.SERVER_TIMESTAMP,
-            'last_active': firestore.SERVER_TIMESTAMP,
-            'profile_picture': '',
-            'cover_photo': '',
-            'state': '',
-            'school': '',
-            'location': '',
-            'first_name': '',
-            'last_name': '',
-            'birthday': None,
-            'sex': '',
-            'last_referral_verification_at': None,
-            'businessname': '',
-            'phone_number': '',
-            'verified_phone': False,
-            'last_email_otp_sent_at': None,
-            'email_code_expiry': None,
-            'token_created_at': firestore.SERVER_TIMESTAMP,
-            'is_online': True,
-            'last_online': firestore.SERVER_TIMESTAMP,
-            'social_links': {},
-            'working_days': [],
-            'working_times': {},
-            'delivery_methods': [],
-        }
-        user_ref.set(new_user_data)
-        logger.info(f"User data for {uid} created in Firestore.")
-        
-        if referral_code_used:
-            logger.info(f"Referral code used: {referral_code_used}. Attempting to update referrer's count.")
-            referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
-            
-            for doc in referrer_query.stream():
-                referrer_ref = doc.reference
-                referrer_ref.update({
-                    'referral_count': firestore.Increment(1)
-                })
-                logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
-                break
-        return jsonify({
-            'message': 'User data saved to Firestore successfully.',
-            'uid': uid
-        }), 201
-    except Exception as e:
-        logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
-        return jsonify({'error': 'Failed to save user data.'}), 500
-
-
-
 
 
 
@@ -7379,6 +7300,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
