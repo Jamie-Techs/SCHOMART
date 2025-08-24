@@ -3,55 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schomart | Login & Signup</title>
+    <title>Schomart | Sign Up</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        /* Custom styles for the app, using the requested colors */
+        /* Custom styles for the app */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4; /* A very light green background */
+            background-color: #f0fdf4;
         }
-        .bg-primary {
-            background-color: #006B3C;
-        }
-        .text-primary {
-            color: #006B3C;
-        }
-        .bg-secondary {
-            background-color: #FDB813;
-        }
-        .text-secondary {
-            color: #FDB813;
-        }
+        .bg-primary { background-color: #006B3C; }
+        .text-primary { color: #006B3C; }
         .btn-primary {
             background-color: #006B3C;
             color: white;
             transition: background-color 0.3s;
         }
-        .btn-primary:hover {
-            background-color: #025730;
-        }
-        .btn-secondary {
-            background-color: #FDB813;
-            color: #333;
-            transition: background-color 0.3s;
-        }
-        .btn-secondary:hover {
-            background-color: #e9a50f;
-        }
+        .btn-primary:hover { background-color: #025730; }
+        .input-group input { padding-left: 2.5rem; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-2xl ring-2 ring-primary">
         <div class="text-center">
-            <h2 id="auth-title" class="text-3xl font-extrabold text-primary">Schomart</h2>
-            <p id="auth-subtitle" class="mt-2 text-sm text-gray-600">
-                Create your account
-            </p>
+            <h2 class="text-3xl font-extrabold text-primary">Schomart</h2>
+            <p class="mt-2 text-sm text-gray-600">Create your account</p>
         </div>
 
+        <!-- Flash Message Section -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="space-y-2">
@@ -68,50 +51,61 @@
         {% endif %}
         {% endwith %}
 
-        <form id="auth-form" class="space-y-6">
+        <form id="signup-form" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-user text-gray-400"></i>
+                    </div>
+                    <input id="username" name="username" type="text" autocomplete="username" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
+                </div>
+            </div>
+
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                <div class="mt-1">
-                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-envelope text-gray-400"></i>
+                    </div>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
                 </div>
             </div>
 
             <div>
                 <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <div class="mt-1">
-                    <input id="password" name="password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-lock text-gray-400"></i>
+                    </div>
+                    <input id="password" name="password" type="password" autocomplete="new-password" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
                 </div>
             </div>
 
-            <div id="confirm-password-field">
+            <div>
                 <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                <div class="mt-1">
-                    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-lock text-gray-400"></i>
+                    </div>
+                    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
                 </div>
             </div>
 
-            <div id="forgot-password-container" class="hidden flex items-center justify-between">
-                <div class="text-sm">
-                    <a href="#" id="forgot-password-link" class="font-medium text-primary hover:text-secondary">
-                        Forgot your password?
-                    </a>
-                </div>
-            </div>
-
-            <div id="auth-buttons" class="space-y-2">
-                <button type="submit" id="main-auth-button" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+            <div class="space-y-2">
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    <i class="fa-solid fa-user-plus mr-2"></i>
                     Sign Up
                 </button>
-                <button type="button" id="toggle-auth-button" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                <a href="/login" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 text-center">
                     Already have an account? Log In
-                </button>
+                </a>
             </div>
         </form>
-
         <div id="message" class="text-center mt-4"></div>
-
     </div>
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -131,20 +125,12 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        const form = document.getElementById('auth-form');
+        const form = document.getElementById('signup-form');
+        const usernameInput = document.getElementById('username');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
-        const confirmPasswordField = document.getElementById('confirm-password-field');
         const confirmPasswordInput = document.getElementById('confirm-password');
         const messageDiv = document.getElementById('message');
-        const authTitle = document.getElementById('auth-title');
-        const authSubtitle = document.getElementById('auth-subtitle');
-        const mainAuthButton = document.getElementById('main-auth-button');
-        const toggleAuthButton = document.getElementById('toggle-auth-button');
-        const forgotPasswordLink = document.getElementById('forgot-password-link');
-        const forgotPasswordContainer = document.getElementById('forgot-password-container');
-
-        let isLogin = false;
 
         function showMessage(text, isError = false) {
             messageDiv.textContent = text;
@@ -153,107 +139,79 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const username = usernameInput.value;
             const email = emailInput.value;
             const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
             
             showMessage('Processing...', false);
 
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', true);
+                return;
+            }
+
+            // ADDED: Password length validation
+            if (password.length < 8) {
+                showMessage('Password must be at least 8 characters long.', true);
+                return;
+            }
+
             try {
-                if (isLogin) {
-                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
-                    if (!user.emailVerified) {
-                        showMessage('Your email is not verified. Please check your inbox for a verification link.', true);
-                        await auth.signOut();
-                        return;
-                    }
-
-                    const idToken = await user.getIdToken();
-                    const response = await fetch('/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ idToken: idToken }),
-                    });
-
-                    if (response.ok) {
-                        showMessage('Login successful! Redirecting...', false);
-                        setTimeout(() => {
-                            window.location.href = '/'; 
-                        }, 1000);
-                    } else {
-                        const errorData = await response.json();
-                        showMessage(errorData.error || 'Server error occurred during login.', true);
-                    }
-
-                } else { // Signup flow
-                    const confirmPassword = confirmPasswordInput.value;
-                    if (password !== confirmPassword) {
-                        showMessage('Passwords do not match.', true);
-                        return;
-                    }
-
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
+                await db.collection('users').doc(user.uid).set({
+                    uid: user.uid,
+                    username: username,
+                    email: email,
+                    created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                    last_active: firebase.firestore.FieldValue.serverTimestamp(),
+                    last_online: firebase.firestore.FieldValue.serverTimestamp(),
+                    token_created_at: firebase.firestore.FieldValue.serverTimestamp(),
                     
-                    const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                    first_name: "",
+                    last_name: "",
+                    phone_number: "",
+                    sex: "",
+                    businessname: "",
+                    location: "",
+                    state: "",
+                    school: "",
+                    full_location: "",
+                    cover_photo: "",
+                    profile_picture: "",
+                    has_posted_free_ad: false,
+                    is_admin: false,
+                    is_online: true,
+                    referral_code: referralCode,
+                    referral_count: 0,
+                    referral_link: `https://schomart.onrender.com/signup?ref=${referralCode}`,
+                    delivery_methods: ["Pickup"],
+                    social_links: {
+                        facebook: "",
+                        instagram: "",
+                        linkedin: "",
+                        twitter: "",
+                        website: ""
+                    },
+                    last_email_otp_sent_at: null,
+                    email_code_expiry: null,
+                    last_referral_verification_at: null,
+                });
 
-                    // UPDATED: Firestore document to match the new fields
-                    await db.collection('users').doc(user.uid).set({
-                        uid: user.uid,
-                        email: email,
-                        created_at: firebase.firestore.FieldValue.serverTimestamp(),
-                        last_active: firebase.firestore.FieldValue.serverTimestamp(),
-                        last_online: firebase.firestore.FieldValue.serverTimestamp(),
-                        token_created_at: firebase.firestore.FieldValue.serverTimestamp(),
-                        
-                        first_name: "",
-                        last_name: "",
-                        phone_number: "",
-                        sex: "",
-                        businessname: "",
-                        location: "",
-                        state: "",
-                        school: "",
-                        full_location: "",
-                        cover_photo: "",
-                        profile_picture: "",
-                        has_posted_free_ad: false,
-                        is_admin: false,
-                        is_online: true,
-                        referral_code: referralCode,
-                        referral_count: 0,
-                        referral_link: `https://schomart.onrender.com/signup?ref=${referralCode}`,
-                        delivery_methods: ["Pickup"],
-                        social_links: {
-                            facebook: "",
-                            instagram: "",
-                            linkedin: "",
-                            twitter: "",
-                            website: ""
-                        },
-                        last_email_otp_sent_at: null,
-                        email_code_expiry: null,
-                        last_referral_verification_at: null,
-                    });
-
-                    await user.sendEmailVerification();
-                    showMessage('Signup successful! Please check your email for a verification link before logging in.', false);
-                }
+                await user.sendEmailVerification();
+                showMessage('Signup successful! Please check your email for a verification link before logging in.', false);
             } catch (error) {
                 console.error("Authentication Error:", error);
                 switch(error.code) {
                     case 'auth/email-already-in-use':
-                        showMessage('This email is already in use. Please log in instead or use another email.', true);
+                        showMessage('This email is already registered. Please log in.', true);
                         break;
                     case 'auth/invalid-email':
                         showMessage('The email address is not valid.', true);
-                        break;
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        showMessage('Invalid email or password. Please try again.', true);
                         break;
                     case 'auth/weak-password':
                         showMessage('Password should be at least 6 characters long.', true);
@@ -264,44 +222,6 @@
                     default:
                         showMessage('An unexpected error occurred. Please try again.', true);
                 }
-            }
-        });
-
-        // Toggle between Login and Signup forms
-        toggleAuthButton.addEventListener('click', () => {
-            isLogin = !isLogin;
-            if (isLogin) {
-                authTitle.textContent = 'Log In';
-                authSubtitle.textContent = 'Sign in to your account';
-                mainAuthButton.textContent = 'Log In';
-                toggleAuthButton.textContent = "Don't have an account? Sign Up";
-                forgotPasswordContainer.classList.remove('hidden');
-                confirmPasswordField.classList.add('hidden');
-            } else {
-                authTitle.textContent = 'Schomart';
-                authSubtitle.textContent = 'Create your account';
-                mainAuthButton.textContent = 'Sign Up';
-                toggleAuthButton.textContent = "Already have an account? Log In";
-                forgotPasswordContainer.classList.add('hidden');
-                confirmPasswordField.classList.remove('hidden');
-            }
-            showMessage('', false);
-        });
-
-        forgotPasswordLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value;
-            if (!email) {
-                showMessage('Please enter your email address to reset your password.', true);
-                return;
-            }
-
-            try {
-                await auth.sendPasswordResetEmail(email);
-                showMessage('Password reset email sent! Check your inbox.', false);
-            } catch (error) {
-                console.error("Forgot Password Error:", error);
-                showMessage('Failed to send password reset email. Please ensure the email is correct and try again.', true);
             }
         });
     </script>
