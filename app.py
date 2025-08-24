@@ -2461,7 +2461,7 @@ def admin_post_airtime():
             if cleaned_amount.isdigit():
                 amount = int(cleaned_amount)
             else:
-                flash('Invalid amount format. Please enter numbers only (e.g., 500, 1000).', 'error')
+                flask.flash('Invalid amount format. Please enter numbers only (e.g., 500, 1000).', 'error')
                 return render_template('admin_post_airtime.html')
 
         cleaned_digits = None
@@ -2471,25 +2471,26 @@ def admin_post_airtime():
 
         # Check if at least one of digits or image is provided
         if not cleaned_digits and not 'airtime_image' in request.files:
-            flash("You must provide either the airtime digits or an image.", "error")
+            flask.flash("You must provide either the airtime digits or an image.", "error")
             return redirect(url_for('admin_post_airtime'))
 
         if not duration_value or not duration_unit:
-            flash('Duration value and unit are required.', 'error')
+            flask.flash('Duration value and unit are required.', 'error')
             return redirect(url_for('admin_post_airtime'))
 
         # Calculate expiry time
-        now = datetime.datetime.utcnow()
+        # Corrected: Use datetime.utcnow() directly
+        now = datetime.utcnow()
         if duration_unit == 'seconds':
-            expiry_time = now + datetime.timedelta(seconds=duration_value)
+            expiry_time = now + timedelta(seconds=duration_value)
         elif duration_unit == 'minutes':
-            expiry_time = now + datetime.timedelta(minutes=duration_value)
+            expiry_time = now + timedelta(minutes=duration_value)
         elif duration_unit == 'hours':
-            expiry_time = now + datetime.timedelta(hours=duration_value)
+            expiry_time = now + timedelta(hours=duration_value)
         elif duration_unit == 'days':
-            expiry_time = now + datetime.timedelta(days=duration_value)
+            expiry_time = now + timedelta(days=duration_value)
         else:
-            flash('Invalid duration unit provided.', 'error')
+            flask.flash('Invalid duration unit provided.', 'error')
             return redirect(url_for('admin_post_airtime'))
 
         # Handle image upload to Firebase Storage
@@ -2511,7 +2512,7 @@ def admin_post_airtime():
                     image_url = blob.public_url
                     logger.info(f"Image uploaded to: {image_url}")
                 except Exception as e:
-                    flash(f"Error uploading image: {e}", "error")
+                    flask.flash(f"Error uploading image: {e}", "error")
                     logger.error(f"Image upload failed: {e}")
                     return redirect(url_for('admin_post_airtime'))
 
@@ -2524,18 +2525,18 @@ def admin_post_airtime():
             'image_url': image_url,
             'created_at': firestore.SERVER_TIMESTAMP,
             'expires_at': expiry_time,
-            'is_active': True,
-            'posted_by': g.user['id'] if g.user and 'id' in g.user else None  # Safely access user id
+            # Corrected: Use flask.g.user['uid'] as set by the session_required decorator
+            'posted_by': flask.g.user.get('uid')
         }
 
         db.collection('airtime_posts').add(airtime_post_data)
 
-        flash('Airtime post created successfully!', 'success')
+        flask.flash('Airtime post created successfully!', 'success')
         return redirect(url_for('admin_post_airtime'))
 
+   
     # If it's a GET request, render the template
     return render_template('admin_post_airtime.html')
-
 
 # --- API Route to Fetch Active Airtime Posts ---
 @app.route('/api/airtime-posts', methods=['GET'])
@@ -2545,7 +2546,8 @@ def get_airtime_posts():
     Filters by expiry time and sorts manually to get the newest post.
     """
     try:
-        now = datetime.datetime.utcnow()
+        # Corrected: Use datetime.utcnow() directly
+        now = datetime.utcnow()
         
         # Use a Firestore query to get active posts
         # We need to filter for posts that have not expired.
@@ -2583,6 +2585,8 @@ def get_airtime_posts():
         return jsonify({'message': f'Error fetching posts: {str(e)}'}), 500
 
 
+
+ 
 # --- API Route to Delete Expired Airtime Posts (Triggered by Frontend JS) ---
 @app.route('/api/airtime-posts/<string:post_id>/delete', methods=['POST'])
 @admin_required
@@ -7300,6 +7304,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
