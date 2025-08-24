@@ -102,7 +102,7 @@
     <script type="module">
         // Import Firebase modules from CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
         // === CONFIGURATION ===
         // Your Firebase project configuration
@@ -184,6 +184,40 @@
 
         // === AUTHENTICATION LOGIC ===
 
+        /**
+         * After successful authentication with Firebase, this function calls the Flask backend
+         * to create a secure session cookie and redirects the user.
+         * @param {Object} user - The Firebase user object.
+         */
+        async function createSessionAndRedirect(user) {
+            try {
+                // Get the user's ID token from Firebase
+                const idToken = await user.getIdToken();
+                console.log("Got ID token from Firebase:", idToken);
+
+                // Send the ID token to the Flask backend to create a session cookie
+                const response = await fetch('/sessionLogin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+
+                if (response.ok) {
+                    showMessage("Login successful! Redirecting...", "success");
+                    // Redirect to the protected dashboard
+                    window.location.href = '/dashboard';
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to create backend session.');
+                }
+            } catch (error) {
+                console.error("Session creation error:", error);
+                showMessage(`Login failed: ${error.message}`, "error");
+            }
+        }
+
         // Handle Signup form submission
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -192,6 +226,7 @@
             const username = document.getElementById('signup-username').value;
             
             try {
+                showMessage('Creating account...', 'info');
                 // 1. Create a user with Firebase Authentication
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
@@ -199,7 +234,7 @@
                 // 2. Send email verification
                 await sendEmailVerification(user);
 
-                // 3. Post user data to your Flask backend
+                // 3. Post user data to your Flask backend (if needed for other purposes, like profile data)
                 const backendResponse = await fetch('/api/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -210,8 +245,8 @@
                     throw new Error('Failed to save user data on the backend.');
                 }
                 
-                showMessage('Account created successfully! Please check your email to verify your address before logging in.', 'success');
-                signupForm.reset();
+                // 4. Create a session and redirect immediately after signup
+                await createSessionAndRedirect(user);
 
             } catch (error) {
                 // Handle various Firebase and backend errors
@@ -230,6 +265,7 @@
                             break;
                         default:
                             errorMessage = `An error occurred: ${error.message}`;
+                            break;
                     }
                 } else if (error.message) {
                     errorMessage = error.message;
@@ -245,6 +281,7 @@
             const password = document.getElementById('login-password').value;
 
             try {
+                showMessage('Logging in...', 'info');
                 // 1. Sign in the user with Firebase
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
@@ -256,23 +293,9 @@
                     showMessage('Your email is not verified. Please check your inbox for the verification link.', 'error');
                     return; // Stop the process here
                 }
-
-                // 3. Get the ID token for backend verification
-                const idToken = await user.getIdToken();
                 
-                // 4. Dynamically create and submit a form with the ID token
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/login_redirect'; // A new Flask route you need to create
-                
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'id_token';
-                hiddenInput.value = idToken;
-                
-                form.appendChild(hiddenInput);
-                document.body.appendChild(form);
-                form.submit();
+                // 3. Create a session and redirect
+                await createSessionAndRedirect(user);
 
             } catch (error) {
                 // Handle Firebase errors
@@ -287,6 +310,7 @@
                             break;
                         default:
                             errorMessage = `An error occurred: ${error.message}`;
+                            break;
                     }
                 }
                 showMessage(errorMessage, 'error');
