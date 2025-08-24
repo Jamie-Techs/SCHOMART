@@ -130,6 +130,12 @@ def allowed_file(filename):
 
 
 
+
+
+
+
+
+
 # --- User Model Class ---
 class User:
     """
@@ -224,25 +230,20 @@ def login_required(f):
 
 
 
-
-
-
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # First, ensure the user is logged in
-        if not g.current_user.is_authenticated:
-            flash("Please log in to access this page.", "error")
-            return redirect(url_for('login'))
-        
-        # Now, check if the user has is_admin set to True
-        # Using .get() for safety in case the attribute is missing
+        # The login_required decorator ensures g.current_user exists.
+        # So we only need to check the admin status.
         if not getattr(g.current_user, 'is_admin', False):
             flash("You do not have permission to access this page.", "error")
-            return redirect(url_for('home')) # or a suitable landing page
+            return redirect(url_for('home'))
         
-        return f(*arkwargs)
+        return f(*args, **kwargs)
     return decorated_function
+
+
+
 
 
 
@@ -2027,9 +2028,10 @@ def delete_advert(advert_id):
 
 
 
-# The corrected backend function for the admin review page
+
 @app.route('/admin/adverts/review')
-@admin_required
+@login_required  # This decorator runs first, populating g.current_user
+@admin_required  # This decorator runs second, after g.current_user is available
 def admin_advert_review():
     """
     Renders the admin review page with adverts awaiting review,
@@ -2055,7 +2057,6 @@ def admin_advert_review():
         else:
             advert['calculated_expiry'] = None
 
-        # This is the final and correct image logic based on your database structure
         main_image_url = advert.get('main_image')
         if main_image_url:
             advert['display_image'] = main_image_url
@@ -2072,6 +2073,7 @@ def admin_advert_review():
 
 
 @app.route('/admin/adverts/approve', methods=['POST'])
+@login_required
 @admin_required
 def admin_advert_approve():
     """
@@ -2102,6 +2104,7 @@ def admin_advert_approve():
 
 
 @app.route('/admin/adverts/reject', methods=['POST'])
+@login_required
 @admin_required
 def admin_advert_reject():
     """
@@ -2135,6 +2138,7 @@ def admin_advert_reject():
 
 
 @app.route('/admin/reported_advert/<report_id>')
+@login_required
 @admin_required
 def reported_advert_details(report_id):
     """
@@ -2195,6 +2199,7 @@ def reported_advert_details(report_id):
     return render_template('admin_reported_advert_details.html', report=report)
 
 @app.route('/admin/action/mark_resolved/<report_id>', methods=['POST'])
+@login_required
 @admin_required
 def mark_report_resolved(report_id):
     """Admin action to mark a report as resolved."""
@@ -2213,6 +2218,7 @@ def mark_report_resolved(report_id):
 
 
 @app.route('/admin/action/suspend_user/<user_id>', methods=['POST'])
+@login_required
 @admin_required
 def suspend_user_account(user_id):
     """Admin action to suspend a user's account."""
@@ -2231,6 +2237,7 @@ def suspend_user_account(user_id):
 
 
 @app.route('/admin/action/take_down_advert/<advert_id>', methods=['POST'])
+@login_required
 @admin_required
 def take_down_advert(advert_id):
     """Admin action to take down an advert."""
@@ -2255,6 +2262,7 @@ def take_down_advert(advert_id):
 
 
 @app.route('/admin/reported_adverts')
+@login_required
 @admin_required
 def reported_adverts_admin():
     """
@@ -2302,6 +2310,7 @@ def reported_adverts_admin():
 
 # --- Admin Function to Post New Airtime ---
 @app.route('/admin/post_airtime', methods=['GET', 'POST'])
+@login_required
 @admin_required
 def admin_post_airtime():
     """
@@ -2455,6 +2464,7 @@ def get_airtime_posts():
  
 # --- API Route to Delete Expired Airtime Posts (Triggered by Frontend JS) ---
 @app.route('/api/airtime-posts/<string:post_id>/delete', methods=['POST'])
+@login_required
 @admin_required
 def delete_airtime_post_api(post_id):
     """
@@ -2495,6 +2505,7 @@ def delete_airtime_post_api(post_id):
 
 # --- Function to Clean Up Expired Posts from the Backend ---
 @app.route('/admin/clean_expired_posts', methods=['POST'])
+@login_required
 @admin_required
 def clean_expired_posts():
     """
@@ -2534,6 +2545,7 @@ def clean_expired_posts():
 
     
 @app.route('/admin_users_management')
+@login_required
 @admin_required
 def admin_users_management():
     return render_template('admin_users_management.html')
@@ -7172,6 +7184,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
