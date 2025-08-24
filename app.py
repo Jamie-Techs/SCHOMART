@@ -1642,7 +1642,7 @@ def sell(advert_id=None):
         if advert_doc.exists:
             advert = advert_doc.to_dict()
     
-    user_id = current_user.id
+    user_id = g.current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
     
@@ -1780,7 +1780,7 @@ def sell(advert_id=None):
 @login_required
 def payment(advert_id):
     advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'pending_payment':
+    if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'pending_payment':
         flash("Invalid payment request.", "error")
         return redirect(url_for('list_adverts'))
 
@@ -1821,7 +1821,7 @@ def payment(advert_id):
 @login_required
 def submit_advert(advert_id):
     advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id:
+    if not advert or advert.get('user_id') != g.current_user.id:
         flash("Invalid submission.", "error")
         return redirect(url_for('list_adverts'))
     
@@ -1856,7 +1856,7 @@ def submit_advert(advert_id):
 @app.route('/adverts')
 @login_required
 def list_adverts():
-    user_id = current_user.id
+    user_id = g.current_user.id
     adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
     adverts = []
     
@@ -1963,7 +1963,7 @@ def delete_advert_and_data(advert_id):
 @login_required
 def pause_advert(advert_id):
     advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'published':
+    if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'published':
         flash("Cannot pause this advert.", "error")
     else:
         db.collection("adverts").document(advert_id).update({"status": "paused"})
@@ -1974,7 +1974,7 @@ def pause_advert(advert_id):
 @login_required
 def resume_advert(advert_id):
     advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != current_user.id or advert.get('status') != 'paused':
+    if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'paused':
         flash("Cannot resume this advert.", "error")
     else:
         db.collection("adverts").document(advert_id).update({"status": "pending_review"})
@@ -1989,7 +1989,7 @@ def repost_advert(advert_id):
     advert_ref = db.collection('adverts').document(advert_id)
     advert_doc = advert_ref.get()
 
-    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != current_user.id:
+    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != g.current_user.id:
         flash('Advert not found or you do not have permission to repost it.', 'error')
         return redirect(url_for('list_adverts'))
         
@@ -2013,7 +2013,7 @@ def delete_advert(advert_id):
     advert_ref = db.collection('adverts').document(advert_id)
     advert_doc = advert_ref.get()
     
-    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != current_user.id:
+    if not advert_doc.exists or advert_doc.to_dict()['user_id'] != g.current_user.id:
         flash('Advert not found or you do not have permission to delete it.', 'error')
         return redirect(url_for('list_adverts'))
 
@@ -7172,6 +7172,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
