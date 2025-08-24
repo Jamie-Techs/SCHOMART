@@ -605,6 +605,9 @@ NIGERIAN_SCHOOLS = {
 
 
 
+
+
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -613,8 +616,9 @@ def profile():
     and generating signed URLs for profile pictures.
     """
     try:
-        # CORRECTED: Get the user's UID from the Flask global 'g' object, not 'session'
-        user_uid = flask.g.user.get('uid')
+        # CORRECTED: Get the user's UID from the Flask session, which is where
+        # your login route stores it.
+        user_uid = session.get('user')
         
         if not user_uid:
             # This check is a failsafe; the decorator should prevent this.
@@ -627,7 +631,6 @@ def profile():
 
         if not user_doc.exists:
             flash("User data not found. Please log in again.", "error")
-            # Use the logger you've defined
             logging.error(f"User document does not exist for UID: {user_uid}")
             return redirect(url_for('signup'))
 
@@ -638,8 +641,7 @@ def profile():
             flash("Your email is not verified. Please check your inbox.", "error")
             return redirect(url_for('email_verification'))
 
-        # Format timestamps for display
-        # You'll need to define a format_timestamp function
+        # Assuming you have a format_timestamp function defined somewhere
         user_data['last_active'] = format_timestamp(user_data.get('last_active'))
         user_data['created_at'] = format_timestamp(user_data.get('created_at'))
 
@@ -679,6 +681,9 @@ def profile():
         logging.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
+
+
 
 
 @app.route('/profile/personal', methods=['GET', 'POST'])
@@ -7085,6 +7090,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
