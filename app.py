@@ -231,13 +231,13 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # First, ensure the user is logged in
-        if not current_user.is_authenticated:
+        if not g.current_user.is_authenticated:
             flash("Please log in to access this page.", "error")
             return redirect(url_for('login'))
         
         # Now, check if the user has is_admin set to True
         # Using .get() for safety in case the attribute is missing
-        if not getattr(current_user, 'is_admin', False):
+        if not getattr(g.current_user, 'is_admin', False):
             flash("You do not have permission to access this page.", "error")
             return redirect(url_for('home')) # or a suitable landing page
         
@@ -7172,6 +7172,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
