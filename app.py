@@ -134,10 +134,6 @@ def allowed_file(filename):
 
 
 
-
-
-
-
 @login_manager.user_loader
 def load_user(user_id):
     user_doc_ref = db.collection('users').document(user_id)
@@ -146,7 +142,6 @@ def load_user(user_id):
         # Pass the unpacked dictionary
         return User(user_id, **user_data)
     return None
-
 
 
 def admin_required(f):
@@ -163,7 +158,7 @@ def admin_required(f):
             flash("You do not have permission to access this page.", "error")
             return redirect(url_for('home')) # or a suitable landing page
         
-        return f(*args, **kwargs)
+        return f(*arkwargs)
     return decorated_function
 
 
@@ -188,50 +183,96 @@ def update_online_status(user_id, is_online):
 
 
 
-
-
-
-# User loader for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    user_doc_ref = db.collection('users').document(user_id)
-    user_data = user_doc_ref.get().to_dict()
-    if user_data:
-        return User(user_id, **user_data)
-    return None
-    
-# Corrected login required decorator
-def login_required(f):
+def session_required(f):
+    """
+    A decorator to protect routes by checking for a valid Firebase session cookie.
+    If no valid cookie is found, it redirects the user to the login page.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        id_token = None
-        # Extract token from Authorization header (for API calls)
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '): 
-                id_token = auth_header.split(' ')[1]
-        
-        if not id_token:
-            # If a direct browser GET request is made without a token,
-            # this check will fail. This is the root of your problem.
-            flash("You must be logged in to access this page.", "error")
-            return redirect(url_for('home'))
+        # Get the session cookie from the request
+        session_cookie = request.cookies.get('__session')
 
+        # If there's no cookie, the user is not authenticated
+        if not session_cookie:
+            return redirect(url_for('signup'))
+
+        # Verify the session cookie with Firebase Admin SDK
         try:
-            decoded_token = auth.verify_id_token(id_token)
-            request.uid = decoded_token['uid']
-            return f(*args, **kwargs)
+            # check_revoked=True adds an extra layer of security
+            decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
+            # You can now access user data via decoded_claims, e.g., decoded_claims['uid']
+            # We can store the user data in the Flask global object 'g' for easy access
+            flask.g.user = decoded_claims
         except auth.InvalidIdTokenError:
-            flash("Invalid login session. Please log in again.", "error")
-            return redirect(url_for('home'))
+            # The cookie is invalid or expired, redirect to login
+            return redirect(url_for('signup'))
         except Exception as e:
-            flash("Authentication failed. Please try again.", "error")
-            return redirect(url_for('home'))
+            # Handle other potential errors gracefully
+            print(f"Error verifying session cookie: {e}")
+            return redirect(url_for('signup'))
+
+        # If the cookie is valid, proceed to the protected route
+        return f(*args, **kwargs)
+
     return decorated_function
 
-# =========================================================================
-# FLASK ROUTES
-# =========================================================================
+
+
+
+
+@app.route("/sessionLogin", methods=["POST"])
+def session_login():
+    """
+    This endpoint receives the ID token from the client and creates a session cookie.
+    """
+    # Get the ID token from the POST request body
+    id_token = request.json.get('idToken')
+    if not id_token:
+        return jsonify({"status": "error", "message": "ID token not found."}), 400
+
+    try:
+        # Set session expiration to 5 days, adjust as needed. Max is 2 weeks.
+        expires_in = datetime.timedelta(days=5)
+
+        # Create the session cookie with the Firebase Admin SDK.
+        # This function also verifies the ID token.
+        session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
+
+        # Create a Flask response object.
+        response = jsonify({"status": "success", "message": "Session cookie created successfully."})
+
+        # Set the session cookie on the response.
+        # httponly=True prevents JavaScript from accessing the cookie.
+        # secure=True ensures the cookie is only sent over HTTPS.
+        response.set_cookie(
+            '__session',
+            session_cookie,
+            max_age=expires_in.total_seconds(),
+            httponly=True,
+            secure=True
+        )
+        return response, 200
+
+    except auth.InvalidIdTokenError:
+        return jsonify({"status": "error", "message": "Invalid ID token."}), 401
+    except Exception as e:
+        print(f"Error creating session cookie: {e}")
+        return jsonify({"status": "error", "message": "Failed to create session cookie."}), 500
+
+@app.route("/sessionLogout", methods=["POST"])
+def session_logout():
+    """
+    This endpoint clears the session cookie to log the user out.
+    """
+    response = jsonify({"status": "success", "message": "Logged out successfully."})
+    response.set_cookie('__session', '', expires=0) # Clear the cookie by setting expiration to 0
+    return response, 200
+
+
+
+
+
 
 
 # API endpoint for user signup
@@ -310,29 +351,6 @@ def api_signup():
     except Exception as e:
         logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
         return jsonify({'error': 'Failed to save user data.'}), 500
-
-# NEW endpoint to handle login redirect
-@app.route('/login_redirect', methods=['POST'])
-def login_redirect():
-    """
-    Receives the ID token from the hidden form and performs a redirect.
-    """
-    id_token = request.form.get('id_token')
-    if not id_token:
-        flash("Authentication failed. No token provided.", "error")
-        return redirect(url_for('home'))
-
-    try:
-        decoded_token = auth.verify_id_token(id_token)
-        # We can safely assume the user is authenticated at this point
-        # The user is now officially authenticated.
-        return redirect(url_for('profile'))
-    except auth.InvalidIdTokenError:
-        flash("Invalid login session. Please log in again.", "error")
-        return redirect(url_for('home'))
-    except Exception as e:
-        flash("Authentication failed. Please try again.", "error")
-        return redirect(url_for('home'))
 
 
 
@@ -815,7 +833,7 @@ NIGERIAN_SCHOOLS = {
 
 
 @app.route('/profile')
-@login_required
+@session_required
 def profile():
     """
     Renders the user's profile page by fetching the latest data from Firestore
@@ -7282,6 +7300,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
