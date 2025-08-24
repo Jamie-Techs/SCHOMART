@@ -176,46 +176,41 @@ def update_online_status(user_id, is_online):
      
 
 
-
-
-
-
-
-# A decorator to protect routes by verifying the ID token
 def login_required(f):
-    """
-    Decorator that checks for a valid Firebase ID token in the Authorization header.
-    This is required for accessing protected routes.
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         id_token = None
-        # Check for Authorization header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            # Expected format: "Bearer <ID_TOKEN>"
-            if auth_header.startswith('Bearer '):
-                id_token = auth_header.split(' ')[1]
+
+        # 1) Authorization header
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            id_token = auth_header.split(' ', 1)[1].strip()
+
+        # 2) Fallback: HttpOnly cookie set by /api/login
+        if not id_token:
+            id_token = request.cookies.get('id_token')
 
         if not id_token:
-            logger.warning("No ID token found in Authorization header. Denying access.")
-            return jsonify({'error': 'Unauthorized: Login required. Token not provided'}), 401
+            app.logger.warning("No ID token found in Authorization header or cookie. Denying access.")
+            flash("You must be logged in to access this page.", "error")
+            return redirect(url_for('home'))
 
         try:
-            # Verify the ID token with Firebase Admin SDK
             decoded_token = auth.verify_id_token(id_token)
             request.uid = decoded_token['uid']
             return f(*args, **kwargs)
-        except auth.InvalidIdTokenError as e:
-            # Handle invalid tokens
-            logger.warning(f"Invalid ID token provided: {e}")
-            return jsonify({'error': 'Unauthorized: Invalid token'}), 401
+        except auth.InvalidIdTokenError:
+            flash("Invalid login session. Please log in again.", "error")
+            return redirect(url_for('home'))
         except Exception as e:
-            # Handle other verification errors
-            logger.error(f"Token verification failed: {e}")
-            return jsonify({'error': 'Unauthorized: Failed to verify token'}), 401
+            app.logger.exception("Authentication failed.")
+            flash("Authentication failed. Please try again.", "error")
+            return redirect(url_for('home'))
 
     return decorated_function
+
+
+
 
 # =========================================================================
 # The updated /api/signup endpoint
@@ -311,33 +306,59 @@ def api_signup():
 # The /api/login endpoint no longer creates a session, just verifies
 # and returns a success message for the frontend to handle.
 # =========================================================================
+
+
+
+from flask import make_response
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
     """
-    Verifies the ID token and returns a success message. The frontend
-    will handle storing the token and redirecting.
+    Verifies the ID token from Authorization header and sets a secure HttpOnly cookie.
+    The cookie allows normal browser navigation to protected pages without adding headers.
     """
-    data = request.get_json()
-    id_token = data.get('idToken')
-    
+    # Try to read from Authorization header
+    auth_header = request.headers.get('Authorization', '')
+    id_token = None
+    if auth_header.startswith('Bearer '):
+        id_token = auth_header.split(' ', 1)[1].strip()
+
+    # Fallback to JSON body (optional)
     if not id_token:
-        logger.warning("No ID token provided for login.")
+        data = request.get_json(silent=True) or {}
+        id_token = data.get('idToken')
+
+    if not id_token:
+        app.logger.warning("No ID token provided for login.")
         return jsonify({'error': 'ID token is required'}), 400
-    
+
     try:
-        auth.verify_id_token(id_token)
-        logger.info("ID token verified successfully. Frontend can now proceed.")
-        return jsonify({'message': 'Login successful'}), 200
+        decoded = auth.verify_id_token(id_token)
+        uid = decoded['uid']
+
+        # Optionally confirm email_verified here (defense-in-depth)
+        if not decoded.get('email_verified', False):
+            return jsonify({'error': 'Email not verified'}), 403
+
+        # Success → set HttpOnly cookie so future GET /profile works
+        resp = make_response(jsonify({'message': 'Login successful', 'uid': uid}), 200)
+        # Cookie options: adjust domain/secure in production
+        resp.set_cookie(
+            'id_token',
+            id_token,
+            httponly=True,
+            secure=True,          # set False only on localhost (http)
+            samesite='Lax',
+            max_age=60 * 60 * 24  # 1 day; tune as needed
+        )
+        return resp
 
     except auth.InvalidIdTokenError:
-        logger.warning("Invalid ID token provided.")
+        app.logger.warning("Invalid ID token provided.")
         return jsonify({'error': 'Invalid ID token'}), 401
     except Exception as e:
-        logger.error(f"Failed to verify ID token: {e}", exc_info=True)
+        app.logger.error(f"Failed to verify ID token: {e}", exc_info=True)
         return jsonify({'error': 'Failed to verify token'}), 500
-
-
-
 
 
 
@@ -459,28 +480,19 @@ def generate_unique_referral_code(db):
 
 
 
-
-
-
-
-
-
-
 @app.route('/logout')
-@login_required
 def logout():
-    """
-    Logs out the user and updates their online status to False.
-    """
-    try:
-        update_online_status(current_user.id, False)
-        logout_user()  # Flask-Login's logout function
-        flash("You have been logged out.", "success")
-        return redirect(url_for('home'))
-    except Exception as e:
-        logger.error(f"Exception on /logout [GET]: {e}", exc_info=True)
-        flash("An error occurred during logout. Please try again.", "danger")
-        return redirect(url_for('home'))
+    resp = make_response(redirect(url_for('home')))
+    # Remove id_token cookie
+    resp.set_cookie('id_token', '', expires=0)
+    flash("You have been logged out.", "info")
+    return resp
+
+
+
+
+
+
 
 
 
@@ -7300,6 +7312,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
