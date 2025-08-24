@@ -131,44 +131,6 @@ def allowed_file(filename):
 
 
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # First, ensure the user is logged in
-        if not current_user.is_authenticated:
-            flash("Please log in to access this page.", "error")
-            return redirect(url_for('login'))
-        
-        # Now, check if the user has is_admin set to True
-        # Using .get() for safety in case the attribute is missing
-        if not getattr(current_user, 'is_admin', False):
-            flash("You do not have permission to access this page.", "error")
-            return redirect(url_for('home')) # or a suitable landing page
-        
-        return f(*arkwargs)
-    return decorated_function
-
-
-
-
-def update_online_status(user_id, is_online):
-    # This is the function we generated previously
-    try:
-        user_ref = db.collection('users').document(user_id)
-        user_ref.update({'is_online': is_online, 'last_online': firestore.SERVER_TIMESTAMP})
-        logger.info(f"User {user_id} online status updated to {is_online}.")
-    except Exception as e:
-        logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
-
-     
-
-
-
-from functools import wraps
-from flask import session, redirect, url_for, flash, g
-import logging
-# Make sure to import your Firestore client here
-# from your_firestore_module import db 
 
 # --- User Model Class ---
 class User:
@@ -261,6 +223,36 @@ def login_required(f):
 
 
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # First, ensure the user is logged in
+        if not current_user.is_authenticated:
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for('login'))
+        
+        # Now, check if the user has is_admin set to True
+        # Using .get() for safety in case the attribute is missing
+        if not getattr(current_user, 'is_admin', False):
+            flash("You do not have permission to access this page.", "error")
+            return redirect(url_for('home')) # or a suitable landing page
+        
+        return f(*arkwargs)
+    return decorated_function
+
+
+
+
+def update_online_status(user_id, is_online):
+    # This is the function we generated previously
+    try:
+        user_ref = db.collection('users').document(user_id)
+        user_ref.update({'is_online': is_online, 'last_online': firestore.SERVER_TIMESTAMP})
+        logger.info(f"User {user_id} online status updated to {is_online}.")
+    except Exception as e:
+        logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
+
+     
 
 
 # --- Routes for Authentication ---
@@ -7171,6 +7163,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
