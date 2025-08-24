@@ -2,204 +2,196 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Futo Jiji</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FingerprintJS/3.3.2/fingerprint.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schomart | Log In</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        /* Your existing CSS remains unchanged */
+        /* Custom styles for the app */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4;
         }
-
-        .login-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 80px auto;
-            background-color: #fff;
-            border: 2px solid #006B3C;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-container h2 {
-            text-align: center;
-            color: #006B3C;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #00391F;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
+        .bg-primary { background-color: #006B3C; }
+        .text-primary { color: #006B3C; }
+        .btn-primary {
             background-color: #006B3C;
             color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
+            transition: background-color 0.3s;
         }
-
-        .btn:hover {
-            background-color: #004d2a;
-        }
-
-        .signup-link {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .signup-link a {
-            color: #FDB813;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* Flash message styling */
-        .alert {
-            padding: 15px 20px;
-            margin: 20px auto; 
-            width: 90%;
-            max-width: 500px; 
-            border-radius: 8px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: 1;
-            transition: opacity 0.5s ease-out;
-        }
-        .alert.error {
-            background-color: #f8d7da; 
-            color: #721c24; 
-            border: 1px solid #f5c6cb;
-        }
-        .alert.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        .alert.warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-        .alert-icon {
-            font-size: 1.2em;
-        }
+        .btn-primary:hover { background-color: #025730; }
+        .input-group input { padding-left: 2.5rem; }
     </style>
 </head>
-<body>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert {{ category}}">
-            <span class="alert-icon">
-              {% if category == 'error' %} <i class="fas fa-times-circle"></i>
-              {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
-              {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
-              {% else %} <i class="fas fa-info-circle"></i>
-              {% endif %}
-            </span>
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+<body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="login-container">
-      <h2>Login to Futo Jiji</h2>
-      <form id="loginForm" method="POST" action="/login">
-        <div class="form-group">
-          <label>Email or Username</label>
-          <input type="text" name="username_or_email" placeholder="you@example.com" required>
+    <div class="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-2xl ring-2 ring-primary">
+        <div class="text-center">
+            <h2 class="text-3xl font-extrabold text-primary">Log In</h2>
+            <p class="mt-2 text-sm text-gray-600">Sign in to your account</p>
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+        <!-- Flash Message Section -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div class="px-4 py-2 rounded-md font-medium
+                {% if category == 'success' %} bg-green-100 text-green-800
+                {% elif category == 'error' %} bg-red-100 text-red-800
+                {% elif category == 'info' %} bg-blue-100 text-blue-800
+                {% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
         </div>
-        <input type="hidden" name="device_fingerprint_data" id="deviceFingerprintData">
-        <button type="submit" class="btn">Login</button>
-      </form>
+        {% endif %}
+        {% endwith %}
 
-      <div class="signup-link">
-        Don't have an account? <a href="/signup">Sign up here</a>
-      </div>
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-envelope text-gray-400"></i>
+                    </div>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
+                </div>
+            </div>
 
-      <div class="signup-link" style="margin-top: 10px;">
-        <a href="{{ url_for('google_login')}}" class="btn" style="background-color: #DB4437;">
-          <i class="fab fa-google"></i> Sign in with Google
-        </a>
-      </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-lock text-gray-400"></i>
+                    </div>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="block w-full rounded-md border-gray-300 pl-10 focus:border-primary focus:ring-primary sm:text-sm">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="text-sm">
+                    <a href="#" id="forgot-password-link" class="font-medium text-primary hover:text-secondary">
+                        Forgot your password?
+                    </a>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i>
+                    Log In
+                </button>
+                <a href="/signup" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 text-center">
+                    Don't have an account? Sign Up
+                </a>
+            </div>
+        </form>
+        <div id="message" class="text-center mt-4"></div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        // Handle device fingerprinting
-        const fingerprintInputField = document.getElementById('deviceFingerprintData');
-        if (fingerprintInputField) {
-          FingerprintJS.load()
-              .then(fp => fp.get())
-              .then(result => {
-                  const components = result.components;
-                  const fingerprintData = {
-                      userAgent: components.userAgent.value,
-                      screenResolution: components.screenResolution.value,
-                      canvas: components.canvas.value,
-                      webgl: components.webgl.value,
-                      fonts: components.fonts.value,
-                      timezone: components.timezone.value,
-                      platform: components.platform.value,
-                  };
-                  fingerprintInputField.value = JSON.stringify(fingerprintData);
-                  console.log('Device Fingerprint captured for login.');
-              })
-              .catch(error => {
-                  console.error('Error loading or getting FingerprintJS:', error);
-              });
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
+            authDomain: "schomart-7a743.firebaseapp.com",
+            projectId: "schomart-7a743",
+            storageBucket: "schomart-7a743.appspot.com",
+            messagingSenderId: "20119186662",
+            appId: "1:20119186662:web:da1755b55dacde4fa6df27",
+            measurementId: "G-9QGL3XHSC7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const form = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const messageDiv = document.getElementById('message');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+
+        function showMessage(text, isError = false) {
+            messageDiv.textContent = text;
+            messageDiv.className = isError ? 'text-red-500 font-medium' : 'text-green-600 font-medium';
         }
-        
-        // Optional: Fade out flash messages
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            }, 5000); 
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            
+            showMessage('Processing...', false);
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                if (!user.emailVerified) {
+                    showMessage('Your email is not verified. Please check your inbox for a verification link.', true);
+                    await auth.signOut();
+                    return;
+                }
+
+                const idToken = await user.getIdToken();
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ idToken: idToken }),
+                });
+
+                if (response.ok) {
+                    showMessage('Login successful! Redirecting...', false);
+                    setTimeout(() => {
+                        window.location.href = '/'; 
+                    }, 1000);
+                } else {
+                    const errorData = await response.json();
+                    showMessage(errorData.error || 'Server error occurred during login.', true);
+                }
+
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                switch(error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                        showMessage('Invalid email or password. Please try again.', true);
+                        break;
+                    case 'auth/invalid-email':
+                        showMessage('The email address is not valid.', true);
+                        break;
+                    default:
+                        showMessage('An unexpected error occurred. Please try again.', true);
+                }
+            }
         });
-      });
+
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = emailInput.value;
+            if (!email) {
+                showMessage('Please enter your email address to reset your password.', true);
+                return;
+            }
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showMessage('Password reset email sent! Check your inbox.', false);
+            } catch (error) {
+                console.error("Forgot Password Error:", error);
+                showMessage('Failed to send password reset email. Please ensure the email is correct and try again.', true);
+            }
+        });
     </script>
 </body>
 </html>
