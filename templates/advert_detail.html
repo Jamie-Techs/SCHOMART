@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ advert.title }} - Details</title>
-    {# Make sure you have the Font Awesome CSS link here! #}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+    <title>{{ advert.title }} - Advert Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# You might want to include Font Awesome if you're using icons #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -637,41 +639,32 @@
     </div>
 
     <div class="seller-info">
-        <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ url_for('static', filename='uploads/profile_pictures/' + user.profile_picture) if user.profile_picture else url_for('static', filename='default_profile.png') }}" alt="{{ user.username }}'s Profile" class="profile-pic">
-        <div class="seller-details">
-            <h3>{{ user.username }}</h3>
+        <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+            <img src="{{ seller.profile_picture }}" alt="{{ seller.full_name }}'s Profile" class="profile-pic">
+            <div class="seller-details">
+                <h3>{{ seller.full_name }}</h3>
 
-                Status: {{ 'Verified' if user.account_status == 'active' else 'Unverified' }}
-                {% if user.account_status == 'active' %}
-                    <i class="fas fa-check-circle status-icon verified" title="Verified Account"></i>
-                {% else %}
-                    <i class="fas fa-exclamation-circle status-icon unverified" title="Unverified Account"></i>
-                {% endif %}
-                {% if user.badge %}<span style="color: green; font-weight: bold;"> - {{ user.badge }}</span>{% endif %}
+                {# REMOVED: Verification Status as all users are now verified #}
+                
+                <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
 
-            <p>Rating: <span class="review-stars">{{ '★' * user.rating|int }}{{ '☆' * (5 - user.rating|int) }}</span> ({{ "%.1f"|format(user.rating or 0.0) }} / 5 from {{ user.review_count or 0 }} reviews)</p>
-            <p>Subscription:
-                {% if user.subscription_status and user.subscription_status != 'None' %}
-                    {{ user.subscription_status }}
-                {% elif user.has_used_free_advert %}
-                    Free (One-Time Used)
-                {% else %}
-                    Free (Eligible)
+                {# Note: This old logic for rating may need to be updated depending on how you calculate it now #}
+                <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
+
+                {# You can keep the rest of the seller info like badge and subscription if you still have it in your data model #}
+
+                {% if current_user_id and current_user_id != seller.id %}
+                    <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')">
+                        <button class="follow-btn" type="submit" id="followButton">
+                            {% if is_following %}
+                                <i class="fas fa-user-minus"></i> Unfollow
+                            {% else %}
+                                <i class="fas fa-user-plus"></i> Follow
+                            {% endif %}
+                        </button>
+                    </form>
                 {% endif %}
-            </p>
-            {% if current_user_id and current_user_id != user.id %} {# Only show follow button if logged in and not following self #}
-            <form id="followForm" onsubmit="handleFollowToggle(event, {{ user.id }})">
-                <button class="follow-btn" type="submit" id="followButton">
-                    {% if is_following %}
-                        <i class="fas fa-user-minus"></i> Unfollow
-                    {% else %}
-                        <i class="fas fa-user-plus"></i> Follow
-                    {% endif %}
-                </button>
-            </form>
-            {% endif %}
-        </div>
+            </div>
         </a>
     </div>
 
@@ -679,58 +672,48 @@
         <div class="image-slider">
             <span class="arrow left" onclick="plusSlides(-1)">‹</span>
             <span class="arrow right" onclick="plusSlides(1)">›</span>
+            
+            {% if advert.main_image %}
+                <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image">
+            {% endif %}
 
-            {# Loop through all media files #}
-            {% for media in advert.media_files %}
-                {% if media.type == 'image' %}
-                    {# Added onclick to open image in modal #}
-                    <img class="slide" src="{{ url_for('static', filename='media/' + media.src) }}" alt="Media Image {{ loop.index }}">
-                {% elif media.type == 'video' %}
-                    <video class="slide" controls>
-                        <source src="{{ url_for('static', filename='media/' + media.src) }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                {% endif %}
+            {% for image in advert.additional_images %}
+                <img class="slide" src="{{ image }}" alt="Additional Advert Image">
             {% endfor %}
+
+            {% if advert.video %}
+                <video class="slide" controls>
+                    <source src="{{ advert.video }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% endif %}
         </div>
 
         <div class="thumbnail-gallery">
-            {# Loop through all media files for thumbnails #}
-            {% for media in advert.media_files %}
-                {% if media.type == 'image' %}
-                    {# Added onclick to open image in modal and change main slide #}
-                    <img class="thumbnail-item" src="{{ url_for('static', filename='media/' + media.src) }}" alt="Thumbnail {{ loop.index }}" data-index="{{ loop.index0 }}">
-                {% elif media.type == 'video' %}
-                    {# Keep video thumbnails as is, they don't open in image modal #}
-                    <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='media/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.index0 }}">
-                {% endif %}
+            {% if advert.main_image %}
+                <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
+            {% endif %}
+
+            {% for image in advert.additional_images %}
+                <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
             {% endfor %}
+
+            {% if advert.video %}
+                <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.length }}">
+            {% endif %}
         </div>
     </div>
-    <p class="views-count"><strong>Views:</strong> {{ advert.view_count }}</p>
-
+    <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
 
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
-    {% if advert.subcategory_name %}
-        <p><strong>Subcategory:</strong> {{ advert.subcategory_name }}</p>
-    {% endif %}
-    <p><strong>Posted on:</strong> {{ advert.created_at.strftime('%B %d, %Y') }}</p>
-
+    
     <h2>{{ advert.title }}</h2>
     <p><strong>Price:</strong> ₦{{ "{:,}".format(advert.price) }}</p>
-    {# Display location combining city and state #}
-    <p><strong>Location:</strong> {{ advert.location }}{% if advert.state_name %}, {{ advert.state_name }}{% endif %}</p>
-    <p><strong>Delivery Options:</strong> {{ advert.delivery }}</p>
+    {# UPDATED: Location now uses 'school' and 'state' #}
+    <p><strong>Location:</strong> {{ advert.school }}, {{ advert.state_name }}</p>
+    <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
     <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
-    <p><strong>Condition:</strong>
-        {% if advert.condition == 'new' %}
-            New
-        {% elif advert.condition == 'used' %}
-            Used
-        {% else %}
-            Not specified
-        {% endif %}
-    </p>
+    <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
 
     <div class="product-description">
         <h3>Description</h3>
@@ -738,19 +721,15 @@
     </div>
 
     <div class="contact-actions">
-        {% if user.phone_number %}
-            <a href="tel:{{ user.phone_number }}" class="nav-button" title="Call Seller">
+        {% if seller.phone_number %}
+            <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
                 <i class="fas fa-phone"></i> Call Seller
             </a>
         {% endif %}
-        <a href="/message/{{ user.id }}/{{ advert.id }}" class="nav-button" title="Message Seller"
-           data-product-title="{{ advert.title }}"
-           data-product-description="{{ advert.description }}"
-           data-product-price="₦{{ '{:,}'.format(advert.price) }}"
-           data-product-location="{{ advert.location }}">
+        <a href="{{ url_for('message_seller_page', seller_id=seller.id, advert_id=advert.id) }}" class="nav-button" title="Message Seller">
             <i class="fas fa-comments"></i> Message Seller
         </a>
-        <button id="saveAdvertBtn" onclick="handleSaveToggle({{ advert.id }})" class="nav-button save-btn" title="Save or Unsave Advert">
+        <button id="saveAdvertBtn" onclick="handleSaveToggle('{{ advert.id }}')" class="nav-button save-btn" title="Save or Unsave Advert">
             {% if is_saved %}
                 <i class="fas fa-bookmark"></i> Remove from Saved
             {% else %}
@@ -781,8 +760,9 @@
             {% for review in reviews %}
                 <div class="review-box">
                     <div class="reviewer-info">
-                        <img src="{{ url_for('static', filename='uploads/profile_pictures/' + (review.reviewer_profile_picture or 'default_profile.png')) }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
-                        <span class="reviewer-name">{{ review.reviewer_username }}</span> {# Displaying username from the joined query #}
+                        {# UPDATED: Use the profile picture URL directly #}
+                        <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile">
+                        <span class="reviewer-name">{{ review.reviewer_username }}</span>
                     </div>
                     <div class="review-content">
                         <div class="review-stars">
@@ -797,6 +777,7 @@
             <p>No reviews yet for this advert. Be the first to leave a review!</p>
         {% endif %}
 
+        {# Review form... (The form is fine as is, assuming submit_review route exists) #}
         <div class="review-form">
             <h3>Submit Your Review</h3>
             <form action="{{ url_for('submit_review', advert_id=advert.id) }}" method="POST">
@@ -814,15 +795,15 @@
             </form>
         </div>
     </div>
-
+    
     {# Similar Adverts Section #}
     <h3>Similar Adverts</h3>
     <div class="similar-adverts">
         {% if similar_adverts %}
             {% for s_advert in similar_adverts %}
                 <a href="{{ url_for('advert_detail', advert_id=s_advert.id) }}" class="advert-card">
-                    {# Assuming advert.main_image is available and correct #}
-                    <img src="{{ url_for('static', filename='media/' + s_advert.main_image) }}" alt="{{ s_advert.title }}" onerror="this.onerror=null;this.src='https://placehold.co/200x130/e0e0e0/777777?text=No+Image';" />
+                    {# UPDATED: Use the image URL directly #}
+                    <img src="{{ s_advert.main_image }}" alt="{{ s_advert.title }}" onerror="this.onerror=null;this.src='https://placehold.co/200x130/e0e0e0/777777?text=No+Image';" />
                     <h4>{{ s_advert.title }}</h4>
                     <p>₦{{ "{:,}".format(s_advert.price) }}</p>
                 </a>
@@ -831,6 +812,8 @@
             <p>No similar adverts found.</p>
         {% endif %}
     </div>
+
+    
 
 
     {# Modals #}
@@ -1060,4 +1043,5 @@
 </script>
 
 </body>
+
 </html>
