@@ -431,13 +431,15 @@ def account_settings():
 
 
 
+
+
 def get_user_info(user_id):
     """
     Fetches user information and calculates their rating and review count.
-    
+
     Args:
         user_id (str): The ID of the user to retrieve.
-        
+
     Returns:
         dict: A dictionary containing user data, or None if the user does not exist.
     """
@@ -450,7 +452,7 @@ def get_user_info(user_id):
         return None
 
     user_data = user_doc.to_dict()
-    user_data['id'] = user_doc.id  # Add user ID to the dictionary
+    user_data['id'] = user_doc.id
 
     # Calculate and attach the user's average rating and total review count
     reviews_query = db.collection('reviews').where('reviewee_id', '==', user_id).stream()
@@ -466,8 +468,6 @@ def get_user_info(user_id):
     user_data['review_count'] = review_count
 
     return user_data
-
-
 
 
 
@@ -6927,6 +6927,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
