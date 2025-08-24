@@ -168,17 +168,36 @@ def update_online_status(user_id, is_online):
 
 
 
-
-# Your custom `login_required` decorator.
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user_id = session.get('user')
         if not user_id:
             flash('You must be logged in to access this page.', 'warning')
-            return redirect(url_for('signup'))
+            return redirect(url_for('login'))
+        
+        # Check if the user object is already in the global 'g' object
+        # This prevents redundant Firestore calls if the decorator is used multiple times
+        # in a single request.
+        if 'current_user' not in g or g.current_user.id != user_id:
+            # Fetch the user document from Firestore
+            user_doc_ref = db.collection('users').document(user_id)
+            user_doc = user_doc_ref.get()
+
+            if not user_doc.exists:
+                logging.error(f"User document does not exist for UID: {user_id}")
+                flash('User data not found. Please log in again.', 'error')
+                session.pop('user', None)
+                return redirect(url_for('login'))
+                
+            # Create a User object and store it in the Flask global 'g' object
+            g.current_user = User(user_doc.id, user_doc.to_dict())
+
         return f(*args, **kwargs)
     return decorated_function
+
+
+
 
 # --- Routes for Authentication ---
 
@@ -186,8 +205,8 @@ def login_required(f):
 def login_page():
     """Serves the login/signup HTML page."""
     if session.get('user'):
-        return redirect(url_for('index')) # If already logged in, redirect to index
-    return render_template('signup.html')
+        return redirect(url_for('profile')) # If already logged in, redirect to index
+    return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login_session():
@@ -216,6 +235,10 @@ def login_session():
 
 
 
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
 
 
 
@@ -7084,6 +7107,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
