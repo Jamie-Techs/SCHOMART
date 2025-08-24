@@ -2644,50 +2644,13 @@ def referral_benefit():
 
 
 
-
-
-
-
-from flask import render_template, abort, session
-from datetime import datetime
-from google.cloud import firestore
-import logging
-
-db = firestore.Client()
-logger = logging.getLogger(__name__)
-
-# Assumed utility functions
-def get_document(collection, doc_id):
-    doc_ref = db.collection(collection).document(doc_id)
-    doc = doc_ref.get()
-    if doc.exists:
-        data = doc.to_dict()
-        data['id'] = doc.id
-        return data
-    return None
-
-def get_category_name(category_id):
-    # This is a placeholder. Implement this to get the category name.
-    return "Category Name"
-
-def get_state_name(state_id):
-    # This is a placeholder. Implement this to get the state name.
-    return "State Name"
-
-def check_if_following(follower_id, followee_id):
-    # This is a placeholder. Implement this to check follow status.
-    return False
-
-def check_if_saved(user_id, advert_id):
-    # This is a placeholder. Implement this to check saved status.
-    return False
-
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
     Handles displaying a single advert detail page with robust data fetching.
     """
-    current_user_id = session.get('user_id')
+    # Use g.current_user to access the logged-in user's ID
+    current_user_id = g.current_user.id if g.current_user else None
 
     try:
         # Step 1: Fetch the advert document directly
@@ -2759,10 +2722,6 @@ def advert_detail(advert_id):
     except Exception as e:
         logger.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
-
-
-
-
 
 
 
@@ -6974,6 +6933,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
