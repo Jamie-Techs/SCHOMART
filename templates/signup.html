@@ -3,265 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schomart | Login & Signup</title>
-    <!-- Tailwind CSS CDN for styling -->
+    <title>Login / Sign Up</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles for the app, using the requested colors */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4; /* A very light green background */
+            background-color: #f3f4f6;
         }
-        .bg-primary {
-            background-color: #006B3C;
+        .container {
+            max-width: 420px;
+            margin: auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .text-primary {
-            color: #006B3C;
+        input, button {
+            border-radius: 0.5rem;
         }
-        .bg-secondary {
-            background-color: #FDB813;
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
         }
-        .text-secondary {
-            color: #FDB813;
+        .form-input:focus {
+            border-color: #6366f1;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
         }
-        .btn-primary {
-            background-color: #006B3C;
+        .form-button {
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 600;
             color: white;
-            transition: background-color 0.3s;
+            background-color: #6366f1;
+            transition: background-color 0.15s ease-in-out;
         }
-        .btn-primary:hover {
-            background-color: #025730;
+        .form-button:hover {
+            background-color: #4f46e5;
         }
-        .btn-secondary {
-            background-color: #FDB813;
-            color: #333;
-            transition: background-color 0.3s;
-        }
-        .btn-secondary:hover {
-            background-color: #e9a50f;
+        .link {
+            color: #6366f1;
+            cursor: pointer;
+            text-decoration: underline;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <!-- Auth Container -->
-    <div class="w-full max-w-lg p-8 space-y-8 bg-white rounded-xl shadow-2xl ring-2 ring-primary">
-        <div class="text-center">
-            <h2 id="auth-title" class="text-3xl font-extrabold text-primary">Schomart</h2>
-            <p id="auth-subtitle" class="mt-2 text-sm text-gray-600">
-                Create your account
-            </p>
+<div class="container text-center">
+    <h1 id="form-title" class="text-3xl font-bold text-gray-800 mb-2">Log In</h1>
+    <p class="text-gray-500 mb-8">Sign in to your account</p>
+
+    <form id="auth-form" class="space-y-4">
+        <div>
+            <input id="email" type="email" placeholder="Email address" required class="form-input">
         </div>
+        <div>
+            <input id="password" type="password" placeholder="Password" required class="form-input">
+        </div>
+        <div class="flex justify-between items-center text-sm">
+            <a href="#" class="link">Forgot your password?</a>
+        </div>
+        <button type="submit" id="auth-button" class="form-button">Log In</button>
+    </form>
 
-        <!-- Auth Form -->
-        <form id="auth-form" class="space-y-6">
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                <div class="mt-1">
-                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                </div>
-            </div>
+    <p class="mt-6 text-sm text-gray-600">
+        <span id="toggle-text">Don't have an account?</span>
+        <a href="#" id="toggle-link" class="link">Sign Up</a>
+    </p>
 
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <div class="mt-1">
-                    <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-                </div>
-            </div>
+    <div id="message-box" class="mt-4 hidden p-3 rounded-lg text-sm transition-all duration-300"></div>
 
-            <div id="forgot-password-container" class="flex items-center justify-between">
-                <div class="text-sm">
-                    <a href="#" id="forgot-password-link" class="font-medium text-primary hover:text-secondary">
-                        Forgot your password?
-                    </a>
-                </div>
-            </div>
+</div>
 
-            <!-- Action buttons -->
-            <div id="auth-buttons" class="space-y-2">
-                <button type="submit" id="main-auth-button" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                    Sign Up
-                </button>
-                <button type="button" id="toggle-auth-button" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    Already have an account? Log In
-                </button>
-            </div>
-        </form>
+<script type="module">
+    // Import the Firebase SDK modules you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
 
-        <!-- Message/Error Display -->
-        <div id="message" class="text-center mt-4"></div>
+    // Firebase configuration and initialization
+    const firebaseConfig = {
+        apiKey: "", // Add your API key here
+        authDomain: "", // Add your auth domain here
+        projectId: "", // Add your project ID here
+        storageBucket: "", // Add your storage bucket here
+        messagingSenderId: "", // Add your messaging sender ID here
+        appId: "" // Add your app ID here
+    };
 
-    </div>
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    const form = document.getElementById('auth-form');
+    const authButton = document.getElementById('auth-button');
+    const formTitle = document.getElementById('form-title');
+    const toggleLink = document.getElementById('toggle-link');
+    const toggleText = document.getElementById('toggle-text');
+    const messageBox = document.getElementById('message-box');
 
-    <script>
-        // Use the firebaseConfig provided by the user
-        const firebaseConfig = {
-            apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
-            authDomain: "schomart-7a743.firebaseapp.com",
-            projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.appspot.com",
-            messagingSenderId: "20119186662",
-            appId: "1:20119186662:web:da1755b55dacde4fa6df27",
-            measurementId: "G-9QGL3XHSC7"
-        };
+    let isLogin = true;
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
-        // DOM elements
-        const form = document.getElementById('auth-form');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const messageDiv = document.getElementById('message');
-        const authTitle = document.getElementById('auth-title');
-        const authSubtitle = document.getElementById('auth-subtitle');
-        const mainAuthButton = document.getElementById('main-auth-button');
-        const toggleAuthButton = document.getElementById('toggle-auth-button');
-        const forgotPasswordLink = document.getElementById('forgot-password-link');
-        const forgotPasswordContainer = document.getElementById('forgot-password-container');
-
-        let isLogin = false; // State to track if we're in login or signup mode
-
-        // Function to display messages
-        function showMessage(text, isError = false) {
-            messageDiv.textContent = text;
-            messageDiv.className = isError ? 'text-red-500 font-medium' : 'text-green-600 font-medium';
+    // Function to display a message to the user
+    function showMessage(message, isError) {
+        messageBox.textContent = message;
+        messageBox.className = 'mt-4 p-3 rounded-lg text-sm transition-all duration-300';
+        if (isError) {
+            messageBox.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-300');
+        } else {
+            messageBox.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-300');
         }
-
-        // Handle form submission (Login or Signup)
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value;
-            const password = passwordInput.value;
-            
-            showMessage('Processing...', false);
-
-            try {
-                if (isLogin) {
-                    // Login user
-                    await auth.signInWithEmailAndPassword(email, password);
-                    // The onAuthStateChanged listener will handle redirection
-                } else {
-                    // Signup user
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    await userCredential.user.sendEmailVerification();
-                    showMessage('Signup successful! Please check your email for a verification link before logging in.', false);
-                }
-            } catch (error) {
-                // Handle various Firebase auth errors
-                console.error("Authentication Error:", error);
-                switch(error.code) {
-                    case 'auth/email-already-in-use':
-                        showMessage('This email is already in use. Please log in instead or use another email.', true);
-                        break;
-                    case 'auth/invalid-email':
-                        showMessage('The email address is not valid.', true);
-                        break;
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                        showMessage('Invalid email or password. Please try again.', true);
-                        break;
-                    case 'auth/weak-password':
-                        showMessage('Password should be at least 6 characters long.', true);
-                        break;
-                    case 'auth/operation-not-allowed':
-                        showMessage('Email/Password sign-in is not enabled. Please contact support.', true);
-                        break;
-                    default:
-                        showMessage('An unexpected error occurred. Please try again.', true);
-                }
-            }
-        });
-
-        // Toggle between Login and Signup forms
-        toggleAuthButton.addEventListener('click', () => {
-            isLogin = !isLogin;
-            if (isLogin) {
-                authTitle.textContent = 'Log In';
-                authSubtitle.textContent = 'Sign in to your account';
-                mainAuthButton.textContent = 'Log In';
-                toggleAuthButton.textContent = "Don't have an account? Sign Up";
-                forgotPasswordContainer.style.display = 'block';
-            } else {
-                authTitle.textContent = 'Schomart';
-                authSubtitle.textContent = 'Create your account';
-                mainAuthButton.textContent = 'Sign Up';
-                toggleAuthButton.textContent = "Already have an account? Log In";
-                forgotPasswordContainer.style.display = 'none';
-            }
-            showMessage('', false); // Clear any messages on toggle
-        });
-
-        // Handle "Forgot Password" functionality
-        forgotPasswordLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const email = emailInput.value;
-            if (!email) {
-                showMessage('Please enter your email address to reset your password.', true);
-                return;
-            }
-
-            try {
-                await auth.sendPasswordResetEmail(email);
-                showMessage('Password reset email sent! Check your inbox.', false);
-            } catch (error) {
-                console.error("Forgot Password Error:", error);
-                showMessage('Failed to send password reset email. Please ensure the email is correct and try again.', true);
-            }
-        });
-
-
-            // Listen for authentication state changes
-firebase.auth().onAuthStateChanged(async (user) => {
-    if (user) {
-        // User is signed in.
-        // Get the Firebase ID token for the authenticated user.
-        const idToken = await user.getIdToken();
-
-        // Now, you can make a secure request to your protected backend route
-        // by including the token in the 'Authorization' header.
-        fetch('/profile', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            // Check for a 401 Unauthorized error, which would indicate a token issue.
-            if (response.status === 401) {
-                console.error('Authentication failed. The token may have expired.');
-                // Handle a failed authentication, e.g., redirect to login.
-                window.location.href = '/login'; 
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data) {
-                console.log('Profile data:', data);
-                // Now you can update your profile page with this data
-            }
-        })
-        .catch(error => {
-            console.error('An error occurred:', error);
-        });
-
-    } else {
-        // User is not signed in or has logged out.
-        console.log('No user signed in.');
-        // Redirect to a public page or login page if the user is not authenticated.
-        window.location.href = '/profile'; 
+        messageBox.classList.remove('hidden');
     }
-});        
 
-   
-    </script>
+    // Toggle between Login and Sign Up views
+    toggleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        isLogin = !isLogin;
+        if (isLogin) {
+            formTitle.textContent = 'Log In';
+            authButton.textContent = 'Log In';
+            toggleText.textContent = "Don't have an account?";
+            toggleLink.textContent = 'Sign Up';
+        } else {
+            formTitle.textContent = 'Sign Up';
+            authButton.textContent = 'Sign Up';
+            toggleText.textContent = 'Already have an account?';
+            toggleLink.textContent = 'Log In';
+        }
+        messageBox.classList.add('hidden'); // Hide any previous messages
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = form.email.value;
+        const password = form.password.value;
+
+        authButton.textContent = 'Processing...';
+        messageBox.classList.add('hidden');
+
+        try {
+            if (isLogin) {
+                // Login user
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessage('Login successful! Redirecting...', false);
+                window.location.href = '/'; // Redirect to home page
+            } else {
+                // Signup user
+                await createUserWithEmailAndPassword(auth, email, password);
+                showMessage('Signup successful! You can now log in.', false);
+                isLogin = true; // Switch back to login view after successful signup
+                formTitle.textContent = 'Log In';
+                authButton.textContent = 'Log In';
+                toggleText.textContent = "Don't have an account?";
+                toggleLink.textContent = 'Sign Up';
+            }
+        } catch (error) {
+            let errorMessage = "An unknown error occurred.";
+            switch (error.code) {
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                    errorMessage = "Invalid email or password.";
+                    break;
+                case 'auth/email-already-in-use':
+                    errorMessage = "This email is already in use. Please log in.";
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = "The password is too weak. Please choose a stronger one.";
+                    break;
+                default:
+                    errorMessage = "An error occurred. Please try again.";
+                    console.error("Firebase Auth Error: ", error);
+                    break;
+            }
+            showMessage(errorMessage, true);
+        } finally {
+            authButton.textContent = isLogin ? 'Log In' : 'Sign Up';
+        }
+    });
+</script>
+
 </body>
 </html>
