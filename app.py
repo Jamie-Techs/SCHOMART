@@ -177,111 +177,177 @@ def update_online_status(user_id, is_online):
 
 
 
+
+
+
+
+# A decorator to protect routes by verifying the ID token
 def login_required(f):
     """
-    A custom decorator that verifies a Firebase session cookie.
-    
-    If the cookie is valid, the decoded claims are stored in flask.g.user.
-    If it's invalid or missing, the user is redirected to the login page.
+    Decorator that checks for a valid Firebase ID token in the Authorization header.
+    This is required for accessing protected routes.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # 1. Get the session cookie from the request
-        session_cookie = flask.request.cookies.get('__session__')
-        
-        # 2. If no cookie is found, redirect to the login page immediately.
-        if not session_cookie:
-            print("No session cookie found. Redirecting to login.")
-            return flask.redirect(flask.url_for('login'))
-        
+        id_token = None
+        # Check for Authorization header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            # Expected format: "Bearer <ID_TOKEN>"
+            if auth_header.startswith('Bearer '):
+                id_token = auth_header.split(' ')[1]
+
+        if not id_token:
+            logger.warning("No ID token found in Authorization header. Denying access.")
+            return jsonify({'error': 'Unauthorized: Login required. Token not provided'}), 401
+
         try:
-            # 3. Verify the session cookie with the Firebase Admin SDK.
-            # This will also check if the user is disabled or the token is revoked.
-            decoded_claims = auth.verify_session_cookie(session_cookie, check_revoked=True)
-            
-            # 4. Store the decoded user claims in Flask's global 'g' object.
-            # This makes the user's data (like UID, email) available in your routes.
-            flask.g.user = decoded_claims
-            
-            # 5. If everything is valid, proceed to the decorated function.
+            # Verify the ID token with Firebase Admin SDK
+            decoded_token = auth.verify_id_token(id_token)
+            request.uid = decoded_token['uid']
             return f(*args, **kwargs)
-        
-        except auth.InvalidSessionCookieError as e:
-            # 6. Handle invalid or revoked cookies by redirecting to login.
-            print(f"Error verifying session cookie: {e}. Redirecting to login.")
-            # Clear the invalid cookie to ensure the browser doesn't keep trying to use it
-            response = flask.redirect(flask.url_for('login'))
-            response.set_cookie('__session__', '', max_age=0, httpyonly=True)
-            return response
+        except auth.InvalidIdTokenError as e:
+            # Handle invalid tokens
+            logger.warning(f"Invalid ID token provided: {e}")
+            return jsonify({'error': 'Unauthorized: Invalid token'}), 401
+        except Exception as e:
+            # Handle other verification errors
+            logger.error(f"Token verification failed: {e}")
+            return jsonify({'error': 'Unauthorized: Failed to verify token'}), 401
 
     return decorated_function
 
-
-
-
-
-
-
-
-
-@app.route("/sessionLogin", methods=["POST"])
-def session_login():
+# =========================================================================
+# The updated /api/signup endpoint
+# =========================================================================
+@app.route('/api/signup', methods=['POST'])
+def api_signup():
     """
-    This endpoint receives the ID token from the client and creates a session cookie.
+    Handles a request from the frontend to create a user document in Firestore.
     """
-    # Get the ID token from the POST request body
-    id_token = request.json.get('idToken')
-    if not id_token:
-        return jsonify({"status": "error", "message": "ID token not found."}), 400
+    if db is None:
+        logger.error("Backend services are unavailable: Firestore DB object is None.")
+        return jsonify({'error': 'Backend services are unavailable.'}), 503
+
+    data = request.get_json()
+    uid = data.get('uid')
+    email = data.get('email')
+    username = data.get('username')
+    referral_code_used = data.get('referralCode')
+
+    if not all([uid, email, username]):
+        logger.warning("Missing required fields (UID, email, or username) in signup request.")
+        return jsonify({'error': 'Missing required fields'}), 400
 
     try:
-        # Set session expiration to 5 days, adjust as needed. Max is 2 weeks.
-        expires_in = timedelta(days=5)
+        user_ref = db.collection('users').document(uid)
+        
+        if user_ref.get().exists:
+            logger.warning(f"User data already exists for UID: {uid}. Aborting signup.")
+            return jsonify({'error': 'User data already exists in Firestore'}), 409
 
-        # Create the session cookie with the Firebase Admin SDK.
-        # This function also verifies the ID token.
-        session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
+        referral_code = generate_unique_referral_code(db)
+        referral_link = f"https://schomart.onrender.com/signup?ref={referral_code}"
 
-        # Create a Flask response object.
-        response = jsonify({"status": "success", "message": "Session cookie created successfully."})
+        new_user_data = {
+            'email': email,
+            'username': username,
+            'referral_code': referral_code,
+            'referral_link': referral_link,
+            'referral_count': 0,
+            'is_verified': False,
+            'is_referral_verified': False,
+            'created_at': firestore.SERVER_TIMESTAMP,
+            'last_active': firestore.SERVER_TIMESTAMP,
+            'profile_picture': '',
+            'cover_photo': '',
+            'state': '',
+            'school': '',
+            'location': '',
+            'first_name': '',
+            'last_name': '',
+            'birthday': None,
+            'sex': '',
+            'last_referral_verification_at': None,
+            'businessname': '',
+            'phone_number': '',
+            'verified_phone': False,
+            'last_email_otp_sent_at': None,
+            'email_code_expiry': None,
+            'token_created_at': firestore.SERVER_TIMESTAMP,
+            'is_online': True,
+            'last_online': firestore.SERVER_TIMESTAMP,
+            'social_links': {},
+            'working_days': [],
+            'working_times': {},
+            'delivery_methods': [],
+        }
 
-        # Set the session cookie on the response.
-        # httponly=True prevents JavaScript from accessing the cookie.
-        # secure=True ensures the cookie is only sent over HTTPS.
-        response.set_cookie(
-            '__session',
-            session_cookie,
-            max_age=expires_in.total_seconds(),
-            httponly=True,
-           # secure=True
-        )
-        return response, 200
+        user_ref.set(new_user_data)
+        logger.info(f"User data for {uid} created in Firestore.")
+        
+        if referral_code_used:
+            logger.info(f"Referral code used: {referral_code_used}. Attempting to update referrer's count.")
+            referrer_query = db.collection('users').where('referral_code', '==', referral_code_used).limit(1)
+            
+            for doc in referrer_query.stream():
+                referrer_ref = doc.reference
+                referrer_ref.update({
+                    'referral_count': firestore.Increment(1)
+                })
+                logger.info(f"Referral count incremented for referrer: {referrer_ref.id}")
+                break
+
+        return jsonify({
+            'message': 'User data saved to Firestore successfully.',
+            'uid': uid
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Firestore save error for UID {uid}: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to save user data.'}), 500
+
+# =========================================================================
+# The /api/login endpoint no longer creates a session, just verifies
+# and returns a success message for the frontend to handle.
+# =========================================================================
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """
+    Verifies the ID token and returns a success message. The frontend
+    will handle storing the token and redirecting.
+    """
+    data = request.get_json()
+    id_token = data.get('idToken')
+    
+    if not id_token:
+        logger.warning("No ID token provided for login.")
+        return jsonify({'error': 'ID token is required'}), 400
+    
+    try:
+        auth.verify_id_token(id_token)
+        logger.info("ID token verified successfully. Frontend can now proceed.")
+        return jsonify({'message': 'Login successful'}), 200
 
     except auth.InvalidIdTokenError:
-        return jsonify({"status": "error", "message": "Invalid ID token."}), 401
+        logger.warning("Invalid ID token provided.")
+        return jsonify({'error': 'Invalid ID token'}), 401
     except Exception as e:
-        print(f"Error creating session cookie: {e}")
-        return jsonify({"status": "error", "message": "Failed to create session cookie."}), 500
-
-@app.route("/sessionLogout", methods=["POST"])
-def session_logout():
-    """
-    This endpoint clears the session cookie to log the user out.
-    """
-    response = jsonify({"status": "success", "message": "Logged out successfully."})
-    response.set_cookie('__session', '', expires=0) # Clear the cookie by setting expiration to 0
-    return response, 200
+        logger.error(f"Failed to verify ID token: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to verify token'}), 500
 
 
 
 
 
-def get_current_user():
-    """
-    A helper function to get the current user's data.
-    Returns the user's claims dictionary or None if not logged in.
-    """
-    return g.get('user', None)
+
+
+
+
+
+
+
+
 
 
 
@@ -7313,6 +7379,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
