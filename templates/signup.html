@@ -207,7 +207,7 @@
                 if (response.ok) {
                     showMessage("Login successful! Redirecting...", "success");
                     // Redirect to the protected dashboard
-                    window.location.href = '/dashboard';
+                    window.location.href = '/profile';
                 } else {
                     const errorData = await response.json();
                     throw new Error(errorData.message || 'Failed to create backend session.');
