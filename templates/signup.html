@@ -52,6 +52,22 @@
             </p>
         </div>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div class="px-4 py-2 rounded-md font-medium
+                {% if category == 'success' %} bg-green-100 text-green-800
+                {% elif category == 'error' %} bg-red-100 text-red-800
+                {% elif category == 'info' %} bg-blue-100 text-blue-800
+                {% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
         <form id="auth-form" class="space-y-6">
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
@@ -67,14 +83,14 @@
                 </div>
             </div>
 
-            <div id="confirm-password-field" class="hidden">
+            <div id="confirm-password-field">
                 <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
                 <div class="mt-1">
                     <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
                 </div>
             </div>
 
-            <div id="forgot-password-container" class="flex items-center justify-between">
+            <div id="forgot-password-container" class="hidden flex items-center justify-between">
                 <div class="text-sm">
                     <a href="#" id="forgot-password-link" class="font-medium text-primary hover:text-secondary">
                         Forgot your password?
@@ -173,7 +189,6 @@
                     }
 
                 } else { // Signup flow
-                    // ADDED: Check if passwords match
                     const confirmPassword = confirmPasswordInput.value;
                     if (password !== confirmPassword) {
                         showMessage('Passwords do not match.', true);
@@ -185,6 +200,7 @@
                     
                     const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
+                    // UPDATED: Firestore document to match the new fields
                     await db.collection('users').doc(user.uid).set({
                         uid: user.uid,
                         email: email,
@@ -197,20 +213,16 @@
                         last_name: "",
                         phone_number: "",
                         sex: "",
-                        birthday: "",
                         businessname: "",
                         location: "",
                         state: "",
                         school: "",
                         full_location: "",
-                        sublocation: "",
                         cover_photo: "",
                         profile_picture: "",
                         has_posted_free_ad: false,
                         is_admin: false,
                         is_online: true,
-                        is_referral_verified: false,
-                        is_verified: false,
                         referral_code: referralCode,
                         referral_count: 0,
                         referral_link: `https://schomart.onrender.com/signup?ref=${referralCode}`,
@@ -263,14 +275,14 @@
                 authSubtitle.textContent = 'Sign in to your account';
                 mainAuthButton.textContent = 'Log In';
                 toggleAuthButton.textContent = "Don't have an account? Sign Up";
-                forgotPasswordContainer.style.display = 'block';
+                forgotPasswordContainer.classList.remove('hidden');
                 confirmPasswordField.classList.add('hidden');
             } else {
                 authTitle.textContent = 'Schomart';
                 authSubtitle.textContent = 'Create your account';
                 mainAuthButton.textContent = 'Sign Up';
                 toggleAuthButton.textContent = "Already have an account? Log In";
-                forgotPasswordContainer.style.display = 'none';
+                forgotPasswordContainer.classList.add('hidden');
                 confirmPasswordField.classList.remove('hidden');
             }
             showMessage('', false);
