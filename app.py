@@ -174,34 +174,14 @@ def update_online_status(user_id, is_online):
         logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
 
      
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        id_token = None
-
-        # First try Authorization header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '): 
-                id_token = auth_header.split(' ')[1]
-
-        # If not in headers, fall back to session
-        if not id_token:
-            id_token = session.get('id_token')
-
-        if not id_token:
-            flash("You must be logged in to access this page.", "error")
-            return redirect(url_for('home'))
-
-        try:
-            decoded_token = auth.verify_id_token(id_token)
-            request.uid = decoded_token['uid']
-            return f(*args, **kwargs)
-        except Exception:
-            flash("Authentication failed. Please log in again.", "error")
-            return redirect(url_for('home'))
+        if "user_id" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
     return decorated_function
-
 
 
 
@@ -303,26 +283,25 @@ def api_signup():
 # =========================================================================
 
 
-
-
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    data = request.get_json()
-    id_token = data.get('idToken')
-
-    if not id_token:
-        return jsonify({'error': 'ID token is required'}), 400
+@app.route("/login", methods=["POST"])
+def login():
+    email = request.form["email"]
+    password = request.form["password"]
 
     try:
-        decoded = auth.verify_id_token(id_token)
-        session['id_token'] = id_token    # ✅ store in session
-        session['uid'] = decoded['uid']
-        return jsonify({'message': 'Login successful'}), 200
+        user = firebase_auth.sign_in_with_email_and_password(email, password)
+        # Store the user's ID token in the session
+        session["user_id"] = user["idToken"]
+        return redirect(url_for("protected_route"))
     except Exception as e:
-        return jsonify({'error': 'Failed to verify token'}), 401
-        
+        return "Login failed", 401
 
 
+
+@app.route("/protected")
+@login_required
+def protected_route():
+    return "Welcome, authenticated user!"
 
 
 
@@ -7273,6 +7252,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
