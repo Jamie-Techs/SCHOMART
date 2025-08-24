@@ -4616,6 +4616,70 @@ def report_advert(advert_id):
 
 
 
+@app.route('/submit_review', methods=['POST'])
+@login_required
+def submit_review():
+    """
+    Handles the submission of a new review for an advert.
+    This route requires a POST request with form data.
+    """
+    try:
+        # Get data from the form
+        advert_id = request.form.get('advert_id')
+        rating_str = request.form.get('rating')
+        comment = request.form.get('comment')
+        reviewee_id = request.form.get('reviewee_id')
+
+        # Basic input validation
+        if not all([advert_id, rating_str, comment, reviewee_id]):
+            flash('All fields are required to submit a review.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        try:
+            rating = int(rating_str)
+            if not 1 <= rating <= 5:
+                flash('Rating must be between 1 and 5.', 'error')
+                return redirect(url_for('advert_detail', advert_id=advert_id))
+        except ValueError:
+            flash('Invalid rating value.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        current_user_id = g.current_user.id
+        
+        # Prevent users from reviewing their own ads
+        if current_user_id == reviewee_id:
+            flash('You cannot review your own advert.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        # Check if the user has already submitted a review for this advert
+        existing_review_query = db.collection('reviews').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        existing_review = next(existing_review_query, None)
+        if existing_review:
+            flash('You have already submitted a review for this advert.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        # Data for the new review document
+        new_review_data = {
+            'advert_id': advert_id,
+            'user_id': current_user_id,
+            'reviewee_id': reviewee_id,
+            'rating': rating,
+            'comment': comment,
+            'created_at': datetime.now()
+        }
+
+        # Add the new review document to the 'reviews' collection
+        db.collection('reviews').add(new_review_data)
+
+        flash('Your review has been submitted successfully!', 'success')
+        
+    except Exception as e:
+        logging.error(f"Error submitting review: {e}", exc_info=True)
+        flash('An unexpected error occurred. Please try again.', 'error')
+        
+    return redirect(url_for('advert_detail', advert_id=advert_id))
+
+
 
 
 
@@ -6878,6 +6942,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
