@@ -333,15 +333,20 @@ def generate_unique_referral_code(db):
 
 
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout')
 def logout():
     """
-    Clears the Flask session, effectively logging the user out.
+    Logs the user out by clearing their session data and
+    redirecting them to the login page.
     """
+    # Safely remove the 'user' key from the session
     session.pop('user', None)
-    flash('You have been logged out.', 'info')
-    return jsonify({'message': 'Logged out successfully'}), 200
 
+    # Flash a success message to the user
+    flash('You have been logged out successfully.', 'success')
+
+    # Redirect the user to the login page
+    return redirect(url_for('login'))
 
 
 
@@ -7167,6 +7172,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
