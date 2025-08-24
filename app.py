@@ -199,6 +199,76 @@ def login_required(f):
 
 
 
+
+
+
+
+# --- User Model Class ---
+# Removed UserMixin since it's not needed for your custom auth system.
+class User:
+    """
+    User data model that retrieves and represents a user from Firestore.
+    """
+    def __init__(self, uid, **kwargs):
+        self.id = str(uid)
+        
+        # Populate the attributes from the 'kwargs' dictionary
+        self.username = kwargs.get('username', '')
+        self.email = kwargs.get('email', '')
+        self.profile_picture = kwargs.get('profile_picture')
+        self.cover_photo = kwargs.get('cover_photo')
+        self.state = kwargs.get('state', '')
+        self.school = kwargs.get('school', '')
+        self.location = kwargs.get('location', '')
+        self.referral_code = kwargs.get('referral_code', '')
+        self.first_name = kwargs.get('first_name', '')
+        self.last_name = kwargs.get('last_name', '')
+        self.birthday = kwargs.get('birthday')
+        self.sex = kwargs.get('sex', '')
+        self.created_at = kwargs.get('created_at')
+        self.last_active = kwargs.get('last_active')
+        self.referral_count = kwargs.get('referral_count', 0)
+        self.is_verified = bool(kwargs.get('is_verified', False))
+        self.is_admin = bool(kwargs.get('is_admin', False))
+        self.is_referral_verified = bool(kwargs.get('is_referral_verified', False))
+        self.last_referral_verification_at = kwargs.get('last_referral_verification_at')
+        self.businessname = kwargs.get('businessname', '')
+        self.phone_number = kwargs.get('phone_number', '')
+        self.verified_phone = bool(kwargs.get('verified_phone', False))
+        self.last_email_otp_sent_at = kwargs.get('last_email_otp_sent_at')
+        self.email_code_expiry = kwargs.get('email_code_expiry')
+        self.token_created_at = kwargs.get('token_created_at')
+        self.is_online = bool(kwargs.get('is_online', False))
+        self.last_online = kwargs.get('last_online')
+        self.social_links = kwargs.get('social_links') if isinstance(kwargs.get('social_links'), dict) else {}
+        self.working_days = kwargs.get('working_days') if isinstance(kwargs.get('working_days'), list) else []
+        self.working_times = kwargs.get('working_times') if isinstance(kwargs.get('working_times'), dict) else {}
+        self.delivery_methods = kwargs.get('delivery_methods') if isinstance(kwargs.get('delivery_methods'), list) else []
+
+    @staticmethod
+    def get(uid):
+        """
+        Retrieves a user document from Firestore and returns a User object.
+        """
+        if not db or not uid:
+            return None
+        try:
+            doc_ref = db.collection('users').document(str(uid))
+            doc = doc_ref.get()
+            if doc.exists:
+                return User(doc.id, **doc.to_dict())
+            return None
+        except Exception as e:
+            # Note: If you have a logger, ensure it's imported
+            # import logging
+            # logging.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
+            return None
+
+
+
+
+
+
 # --- Routes for Authentication ---
 
 @app.route('/login', methods=['GET'])
@@ -7107,6 +7177,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
