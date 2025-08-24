@@ -604,10 +604,6 @@ NIGERIAN_SCHOOLS = {
 
 
 
-
-
-
-
 @app.route('/profile')
 @login_required
 def profile():
@@ -636,10 +632,7 @@ def profile():
 
         user_data = user_doc.to_dict()
 
-        # Check email verification status from the most recent data
-        if not user_data.get('is_verified', False):
-            flash("Your email is not verified. Please check your inbox.", "error")
-            return redirect(url_for('signup'))
+        # REMOVED: The email verification check is no longer needed here.
 
         # Assuming you have a format_timestamp function defined somewhere
         user_data['last_active'] = format_timestamp(user_data.get('last_active'))
@@ -668,7 +661,7 @@ def profile():
         except Exception as e:
             logging.error(f"Error generating cover photo URL for {user_uid}: {e}")
             flash(f"Error loading cover photo: {str(e)}", "error")
-        
+            
         referral_link = f"https://schomart.onrender.com/signup?ref={user_uid}"
 
         return render_template('profile.html',
@@ -681,6 +674,7 @@ def profile():
         logging.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
 
 
 
@@ -7090,6 +7084,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
