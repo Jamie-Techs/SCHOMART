@@ -2644,13 +2644,14 @@ def referral_benefit():
 
 
 
+
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page with robust data fetching.
+    Handles displaying a single advert detail page for all users (logged-in or not).
     """
-    # Use g.current_user to access the logged-in user's ID
-    current_user_id = g.current_user.id if g.current_user else None
+    # Safely get the user ID, defaulting to None if no user is logged in.
+    current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
         # Step 1: Fetch the advert document directly
@@ -2694,8 +2695,11 @@ def advert_detail(advert_id):
         advert['state_name'] = get_state_name(advert.get('state'))
         
         # Step 4: Check if the current user is following the seller or has saved the advert
-        is_following = check_if_following(current_user_id, seller['id'])
-        is_saved = check_if_saved(current_user_id, advert_id)
+        is_following = False
+        is_saved = False
+        if current_user_id:
+            is_following = check_if_following(current_user_id, seller['id'])
+            is_saved = check_if_saved(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert
         reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
@@ -2722,6 +2726,9 @@ def advert_detail(advert_id):
     except Exception as e:
         logger.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
 
 
 
@@ -6933,6 +6940,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
