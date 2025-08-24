@@ -245,7 +245,7 @@ def session_login():
             session_cookie,
             max_age=expires_in.total_seconds(),
             httponly=True,
-            secure=True
+           # secure=True
         )
         return response, 200
 
@@ -7307,6 +7307,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+
 
 
 
