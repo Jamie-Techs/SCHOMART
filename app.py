@@ -2645,6 +2645,7 @@ def referral_benefit():
 
 
 
+
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
@@ -2679,7 +2680,8 @@ def advert_detail(advert_id):
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
 
-            # CRITICAL FIX: Get the filename and use the helper function to build the full URL.
+            # CRITICAL FIX: Get the filename from Firestore and use the helper function
+            # to get the full public URL.
             profile_picture_filename = seller.get('profile_picture')
             seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
 
@@ -2733,8 +2735,15 @@ def advert_detail(advert_id):
         )
 
     except Exception as e:
-        logger.error(f"Error fetching advert detail: {e}", exc_info=True)
+        logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
+
+
+
 
 
 
@@ -6951,6 +6960,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
