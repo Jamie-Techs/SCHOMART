@@ -653,7 +653,7 @@
     
     <div style="display: flex; align-items: center; margin-top: 10px;">
         <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-picture" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
+            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
             <div class="seller-details">
                 <h3>{{ seller.username }}</h3>
                 <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
@@ -1052,6 +1052,7 @@
 </body>
 
 </html>
+
 
 
 
