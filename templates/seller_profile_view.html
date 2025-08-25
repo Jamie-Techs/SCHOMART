@@ -533,6 +533,7 @@
             }
         </style>
 </head>
+
 <body>
     <div class="container">
         {# Flash Messages #}
@@ -552,315 +553,287 @@
                 {% endif %}
             {% endwith %}
         </ul>
-
         <a href="javascript:history.back()" class="back-button"><i class="fas fa-arrow-left"></i> Back</a>
-
         {# Profile Banner and Header #}
-<div class="profile-banner">
-    {% if seller.cover_photo_url %}
-        <img src="{{ seller.cover_photo_url }}" alt="{{ seller.businessname or seller.username }}'s Cover Photo" onclick="openImageModal(this.src)">
-    {% else %}
-        <div style="width: 100%; height: 100%; background-color: #a0a0a0; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em;"><i class="fas fa-image"></i></div>
-    {% endif %}
-</div>
-
-<div class="profile-header">
-    <div class="profile-picture-container">
-        <img src="{{ seller.profile_picture_url }}" alt="{{ seller.businessname or seller.username }}'s Profile Picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';" onclick="openImageModal(this.src)">
-    </div>
-    <div class="profile-details">
-        <h2>
-            {{ seller.businessname or seller.username }}
-            {% if seller.badge %}
-                <span class="badge">{{ seller.badge }}</span>
+        <div class="profile-banner">
+            {% if seller.cover_photo_url %}
+                <img src="{{ seller.cover_photo_url }}" alt="{{ seller.businessname or seller.username }}'s Cover Photo" onclick="openImageModal(this.src)">
+            {% else %}
+                <div style="width: 100%; height: 100%; background-color: #a0a0a0; display: flex; align-items: center; justify-content: center; color: white; font-size: 2em;"><i class="fas fa-image"></i></div>
             {% endif %}
-        </h2>
-        {% if seller.username and seller.businessname %}
-            <p><strong>Username:</strong> {{ seller.username }}</p>
-        {% endif %}
-
-        
-        <p><i class="fas fa-chart-line"></i> <strong>Status:</strong> {{ seller.account_status|capitalize }}</p>
-        {% if seller.location %}
-            <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
-        {% endif %}
-        <p><i class="fas fa-calendar-days"></i> <strong>Joined:</strong> {{ seller.created_at }}</p>
-        <p>
-            <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
-            <span class="rating-stars">
-                {% for i in range(seller.rating|round(0, 'floor')|int) %}
-                    <i class="fas fa-star"></i>
-                {% endfor %}
-                {% for i in range(5 - (seller.rating|round(0, 'floor')|int)) %}
-                    <i class="far fa-star"></i> {# Outline star for unrated #}
-                {% endfor %}
-            </span>
-            ({{ seller.review_count }} Reviews)
-        </p>
-
-        {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
-        {# Add a hidden input or a data attribute to the profile-header itself #}
-        <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
-            <i class="fas fa-users"></i> <strong>Followers:</strong> <span id="followersCount">{{ followers_count | default(0) }}</span>
         </div>
-    </div>
-    {% if current_user_id and current_user_id != seller.id %}
-        <button class="follow-button {% if is_following %}unfollow{% endif %}" data-seller-id="{{ seller.id }}">
-            <i class="{% if is_following %}fas fa-user-minus{% else %}fas fa-user-plus{% endif %}"></i>
-            {% if is_following %}Unfollow{% else %}Follow{% endif %}
-        </button>
-    {% endif %}
-</div>
-
-{# About Section #}
-{% if seller.bio %}
-<div class="about-section">
-    <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
-    <p>{{ seller.bio }}</p>
-</div>
-{# About Section #}
-{% if seller.bio %}
-<div class="about-section">
-    <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
-    <p>{{ seller.bio }}</p>
-</div>
-{% endif %} {# This closes the 'if seller.bio' block #}
-
-
-{# Contact Information Section #}
-<div class="contact-section">
-    <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
-    {% if seller.phone_number %}
-        <div class="contact-buttons">
-            <a href="tel:{{ seller.phone_number }}" class="btn contact-btn">
-                <i class="fas fa-phone"></i> Call Seller
-            </a>
-            <a href="https://wa.me/{{ seller.phone_number }}" class="btn contact-btn btn-whatsapp" target="_blank">
-                <i class="fab fa-whatsapp"></i> Chat with Seller
-            </a>
-        </div>
-    {% else %}
-        <p class="no-contact-message">Contact information is not available.</p>
-    {% endif %}
-</div>
-
-
-{# Social Media Section #}
-{% if seller.social_links %}
-<div class="social-links-section">
-    <h3 class="section-title"><i class="fas fa-share-nodes"></i> Social Media</h3>
-    <ul>
-        {% for platform, link in seller.social_links.items() %}
-        <li>
-            {% set icon_class = "" %}
-            {% if platform.lower() == 'facebook' %}{% set icon_class = "fab fa-facebook" %}
-            {% elif platform.lower() == 'twitter' %}{% set icon_class = "fab fa-x-twitter" %}
-            {% elif platform.lower() == 'instagram' %}{% set icon_class = "fab fa-instagram" %}
-            {% elif platform.lower() == 'linkedin' %}{% set icon_class = "fab fa-linkedin" %}
-            {% elif platform.lower() == 'youtube' %}{% set icon_class = "fab fa-youtube" %}
-            {% elif platform.lower() == 'whatsapp' %}{% set icon_class = "fab fa-whatsapp" %}
-            {% else %}{% set icon_class = "fas fa-link" %}
-            {% endif %}
-            <i class="{{ icon_class }}"></i> <strong>{{ platform|title }}:</strong> <a href="{{ link }}" target="_blank" rel="noopener noreferrer">{{ link }}</a>
-        </li>
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-        
-
-
-{# Business Hours Section #}
-{% if seller.working_days and seller.working_times %}
-<div class="business-hours-section">
-    <h3 class="section-title"><i class="fas fa-clock"></i> Business Hours</h3>
-    <ul>
-        {# Loop through all days to ensure "Closed" is shown for non-working days #}
-        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-            <li>
-                <strong>{{ day }}:</strong>
-                {% if day in seller.working_days and seller.working_times and seller.working_times[day] %}
-                    {{ seller.working_times[day].open }} - {{ seller.working_times[day].close }}
-                {% else %}
-                    Closed
+        <div class="profile-header">
+            <div class="profile-picture-container">
+                <img src="{{ seller.profile_picture_url }}" alt="{{ seller.businessname or seller.username }}'s Profile Picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';" onclick="openImageModal(this.src)">
+            </div>
+            <div class="profile-details">
+                <h2>
+                    {{ seller.businessname or seller.username }}
+                    {% if seller.badge %}
+                        <span class="badge">{{ seller.badge }}</span>
+                    {% endif %}
+                </h2>
+                {% if seller.username and seller.businessname %}
+                    <p><strong>Username:</strong> {{ seller.username }}</p>
                 {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-</div>
-{% endif %}
-
-{# Active Adverts Section #}
-<h3 class="section-title"><i class="fas fa-tag"></i> Active Adverts by {{ seller.businessname or seller.username }}</h3>
-{% if adverts %}
-    <div class="advert-list">
-        {% for advert in adverts %}
-            <div class="advert-item">
-                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
-                <div class="advert-details">
-                    <h3><i class="fas fa-bullhorn"></i> {{ advert.title }}</h3>
-                    <p class="price"><i class="fas fa-money-bill-wave"></i> ₦{{ "{:,.2f}".format(advert.price|float) }}</p>
-                    <p class="post_date"><i class="fas fa-calendar-alt"></i> Posted: {{ advert.created_at.strftime('%Y-%m-%d') }}</p>
-                </div>
-                <div class="advert-actions">
-                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn"><i class="fas fa-eye"></i> View Advert</a>
+                <p><i class="fas fa-chart-line"></i> <strong>Status:</strong> {{ seller.account_status|capitalize }}</p>
+                {% if seller.location %}
+                    <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
+                {% endif %}
+                <p><i class="fas fa-calendar-days"></i> <strong>Joined:</strong> {{ seller.created_at }}</p>
+                <p>
+                    <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
+                    <span class="rating-stars">
+                        {% for i in range(seller.rating|round(0, 'floor')|int) %}
+                            <i class="fas fa-star"></i>
+                        {% endfor %}
+                        {% for i in range(5 - (seller.rating|round(0, 'floor')|int)) %}
+                            <i class="far fa-star"></i> {# Outline star for unrated #}
+                        {% endfor %}
+                    </span>
+                    ({{ seller.review_count }} Reviews)
+                </p>
+                {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
+                {# Add a hidden input or a data attribute to the profile-header itself #}
+                <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
+                    <i class="fas fa-users"></i> <strong>Followers:</strong> <span id="followersCount">{{ followers_count | default(0) }}</span>
                 </div>
             </div>
-        {% endfor %}
+            {% if current_user_id and current_user_id != seller.id %}
+                <button class="follow-button {% if is_following %}unfollow{% endif %}" data-seller-id="{{ seller.id }}">
+                    <i class="{% if is_following %}fas fa-user-minus{% else %}fas fa-user-plus{% endif %}"></i>
+                    {% if is_following %}Unfollow{% else %}Follow{% endif %}
+                </button>
+            {% endif %}
+        </div>
+        
+        {# About Section #}
+        {% if seller.bio %}
+        <div class="about-section">
+            <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
+            <p>{{ seller.bio }}</p>
+        </div>
+        {% endif %}
+
+        {# Contact Information Section #}
+        <div class="contact-section">
+            <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
+            {% if seller.phone_number %}
+                <div class="contact-buttons">
+                    <a href="tel:{{ seller.phone_number }}" class="btn contact-btn">
+                        <i class="fas fa-phone"></i> Call Seller
+                    </a>
+                    <a href="https://wa.me/{{ seller.phone_number }}" class="btn contact-btn btn-whatsapp" target="_blank">
+                        <i class="fab fa-whatsapp"></i> Chat with Seller
+                    </a>
+                </div>
+            {% else %}
+                <p class="no-contact-message">Contact information is not available.</p>
+            {% endif %}
+        </div>
+        
+        {# Social Media Section #}
+        {% if seller.social_links %}
+        <div class="social-links-section">
+            <h3 class="section-title"><i class="fas fa-share-nodes"></i> Social Media</h3>
+            <ul>
+                {% for platform, link in seller.social_links.items() %}
+                <li>
+                    {% set icon_class = "" %}
+                    {% if platform.lower() == 'facebook' %}{% set icon_class = "fab fa-facebook" %}
+                    {% elif platform.lower() == 'twitter' %}{% set icon_class = "fab fa-x-twitter" %}
+                    {% elif platform.lower() == 'instagram' %}{% set icon_class = "fab fa-instagram" %}
+                    {% elif platform.lower() == 'linkedin' %}{% set icon_class = "fab fa-linkedin" %}
+                    {% elif platform.lower() == 'youtube' %}{% set icon_class = "fab fa-youtube" %}
+                    {% elif platform.lower() == 'whatsapp' %}{% set icon_class = "fab fa-whatsapp" %}
+                    {% else %}{% set icon_class = "fas fa-link" %}
+                    {% endif %}
+                    <i class="{{ icon_class }}"></i> <strong>{{ platform|title }}:</strong> <a href="{{ link }}" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {# Business Hours Section #}
+        {% if seller.working_days and seller.working_times %}
+        <div class="business-hours-section">
+            <h3 class="section-title"><i class="fas fa-clock"></i> Business Hours</h3>
+            <ul>
+                {# Loop through all days to ensure "Closed" is shown for non-working days #}
+                {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                    <li>
+                        <strong>{{ day }}:</strong>
+                        {% if day in seller.working_days and seller.working_times and seller.working_times[day] %}
+                            {{ seller.working_times[day].open }} - {{ seller.working_times[day].close }}
+                        {% else %}
+                            Closed
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {# Active Adverts Section #}
+        <h3 class="section-title"><i class="fas fa-tag"></i> Active Adverts by {{ seller.businessname or seller.username }}</h3>
+        {% if adverts %}
+            <div class="advert-list">
+                {% for advert in adverts %}
+                    <div class="advert-item">
+                        <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
+                        <div class="advert-details">
+                            <h3><i class="fas fa-bullhorn"></i> {{ advert.title }}</h3>
+                            <p class="price"><i class="fas fa-money-bill-wave"></i> ₦{{ "{:,.2f}".format(advert.price|float) }}</p>
+                            <p class="post_date"><i class="fas fa-calendar-alt"></i> Posted: {{ advert.created_at.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        <div class="advert-actions">
+                            <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn"><i class="fas fa-eye"></i> View Advert</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-adverts-message"><i class="fas fa-box-open"></i> {{ seller.businessname or seller.username }} currently has no active adverts.</p>
+        {% endif %}
     </div>
-{% else %}
-    <p class="no-adverts-message"><i class="fas fa-box-open"></i> {{ seller.businessname or seller.username }} currently has no active adverts.</p>
-{% endif %}
-</div>
+    
+    {# Image Modal Structure #}
+    <div id="imageModal" class="image-modal">
+        <span class="close-button" onclick="closeImageModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+    
+    {# JavaScript for Follow/Unfollow and Image Modal #}
+    <script>
+        // --- Image Modal Logic ---
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
 
-{# Image Modal Structure #}
-<div id="imageModal" class="image-modal">
-    <span class="close-button" onclick="closeImageModal()">&times;</span>
-    <img class="modal-content" id="modalImage">
-</div>
-
-
-{# JavaScript for Follow/Unfollow and Image Modal #}
-<script>
-    // --- Image Modal Logic ---
-    const imageModal = document.getElementById('imageModal');
-    const modalImage = document.getElementById('modalImage');
-
-    function openImageModal(src) {
-        modalImage.src = src;
-        imageModal.classList.add('active'); // Add 'active' class for CSS transitions
-        imageModal.style.display = 'flex'; // Use flex to center content
-    }
-
-    function closeImageModal() {
-        imageModal.classList.remove('active'); // Remove 'active' class
-        // Wait for transition to complete before hiding to ensure smooth animation
-        setTimeout(() => {
-            imageModal.style.display = 'none';
-        }, 300); // Should match CSS transition duration
-    }
-
-    // Close modal when clicking outside the image
-    imageModal.addEventListener('click', function(event) {
-        if (event.target === imageModal) {
-            closeImageModal();
+        function openImageModal(src) {
+            modalImage.src = src;
+            imageModal.classList.add('active'); // Add 'active' class for CSS transitions
+            imageModal.style.display = 'flex'; // Use flex to center content
         }
-    });
 
-    // --- Follow/Unfollow Button Logic and Initial Follower Count Display ---
-    document.addEventListener('DOMContentLoaded', function() {
-        const followButton = document.querySelector('.follow-button');
-        const followersCountSpan = document.getElementById('followersCount'); // Grab the followers count span
-        // Get sellerId from a more reliable element, like the followers-count div
-        const profileHeader = document.querySelector('.profile-header .followers-count'); // Target the specific div
-        const sellerIdFromProfile = profileHeader ? profileHeader.dataset.sellerId : null;
+        function closeImageModal() {
+            imageModal.classList.remove('active'); // Remove 'active' class
+            // Wait for transition to complete before hiding to ensure smooth animation
+            setTimeout(() => {
+                imageModal.style.display = 'none';
+            }, 300); // Should match CSS transition duration
+        }
 
-        // --- Function to fetch and display initial follower count ---
-        async function fetchInitialFollowerCount() {
-            if (!followersCountSpan) {
-                console.warn('Followers count span (ID: "followersCount") not found.');
-                return;
+        // Close modal when clicking outside the image
+        imageModal.addEventListener('click', function(event) {
+            if (event.target === imageModal) {
+                closeImageModal();
             }
+        });
 
-            // Use the sellerId obtained from the profile header
-            const sellerId = sellerIdFromProfile;
-
-            if (!sellerId) {
-                console.error('Seller ID not found. Cannot fetch initial follower count.');
-                return;
-            }
-
-            try {
-                // Assuming you have an API endpoint to get a user's follower count
-                const response = await fetch(`/api/get_follower_count/${sellerId}`);
-                const data = await response.json();
-
-                if (response.ok && data.success && data.follower_count !== undefined) {
-                    followersCountSpan.textContent = data.follower_count;
-                } else {
-                    console.error('Failed to fetch initial follower count:', data.message || 'Unknown error');
+        // --- Follow/Unfollow Button Logic and Initial Follower Count Display ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const followButton = document.querySelector('.follow-button');
+            const followersCountSpan = document.getElementById('followersCount'); // Grab the followers count span
+            // Get sellerId from a more reliable element, like the followers-count div
+            const profileHeader = document.querySelector('.profile-header .followers-count'); // Target the specific div
+            const sellerIdFromProfile = profileHeader ? profileHeader.dataset.sellerId : null;
+            
+            // --- Function to fetch and display initial follower count ---
+            async function fetchInitialFollowerCount() {
+                if (!followersCountSpan) {
+                    console.warn('Followers count span (ID: "followersCount") not found.');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error fetching initial follower count:', error);
-            }
-        }
-
-        // Call the function to fetch and display the initial follower count when the page loads
-        fetchInitialFollowerCount();
-
-        if (followButton) {
-            followButton.addEventListener('click', async function() {
-                const sellerId = this.dataset.sellerId; // This should be reliable for the button click
-                const isFollowing = this.classList.contains('unfollow'); // Check current state from class
-
-                // Determine the correct API endpoint based on the action
-                const endpoint = isFollowing ? `/api/unfollow_user/${sellerId}` : `/api/follow_user/${sellerId}`;
-                const method = 'POST'; // Both are POST requests
-
+                // Use the sellerId obtained from the profile header
+                const sellerId = sellerIdFromProfile;
+                if (!sellerId) {
+                    console.error('Seller ID not found. Cannot fetch initial follower count.');
+                    return;
+                }
                 try {
-                    const response = await fetch(endpoint, {
-                        method: method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            // Include CSRF token if you are using Flask-WTF or similar
-                            // 'X-CSRFToken': 'YOUR_CSRF_TOKEN_HERE'
-                        },
-                    });
-
-                    const data = await response.json(); // Parse the JSON response
-
-                    if (response.ok && data.success) { // Check both HTTP status and custom success flag
-                        // Toggle the button's appearance and text
-                        if (isFollowing) {
-                            this.classList.remove('unfollow');
-                            this.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
-                            showFlashMessage('success', 'You have unfollowed this user.');
-                        } else {
-                            this.classList.add('unfollow');
-                            this.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
-                            showFlashMessage('success', 'You are now following this user!');
-                        }
-                        // --- UPDATE THE FOLLOWER COUNT DYNAMICALLY ---
-                        if (followersCountSpan && data.new_followers_count !== undefined) {
-                            followersCountSpan.textContent = data.new_followers_count;
-                        }
+                    // Assuming you have an API endpoint to get a user's follower count
+                    const response = await fetch(`/api/get_follower_count/${sellerId}`);
+                    const data = await response.json();
+                    if (response.ok && data.success && data.follower_count !== undefined) {
+                        followersCountSpan.textContent = data.follower_count;
                     } else {
-                        // Handle error, e.g., show a flash message
-                        showFlashMessage('error', data.message || 'An error occurred.');
+                        console.error('Failed to fetch initial follower count:', data.message || 'Unknown error');
                     }
                 } catch (error) {
-                    console.error('Error during follow/unfollow:', error);
-                    showFlashMessage('error', 'Network error. Please try again.');
+                    console.error('Error fetching initial follower count:', error);
                 }
-            });
-        }
-
-        // Function to dynamically add flash messages
-        function showFlashMessage(category, message) {
-            const flashMessagesContainer = document.querySelector('.flash-messages');
-            if (!flashMessagesContainer) {
-                console.warn('Flash messages container not found. Message not displayed:', message);
-                return;
             }
-
-            const li = document.createElement('li');
-            li.classList.add(category);
-
-            let iconHTML = ''; // Use an empty string for the icon initially
-            if (category === 'error') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
-            else if (category === 'info') iconHTML = '<i class="fas fa-circle-info"></i>';
-            else if (category === 'warning') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
-            else if (category === 'success') iconHTML = '<i class="fas fa-circle-check"></i>';
-
-            li.innerHTML = iconHTML + message; // Set innerHTML to include the icon
-            flashMessagesContainer.appendChild(li);
-
-            // Optional: Automatically remove message after a few seconds
-            setTimeout(() => {
-                li.remove();
-            }, 5000); // Message disappears after 5 seconds
-        }
-    });
-</script>
+            // Call the function to fetch and display the initial follower count when the page loads
+            fetchInitialFollowerCount();
+            
+            if (followButton) {
+                followButton.addEventListener('click', async function() {
+                    const sellerId = this.dataset.sellerId; // This should be reliable for the button click
+                    const isFollowing = this.classList.contains('unfollow'); // Check current state from class
+                    // Determine the correct API endpoint based on the action
+                    const endpoint = isFollowing ? `/api/unfollow_user/${sellerId}` : `/api/follow_user/${sellerId}`;
+                    const method = 'POST'; // Both are POST requests
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                // Include CSRF token if you are using Flask-WTF or similar
+                                // 'X-CSRFToken': 'YOUR_CSRF_TOKEN_HERE'
+                            },
+                        });
+                        const data = await response.json(); // Parse the JSON response
+                        if (response.ok && data.success) { // Check both HTTP status and custom success flag
+                            // Toggle the button's appearance and text
+                            if (isFollowing) {
+                                this.classList.remove('unfollow');
+                                this.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                                showFlashMessage('success', 'You have unfollowed this user.');
+                            } else {
+                                this.classList.add('unfollow');
+                                this.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                                showFlashMessage('success', 'You are now following this user!');
+                            }
+                            // --- UPDATE THE FOLLOWER COUNT DYNAMICALLY ---
+                            if (followersCountSpan && data.new_followers_count !== undefined) {
+                                followersCountSpan.textContent = data.new_followers_count;
+                            }
+                        } else {
+                            // Handle error, e.g., show a flash message
+                            showFlashMessage('error', data.message || 'An error occurred.');
+                        }
+                    } catch (error) {
+                        console.error('Error during follow/unfollow:', error);
+                        showFlashMessage('error', 'Network error. Please try again.');
+                    }
+                });
+            }
+            
+            // Function to dynamically add flash messages
+            function showFlashMessage(category, message) {
+                const flashMessagesContainer = document.querySelector('.flash-messages');
+                if (!flashMessagesContainer) {
+                    console.warn('Flash messages container not found. Message not displayed:', message);
+                    return;
+                }
+                const li = document.createElement('li');
+                li.classList.add(category);
+                let iconHTML = ''; // Use an empty string for the icon initially
+                if (category === 'error') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
+                else if (category === 'info') iconHTML = '<i class="fas fa-circle-info"></i>';
+                else if (category === 'warning') iconHTML = '<i class="fas fa-triangle-exclamation"></i>';
+                else if (category === 'success') iconHTML = '<i class="fas fa-circle-check"></i>';
+                li.innerHTML = iconHTML + message; // Set innerHTML to include the icon
+                flashMessagesContainer.appendChild(li);
+                // Optional: Automatically remove message after a few seconds
+                setTimeout(() => {
+                    li.remove();
+                }, 5000); // Message disappears after 5 seconds
+            }
+        });
+    </script>
 </body>
 </html>
+
+
