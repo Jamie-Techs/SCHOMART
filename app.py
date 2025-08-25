@@ -2768,6 +2768,10 @@ def advert_detail(advert_id):
 
 
 
+
+# Assuming your other imports and setup are already in place
+# ...
+
 @app.route('/seller_profile/<seller_id>')
 def seller_profile_view(seller_id):
     current_user_id = session.get('user_id')
@@ -2792,7 +2796,6 @@ def seller_profile_view(seller_id):
         cover_photo_filename = seller_info.get('cover_photo')
         seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
 
-        # ✨ NEW APPROACH: Check if the object has a 'to_datetime' method
         if seller_info.get('created_at') and hasattr(seller_info['created_at'], 'to_datetime'):
             seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
 
@@ -2818,12 +2821,18 @@ def seller_profile_view(seller_id):
         for advert_doc in adverts_ref.stream():
             advert = advert_doc.to_dict()
             advert['id'] = advert_doc.id
-            if advert.get('main_image'):
-                advert['main_image_url'] = get_advert_image_url(advert['main_image'])
-            else:
-                advert['main_image_url'] = url_for('static', filename='images/default_advert_image.png')
             
-            # ✨ NEW APPROACH: Check for 'to_datetime' for each advert
+            # ✨ REVISED: Generate a signed URL for the main image here, consistent with a display image approach
+            if advert.get('main_image'):
+                # This logic is what your 'home' route is likely doing to create the display URL
+                blob = admin_storage.blob(advert['main_image'])
+                if blob.exists():
+                    advert['display_image'] = blob.generate_signed_url(timedelta(minutes=15), method='GET')
+                else:
+                    advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
+            else:
+                advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
+
             if advert.get('created_at') and hasattr(advert['created_at'], 'to_datetime'):
                 advert['created_at'] = advert['created_at'].strftime('%Y-%m-%d %H:%M')
             if advert.get('expires_at') and hasattr(advert['expires_at'], 'to_datetime'):
@@ -2837,17 +2846,9 @@ def seller_profile_view(seller_id):
                                is_following=is_following,
                                current_user_id=current_user_id)
     except Exception as e:
-        logging.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
+        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
-
-
-
-
-
-
-
-
 
 
 
@@ -6985,6 +6986,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
