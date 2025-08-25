@@ -579,15 +579,7 @@
             <p><strong>Username:</strong> {{ seller.username }}</p>
         {% endif %}
 
-        <div class="verification-badges">
-            {% if seller.is_verified %}
-                <span class="badge" style="background-color: #007bff;"><i class="fas fa-circle-check"></i> Verified Account</span>
-            {% endif %}
-            {% if seller.verified_phone %}
-                <span class="badge" style="background-color: #28a745;"><i class="fas fa-phone-check"></i> Phone Verified</span>
-            {% endif %}
-        </div>
-
+        
         <p><i class="fas fa-chart-line"></i> <strong>Status:</strong> {{ seller.account_status|capitalize }}</p>
         {% if seller.location %}
             <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
@@ -690,7 +682,7 @@
     <div class="advert-list">
         {% for advert in adverts %}
             <div class="advert-item">
-                <img src="{{ advert.main_image_url }}" alt="{{ advert.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert.title }}" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_advert_image.png') }}';" />
                 <div class="advert-details">
                     <h3><i class="fas fa-bullhorn"></i> {{ advert.title }}</h3>
                     <p class="price"><i class="fas fa-money-bill-wave"></i> ₦{{ "{:,.2f}".format(advert.price|float) }}</p>
@@ -712,6 +704,7 @@
     <span class="close-button" onclick="closeImageModal()">&times;</span>
     <img class="modal-content" id="modalImage">
 </div>
+
 
 {# JavaScript for Follow/Unfollow and Image Modal #}
 <script>
