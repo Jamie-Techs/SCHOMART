@@ -130,18 +130,6 @@ def allowed_file(filename):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 # --- User Model Class ---
 class User:
     """
@@ -2852,20 +2840,111 @@ def seller_profile_view(seller_id):
 
 
 
-
-
-@app.route('/subscribe')
+@app.route('/subscribe', methods=['GET', 'POST'])
 def subscribe():
-    # Add your logic for the subscription page here
-    return "This is the subscription page."
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please login first.', 'error')
+        return redirect(url_for('login'))
 
+    user_info = get_user_info(user_id)
+    if not user_info:
+        flash('User information not found. Please try logging in again.', 'error')
+        return redirect(url_for('login'))
 
+    all_plans = get_all_plans_from_db()
+    if not all_plans:
+        flash('No subscription plans available at this time. Please try again later.', 'error')
+        return redirect(url_for('profile'))
 
+    if request.method == 'POST':
+        selected_plan_id_str = request.form.get('plan')
+        payment_method_selected = request.form.get('payment_method')
 
+        if not selected_plan_id_str:
+            flash('Please select a subscription plan.', 'error')
+            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
 
+        selected_plan = next((p for p in all_plans if p['id'] == selected_plan_id_str), None)
 
+        if not selected_plan:
+            flash('Selected plan details could not be found. Please try again.', 'error')
+            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
 
+        plan_name = selected_plan['name']
+        plan_amount = selected_plan['amount']
+        plan_duration_days = selected_plan['duration_days']
 
+        # Handle Free Promo Plan
+        if plan_name == 'Free Promo Plan':
+            try:
+                # Firestore query to check if the user has an active Free Promo Plan
+                query_ref = db.collection('subscriptions').where('user_id', '==', user_id).where('plan_name', '==', 'Free Promo Plan').where('status', '==', 'active').limit(1)
+                docs = query_ref.get()
+                free_promo_used = len(docs) > 0
+            except Exception as e:
+                logging.error(f"Firestore error checking free promo usage for user {user_id}: {e}")
+                flash('An internal error occurred. Please try again.', 'error')
+                return redirect(url_for('subscribe'))
+
+            if free_promo_used:
+                flash('You have already used your Free Promo Plan.', 'error')
+                return redirect(url_for('subscribe'))
+            else:
+                expiry_date = date.today() + timedelta(days=plan_duration_days)
+                try:
+                    subscription_data = {
+                        'user_id': user_id,
+                        'plan_id': selected_plan.get('id'), # Assuming the plan ID is a string in Firestore
+                        'plan_name': plan_name,
+                        'status': 'active',
+                        'start_date': datetime.now(),
+                        'expiry_date': expiry_date,
+                        'payment_reference': 'FREE_PROMO_ACTIVATED',
+                        'transaction_amount': 0.00,
+                        'transaction_currency': 'N/A'
+                    }
+                    db.collection('subscriptions').add(subscription_data)
+                    flash(f'Successfully subscribed to {plan_name}!', 'success')
+                    return redirect(url_for('profile'))
+                except Exception as e:
+                    logging.error(f"Firestore error activating free promo plan for user {user_id}: {e}")
+                    flash('An error occurred while activating your free plan. Please try again.', 'error')
+                    return redirect(url_for('subscribe'))
+        
+        # Handle Bank Transfer Payment
+        if payment_method_selected == 'bank':
+            payment_reference = generate_unique_reference()
+            expiry_date = date.today() + timedelta(days=plan_duration_days)
+            try:
+                subscription_data = {
+                    'user_id': user_id,
+                    'plan_id': selected_plan.get('id'),
+                    'plan_name': plan_name,
+                    'status': 'pending',
+                    'start_date': datetime.now(),
+                    'expiry_date': expiry_date,
+                    'payment_reference': payment_reference,
+                    'transaction_amount': plan_amount,
+                    'transaction_currency': BANK_ACCOUNT_DETAILS['currency']
+                }
+                db.collection('subscriptions').add(subscription_data)
+                
+                session['bank_transfer_amount'] = float(plan_amount)
+                session['bank_account_details'] = BANK_ACCOUNT_DETAILS
+                session['bank_transfer_plan_name'] = plan_name
+                session['payment_reference'] = payment_reference
+                return redirect(url_for('bank_transfer_instructions_page'))
+            except Exception as e:
+                logging.error(f"Error saving pending bank transfer subscription for user {user_id}: {e}")
+                flash('An error occurred while preparing your bank transfer subscription. Please try again.', 'error')
+                return redirect(url_for('subscribe'))
+        else:
+            flash('Invalid payment method selected. Please choose Bank Transfer.', 'error')
+            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
+    
+    # GET request
+    return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
 
 
 
@@ -6611,6 +6690,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
