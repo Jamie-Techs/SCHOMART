@@ -58,14 +58,11 @@ from botocore.exceptions import ClientError
 from authlib.integrations.flask_client import OAuth
 
 from firebase_functions import https_fn
-from google.cloud import firestore
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from botocore.exceptions import ClientError
 import boto3
 import re
-
-from google.cloud import firestore as gcp_firestore
 from google.oauth2 import service_account
 from firebase_admin import credentials, firestore as admin_firestore, initialize_app
 import tempfile
@@ -6989,6 +6986,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
