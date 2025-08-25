@@ -2648,7 +2648,7 @@ def referral_benefit():
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page for all users (logged-in or not).
+    Handles displaying a single advert detail page with robust data fetching.
     """
     # Safely get the user ID, defaulting to None if no user is logged in.
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
@@ -2673,25 +2673,14 @@ def advert_detail(advert_id):
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
-            seller = {'id': seller_id, 'username': 'Unknown Seller', 'profile_picture': 'default_profile.png', 'rating': 0.0, 'review_count': 0}
+            seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'profile_picture': url_for('static', filename='images/default_profile.png'), 'rating': 0.0, 'review_count': 0}
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
-
-            # Step 2: Fetch seller info and calculate rating directly in the route
-seller_id = advert.get('user_id')
-seller_doc = db.collection('users').document(seller_id).get()
-
-if not seller_doc.exists:
-    seller = {'id': seller_id, 'username': 'Unknown Seller', 'profile_picture': url_for('static', filename='images/default_profile.png'), 'rating': 0.0, 'review_count': 0}
-else:
-    seller = seller_doc.to_dict()
-    seller['id'] = seller_doc.id
-
-    # Add the profile picture URL to the seller dictionary
-    # Pass the filename to your helper function
-    seller['profile_picture'] = get_profile_picture_url(seller.get('profile_picture'))
-    
+            
+            # Add the profile picture URL to the seller dictionary
+            seller['profile_picture'] = get_profile_picture_url(seller.get('profile_picture'))
+            
             # Calculate and attach the seller's rating and review count
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
@@ -6954,6 +6943,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
