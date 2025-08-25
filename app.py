@@ -2644,8 +2644,6 @@ def referral_benefit():
 
 
 
-
-
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
@@ -2669,7 +2667,6 @@ def advert_detail(advert_id):
             abort(404)
 
         # Step 2: Fetch seller info and attach the profile picture URL.
-        # Use a single variable for consistency: seller_id
         seller_id = advert.get('user_id')
         seller_doc = db.collection('users').document(seller_id).get()
 
@@ -2680,9 +2677,12 @@ def advert_detail(advert_id):
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
 
+            # This is the critical line that fixes the issue.
+            # It takes the filename and generates a full URL.
             profile_picture_filename = seller.get('profile_picture')
             seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
-            
+
+            # Calculate and attach the seller's rating and review count
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
             review_count = 0
@@ -2694,7 +2694,7 @@ def advert_detail(advert_id):
             seller['rating'] = total_rating / review_count if review_count > 0 else 0.0
             seller['review_count'] = review_count
 
-        # Step 3: Fetch related advert data (category, state)
+        # Step 3: Fetch related advert data.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
         
@@ -2705,7 +2705,7 @@ def advert_detail(advert_id):
             is_following = check_if_following(current_user_id, seller['id'])
             is_saved = check_if_saved(current_user_id, advert_id)
 
-        # Step 5: Fetch reviews for the current advert
+        # Step 5: Fetch reviews for the current advert and process reviewer images
         reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
         reviews = []
         for review_doc in reviews_ref:
@@ -2733,6 +2733,17 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6960,6 +6971,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
