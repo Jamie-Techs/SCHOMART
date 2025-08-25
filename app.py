@@ -2648,13 +2648,12 @@ def referral_benefit():
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page with robust data fetching.
+    Handles displaying a single advert detail page.
     """
-    # Safely get the user ID, defaulting to None if no user is logged in.
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
-        # Step 1: Fetch the advert document directly
+        # Step 1: Fetch the advert document.
         advert_ref = db.collection('adverts').document(advert_id)
         advert_doc = advert_ref.get()
 
@@ -2668,19 +2667,22 @@ def advert_detail(advert_id):
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
-        # Step 2: Fetch seller info and calculate rating directly in the route
+        # Step 2: Fetch seller info and attach the profile picture URL.
         seller_id = advert.get('user_id')
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
-            seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'profile_picture': url_for('static', filename='images/default_profile.png'), 'rating': 0.0, 'review_count': 0}
+            seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'rating': 0.0, 'review_count': 0}
+            # Provide a default URL as a fallback.
+            seller['profile_picture'] = url_for('static', filename='images/default_profile.png')
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
-            
-            # Add the profile picture URL to the seller dictionary
-            seller['profile_picture'] = get_profile_picture_url(seller.get('profile_picture'))
-            
+
+            # CRITICAL FIX: Get the filename and use the helper function to build the full URL.
+            profile_picture_filename = seller.get('profile_picture')
+            seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
+
             # Calculate and attach the seller's rating and review count
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
@@ -2693,7 +2695,7 @@ def advert_detail(advert_id):
             seller['rating'] = total_rating / review_count if review_count > 0 else 0.0
             seller['review_count'] = review_count
 
-        # Step 3: Fetch related advert data
+        # Step 3: Fetch related advert data (category, state)
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
         
@@ -2713,9 +2715,12 @@ def advert_detail(advert_id):
             if reviewer_info.exists:
                 reviewer_data = reviewer_info.to_dict()
                 review_data['reviewer_username'] = reviewer_data.get('full_name', 'Anonymous')
-                review_data['reviewer_profile_picture'] = reviewer_data.get('profile_picture')
+                # Also convert the reviewer's profile picture filename to a URL.
+                reviewer_profile_filename = reviewer_data.get('profile_picture')
+                review_data['reviewer_profile_picture'] = get_profile_picture_url(reviewer_profile_filename)
             reviews.append(review_data)
 
+        # Step 6: Render the template with all the necessary data
         return render_template(
             'advert_detail.html',
             advert=advert,
@@ -2723,12 +2728,15 @@ def advert_detail(advert_id):
             reviews=reviews,
             is_following=is_following,
             is_saved=is_saved,
-            current_user_id=current_user_id
+            current_user_id=current_user_id,
+            is_owner=is_owner
         )
 
     except Exception as e:
         logger.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
 
 
 
@@ -6943,6 +6951,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
