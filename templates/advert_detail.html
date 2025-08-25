@@ -646,7 +646,7 @@
     </div>
 
     <div class="seller-info">
-    <a href="{{ url_for('seller_profile', user_id=seller.id) }}" class="button view-profile-button">
+    <a href="{{ url_for('seller_profile_view', user_id=seller.id) }}" class="button view-profile-button">
         {% if is_owner %}
             View My Profile
         {% else %}
@@ -656,14 +656,14 @@
     
     <div style="display: flex; align-items: center; margin-top: 10px;">
         <a href="{{ url_for('seller_profile', user_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-picture" onerror="this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=No+Image';">
-            <div class="seller-details">
-                <h3>{{ seller.username }}</h3>
-                <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
-                <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
-            </div>
-        </a>
-
+    <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-picture" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
+    <div class="seller-details">
+        <h3>{{ seller.username }}</h3>
+        <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
+        <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
+    </div>
+</a>
+        
         {% if current_user_id and current_user_id != seller.id %}
             <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
                 <button class="follow-btn" type="submit" id="followButton">
@@ -1056,6 +1056,7 @@
 </body>
 
 </html>
+
 
 
 
