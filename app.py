@@ -94,7 +94,7 @@ try:
         temp_path = temp.name
 
     cred = credentials.Certificate(temp_path)
-    initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
+    initialize_app(cred, {'storageBucket': 'schomart-7a743.com'})
 
     # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
     db = admin_firestore.client()
@@ -1668,53 +1668,6 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
         logger.error(f"Failed to upload file to Firebase Storage: {e}")
 
         return None, None
-
-
-
-def handle_file_uploads(files, user_id, advert_data):
-    """
-    Handles file uploads for a new or existing advert (old version).
-
-    Returns:
-        A tuple containing (main_image_filename, additional_images_filenames, video_filename)
-        This version incorrectly returns filenames, not full URLs.
-    """
-    main_image_filename = None
-    additional_images_filenames = []
-    video_filename = None
-
-    # Handle Main Image Upload
-    main_image_file = files.get('main_image')
-    if main_image_file and main_image_file.filename != '':
-        # This is where the old logic likely had an issue.
-        # It's receiving a tuple (public_url, unique_filename) but
-        # only storing the filename.
-        _, unique_filename = upload_file_to_firebase(main_image_file, f"adverts/{user_id}/images")
-        main_image_filename = unique_filename
-    elif 'main_image' in advert_data:
-        # Keep the existing filename for reposts
-        main_image_filename = advert_data.get('main_image')
-
-    # Handle Additional Images Uploads
-    additional_images_files = files.getlist('additional_images')
-    if additional_images_files:
-        for file in additional_images_files:
-            if file and file.filename != '':
-                _, unique_filename = upload_file_to_firebase(file, f"adverts/{user_id}/images")
-                if unique_filename:
-                    additional_images_filenames.append(unique_filename)
-    # The advert_data check for additional images would likely be here as well
-
-    # Handle Video Upload
-    video_file = files.get('video')
-    if video_file and video_file.filename != '':
-        _, unique_filename = upload_file_to_firebase(video_file, f"adverts/{user_id}/videos")
-        video_filename = unique_filename
-    elif 'video' in advert_data:
-        # Keep the existing video filename for reposts
-        video_filename = advert_data.get('video')
-
-    return main_image_filename, additional_images_filenames, video_filename
 
 
 
@@ -7018,6 +6971,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
