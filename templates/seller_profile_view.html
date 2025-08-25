@@ -618,20 +618,24 @@
     <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
     <p>{{ seller.bio }}</p>
 </div>
-{% endif %}
 
-{# Contact Information Section #}
-{% if seller.phone_number %} {# Assuming email might be optional or handled elsewhere #}
+        
 <div class="contact-section">
     <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
-    {# {% if seller.email %} #}
-    {# <p><i class="fas fa-envelope"></i> <strong>Email:</strong> <a href="mailto:{{ seller.email }}">{{ seller.email }}</a></p> #}
-    {# {% endif %} #}
     {% if seller.phone_number %}
-    <p><i class="fas fa-phone"></i> <strong>Phone:</strong> <a href="tel:{{ seller.phone_number }}">{{ seller.phone_number }}</a></p>
+        <div class="contact-buttons">
+            <a href="tel:{{ seller.phone_number }}" class="btn contact-btn">
+                <i class="fas fa-phone"></i> Call Seller
+            </a>
+            <a href="https://wa.me/{{ seller.phone_number }}" class="btn contact-btn btn-whatsapp" target="_blank">
+                <i class="fab fa-whatsapp"></i> Chat with Seller
+            </a>
+        </div>
+    {% else %}
+        <p class="no-contact-message">Contact information is not available.</p>
     {% endif %}
 </div>
-{% endif %}
+
 
 {# Social Media Section #}
 {% if seller.social_links %}
