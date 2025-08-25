@@ -2772,12 +2772,6 @@ def advert_detail(advert_id):
 def seller_profile_view(seller_id):
     current_user_id = session.get('user_id')
     
-    # 🐞 CRITICAL FIX: The following block of code is what causes the malfunction.
-    # It redirects the seller to their personal page. Removing it allows them
-    # to view their own public-facing profile.
-    # if current_user_id == seller_id:
-    #     return redirect(url_for('profile'))
-
     seller_info = None
     seller_adverts = []
     is_following = False
@@ -2792,19 +2786,16 @@ def seller_profile_view(seller_id):
         
         seller_info = seller_doc.to_dict()
 
-        # ✨ CORRECTED: Use your existing helper functions for generating image URLs.
-        # This assumes your Firestore document stores a Cloud Storage path.
         profile_picture_filename = seller_info.get('profile_picture')
         seller_info['profile_picture_url'] = get_profile_picture_url(profile_picture_filename)
         
         cover_photo_filename = seller_info.get('cover_photo')
         seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
 
-        # Convert Firestore Timestamps to a formatted string for display
-        if seller_info.get('created_at') and isinstance(seller_info['created_at'], firestore.Timestamp):
+        # ✨ NEW APPROACH: Check if the object has a 'to_datetime' method
+        if seller_info.get('created_at') and hasattr(seller_info['created_at'], 'to_datetime'):
             seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
 
-        # Get seller's average rating and review count from the 'reviews' collection
         reviews_ref = db.collection('reviews').where('reviewee_id', '==', seller_id)
         reviews = reviews_ref.stream()
         
@@ -2821,22 +2812,21 @@ def seller_profile_view(seller_id):
             followers_query = db.collection('followers').where('follower_id', '==', current_user_id).where('followed_id', '==', seller_id).limit(1)
             is_following = len(list(followers_query.stream())) > 0
 
-        # Fetch only published/active adverts for this seller
         adverts_ref = db.collection('adverts').where('user_id', '==', seller_id).where('status', '==', 'published').order_by('created_at', direction=firestore.Query.DESCENDING)
         
         seller_adverts = []
         for advert_doc in adverts_ref.stream():
             advert = advert_doc.to_dict()
             advert['id'] = advert_doc.id
-            # ✨ CORRECTED: Use your existing helper function for the main advert image
             if advert.get('main_image'):
                 advert['main_image_url'] = get_advert_image_url(advert['main_image'])
             else:
                 advert['main_image_url'] = url_for('static', filename='images/default_advert_image.png')
             
-            if advert.get('created_at') and isinstance(advert['created_at'], firestore.Timestamp):
+            # ✨ NEW APPROACH: Check for 'to_datetime' for each advert
+            if advert.get('created_at') and hasattr(advert['created_at'], 'to_datetime'):
                 advert['created_at'] = advert['created_at'].strftime('%Y-%m-%d %H:%M')
-            if advert.get('expires_at') and isinstance(advert['expires_at'], firestore.Timestamp):
+            if advert.get('expires_at') and hasattr(advert['expires_at'], 'to_datetime'):
                 advert['expires_at'] = advert['expires_at'].strftime('%Y-%m-%d %H:%M')
             
             seller_adverts.append(advert)
@@ -2847,9 +2837,18 @@ def seller_profile_view(seller_id):
                                is_following=is_following,
                                current_user_id=current_user_id)
     except Exception as e:
-        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
+        logging.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6986,6 +6985,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
