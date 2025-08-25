@@ -10,11 +10,11 @@ import logging
 import requests
 import flask
 from io import BytesIO
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from functools import wraps
 from datetime import timedelta, date, timezone, datetime
-from datetime import datetime, timedelta
-from datetime import datetime, UTC
+import tempfile
+
 from flask import (
     Flask,
     request,
@@ -46,29 +46,26 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image
 from flask_apscheduler import APScheduler
 from dotenv import load_dotenv
-from firebase_functions import https_fn
+
+# --- Firebase and Google Cloud Imports ---
 import firebase_admin
-from firebase_admin import credentials, storage,  firestore, auth, exceptions, initialize_app
+from firebase_admin import (
+    credentials,
+    storage,
+    firestore,
+    auth,
+    exceptions,
+    initialize_app
+)
 from firebase_admin.exceptions import FirebaseError
 from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilter
 from google.cloud.firestore_v1 import Increment
-import boto3
-from botocore.exceptions import ClientError
-
 from authlib.integrations.flask_client import OAuth
-from google.cloud import storage
-
-from firebase_functions import https_fn
-from datetime import datetime, timezone, timedelta
-from dotenv import load_dotenv
-from botocore.exceptions import ClientError
-import boto3
-import re
 from google.oauth2 import service_account
-from firebase_admin import credentials, firestore as admin_firestore, initialize_app
-import tempfile
-from urllib.parse import quote
 
+# --- AWS S3 Imports (if used) ---
+import boto3
+from botocore.exceptions import ClientError
 
 
 load_dotenv()
@@ -7014,6 +7011,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
