@@ -618,8 +618,16 @@
     <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
     <p>{{ seller.bio }}</p>
 </div>
+{# About Section #}
+{% if seller.bio %}
+<div class="about-section">
+    <h3 class="section-title"><i class="fas fa-info-circle"></i> About {{ seller.businessname or seller.username }}</h3>
+    <p>{{ seller.bio }}</p>
+</div>
+{% endif %} {# This closes the 'if seller.bio' block #}
 
-        
+
+{# Contact Information Section #}
 <div class="contact-section">
     <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
     {% if seller.phone_number %}
@@ -659,6 +667,8 @@
     </ul>
 </div>
 {% endif %}
+        
+
 
 {# Business Hours Section #}
 {% if seller.working_days and seller.working_times %}
