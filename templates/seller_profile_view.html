@@ -581,18 +581,30 @@
                     <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
                 {% endif %}
                 <p><i class="fas fa-calendar-days"></i> <strong>Joined:</strong> {{ seller.created_at }}</p>
+                
                 <p>
-                    <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
-                    <span class="rating-stars">
-                        {% for i in range(seller.rating|round(0, 'floor')|int) %}
-                            <i class="fas fa-star"></i>
-                        {% endfor %}
-                        {% for i in range(5 - (seller.rating|round(0, 'floor')|int)) %}
-                            <i class="far fa-star"></i> {# Outline star for unrated #}
-                        {% endfor %}
-                    </span>
-                    ({{ seller.review_count }} Reviews)
-                </p>
+    <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
+    <span class="rating-stars">
+        {% if seller['rating'] is not none %}
+            {% for i in range(seller['rating']|round(0, 'floor')|int) %}
+                <i class="fas fa-star"></i>
+            {% endfor %}
+            {% for i in range(5 - (seller['rating']|round(0, 'floor')|int)) %}
+                <i class="far fa-star"></i> {# Outline star for unrated #}
+            {% endfor %}
+        {% else %}
+            {% for i in range(5) %}
+                <i class="far fa-star"></i>
+            {% endfor %}
+        {% endif %}
+    </span>
+    ({{ seller['review_count'] | default(0) }} Reviews)
+</p>
+                
+                
+                
+                
+                
                 {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
                 {# Add a hidden input or a data attribute to the profile-header itself #}
                 <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
