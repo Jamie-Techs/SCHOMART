@@ -101,7 +101,7 @@ try:
     # Initialize Firestore and Storage clients
     db = admin_firestore.client()
     # Corrected line: Explicitly get the bucket using its name
-    admin_storage = storage.bucket('schomart-7a743.firebasestorage.app')
+    admin_storage = storage.bucket()
 
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
@@ -7012,6 +7012,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
