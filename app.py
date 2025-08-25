@@ -2767,85 +2767,59 @@ def advert_detail(advert_id):
 
 
 
-# Assuming your other imports and setup are already in place
-# ...
 
-@app.route('/seller_profile/<seller_id>')
+
+
+
+
+@app.route('/seller/<string:seller_id>')
+@login_required
 def seller_profile_view(seller_id):
-    current_user_id = session.get('user_id')
-    seller_info = None
-    seller_adverts = []
-    is_following = False
-
+    """
+    Displays the profile of a seller, including their adverts.
+    """
     try:
-        seller_doc_ref = db.collection('users').document(seller_id)
-        seller_doc = seller_doc_ref.get()
+        seller_info = mongo.db.users.find_one_or_404({"_id": ObjectId(seller_id), "account_type": "seller"})
+        seller_adverts = list(mongo.db.adverts.find({"author_id": seller_id, "status": "active"}))
 
-        if not seller_doc.exists:
-            flash("Seller profile not found.", "error")
-            return redirect(url_for('home'))
-        
-        seller_info = seller_doc.to_dict()
+        # Check if the current user is following this seller
+        is_following = False
+        if g.current_user:
+            user_id = g.current_user.get("_id")
+            if user_id:
+                # Assuming your user document has a 'following' list
+                user_doc = mongo.db.users.find_one({"_id": user_id})
+                if user_doc and 'following' in user_doc and seller_id in user_doc['following']:
+                    is_following = True
 
-        profile_picture_filename = seller_info.get('profile_picture')
-        seller_info['profile_picture_url'] = get_profile_picture_url(profile_picture_filename)
-        
-        cover_photo_filename = seller_info.get('cover_photo')
-        seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
-        
-        # Add the seller's WhatsApp link to their info dictionary
-        seller_phone = seller_info.get('phone_number')
-        if seller_phone:
-            # We'll generate a simple message link here
-            seller_info['whatsapp_link'] = f"https://wa.me/{seller_phone}"
+        # Ensure seller_info is a dictionary for safety, and get follower count
+        if seller_info:
+            followers_count = mongo.db.users.count_documents({"following": seller_id})
+            seller_info['followers_count'] = followers_count
 
-        if seller_info.get('created_at') and hasattr(seller_info['created_at'], 'to_datetime'):
-            seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
-
-        # ... (rest of your existing code for reviews, etc.)
-
-        if current_user_id:
-            followers_query = db.collection('followers').where('follower_id', '==', current_user_id).where('followed_id', '==', seller_id).limit(1)
-            is_following = len(list(followers_query.stream())) > 0
-
-        # ✨ REVISED QUERY: Use .where() to filter by published status
-        adverts_ref = db.collection('adverts').where('user_id', '==', seller_id).where('status', '==', 'published').order_by('created_at', direction=firestore.Query.DESCENDING)
-        
-        seller_adverts = []
-        for advert_doc in adverts_ref.stream():
-            advert = advert_doc.to_dict()
-            advert['id'] = advert_doc.id
-            
-            if advert.get('main_image'):
-                blob = admin_storage.blob(advert['main_image'])
-                if blob.exists():
-                    advert['display_image'] = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-                else:
-                    advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
+        # Correctly fetch the image URL for each advert, adding a fallback
+        for advert in seller_adverts:
+            main_image_url = advert.get('main_image')
+            if main_image_url:
+                advert['display_image'] = main_image_url
             else:
                 advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
 
-            if advert.get('created_at') and hasattr(advert['created_at'], 'to_datetime'):
-                advert['created_at'] = advert['created_at'].strftime('%Y-%m-%d %H:%M')
-            if advert.get('expires_at') and hasattr(advert['expires_at'], 'to_datetime'):
-                advert['expires_at'] = advert['expires_at'].strftime('%Y-%m-%d %H:%M')
+        # Pass the data to the template
+        return render_template(
+            'seller_profile_view.html',
+            seller=seller_info,
+            adverts=seller_adverts,
+            is_following=is_following,
+            current_user_id=g.current_user.get('_id') if g.current_user else None
+        )
 
-            # We'll use the URL of the advert details page as the message content
-            advert_url = url_for('advert_detail', advert_id=advert['id'], _external=True)
-            pre_filled_message = f"Hello, I am interested in this advert from your profile: {advert_url}"
-            advert['whatsapp_link_with_message'] = f"https://wa.me/{seller_phone}?text={quote(pre_filled_message)}"
-            
-            seller_adverts.append(advert)
-
-        return render_template('seller_profile_view.html',
-                               seller=seller_info,
-                               adverts=seller_adverts,
-                               is_following=is_following,
-                               current_user_id=current_user_id)
     except Exception as e:
-        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
-        flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
+        # Log the detailed error
+        app.logger.error(f"Unexpected error in seller_profile_view for user {g.current_user.get('_id') if g.current_user else 'unknown'}: {e}")
+        flash('An unexpected error occurred. Please try again later.', 'error')
         return redirect(url_for('home'))
+
 
 
 
@@ -6979,6 +6953,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
