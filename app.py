@@ -2771,18 +2771,88 @@ def advert_detail(advert_id):
 
 
 
+@app.route('/seller_profile/<seller_id>')
+def seller_profile_view(seller_id):
+    current_user_id = session.get('user_id')
+    
+    # 🐞 CRITICAL FIX: The following block of code is what causes the malfunction.
+    # It redirects the seller to their personal page. Removing it allows them
+    # to view their own public-facing profile.
+    # if current_user_id == seller_id:
+    #     return redirect(url_for('profile'))
 
+    seller_info = None
+    seller_adverts = []
+    is_following = False
 
+    try:
+        seller_doc_ref = db.collection('users').document(seller_id)
+        seller_doc = seller_doc_ref.get()
 
+        if not seller_doc.exists:
+            flash("Seller profile not found.", "error")
+            return redirect(url_for('home'))
+        
+        seller_info = seller_doc.to_dict()
 
+        # ✨ CORRECTED: Use your existing helper functions for generating image URLs.
+        # This assumes your Firestore document stores a Cloud Storage path.
+        profile_picture_filename = seller_info.get('profile_picture')
+        seller_info['profile_picture_url'] = get_profile_picture_url(profile_picture_filename)
+        
+        cover_photo_filename = seller_info.get('cover_photo')
+        seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
 
+        # Convert Firestore Timestamps to a formatted string for display
+        if seller_info.get('created_at') and isinstance(seller_info['created_at'], firestore.Timestamp):
+            seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
 
+        # Get seller's average rating and review count from the 'reviews' collection
+        reviews_ref = db.collection('reviews').where('reviewee_id', '==', seller_id)
+        reviews = reviews_ref.stream()
+        
+        total_rating = 0
+        review_count = 0
+        for review in reviews:
+            total_rating += review.to_dict().get('rating', 0)
+            review_count += 1
+        
+        seller_info['rating'] = total_rating / review_count if review_count > 0 else 0.0
+        seller_info['review_count'] = review_count
 
+        if current_user_id:
+            followers_query = db.collection('followers').where('follower_id', '==', current_user_id).where('followed_id', '==', seller_id).limit(1)
+            is_following = len(list(followers_query.stream())) > 0
 
+        # Fetch only published/active adverts for this seller
+        adverts_ref = db.collection('adverts').where('user_id', '==', seller_id).where('status', '==', 'published').order_by('created_at', direction=firestore.Query.DESCENDING)
+        
+        seller_adverts = []
+        for advert_doc in adverts_ref.stream():
+            advert = advert_doc.to_dict()
+            advert['id'] = advert_doc.id
+            # ✨ CORRECTED: Use your existing helper function for the main advert image
+            if advert.get('main_image'):
+                advert['main_image_url'] = get_advert_image_url(advert['main_image'])
+            else:
+                advert['main_image_url'] = url_for('static', filename='images/default_advert_image.png')
+            
+            if advert.get('created_at') and isinstance(advert['created_at'], firestore.Timestamp):
+                advert['created_at'] = advert['created_at'].strftime('%Y-%m-%d %H:%M')
+            if advert.get('expires_at') and isinstance(advert['expires_at'], firestore.Timestamp):
+                advert['expires_at'] = advert['expires_at'].strftime('%Y-%m-%d %H:%M')
+            
+            seller_adverts.append(advert)
 
-
-
-
+        return render_template('seller_profile_view.html',
+                               seller=seller_info,
+                               adverts=seller_adverts,
+                               is_following=is_following,
+                               current_user_id=current_user_id)
+    except Exception as e:
+        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
+        flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
+        return redirect(url_for('home'))
 
 
 
@@ -3434,92 +3504,6 @@ def upload_message_file():
             
             
             
-            
-@app.route('/seller_profile/<seller_id>')
-def seller_profile_view(seller_id):
-    current_user_id = session.get('user_id')
-    
-    # If the current user is the seller, redirect them to their full profile
-    if current_user_id == seller_id:
-        # Note: You need to have a 'profile' route defined for this to work
-        return redirect(url_for('profile'))
-
-    seller_info = None
-    seller_adverts = []
-    is_following = False
-
-    try:
-        # Fetch public seller information from the 'users' collection
-        # Firestore uses document references for single items.
-        seller_doc_ref = db.collection('users').document(seller_id)
-        seller_doc = seller_doc_ref.get()
-
-        if not seller_doc.exists:
-            flash("Seller profile not found.", "error")
-            return redirect(url_for('home'))
-        
-        seller_info = seller_doc.to_dict()
-
-        # Construct full URLs for profile and cover pictures.
-        # This assumes your file paths are relative to a 'static' folder.
-        seller_info['profile_picture_url'] = url_for('static', filename=f'uploads/profile_pictures/{seller_info.get("profile_picture", "default_profile.png")}')
-        seller_info['cover_photo_url'] = url_for('static', filename=f'uploads/cover_photos/{seller_info.get("cover_photo")}') if seller_info.get('cover_photo') else None
-
-        # Convert Firestore Timestamps to a formatted string for display
-        if seller_info.get('created_at') and isinstance(seller_info['created_at'], firestore.Timestamp):
-            seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
-
-        # Get seller's average rating and review count from the 'reviews' collection
-        # Firestore doesn't have a built-in AVG or COUNT. We must query and calculate.
-        reviews_ref = db.collection('reviews').where('reviewee_id', '==', seller_id)
-        reviews = reviews_ref.stream()
-        
-        total_rating = 0
-        review_count = 0
-        for review in reviews:
-            total_rating += review.to_dict().get('rating', 0)
-            review_count += 1
-        
-        seller_info['rating'] = total_rating / review_count if review_count > 0 else 0.0
-        seller_info['review_count'] = review_count
-
-        # Check if the logged-in user is following this seller
-        if current_user_id: # Only check if a user is logged in
-            followers_query = db.collection('followers').where('follower_id', '==', current_user_id).where('followed_id', '==', seller_id).limit(1)
-            is_following = len(list(followers_query.stream())) > 0
-
-        # Fetch only published/active adverts for this seller
-        # Firestore requires an index for this type of query.
-        # Create a composite index on 'user_id', 'status', and 'expires_at'
-        adverts_ref = db.collection('adverts').where('user_id', '==', seller_id).where('status', '==', 'published').where('expires_at', '>', firestore.SERVER_TIMESTAMP).order_by('created_at', direction=firestore.Query.DESCENDING)
-        
-        seller_adverts = []
-        for advert_doc in adverts_ref.stream():
-            advert = advert_doc.to_dict()
-            advert['id'] = advert_doc.id # Add the document ID
-            if advert.get('main_image'):
-                advert['main_image_url'] = url_for('static', filename=f'uploads/{advert["main_image"]}')
-            else:
-                advert['main_image_url'] = url_for('static', filename='default_advert_image.png')
-            
-            # Convert Firestore Timestamps for display
-            if advert.get('created_at') and isinstance(advert['created_at'], firestore.Timestamp):
-                advert['created_at'] = advert['created_at'].strftime('%Y-%m-%d %H:%M')
-            if advert.get('expires_at') and isinstance(advert['expires_at'], firestore.Timestamp):
-                advert['expires_at'] = advert['expires_at'].strftime('%Y-%m-%d %H:%M')
-            
-            seller_adverts.append(advert)
-
-        return render_template('seller_profile_view.html',
-                               seller=seller_info,
-                               adverts=seller_adverts,
-                               is_following=is_following,
-                               current_user_id=current_user_id)
-    except Exception as e:
-        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
-        flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
-        return redirect(url_for('home'))
-    # The 'finally' block with cur.close() is not needed with Firestore client.
 
 
 # --- Helper Functions to fetch data from DB ---
@@ -7005,6 +6989,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
