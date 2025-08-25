@@ -812,6 +812,9 @@ def profile():
 
 
 
+# Assuming your other imports and setup are already in place
+# ...
+
 @app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
@@ -896,13 +899,21 @@ def personal_details():
                 # Handle image uploads
                 profile_picture_file = request.files.get('profile_picture')
                 if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
-                    blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+                    blob_path = f"users/{user_uid}/profile.jpg"
+                    blob = admin_storage.blob(blob_path)
                     blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
+                    
+                    # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
+                    update_data['profile_picture'] = blob_path
                 
                 cover_photo_file = request.files.get('cover_photo')
                 if cover_photo_file and cover_photo_file.filename and allowed_file(cover_photo_file.filename):
-                    blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+                    blob_path_cover = f"users/{user_uid}/cover.jpg"
+                    blob = admin_storage.blob(blob_path_cover)
                     blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
+                    
+                    # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
+                    update_data['cover_photo'] = blob_path_cover
 
                 user_doc_ref.update(update_data)
                 flash('Profile updated successfully!', 'success')
@@ -947,6 +958,11 @@ def personal_details():
         logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
+
+
+
+
 
 
 @app.route('/profile/<username>')
@@ -6971,6 +6987,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
