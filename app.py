@@ -1564,32 +1564,7 @@ def get_school_acronym(state, school):
         logger.error(f"Error getting school acronym for {school} in {state}: {e}")
     return None
 
-def upload_file_to_firebase(file, folder, allowed_extensions=None):
-    """
-    Uploads a file to Firebase Storage.
-    Returns the public URL and filename on success, None otherwise.
-    """
-    if not file or not file.filename:
-        return None, None
 
-    if allowed_extensions and '.' in file.filename and \
-       file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-        logger.warning(f"File upload rejected due to unsupported extension: {file.filename}")
-        raise ValueError("Unsupported file type.")
-
-    filename = secure_filename(file.filename)
-    extension = os.path.splitext(filename)[1]
-    unique_filename = f"{uuid.uuid4()}{extension}"
-    destination_path = f"{folder}/{unique_filename}"
-
-    try:
-        blob = admin_storage.blob(destination_path)
-        blob.upload_from_file(file, content_type=file.content_type)
-        blob.make_public()
-        return blob.public_url, unique_filename
-    except Exception as e:
-        logger.error(f"Failed to upload file to Firebase Storage: {e}")
-        return None, None
 
 
 def get_category_id_from_name(category_name):
@@ -1657,25 +1632,81 @@ def get_user_advert_options(user_id):
             
     return options
 
-def handle_file_uploads(files, user_id, existing_advert=None):
-    main_img_url = existing_advert.get('main_image') if existing_advert else None
-    additional_img_urls = existing_advert.get('additional_images', []) if existing_advert else []
-    video_url = existing_advert.get('video') if existing_advert else None
 
-    if files.get('main_image') and files['main_image'].filename:
-        main_img_url, _ = upload_file_to_firebase(files['main_image'], f'adverts/{user_id}/images')
 
-    if files.getlist("additional_images"):
-        for img in files.getlist("additional_images"):
-            if img.filename:
-                url, _ = upload_file_to_firebase(img, f'adverts/{user_id}/images')
+def upload_file_to_firebase(file, folder):
+    """
+    Uploads a file to Firebase Storage.
+    Returns the public URL of the uploaded file on success, None otherwise.
+    """
+    if not file or not file.filename:
+        return None
+
+    filename = secure_filename(file.filename)
+    extension = os.path.splitext(filename)[1]
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    destination_path = f"{folder}/{unique_filename}"
+
+    try:
+        blob = admin_storage.blob(destination_path)
+        blob.upload_from_file(file, content_type=file.content_type)
+        blob.make_public()
+        return blob.public_url  # Returns only the URL
+    except Exception as e:
+        logger.error(f"Failed to upload file to Firebase Storage: {e}")
+        return None
+
+
+
+def handle_file_uploads(files, user_id, advert_data):
+    """
+    Handles file uploads for a new or existing advert.
+
+    Args:
+        files: The Werkzeug FileStorage dictionary from request.files.
+        user_id: The ID of the current user.
+        advert_data: The existing advert data (for reposting) or an empty dict.
+
+    Returns:
+        A tuple containing (main_image_url, additional_images_urls, video_url)
+    """
+    main_image_url = None
+    additional_images_urls = []
+    video_url = None
+
+    # Handle Main Image Upload
+    main_image_file = files.get('main_image')
+    if main_image_file and main_image_file.filename != '':
+        main_image_url = upload_file_to_firebase(main_image_file, f"adverts/{user_id}/images")
+        if not main_image_url:
+            raise Exception("Main image upload failed.")
+    elif 'main_image' in advert_data:
+        # If no new main image is uploaded, keep the existing one from advert_data
+        main_image_url = advert_data.get('main_image')
+
+    # Handle Additional Images Uploads
+    additional_images_files = files.getlist('additional_images')
+    if additional_images_files:
+        for file in additional_images_files:
+            if file and file.filename != '':
+                url = upload_file_to_firebase(file, f"adverts/{user_id}/images")
                 if url:
-                    additional_img_urls.append(url)
-    
-    if files.get('video') and files['video'].filename:
-        video_url, _ = upload_file_to_firebase(files['video'], f'adverts/{user_id}/videos')
-    
-    return main_img_url, additional_img_urls, video_url
+                    additional_images_urls.append(url)
+    # If editing, you might want to merge with existing additional images
+    # For a simple approach, we'll just use the newly uploaded ones.
+    # To keep existing images, you'd need a more complex form that sends their URLs back.
+
+    # Handle Video Upload
+    video_file = files.get('video')
+    if video_file and video_file.filename != '':
+        video_url = upload_file_to_firebase(video_file, f"adverts/{user_id}/videos")
+        if not video_url:
+            raise Exception("Video upload failed.")
+    elif 'video' in advert_data:
+        # If no new video, keep the existing one
+        video_url = advert_data.get('video')
+
+    return main_image_url, additional_images_urls, video_url
 
 
 
@@ -1740,14 +1771,6 @@ def check_if_saved(user_id, advert_id):
 
 
 
-
-
-
-
-
-
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1759,11 +1782,11 @@ def sell(advert_id=None):
         advert_doc = advert_doc_ref.get()
         if advert_doc.exists:
             advert = advert_doc.to_dict()
-    
+
     user_id = g.current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
-    
+
     advert_data = {}
     is_repost = False
     
@@ -1815,6 +1838,7 @@ def sell(advert_id=None):
             )
         
         try:
+            # Assuming handle_file_uploads returns the full URLs
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
             # --- The updated section to use the new category logic ---
@@ -1833,7 +1857,7 @@ def sell(advert_id=None):
                 "state": form_data.get('state'),
                 "school": form_data.get('school'),
                 "specific_location": form_data.get("specific_location"),
-                "main_image": main_image_url,
+                "main_image": main_image_url, # <-- CRITICAL: This is already the URL from handle_file_uploads
                 "additional_images": additional_images_urls,
                 "video": video_url,
                 "plan_name": selected_option.get("plan_name"),
@@ -1886,7 +1910,12 @@ def sell(advert_id=None):
         form_data=form_data,
         advert_data=advert_data,
         is_repost=is_repost
-)
+    )
+
+
+
+
+
 
 
 
@@ -1931,6 +1960,10 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
+
+
+
+
 
 
 
@@ -6979,6 +7012,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
