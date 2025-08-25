@@ -10,11 +10,11 @@ import logging
 import requests
 import flask
 from io import BytesIO
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from functools import wraps
 from datetime import timedelta, date, timezone, datetime
-import tempfile
-
+from datetime import datetime, timedelta
+from datetime import datetime, UTC
 from flask import (
     Flask,
     request,
@@ -46,82 +46,148 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image
 from flask_apscheduler import APScheduler
 from dotenv import load_dotenv
-
-# --- Firebase and Google Cloud Imports ---
+from firebase_functions import https_fn
 import firebase_admin
-from firebase_admin import (
-    credentials,
-    storage,
-    firestore,
-    auth,
-    exceptions,
-    initialize_app
-)
+from firebase_admin import credentials, storage,  firestore, auth, exceptions, initialize_app
 from firebase_admin.exceptions import FirebaseError
 from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilter
 from google.cloud.firestore_v1 import Increment
-from authlib.integrations.flask_client import OAuth
-from google.oauth2 import service_account
-
-# --- AWS S3 Imports (if used) ---
 import boto3
 from botocore.exceptions import ClientError
+
+from authlib.integrations.flask_client import OAuth
+from google.cloud import storage
+
+from firebase_functions import https_fn
+from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+from botocore.exceptions import ClientError
+import boto3
+import re
+from google.oauth2 import service_account
+from firebase_admin import credentials, firestore as admin_firestore, initialize_app
+import tempfile
+from urllib.parse import quote
+
 
 
 load_dotenv()
 
+
+
 app = Flask(__name__)
+
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
+
 bcrypt = Bcrypt(app)
+
 mail = Mail(app)
+
 oauth = OAuth(app)
+
 socketio = SocketIO(app)
 
+
+
+
+
 try:
-    # Load Firebase credentials from environment
-    raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
-    if not raw_json:
-        raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
 
-    # Write credentials to a temporary file
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
-        temp.write(raw_json)
-        temp.flush()
-        temp_path = temp.name
+# Load Firebase credentials from environment
 
-    # Initialize Firebase Admin SDK with the correct bucket name
-    cred = credentials.Certificate(temp_path)
-    # The storageBucket URL should be the appspot.com URL, not the firebasestorage.app one.
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': 'schomart-7a743.appspot.com'
-    })
+raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
 
-    # Initialize Firestore and Storage clients
-    db = admin_firestore.client()
-    # Corrected line: Explicitly get the bucket with the correct method
-    admin_storage = storage.bucket()
+if not raw_json:
 
-    logging.info("Firebase Firestore and Storage clients initialized successfully.")
+raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
+
+
+
+# Write credentials to a temporary file
+
+with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
+
+temp.write(raw_json)
+
+temp.flush()
+
+temp_path = temp.name
+
+
+
+# Initialize Firebase Admin SDK with correct bucket name
+
+cred = credentials.Certificate(temp_path)
+
+firebase_admin.initialize_app(cred, {
+
+'storageBucket': 'schomart-7a743.firebasestorage.app'
+
+})
+# Initialize Firestore and Storage clients
+
+db = admin_firestore.client()
+
+# Corrected line: Explicitly get the bucket using its name
+
+admin_storage = storage.bucket(schomart-7a743.com)
+
+
+
+logging.info("Firebase Firestore and Storage clients initialized successfully.")
+
+
 
 except Exception as e:
-    logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
-    raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+
+logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
+
+raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
+
+
 
 finally:
-    # Clean up the temporary credentials file
-    if 'temp_path' in locals() and os.path.exists(temp_path):
-        os.remove(temp_path)
+
+# Clean up the temporary credentials file
+
+if 'temp_path' in locals() and os.path.exists(temp_path):
+
+os.remove(temp_path)
+
+
 
 # Configure logging
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 logger = logging.getLogger(__name__)
 
+
+
 # Allowed file types for uploads
+
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
 
+
+
 def allowed_file(filename):
-    """Checks if the uploaded file has an allowed extension."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+"""Checks if the uploaded file has an allowed extension."""
+
+return '.' in filename and filename.rsplit('.', 1)[1]
+
+.lower() in current_app.config['ALLOWED_EXTENSIONS']
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7011,6 +7077,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
