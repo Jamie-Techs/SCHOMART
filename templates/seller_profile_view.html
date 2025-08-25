@@ -584,12 +584,11 @@
                 <p>
                     <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
                     <span class="rating-stars">
-                        {# Use dict.get() with a default value of 0 to prevent errors if the key is missing #}
-                        {% set rating_val = seller.get('rating', 0) %}
-                        {% for i in range(rating_val|round(0, 'floor')|int) %}
+                        {% set rating_value = seller.get('rating', 0) %}
+                        {% for i in range(rating_value|round(0, 'floor')|int) %}
                             <i class="fas fa-star"></i>
                         {% endfor %}
-                        {% for i in range(5 - (rating_val|round(0, 'floor')|int)) %}
+                        {% for i in range(5 - (rating_value|round(0, 'floor')|int)) %}
                             <i class="far fa-star"></i> {# Outline star for unrated #}
                         {% endfor %}
                     </span>
@@ -616,7 +615,7 @@
             <p>{{ seller.bio }}</p>
         </div>
         {% endif %}
-
+        
         {# Contact Information Section #}
         <div class="contact-section">
             <h3 class="section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
@@ -837,6 +836,4 @@
     </script>
 </body>
 </html>
-
-
 
