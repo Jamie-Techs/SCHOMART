@@ -726,7 +726,7 @@
                 <i class="fas fa-phone"></i> Call Seller
             </a>
         {% endif %}
-        <a href="{{ url_for('message_seller_page', seller_id=seller.id, advert_id=advert.id) }}" class="nav-button" title="Message Seller">
+        <a href="{{ url_for('message_seller', seller_id=seller.id, advert_id=advert.id) }}" class="nav-button" title="Message Seller">
             <i class="fas fa-comments"></i> Message Seller
         </a>
         <button id="saveAdvertBtn" onclick="handleSaveToggle('{{ advert.id }}')" class="nav-button save-btn" title="Save or Unsave Advert">
@@ -1045,3 +1045,4 @@
 </body>
 
 </html>
+
