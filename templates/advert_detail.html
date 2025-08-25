@@ -647,7 +647,7 @@
         </a>
     </div>
     <div class="seller-info">
-    <a href="{{ url_for('seller_profile_view', user_id=seller.id) }}" class="button view-profile-button">
+    <a href="{{ url_for('seller_profile_view',seller_id=seller.id) }}" class="button view-profile-button">
         {% if is_owner %}
             View My Profile
         {% else %}
@@ -1056,6 +1056,7 @@
 </body>
 
 </html>
+
 
 
 
