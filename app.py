@@ -2854,7 +2854,10 @@ def seller_profile_view(seller_id):
 
 
 
-
+@app.route('/subscribe')
+def subscribe():
+    # Add your logic for the subscription page here
+    return "This is the subscription page."
 
 
 
@@ -3123,12 +3126,6 @@ def messages():
             
             
             
-            
-            
-@app.route('/subscribe')
-def subscribe():
-    # Your subscription logic here
-    return render_template('subscribe.html')
 
 
 # --- Helper Functions to fetch data from DB ---
@@ -6614,6 +6611,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
