@@ -69,7 +69,8 @@ from firebase_admin import credentials, firestore as admin_firestore, initialize
 import tempfile
 from urllib.parse import quote
 
- 
+
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -78,7 +79,6 @@ bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
-
 
 try:
     # Load Firebase credentials from environment
@@ -92,15 +92,16 @@ try:
         temp.flush()
         temp_path = temp.name
 
-    # Initialize Firebase Admin SDK with correct bucket name
+    # Initialize Firebase Admin SDK with the correct bucket name
     cred = credentials.Certificate(temp_path)
+    # The storageBucket URL should be the appspot.com URL, not the firebasestorage.app one.
     firebase_admin.initialize_app(cred, {
-        'storageBucket': 'schomart-7a743.firebasestorage.app'
+        'storageBucket': 'schomart-7a743.appspot.com'
     })
 
     # Initialize Firestore and Storage clients
     db = admin_firestore.client()
-    # Corrected line: Explicitly get the bucket using its name
+    # Corrected line: Explicitly get the bucket with the correct method
     admin_storage = storage.bucket()
 
     logging.info("Firebase Firestore and Storage clients initialized successfully.")
@@ -123,7 +124,8 @@ app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 
 
 def allowed_file(filename):
     """Checks if the uploaded file has an allowed extension."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 
 
 
@@ -7012,6 +7014,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
