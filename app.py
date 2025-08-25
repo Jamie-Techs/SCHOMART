@@ -486,31 +486,49 @@ def get_unique_id():
 
 
 
-def get_profile_picture_url(profile_picture_filename_str):
-    """Generates a public URL for a profile picture from Firebase Storage."""
-    if not profile_picture_filename_str or not cloud_storage:
-        return url_for('static', filename='images/default_profile.png')
-    
-    blob_path = f"profile_pictures/{profile_picture_filename_str}"
-    blob = cloud_storage.blob(blob_path)
 
-    if blob.exists():
-        return blob.public_url
-    else:
+# Assuming 'admin_storage' and 'db' are initialized globally
+
+def get_profile_picture_url(profile_picture_filename):
+    """
+    Generates a signed URL for a profile picture from a Cloud Storage filename.
+    """
+    if not profile_picture_filename:
+        # Return a default image if no filename is provided
         return url_for('static', filename='images/default_profile.png')
+
+    try:
+        # Use the correct variable name 'admin_storage'
+        blob = admin_storage.blob(profile_picture_filename)
+        if blob.exists():
+            return blob.generate_signed_url(timedelta(minutes=15), method='GET')
+        else:
+            return url_for('static', filename='images/default_profile.png')
+    except Exception as e:
+        logger.error(f"Error generating profile pic URL for {profile_picture_filename}: {e}")
+        return url_for('static', filename='images/default_profile.png')
+
 
 def get_cover_photo_url(cover_photo_filename_str):
     """Generates a public URL for a cover photo from Firebase Storage."""
-    if not cover_photo_filename_str or not cloud_storage:
+    if not cover_photo_filename_str:
         return url_for('static', filename='images/no-photo-selected.png')
         
-    blob_path = f"cover_photos/{cover_photo_filename_str}"
-    blob = cloud_storage.blob(blob_path)
+    try:
+        # Use the correct variable name 'admin_storage'
+        # The path should match how you saved it in the personal_details route.
+        blob_path = cover_photo_filename_str 
+        blob = admin_storage.blob(blob_path)
     
-    if blob.exists():
-        return blob.public_url
-    else:
+        if blob.exists():
+            # Generate a signed URL for a limited time
+            return blob.generate_signed_url(timedelta(minutes=15), method='GET')
+        else:
+            return url_for('static', filename='images/no-photo-selected.png')
+    except Exception as e:
+        logging.error(f"Error generating cover photo URL for {cover_photo_filename_str}: {e}")
         return url_for('static', filename='images/no-photo-selected.png')
+
 
 
 
@@ -6987,6 +7005,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
