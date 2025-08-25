@@ -25,11 +25,18 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .top-navigation {
-            display: flex;
-            justify-content: flex-start; /* Align items to the start (left) */
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+    display: flex;
+    justify-content: flex-start; /* Default for larger screens */
+    flex-wrap: wrap; /* Allows buttons to wrap to a new line */
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+    .top-navigation {
+        justify-content: center; /* Center buttons on smaller screens */
+    }
+            }
         /* Define .nav-button style to be used by all buttons with icons */
         .nav-button { /* Apply common styles for all interactive buttons */
             background-color: #006B3C;
@@ -640,9 +647,9 @@
 
     <div class="seller-info">
         <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ seller.profile_picture }}" alt="{{ seller.full_name }}'s Profile" class="profile-pic">
+            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-picture" onerror="this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=No+Image';">
             <div class="seller-details">
-                <h3>{{ seller.full_name }}</h3>
+                <h3>{{ seller.username }}</h3>
 
                 {# REMOVED: Verification Status as all users are now verified #}
                 
@@ -726,8 +733,8 @@
                 <i class="fas fa-phone"></i> Call Seller
             </a>
         {% endif %}
-        <a href="{{ url_for('message_seller', seller_id=seller.id, advert_id=advert.id) }}" class="nav-button" title="Message Seller">
-            <i class="fas fa-comments"></i> Message Seller
+        <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="button message-seller-button">
+    Message Seller
         </a>
         <button id="saveAdvertBtn" onclick="handleSaveToggle('{{ advert.id }}')" class="nav-button save-btn" title="Save or Unsave Advert">
             {% if is_saved %}
@@ -1045,5 +1052,6 @@
 </body>
 
 </html>
+
 
 
