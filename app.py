@@ -2669,23 +2669,20 @@ def advert_detail(advert_id):
             abort(404)
 
         # Step 2: Fetch seller info and attach the profile picture URL.
+        # Use a single variable for consistency: seller_id
         seller_id = advert.get('user_id')
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
             seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'rating': 0.0, 'review_count': 0}
-            # Provide a default URL as a fallback.
             seller['profile_picture'] = url_for('static', filename='images/default_profile.png')
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
 
-            # CRITICAL FIX: Get the filename from Firestore and use the helper function
-            # to get the full public URL.
             profile_picture_filename = seller.get('profile_picture')
             seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
-
-            # Calculate and attach the seller's rating and review count
+            
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
             review_count = 0
@@ -2717,7 +2714,6 @@ def advert_detail(advert_id):
             if reviewer_info.exists:
                 reviewer_data = reviewer_info.to_dict()
                 review_data['reviewer_username'] = reviewer_data.get('full_name', 'Anonymous')
-                # Also convert the reviewer's profile picture filename to a URL.
                 reviewer_profile_filename = reviewer_data.get('profile_picture')
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(reviewer_profile_filename)
             reviews.append(review_data)
@@ -2737,6 +2733,10 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
 
 
 
@@ -6960,6 +6960,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
