@@ -822,15 +822,15 @@
         <div class="modal-content contact-options-modal-content">
             <span class="close" onclick="document.getElementById('contactOptionsModal').style.display='none'">&times;</span>
             <h3>Contact Seller</h3>
-            <p>Contact Options for {{ user.username }} ({{ user.phone_number }}):</p> {# Display phone number here #}
-            <a href="tel:{{ user.phone_number }}" class="contact-option-btn">
-                <i class="fas fa-phone"></i> Call {{ user.phone_number }}
+            <p>Contact Options for {{ seller.username }} ({{ seller.phone_number }}):</p> {# Display phone number here #}
+            <a href="tel:{{ seller.phone_number }}" class="contact-option-btn">
+                <i class="fas fa-phone"></i> Call {{ seller.phone_number }}
             </a>
-            <a href="https://wa.me/{{ user.phone_number }}" target="_blank" class="contact-option-btn">
-                <i class="fab fa-whatsapp"></i> WhatsApp {{ user.phone_number }}
+            <a href="https://wa.me/{{ seller.phone_number }}" target="_blank" class="contact-option-btn">
+                <i class="fab fa-whatsapp"></i> WhatsApp {{ seller.phone_number }}
             </a>
             {# You can add more options here if needed, e.g., SMS #}
-            {# <a href="sms:{{ user.phone_number }}" class="contact-option-btn">Send SMS</a> #}
+            {# <a href="sms:{{ seller.phone_number }}" class="contact-option-btn">Send SMS</a> #}
         </div>
     </div>
 
@@ -1045,4 +1045,5 @@
 </body>
 
 </html>
+
 
