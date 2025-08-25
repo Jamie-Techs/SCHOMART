@@ -646,34 +646,38 @@
     </div>
 
     <div class="seller-info">
-        <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+    <a href="{{ url_for('seller_profile', user_id=seller.id) }}" class="button view-profile-button">
+        {% if is_owner %}
+            View My Profile
+        {% else %}
+            View Seller Profile
+        {% endif %}
+    </a>
+    
+    <div style="display: flex; align-items: center; margin-top: 10px;">
+        <a href="{{ url_for('seller_profile', user_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
             <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-picture" onerror="this.src='https://placehold.co/100x100/A0A0A0/FFFFFF?text=No+Image';">
             <div class="seller-details">
                 <h3>{{ seller.username }}</h3>
-
-                {# REMOVED: Verification Status as all users are now verified #}
-                
                 <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
-
-                {# Note: This old logic for rating may need to be updated depending on how you calculate it now #}
                 <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
-
-                {# You can keep the rest of the seller info like badge and subscription if you still have it in your data model #}
-
-                {% if current_user_id and current_user_id != seller.id %}
-                    <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')">
-                        <button class="follow-btn" type="submit" id="followButton">
-                            {% if is_following %}
-                                <i class="fas fa-user-minus"></i> Unfollow
-                            {% else %}
-                                <i class="fas fa-user-plus"></i> Follow
-                            {% endif %}
-                        </button>
-                    </form>
-                {% endif %}
             </div>
         </a>
+
+        {% if current_user_id and current_user_id != seller.id %}
+            <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
+                <button class="follow-btn" type="submit" id="followButton">
+                    {% if is_following %}
+                        <i class="fas fa-user-minus"></i> Unfollow
+                    {% else %}
+                        <i class="fas fa-user-plus"></i> Follow
+                    {% endif %}
+                </button>
+            </form>
+        {% endif %}
     </div>
+</div>
+
 
     <div class="media-gallery">
         <div class="image-slider">
@@ -1052,6 +1056,7 @@
 </body>
 
 </html>
+
 
 
 
