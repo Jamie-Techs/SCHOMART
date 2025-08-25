@@ -71,113 +71,56 @@ from urllib.parse import quote
 
 
 
+ 
+
 load_dotenv()
 
-
-
 app = Flask(__name__)
-
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 
 bcrypt = Bcrypt(app)
-
 mail = Mail(app)
-
 oauth = OAuth(app)
-
 socketio = SocketIO(app)
 
-
-
-
-
 try:
+    raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if not raw_json:
+        raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
 
-# Load Firebase credentials from environment
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
+        temp.write(raw_json)
+        temp.flush()
+        temp_path = temp.name
 
-raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    cred = credentials.Certificate(temp_path)
+    initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
 
-if not raw_json:
+    # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
+    db = admin_firestore.client()
 
-raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
-
-
-
-# Write credentials to a temporary file
-
-with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
-
-temp.write(raw_json)
-
-temp.flush()
-
-temp_path = temp.name
-
-
-
-# Initialize Firebase Admin SDK with correct bucket name
-
-cred = credentials.Certificate(temp_path)
-
-firebase_admin.initialize_app(cred, {
-
-'storageBucket': 'schomart-7a743.firebasestorage.app'
-
-})
-# Initialize Firestore and Storage clients
-
-db = admin_firestore.client()
-
-# Corrected line: Explicitly get the bucket using its name
-
-admin_storage = storage.bucket(schomart-7a743.com)
-
-
-
-logging.info("Firebase Firestore and Storage clients initialized successfully.")
-
-
+    # --- THIS LINE IS THE CORRECT ADDITION FOR YOUR STORAGE CLIENT. ---
+    admin_storage = storage.bucket()
+    
+    logging.info("Firebase Firestore and Storage clients initialized successfully.")
 
 except Exception as e:
-
-logging.error(f"Failed to initialize Firebase: {e}", exc_info=True)
-
-raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
-
-
-
+    logging.error(f"Failed to initialize Firebase: {e}")
+    raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
 finally:
-
-# Clean up the temporary credentials file
-
-if 'temp_path' in locals() and os.path.exists(temp_path):
-
-os.remove(temp_path)
-
-
-
+    if 'temp_path' in locals() and os.path.exists(temp_path):
+        os.remove(temp_path)
+        
 # Configure logging
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+                                        
 logger = logging.getLogger(__name__)
 
-
-
-# Allowed file types for uploads
-
+# Note: Local file storage configurations are now obsolete, but kept for context.
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
 
-
-
 def allowed_file(filename):
-
-"""Checks if the uploaded file has an allowed extension."""
-
-return '.' in filename and filename.rsplit('.', 1)[1]
-
-.lower() in current_app.config['ALLOWED_EXTENSIONS']
-
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
 
@@ -1698,14 +1641,18 @@ def get_user_advert_options(user_id):
     return options
 
 
-
-def upload_file_to_firebase(file, folder):
+def upload_file_to_firebase(file, folder, allowed_extensions=None):
     """
     Uploads a file to Firebase Storage.
-    Returns the public URL of the uploaded file on success, None otherwise.
+    Returns the public URL and filename on success, None otherwise.
     """
     if not file or not file.filename:
-        return None
+        return None, None
+
+    if allowed_extensions and '.' in file.filename and \
+       file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        logger.warning(f"File upload rejected due to unsupported extension: {file.filename}")
+        raise ValueError("Unsupported file type.")
 
     filename = secure_filename(file.filename)
     extension = os.path.splitext(filename)[1]
@@ -1716,11 +1663,11 @@ def upload_file_to_firebase(file, folder):
         blob = admin_storage.blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
-        return blob.public_url  # Returns only the URL
+        return blob.public_url, unique_filename
     except Exception as e:
         logger.error(f"Failed to upload file to Firebase Storage: {e}")
-        return None
 
+        return None, None
 
 
 def handle_file_uploads(files, user_id, advert_data):
@@ -1832,10 +1779,6 @@ def check_if_saved(user_id, advert_id):
 
 
 
-
-
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1847,11 +1790,11 @@ def sell(advert_id=None):
         advert_doc = advert_doc_ref.get()
         if advert_doc.exists:
             advert = advert_doc.to_dict()
-
+    
     user_id = g.current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
-
+    
     advert_data = {}
     is_repost = False
     
@@ -1903,7 +1846,6 @@ def sell(advert_id=None):
             )
         
         try:
-            # Assuming handle_file_uploads returns the full URLs
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
             # --- The updated section to use the new category logic ---
@@ -1922,7 +1864,7 @@ def sell(advert_id=None):
                 "state": form_data.get('state'),
                 "school": form_data.get('school'),
                 "specific_location": form_data.get("specific_location"),
-                "main_image": main_image_url, # <-- CRITICAL: This is already the URL from handle_file_uploads
+                "main_image": main_image_url,
                 "additional_images": additional_images_urls,
                 "video": video_url,
                 "plan_name": selected_option.get("plan_name"),
@@ -7077,6 +7019,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
