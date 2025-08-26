@@ -2838,7 +2838,7 @@ def seller_profile_view(seller_id):
             advert['id'] = advert_doc.id
             
             if advert.get('main_image'):
-                blob = admin_storage.blob(advert['main_image'])
+                blob = bucket.blob(advert['main_image'])
                 if blob.exists():
                     advert['display_image'] = blob.generate_signed_url(timedelta(minutes=15), method='GET')
                 else:
@@ -6725,6 +6725,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
