@@ -1759,6 +1759,9 @@ def check_if_saved(user_id, advert_id):
 
 
 
+
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1862,9 +1865,7 @@ def sell(advert_id=None):
                 new_advert_ref.set(advert_payload)
                 advert_id_for_payment = new_advert_ref.id
                 
-                # CORRECTED LINE: Pass advert_id directly. The plan_name
-                # will be fetched from the advert document on the payment page.
-                return redirect(url_for('payment', advert_id=advert_id_for_payment))
+                return redirect(url_for('payment', advert_id=advert_id_for_payment, plan_name=selected_option['plan_name']))
             else:
                 advert_payload["status"] = "pending_review"
                 # Use update() if reposting, set() for a new post
@@ -1904,25 +1905,16 @@ def sell(advert_id=None):
 
 
 
-
-
-
-
-
-
-
-# Updated /payment route
-@app.route('/payment/<advert_id>')
+@app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
     advert = get_document("adverts", advert_id)
     if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'pending_payment':
         flash("Invalid payment request.", "error")
         return redirect(url_for('list_adverts'))
-    
+
     plan_name = advert.get('plan_name')
-    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p.get('label') == plan_name), None) # Use 'label' to match advert_payload
-    
+    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
@@ -1941,7 +1933,7 @@ def payment(advert_id):
         "bank_name": "ZENITH",
         "currency": "NGN"
     }
-    
+
     return render_template(
         "payment.html",
         plan_name=plan_name,
@@ -1950,7 +1942,6 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
-
 
 
 
@@ -6736,6 +6727,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
