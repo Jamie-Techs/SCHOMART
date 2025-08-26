@@ -108,7 +108,14 @@ finally:
         os.remove(temp_path)
 
 
+# Note: Local file storage configurations are now obsolete, but kept for context.
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
 
+def allowed_file(filename):
+    """
+    Checks if a file has an allowed extension.
+    """
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
 
@@ -6722,6 +6729,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
