@@ -1944,18 +1944,7 @@ def payment(advert_id):
     )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+# Updated /submit-advert/<advert_id> route
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
 @login_required
 def submit_advert(advert_id):
@@ -1971,20 +1960,22 @@ def submit_advert(advert_id):
 
     # Get the plan duration for expiration calculation
     plan_name = advert.get('plan_name')
-    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
+    # Use advert.get to handle potential missing keys gracefully
+    plan_details = SUBSCRIPTION_PLANS.get(plan_name)
     
-    if not plan:
+    if not plan_details:
         flash("Invalid subscription plan details.", "error")
         return redirect(url_for('list_adverts'))
 
-    duration_days = plan.get("advert_duration_days", 0) 
-    expires_at = datetime.now() + timedelta(days=duration_days)
+    duration_days = plan_details.get("advert_duration_days", 0)
     
+    # It's better to calculate the expiry date at the time of admin publishing.
+    # We will remove 'expires_at' and 'published_at' from here.
+    # The admin review route will set these values once the advert is manually approved.
+
     db.collection("adverts").document(advert_id).update({
-        # Only update the status and expiration date
+        # Only update the status to 'pending_review'
         "status": "pending_review",
-        "published_at": firestore.SERVER_TIMESTAMP,
-        "expires_at": expires_at
     })
     
     flash("Your advert has been submitted for review. Thank you for your payment!", "success")
@@ -1992,6 +1983,10 @@ def submit_advert(advert_id):
 
 
 
+
+
+
+# Updated /adverts route
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -2006,12 +2001,13 @@ def list_adverts():
         advert_data = doc.to_dict()
         advert_data['id'] = doc.id
         
-        # Determine the advert status based on new logic
         status = advert_data.get('status', 'pending_review') # Default to pending_review
         
         # Check for expiration if the advert is published
         if status == 'published' and 'published_at' in advert_data and advert_data['published_at']:
+            # Use 'plan_name' to get details.
             plan_name = advert_data.get('plan_name')
+            # Assuming SUBSCRIPTION_PLANS is a dictionary where keys are plan names
             plan_details = SUBSCRIPTION_PLANS.get(plan_name)
             
             if plan_details:
@@ -2020,7 +2016,6 @@ def list_adverts():
                 
                 # Check if published_at is a datetime object, convert if necessary
                 if not isinstance(published_at, datetime):
-                    # Assuming it's a Firestore Timestamp, convert it
                     published_at = published_at.to_datetime()
                 
                 # Use timedelta correctly
@@ -2051,9 +2046,28 @@ def list_adverts():
         advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
         
         # Check and format 'created_at' using the correct datetime reference
-        advert_data['created_at'] = advert_data.get('created_at', 'N/A')
-        if advert_data['created_at'] != 'N/A' and isinstance(advert_data['created_at'], datetime):
-            advert_data['created_at'] = advert_data['created_at'].strftime('%Y-%m-%d %H:%M')
+        created_at = advert_data.get('created_at')
+        if created_at and isinstance(created_at, datetime):
+            advert_data['created_at'] = created_at.strftime('%Y-%m-%d %H:%M')
+        elif created_at:
+            advert_data['created_at'] = created_at.to_datetime().strftime('%Y-%m-%d %H:%M')
+        else:
+            advert_data['created_at'] = 'N/A'
+            
+        # --- Add a key to control button display in the template ---
+        if advert_data['status'] == 'published':
+            advert_data['button_text'] = 'View Advert'
+            advert_data['button_url'] = url_for('advert_detail', advert_id=advert_data['id'])
+        elif advert_data['status'] == 'pending_payment':
+            advert_data['button_text'] = 'Make Payment'
+            advert_data['button_url'] = url_for('payment', advert_id=advert_data['id'])
+        elif advert_data['status'] == 'pending_review':
+            advert_data['button_text'] = 'Pending Review'
+            advert_data['button_url'] = '#' # Not a clickable link
+        elif advert_data['status'] == 'expired':
+            advert_data['button_text'] = 'Expired'
+            advert_data['button_url'] = '#'
+        # --- End of button logic addition ---
             
         adverts.append(advert_data)
     
@@ -2062,41 +2076,12 @@ def list_adverts():
         delete_advert_and_data(advert_id) # Call a new helper function
         
     return render_template("list_adverts.html", adverts=adverts)
-    
-def delete_advert_and_data(advert_id):
-    """Deletes an advert document and its associated images."""
-    try:
-        advert_ref = db.collection('adverts').document(advert_id)
-        advert_doc = advert_ref.get()
-        if not advert_doc.exists:
-            return False, 'Advert not found.'
 
-        advert_data = advert_doc.to_dict()
-        main_image = advert_data.get('main_image')
-        other_images = advert_data.get('other_images', [])
 
-        bucket = storage.bucket()
-        # Delete main image if it exists
-        if main_image:
-            main_image_path = main_image.split('/')[-1]
-            blob = bucket.blob(main_image_path)
-            if blob.exists():
-                blob.delete()
-        
-        # Delete other images
-        for img_url in other_images:
-            img_path = img_url.split('/')[-1]
-            blob = bucket.blob(img_path)
-            if blob.exists():
-                blob.delete()
-        
-        # Delete Firestore document
-        advert_ref.delete()
-        return True, 'Advert and images deleted successfully.'
 
-    except Exception as e:
-        print(f"Error deleting advert {advert_id}: {e}")
-        return False, f'An error occurred: {e}'
+
+
+
 
 @app.route('/advert/pause/<advert_id>', methods=['POST'])
 @login_required
@@ -6727,6 +6712,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
