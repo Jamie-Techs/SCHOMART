@@ -1613,18 +1613,15 @@ def get_user_advert_options(user_id):
     return options
 
 
-def upload_file_to_firebase(file, folder, allowed_extensions=None):
+
+
+def upload_file_to_firebase(file, folder):
     """
     Uploads a file to Firebase Storage.
-    Returns the public URL and filename on success, None otherwise.
+    Returns the public URL of the uploaded file on success, None otherwise.
     """
     if not file or not file.filename:
-        return None, None
-
-    if allowed_extensions and '.' in file.filename and \
-       file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
-        logger.warning(f"File upload rejected due to unsupported extension: {file.filename}")
-        raise ValueError("Unsupported file type.")
+        return None
 
     filename = secure_filename(file.filename)
     extension = os.path.splitext(filename)[1]
@@ -1632,14 +1629,63 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
     destination_path = f"{folder}/{unique_filename}"
 
     try:
-        blob = bucket.blob(destination_path)
+        blob = admin_storage.blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
-        return blob.public_url, unique_filename
+        return blob.public_url
     except Exception as e:
-        logger.error(f"Failed to upload file to Firebase Storage: {e}")
+        logging.error(f"Failed to upload file to Firebase Storage: {e}")
+        return None
 
-        return None, None
+def handle_file_uploads(files, user_id, advert_data):
+    """
+    Handles file uploads for a new or existing advert.
+
+    Args:
+        files: The Werkzeug FileStorage dictionary from request.files.
+        user_id: The ID of the current user.
+        advert_data: The existing advert data (for reposting) or an empty dict.
+
+    Returns:
+        A tuple containing (main_image_url, additional_images_urls, video_url)
+    """
+    main_image_url = None
+    additional_images_urls = []
+    video_url = None
+
+    # Handle Main Image Upload
+    main_image_file = files.get('main_image')
+    if main_image_file and main_image_file.filename != '':
+        main_image_url = upload_file_to_firebase(main_image_file, f"adverts/{user_id}/images")
+        if not main_image_url:
+            raise Exception("Main image upload failed.")
+    elif 'main_image' in advert_data:
+        # If no new main image is uploaded, keep the existing one from advert_data
+        main_image_url = advert_data.get('main_image')
+
+    # Handle Additional Images Uploads
+    additional_images_files = files.getlist('additional_images')
+    if additional_images_files:
+        for file in additional_images_files:
+            if file and file.filename != '':
+                url = upload_file_to_firebase(file, f"adverts/{user_id}/images")
+                if url:
+                    additional_images_urls.append(url)
+    # If editing, you might want to merge with existing additional images
+    # For a simple approach, we'll just use the newly uploaded ones.
+    # To keep existing images, you'd need a more complex form that sends their URLs back.
+
+    # Handle Video Upload
+    video_file = files.get('video')
+    if video_file and video_file.filename != '':
+        video_url = upload_file_to_firebase(video_file, f"adverts/{user_id}/videos")
+        if not video_url:
+            raise Exception("Video upload failed.")
+    elif 'video' in advert_data:
+        # If no new video, keep the existing one
+        video_url = advert_data.get('video')
+
+    return main_image_url, additional_images_urls, video_url
 
 
 
@@ -6674,6 +6720,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
