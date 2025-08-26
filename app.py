@@ -477,7 +477,7 @@ def get_profile_picture_url(profile_picture_filename):
 
     try:
         # Use the correct variable name 'admin_storage'
-        blob = admin_storage.blob(profile_picture_filename)
+        blob = bucket.blob(profile_picture_filename)
         if blob.exists():
             return blob.generate_signed_url(timedelta(minutes=15), method='GET')
         else:
@@ -496,7 +496,7 @@ def get_cover_photo_url(cover_photo_filename_str):
         # Use the correct variable name 'admin_storage'
         # The path should match how you saved it in the personal_details route.
         blob_path = cover_photo_filename_str 
-        blob = admin_storage.blob(blob_path)
+        blob = bucket.blob(blob_path)
     
         if blob.exists():
             # Generate a signed URL for a limited time
@@ -771,7 +771,7 @@ def profile():
         cover_photo_url = ""
 
         try:
-            profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+            profile_blob = bucket.blob(f"users/{user_uid}/profile.jpg")
             if profile_blob.exists():
                 profile_pic_url = profile_blob.generate_signed_url(
                     timedelta(minutes=15), method='GET'
@@ -781,7 +781,7 @@ def profile():
             flash(f"Error loading profile picture: {str(e)}", "error")
 
         try:
-            cover_blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+            cover_blob = bucket.blob(f"users/{user_uid}/cover.jpg")
             if cover_blob.exists():
                 cover_photo_url = cover_blob.generate_signed_url(
                     timedelta(minutes=15), method='GET'
@@ -896,7 +896,7 @@ def personal_details():
                 profile_picture_file = request.files.get('profile_picture')
                 if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
                     blob_path = f"users/{user_uid}/profile.jpg"
-                    blob = admin_storage.blob(blob_path)
+                    blob = bucket.blob(blob_path)
                     blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
                     
                     # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
@@ -905,7 +905,7 @@ def personal_details():
                 cover_photo_file = request.files.get('cover_photo')
                 if cover_photo_file and cover_photo_file.filename and allowed_file(cover_photo_file.filename):
                     blob_path_cover = f"users/{user_uid}/cover.jpg"
-                    blob = admin_storage.blob(blob_path_cover)
+                    blob = bucket.blob(blob_path_cover)
                     blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
                     
                     # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
@@ -924,14 +924,14 @@ def personal_details():
         cover_photo_url = ""
         
         try:
-            profile_blob = admin_storage.blob(f"users/{user_uid}/profile.jpg")
+            profile_blob = bucket.blob(f"users/{user_uid}/profile.jpg")
             if profile_blob.exists():
                 profile_pic_url = profile_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
             logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
             
         try:
-            cover_blob = admin_storage.blob(f"users/{user_uid}/cover.jpg")
+            cover_blob = bucket.blob(f"users/{user_uid}/cover.jpg")
             if cover_blob.exists():
                 cover_photo_url = cover_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
@@ -1150,7 +1150,7 @@ def add_category():
             
             # The path where the file will be stored in your bucket
             blob_path = f"static/category/{filename}"
-            blob = admin_storage.blob(blob_path)
+            blob = bucket.blob(blob_path)
             
             # Upload the file to Firebase Storage
             blob.upload_from_file(file)
@@ -1203,7 +1203,7 @@ def home():
             if image_filename:
                 # Construct the blob path using the saved filename
                 blob_path = f"static/category/{image_filename}"
-                blob = admin_storage.blob(blob_path)
+                blob = bucket.blob(blob_path)
                 
                 if blob.exists():
                     image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
@@ -1632,7 +1632,7 @@ def upload_file_to_firebase(file, folder, allowed_extensions=None):
     destination_path = f"{folder}/{unique_filename}"
 
     try:
-        blob = admin_storage.blob(destination_path)
+        blob = bucket.blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
         return blob.public_url, unique_filename
@@ -2671,7 +2671,7 @@ def advert_detail(advert_id):
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
-            seller = {'id': seller_id, 'full_name': 'Unknown Seller', 'rating': 0.0, 'review_count': 0}
+            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0}
             seller['profile_picture'] = url_for('static', filename='images/default_profile.png')
         else:
             seller = seller_doc.to_dict()
@@ -2713,7 +2713,7 @@ def advert_detail(advert_id):
             reviewer_info = db.collection('users').document(review_data['user_id']).get()
             if reviewer_info.exists:
                 reviewer_data = reviewer_info.to_dict()
-                review_data['reviewer_username'] = reviewer_data.get('full_name', 'Anonymous')
+                review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
                 reviewer_profile_filename = reviewer_data.get('profile_picture')
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(reviewer_profile_filename)
             reviews.append(review_data)
@@ -6674,6 +6674,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
