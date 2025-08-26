@@ -1758,6 +1758,7 @@ def check_if_saved(user_id, advert_id):
 
 
 
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1861,7 +1862,9 @@ def sell(advert_id=None):
                 new_advert_ref.set(advert_payload)
                 advert_id_for_payment = new_advert_ref.id
                 
-                return redirect(url_for('payment', advert_id=advert_id_for_payment, plan_name=selected_option['plan_name']))
+                # CORRECTED LINE: Pass advert_id directly. The plan_name
+                # will be fetched from the advert document on the payment page.
+                return redirect(url_for('payment', advert_id=advert_id_for_payment))
             else:
                 advert_payload["status"] = "pending_review"
                 # Use update() if reposting, set() for a new post
@@ -1897,6 +1900,14 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
+
+
+
+
+
+
 
 
 
@@ -6725,6 +6736,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
