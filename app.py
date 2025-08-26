@@ -91,7 +91,7 @@ try:
 
     # Initialize the Firebase Admin SDK with the credentials
     cred = credentials.Certificate(temp_path)
-    initialize_app(cred, {'storageBucket': 'schomart-7a743.appspot.com'})
+    initialize_app(cred, {'storageBucket': 'schomart-7a743.firebasestorage.app'})
 
     # Get a reference to the Firestore and Storage clients
     db = firestore.client()
@@ -6729,6 +6729,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
