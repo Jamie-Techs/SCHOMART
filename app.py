@@ -1900,29 +1900,18 @@ def sell(advert_id=None):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.route('/payment/<advert_id>', methods=['GET'])
+# Updated /payment route
+@app.route('/payment/<advert_id>')
 @login_required
 def payment(advert_id):
     advert = get_document("adverts", advert_id)
     if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'pending_payment':
         flash("Invalid payment request.", "error")
         return redirect(url_for('list_adverts'))
-
+    
     plan_name = advert.get('plan_name')
-    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
+    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p.get('label') == plan_name), None) # Use 'label' to match advert_payload
+    
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
@@ -1941,7 +1930,7 @@ def payment(advert_id):
         "bank_name": "ZENITH",
         "currency": "NGN"
     }
-
+    
     return render_template(
         "payment.html",
         plan_name=plan_name,
@@ -1950,6 +1939,13 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
+
+
+
+
+
+
+
 
 
 
@@ -6729,6 +6725,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
