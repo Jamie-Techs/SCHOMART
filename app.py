@@ -8,13 +8,14 @@ import time
 import hashlib
 import logging
 import requests
-import flask
+import json
+import tempfile
 from io import BytesIO
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from functools import wraps
-from datetime import timedelta, date, timezone, datetime
-from datetime import datetime, timedelta
-from datetime import datetime, UTC
+from datetime import datetime, timedelta, date, timezone, UTC
+
+import flask
 from flask import (
     Flask,
     request,
@@ -28,7 +29,6 @@ from flask import (
     abort,
     g,
     current_app,
-    json,
 )
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
@@ -46,33 +46,23 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image
 from flask_apscheduler import APScheduler
 from dotenv import load_dotenv
-from firebase_functions import https_fn
+
 import firebase_admin
-from firebase_admin import credentials, storage,  firestore, auth, exceptions, initialize_app
+from firebase_admin import credentials, storage, firestore, auth
 from firebase_admin.exceptions import FirebaseError
 from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilter
 from google.cloud.firestore_v1 import Increment
+from google.oauth2 import service_account
+from google.cloud import storage as gcp_storage
+
+from firebase_functions import https_fn
+
 import boto3
 from botocore.exceptions import ClientError
 
 from authlib.integrations.flask_client import OAuth
-from google.cloud import storage
 
-from firebase_functions import https_fn
-from datetime import datetime, timezone, timedelta
-from dotenv import load_dotenv
-from botocore.exceptions import ClientError
-import boto3
-import re
-from google.oauth2 import service_account
-from firebase_admin import credentials, firestore as admin_firestore, initialize_app
-import tempfile
-from urllib.parse import quote
-
-
-
- 
-
+# --- Application setup ---
 load_dotenv()
 
 app = Flask(__name__)
@@ -83,45 +73,39 @@ mail = Mail(app)
 oauth = OAuth(app)
 socketio = SocketIO(app)
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# --- Firebase initialization ---
 try:
     raw_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
     if not raw_json:
         raise ValueError("FIREBASE_CREDENTIALS_JSON environment variable not set.")
 
+    # Use a temporary file to store credentials for Firebase SDK
     with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as temp:
         temp.write(raw_json)
         temp.flush()
         temp_path = temp.name
 
+    # Initialize the Firebase Admin SDK with the credentials
     cred = credentials.Certificate(temp_path)
     initialize_app(cred, {'storageBucket': 'schomart-7a743.com'})
 
-    # --- THIS LINE WAS THE ISSUE. REVERTED TO YOUR ORIGINAL CORRECT CODE. ---
-    db = admin_firestore.client()
-
-    # --- THIS LINE IS THE CORRECT ADDITION FOR YOUR STORAGE CLIENT. ---
-    admin_storage = storage.bucket()
+    # Get a reference to the Firestore and Storage clients
+    db = firestore.client()
+    bucket = storage.bucket()
     
-    logging.info("Firebase Firestore and Storage clients initialized successfully.")
+    logger.info("Firebase Firestore and Storage clients initialized successfully.")
 
 except Exception as e:
-    logging.error(f"Failed to initialize Firebase: {e}")
+    logger.error(f"Failed to initialize Firebase: {e}")
     raise RuntimeError("Firebase initialization failed. Check your credentials and environment setup.")
 finally:
+    # Clean up the temporary file
     if 'temp_path' in locals() and os.path.exists(temp_path):
         os.remove(temp_path)
-        
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-                                        
-logger = logging.getLogger(__name__)
-
-# Note: Local file storage configurations are now obsolete, but kept for context.
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx', 'mp3', 'wav', 'mp4'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
 
 
 
@@ -6690,6 +6674,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
