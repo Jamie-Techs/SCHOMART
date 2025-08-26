@@ -1629,7 +1629,7 @@ def upload_file_to_firebase(file, folder):
     destination_path = f"{folder}/{unique_filename}"
 
     try:
-        blob = admin_storage.blob(destination_path)
+        blob = bucket.blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
         return blob.public_url
@@ -1637,6 +1637,8 @@ def upload_file_to_firebase(file, folder):
         logging.error(f"Failed to upload file to Firebase Storage: {e}")
         return None
 
+
+                      
 def handle_file_uploads(files, user_id, advert_data):
     """
     Handles file uploads for a new or existing advert.
@@ -6720,6 +6722,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
