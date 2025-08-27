@@ -1405,30 +1405,17 @@ CATEGORIES = {
 
 
 
-# Assuming this is the function causing the error
+# The correct way to count documents in Firestore
 def get_advert_count(user_id):
-    """
-    Counts the number of active adverts for a specific user.
-    """
     try:
-        # Check for active adverts
-        now = datetime.now(timezone.utc)
-        
-        # Use a proper query to get documents
-        active_adverts = db.collection('adverts').where('user_id', '==', user_id).stream()
-        
-        count = 0
-        for advert_doc in active_adverts:
-            advert_data = advert_doc.to_dict()
-            expires_at = advert_data.get('expires_at')
-            # Only count adverts that have not expired
-            if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
-                count += 1
-
-        return count
+        # Use a server-side aggregation query for an accurate count
+        aggregate_query = db.collection('adverts').where('user_id', '==', user_id).count()
+        results = aggregate_query.get()
+        return results[0][0].value
     except Exception as e:
-        logger.error(f"Error getting advert count for user {user_id}: {e}", exc_info=True)
+        logger.error(f"Error getting advert count for user {user_id}: {e}")
         return 0
+
 
 
 
@@ -6731,6 +6718,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
