@@ -2155,46 +2155,6 @@ def delete_advert(advert_id):
 
 
 
-@app.route('/admin/adverts/review')
-@login_required  # This decorator runs first, populating g.current_user
-@admin_required  # This decorator runs second, after g.current_user is available
-def admin_advert_review():
-    """
-    Renders the admin review page with adverts awaiting review,
-    correctly displaying the main image.
-    """
-    adverts_ref = db.collection("adverts")
-    query = adverts_ref.where("status", "==", "pending_review").stream()
-    pending_adverts = []
-
-    for doc in query:
-        advert = doc.to_dict()
-        advert['id'] = doc.id
-
-        user_info = get_user_info(advert['user_id'])
-        advert['seller_username'] = user_info.get('username', 'N/A')
-        advert['seller_email'] = user_info.get('email', 'N/A')
-
-        advert['category_name'] = get_category_name(advert.get('category_id'))
-
-        duration_days = advert.get("advert_duration_days")
-        if duration_days and advert.get("created_at"):
-            advert['calculated_expiry'] = datetime.now() + timedelta(days=duration_days)
-        else:
-            advert['calculated_expiry'] = None
-
-        main_image_url = advert.get('main_image')
-        if main_image_url:
-            advert['display_image'] = main_image_url
-        else:
-            advert['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
-
-        advert['payment_reference'] = advert.get('payment_reference', 'N/A')
-        
-        pending_adverts.append(advert)
-
-    return render_template('admin_review.html', adverts=pending_adverts)
-
 
 
 
@@ -2239,7 +2199,6 @@ def admin_advert_review():
         pending_adverts.append(advert)
 
     return render_template('admin_review.html', adverts=pending_adverts)
-
 
 
 
@@ -6765,6 +6724,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
