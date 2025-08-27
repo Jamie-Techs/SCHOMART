@@ -284,17 +284,17 @@
 <body>
     <div class="container">
 
-        <div class="top-navigation">
-    <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
-        <i class="fas fa-arrow-left"></i> Back
-    </button>
-    <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
-        <i class="fas fa-home"></i> Home
-    </a>
-    <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
-        <i class="fas fa-user"></i> Profile
-    </a>
-    <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+        <div class="navigation-buttons">
+            <a href="javascript:history.back()" class="btn-navigation">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{{ url_for('home') }}" class="btn-navigation">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile') }}" class="btn-navigation">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
         <i class="fas fa-bookmark"></i> Saved Adverts
     </a>
     
@@ -309,7 +309,7 @@
         {% endif %}
     </button>
     {% endif %}
-</div>
+        </div>
 
 
         
@@ -492,6 +492,41 @@
                 console.error('Could not copy text: ', err);
             });
         }
+
+// Function to toggle save/unsave state and send API request
+async function toggleSaveAdvert(button, advertId) {
+    const isSaved = button.classList.contains('saved');
+    const endpoint = isSaved ? '/api/unsave_advert' : '/api/save_advert';
+    const action = isSaved ? 'unsaving' : 'saving';
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ advert_id: advertId })
+        });
+        
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            if (isSaved) {
+                // Unsaved successfully, change button state
+                button.classList.remove('saved');
+                button.innerHTML = '<i class="far fa-bookmark"></i> Save';
+            } else {
+                // Saved successfully, change button state
+                button.classList.add('saved');
+                button.innerHTML = '<i class="fas fa-bookmark"></i> Saved';
+            }
+        } else {
+            alert(`Error ${action} advert: ${data.message}`);
+        }
+    } catch (error) {
+        console.error(`Fetch error ${action} advert:`, error);
+        alert('An unexpected error occurred. Please try again.');
+    }
+}
+                                
     </script>
 </body>
 </html>
