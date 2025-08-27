@@ -759,13 +759,18 @@
         <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
             Message Seller
         </a>
-        <button id="saveAdvertBtn" onclick="handleSaveToggle('{{ advert.id }}')" class="nav-button save-btn" title="Save or Unsave Advert">
-            {% if is_saved %}
-                <i class="fas fa-bookmark"></i> Remove from Saved
-            {% else %}
-                <i class="far fa-bookmark"></i> Save Advert
-            {% endif %}
-        </button>
+
+
+        <button class="btn btn-save {% if advert.is_saved %} saved {% endif %}" 
+        onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
+        data-advert-id="{{ advert.id }}">
+    {% if advert.is_saved %}
+        <i class="fas fa-bookmark"></i> Saved
+    {% else %}
+        <i class="far fa-bookmark"></i> Save
+    {% endif %}
+</button>
+        
         <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
             <i class="fas fa-flag"></i> Report Advert
         </button>
@@ -1078,6 +1083,7 @@ async function toggleSaveAdvert(button, advertId) {
 </body>
 
 </html>
+
 
 
 
