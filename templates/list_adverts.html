@@ -393,10 +393,7 @@
                             </form>
                         {% elif advert.status == 'published' %}
                             <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn">View</a>
-                            <form action="{{ url_for('pause_advert', advert_id=advert.id) }}" method="POST">
-                                <button type="submit" class="btn btn-info">Pause</button>
-                            </form>
-                            <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
+                            
                             <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
