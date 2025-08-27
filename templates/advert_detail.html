@@ -632,7 +632,8 @@
     {% endwith %}
     {# End Flash Messages #}
 
-    <div class="top-navigation">
+    
+        <div class="top-navigation">
     <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
         <i class="fas fa-arrow-left"></i> Back
     </button>
@@ -642,7 +643,7 @@
     <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
         <i class="fas fa-user"></i> Profile
     </a>
-    <a href="{{ url_for('saved_adverts') }}" class="nav-button" title="View your Saved Adverts">
+    <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
         <i class="fas fa-bookmark"></i> Saved Adverts
     </a>
     
@@ -657,8 +658,14 @@
         {% endif %}
     </button>
     {% endif %}
-    
 </div>
+        
+
+
+
+
+        
+    
 
  
     <div class="seller-info">
@@ -1071,6 +1078,7 @@ async function toggleSaveAdvert(button, advertId) {
 </body>
 
 </html>
+
 
 
 
