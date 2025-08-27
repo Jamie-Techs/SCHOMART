@@ -613,13 +613,9 @@
             margin-right: 20px;  /* adjust as needed */
         }
     </style>
-
-
     </head>
 <body>
-
 <div class="container">
-
     {# Flash Messages #}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -631,8 +627,8 @@
     {% endif %}
     {% endwith %}
     {# End Flash Messages #}
-
     
+
         <div class="top-navigation">
     <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
         <i class="fas fa-arrow-left"></i> Back
@@ -659,15 +655,13 @@
     </button>
     {% endif %}
 </div>
-        
-
-
-
 
         
+        
+
     
-
  
+
     <div class="seller-info">
     <a href="{{ url_for('seller_profile_view',seller_id=seller.id) }}" class="button view-profile-button">
         
@@ -696,7 +690,6 @@
         {% endif %}
     </div>
     </div>
-
     
     <div class="media-gallery">
         <div class="image-slider">
@@ -706,11 +699,9 @@
             {% if advert.main_image %}
                 <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image">
             {% endif %}
-
             {% for image in advert.additional_images %}
                 <img class="slide" src="{{ image }}" alt="Additional Advert Image">
             {% endfor %}
-
             {% if advert.video %}
                 <video class="slide" controls>
                     <source src="{{ advert.video }}" type="video/mp4">
@@ -718,23 +709,19 @@
                 </video>
             {% endif %}
         </div>
-
         <div class="thumbnail-gallery">
             {% if advert.main_image %}
                 <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
             {% endif %}
-
             {% for image in advert.additional_images %}
                 <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
             {% endfor %}
-
             {% if advert.video %}
                 <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.length }}">
             {% endif %}
         </div>
     </div>
     <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
-
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
     
     <h2>{{ advert.title }}</h2>
@@ -744,12 +731,10 @@
     <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
     <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
     <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
-
     <div class="product-description">
         <h3>Description</h3>
         <p>{{ advert.description }}</p>
     </div>
-
     <div class="contact-actions">
         {% if seller.phone_number %}
             <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
@@ -759,17 +744,15 @@
         <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
             Message Seller
         </a>
-
-
         <button class="save-btn {% if advert.is_saved %} saved {% endif %}" 
-        onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
-        data-advert-id="{{ advert.id }}">
-    {% if advert.is_saved %}
-        <i class="fas fa-bookmark"></i> Saved
-    {% else %}
-        <i class="far fa-bookmark"></i> Save
-    {% endif %}
-</button>
+            onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
+            data-advert-id="{{ advert.id }}">
+            {% if advert.is_saved %}
+                <i class="fas fa-bookmark"></i> Saved
+            {% else %}
+                <i class="far fa-bookmark"></i> Save
+            {% endif %}
+        </button>
         
         <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
             <i class="fas fa-flag"></i> Report Advert
@@ -778,7 +761,6 @@
             <i class="fas fa-share-alt"></i> Share
         </button>
     </div>
-
     <div class="safety-tips">
         <h3>Safety Tips</h3>
         <ul>
@@ -788,7 +770,6 @@
             <li>Keep communication on the platform.</li>
         </ul>
     </div>
-
     <div class="reviews-section">
         <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
         {% if reviews %}
@@ -811,7 +792,6 @@
         {% else %}
             <p>No reviews yet for this advert. Be the first to leave a review!</p>
         {% endif %}
-
         {# Review form... (The form is fine as is, assuming submit_review route exists) #}
         <div class="review-form">
             <h3>Submit Your Review</h3>
@@ -848,8 +828,6 @@
         {% endif %}
     </div>
 </div>
-
-
     {# Modals #}
     {# Contact Options Modal #}
     <div id="contactOptionsModal" class="modal">
@@ -867,7 +845,6 @@
             {# <a href="sms:{{ seller.phone_number }}" class="contact-option-btn">Send SMS</a> #}
         </div>
     </div>
-
     {# Report Advert Modal #}
     <div id="reportModal" class="modal">
         <div class="modal-content">
@@ -880,7 +857,6 @@
             </form>
         </div>
     </div>
-
     {# NEW: Image Viewing Modal #}
     <div id="advertImageViewModal" class="modal">
         <div class="modal-content">
@@ -888,17 +864,13 @@
             <button onclick="closeAdvertImageViewModal()" class="close-modal-btn">Go Back</button>
         </div>
     </div>
-
 </div>
-
 <script>
     let slideIndex = 0;
     const slides = document.querySelectorAll('.image-slider .slide');
     const thumbnails = document.querySelectorAll('.thumbnail-item');
-
     function showSlide(n) {
         if (slides.length === 0) return;
-
         if (n >= slides.length) {
             slideIndex = 0;
         } else if (n < 0) {
@@ -906,7 +878,6 @@
         } else {
             slideIndex = n;
         }
-
         slides.forEach(slide => {
             slide.style.display = 'none';
             if (slide.tagName === 'VIDEO') {
@@ -914,28 +885,23 @@
             }
         });
         thumbnails.forEach(thumb => thumb.classList.remove('active-thumb'));
-
         slides[slideIndex].style.display = 'block';
         if (slides[slideIndex].tagName === 'VIDEO') {
             slides[slideIndex].play(); // Auto-play video when active
         }
         thumbnails[slideIndex].classList.add('active-thumb');
     }
-
     function nextSlide() {
         showSlide(slideIndex + 1);
     }
-
     function prevSlide() {
         showSlide(slideIndex - 1);
     }
-
     thumbnails.forEach(thumb => {
         thumb.addEventListener('click', function() {
             showSlide(parseInt(this.dataset.index));
         });
     });
-
     // --- NEW: Image Viewing Modal Functions ---
     function showAdvertImageViewModal(imageUrl) {
         const modal = document.getElementById('advertImageViewModal');
@@ -943,7 +909,6 @@
         modalImage.src = imageUrl;
         modal.style.display = 'flex'; // Use flex to center content
     }
-
     function closeAdvertImageViewModal() {
         const modal = document.getElementById('advertImageViewModal');
         modal.style.display = 'none';
@@ -954,7 +919,6 @@
             activeVideo.pause();
         }
     }
-
     // Make main slider images clickable to open the modal
     slides.forEach((slide) => {
         if (slide.tagName === 'IMG') { // Only for images, not videos
@@ -963,7 +927,6 @@
             });
         }
     });
-
     // Make image thumbnails clickable to open the modal (already wired above, but confirm)
     thumbnails.forEach((thumb, index) => {
         // Ensure it's an image thumbnail, not a video thumbnail placeholder
@@ -975,24 +938,18 @@
             });
         }
     });
-
     // Initial display
     showSlide(0);
-
     // JavaScript for Follow/Unfollow
     async function handleFollowToggle(event, sellerId) {
         event.preventDefault(); // Prevent default form submission
-
         const followButton = document.getElementById('followButton');
         const isFollowing = followButton.innerHTML.includes('Unfollow'); // Check current state
-
         const action = isFollowing ? 'unfollow' : 'follow';
         const url = `/toggle_follow/${sellerId}?action=${action}`;
-
         try {
             const response = await fetch(url, { method: 'POST' });
             const data = await response.json();
-
             if (data.success) {
                 if (data.is_following) {
                     followButton.innerHTML = '<img src="{{ url_for('static', filename='media/icons/unfollow_icon.png') }}" alt="Unfollow" class="button-icon"> Unfollow';
@@ -1009,13 +966,11 @@
             flashMessage('An unexpected error occurred.', 'error');
         }
     }
-
-   // Function to toggle save/unsave state and send API request
+    // Function to toggle save/unsave state and send API request
 async function toggleSaveAdvert(button, advertId) {
     const isSaved = button.classList.contains('saved');
     const endpoint = isSaved ? '/api/unsave_advert' : '/api/save_advert';
     const action = isSaved ? 'unsaving' : 'saving';
-
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -1024,7 +979,6 @@ async function toggleSaveAdvert(button, advertId) {
         });
         
         const data = await response.json();
-
         if (response.ok && data.success) {
             if (isSaved) {
                 // Unsaved successfully, change button state
@@ -1059,7 +1013,6 @@ async function toggleSaveAdvert(button, advertId) {
             alert(message); // Fallback to alert if no flash container
         }
     }
-
     // Share advert function (using Web Share API if available)
     function shareAdvert() {
         if (navigator.share) {
@@ -1076,27 +1029,10 @@ async function toggleSaveAdvert(button, advertId) {
             prompt("Copy this link to share:", shareText); // Or you could implement a custom share modal
         }
     }
-
     
 </script>
-
 </body>
-
 </html>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
