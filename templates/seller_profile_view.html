@@ -594,7 +594,7 @@
                     </span>
                     ({{ seller.get('review_count', 0) }} Reviews)
                 </p>
-                {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
+           <!--     {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
                 {# Add a hidden input or a data attribute to the profile-header itself #}
                 <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
                     <i class="fas fa-users"></i> <strong>Followers:</strong> <span id="followersCount">{{ followers_count | default(0) }}</span>
@@ -606,7 +606,7 @@
                     {% if is_following %}Unfollow{% else %}Follow{% endif %}
                 </button>
             {% endif %}
-        </div>
+        </div> -->
         
         {# About Section #}
         {% if seller.bio %}
