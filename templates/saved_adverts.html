@@ -546,7 +546,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ advert_id: advertId })
+                body: JSON.stringify({ advert_id: advertId }) // 👈 CORRECTED LINE
             });
             const data = await response.json();
 
