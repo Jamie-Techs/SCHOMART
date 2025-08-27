@@ -283,20 +283,37 @@
 </head>
 <body>
     <div class="container">
-        <div class="navigation-buttons">
-            <a href="javascript:history.back()" class="btn-navigation">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <a href="{{ url_for('home') }}" class="btn-navigation">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="{{ url_for('profile') }}" class="btn-navigation">
-                <i class="fas fa-user"></i> Profile
-            </a>
-            <a href="{{ url_for('saved_adverts') }}" class="btn-navigation">
-                <i class="fas fa-bookmark"></i> Saved Adverts
-            </a>
-        </div>
+
+        <div class="top-navigation">
+    <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
+        <i class="fas fa-home"></i> Home
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
+        <i class="fas fa-user"></i> Profile
+    </a>
+    <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+        <i class="fas fa-bookmark"></i> Saved Adverts
+    </a>
+    
+    {% if g.current_user and g.current_user.is_authenticated and advert %}
+    <button class="nav-button" 
+            onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
+            title="Save or unsave this advert">
+        {% if is_saved %}
+            <i class="fas fa-bookmark"></i> Unsave
+        {% else %}
+            <i class="far fa-bookmark"></i> Save
+        {% endif %}
+    </button>
+    {% endif %}
+</div>
+
+
+        
+        
         <h2>Your Adverts</h2>
         {# Display Flash messages #}
         {% with messages = get_flashed_messages(with_categories=true) %}
