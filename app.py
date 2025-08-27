@@ -1685,19 +1685,26 @@ def check_if_following(follower_id, followee_id):
     
     return follower_doc.exists
 
-# New helper function to check if an advert is saved
 def check_if_saved(user_id, advert_id):
     """
-    Checks if a specific advert has been saved by a user.
+    Checks if a specific advert has been saved by a user using a direct document lookup.
     """
     if not user_id or not advert_id:
         return False
+    
     try:
-        saved_ref = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).get()
-        return len(saved_ref) > 0
+        # Construct the document ID as we do in the unsave_advert route.
+        doc_id = f"{user_id}_{advert_id}"
+        
+        # Get the document reference and check for its existence with a single operation.
+        doc_ref = db.collection('saved_adverts').document(doc_id)
+        return doc_ref.get().exists
+        
     except Exception as e:
         logger.error(f"Error checking if advert {advert_id} is saved for user {user_id}: {e}", exc_info=True)
         return False
+
+
 
 
 def get_subscription_plan(plan_type):
@@ -2660,9 +2667,6 @@ def referral_benefit():
 
 
 
-# You need to make sure you have your existing helper functions like
-# get_profile_picture_url, get_category_name, etc. here as well.
-
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
@@ -2690,12 +2694,10 @@ def advert_detail(advert_id):
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
-            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0}
-            seller['profile_picture'] = url_for('static', filename='images/default_profile.png')
+            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': url_for('static', filename='images/default_profile.png')}
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
-
             profile_picture_filename = seller.get('profile_picture')
             seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
 
@@ -2718,9 +2720,7 @@ def advert_detail(advert_id):
         is_following = False
         is_saved = False
         if current_user_id:
-            # The is_following check remains the same
             is_following = check_if_following(current_user_id, seller['id'])
-            # The is_saved check now uses the new function
             is_saved = check_if_saved(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
@@ -2751,7 +2751,6 @@ def advert_detail(advert_id):
     except Exception as e:
         logger.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
-
 
 
 
@@ -2904,57 +2903,28 @@ def save_advert():
 @app.route('/api/unsave_advert', methods=['POST'])
 @login_required
 def unsave_advert():
-    """
-    Removes a specific advert from the user's saved list.
-    This version is more robust in handling the request data.
-    """
-    advert_id_to_remove = None
-    try:
-        # Step 1: Check the Content-Type header
-        if request.headers.get('Content-Type') == 'application/json':
-            # This is the expected method, attempt to parse JSON
-            data = request.get_json(silent=True)
-            if data:
-                advert_id_to_remove = data.get('advert_id')
-        else:
-            # Fallback for unexpected content types or if request.get_json() fails
-            try:
-                # Attempt to parse raw data from the request body as JSON
-                raw_data = request.data.decode('utf-8')
-                if raw_data:
-                    data = json.loads(raw_data)
-                    advert_id_to_remove = data.get('advert_id')
-            except json.JSONDecodeError:
-                # If it's not JSON, maybe it's URL-encoded or something else
-                advert_id_to_remove = request.form.get('advert_id')
-                if not advert_id_to_remove:
-                    advert_id_to_remove = request.args.get('advert_id')
+    data = request.get_json()
+    advert_id = data.get('advert_id')
+    user_id = g.current_user.id
 
-    except Exception as e:
-        logger.error(f"Error parsing request body for unsave_advert: {e}", exc_info=True)
-        return jsonify({'success': False, 'message': 'Invalid request data.'}), 400
-
-    # Step 2: Validate the advert ID
-    current_user_id = g.current_user.id
-    if not advert_id_to_remove:
-        logging.warning(f"Advert ID required for user {current_user_id}. Data received: {request.data}")
+    if not advert_id:
         return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
 
-    # Step 3: Perform the database operation
     try:
-        doc_ref = db.collection('saved_adverts').document(f'{current_user_id}_{advert_id_to_remove}')
+        # Construct the document ID using the user and advert IDs
+        doc_id = f"{user_id}_{advert_id}"
+        doc_ref = db.collection('saved_adverts').document(doc_id)
         
-        if not doc_ref.get().exists:
-            return jsonify({'success': False, 'message': 'Advert is not in your saved list.'}), 404
-
-        doc_ref.delete()
-        
-        return jsonify({'success': True, 'message': 'Advert removed successfully.'}), 200
-
+        # Check if the document exists before trying to delete it
+        if doc_ref.get().exists:
+            doc_ref.delete()
+            return jsonify({'success': True, 'message': 'Advert successfully unsaved.'})
+        else:
+            return jsonify({'success': False, 'message': 'Advert not found in saved list.'}), 404
+            
     except Exception as e:
-        logger.error(f"Error removing saved advert for user {current_user_id}: {e}", exc_info=True)
-        return jsonify({'success': False, 'message': 'An unexpected error occurred.'}), 500
-
+        logger.error(f"Error unsaving advert: {e}")
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
 
 
 
@@ -6368,6 +6338,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
