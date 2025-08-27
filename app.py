@@ -2091,14 +2091,6 @@ def list_adverts():
 
 
 
-
-
-
-
-
-
-
-
 @app.route('/advert/pause/<advert_id>', methods=['POST'])
 @login_required
 def pause_advert(advert_id):
@@ -2164,13 +2156,6 @@ def delete_advert(advert_id):
         flash(message, 'error')
         
     return redirect(url_for('list_adverts'))
-
-
-
-
-
-
-
 
 
 @app.route('/admin/adverts/review')
@@ -2244,13 +2229,6 @@ def admin_advert_approve():
     return redirect(url_for('admin_advert_review'))
 
 
-
-
-
-
-
-
-
 @app.route('/admin/adverts/reject', methods=['POST'])
 @login_required
 @admin_required
@@ -2278,11 +2256,6 @@ def admin_advert_reject():
         })
 
     return redirect(url_for('admin_advert_review'))
-
-
-
-
-
 
 
 @app.route('/admin/reported_advert/<report_id>')
@@ -2401,12 +2374,6 @@ def take_down_advert(advert_id):
     })
     
     return jsonify({"message": "Advert taken down successfully!"}), 200
-
-
-
-
-
-
 
 
 @app.route('/admin/reported_adverts')
@@ -2871,6 +2838,108 @@ def seller_profile_view(seller_id):
         logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
+
+
+
+@app.route('/saved_adverts')
+@login_required
+def saved_adverts_page():
+    """
+    Displays a list of adverts saved by the current user.
+    """
+    user_id = g.current_user.id
+    saved_adverts_list = []
+
+    try:
+        # Step 1: Get the list of saved advert IDs for the current user
+        saved_ref = db.collection('saved_adverts').where('user_id', '==', user_id).stream()
+        saved_advert_ids = [doc.to_dict()['advert_id'] for doc in saved_ref]
+        
+        # Step 2: If there are saved IDs, fetch the full advert details
+        if saved_advert_ids:
+            for advert_id in saved_advert_ids:
+                advert_doc = db.collection('adverts').document(advert_id).get()
+                if advert_doc.exists:
+                    advert_data = advert_doc.to_dict()
+                    advert_data['id'] = advert_doc.id
+                    # Ensure the correct image URL is used for display
+                    if 'main_image' in advert_data:
+                        advert_data['display_image'] = advert_data['main_image']
+                    else:
+                        advert_data['display_image'] = url_for('static', filename='images/default_advert_image.png')
+                    saved_adverts_list.append(advert_data)
+
+    except Exception as e:
+        logger.error(f"Error fetching saved adverts for user {user_id}: {e}", exc_info=True)
+        flash("An error occurred while loading your saved adverts.", "error")
+
+    return render_template('saved_adverts.html', saved_adverts=saved_adverts_list)
+
+
+@app.route('/api/save_advert', methods=['POST'])
+@login_required
+def save_advert():
+    """Saves an advert to the user's saved list."""
+    user_id = g.current_user.id
+    data = request.get_json()
+    advert_id = data.get('advert_id')
+
+    if not advert_id:
+        return jsonify({"success": False, "message": "Advert ID is required."}), 400
+
+    try:
+        # Check if the advert is already saved to prevent duplicates
+        saved_advert_query = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        
+        if list(saved_advert_query):
+            return jsonify({"success": True, "message": "Advert is already saved."}), 200
+
+        db.collection('saved_adverts').add({
+            'user_id': user_id,
+            'advert_id': advert_id,
+            'saved_at': firestore.SERVER_TIMESTAMP
+        })
+
+        return jsonify({"success": True, "message": "Advert saved successfully."}), 200
+
+    except Exception as e:
+        logger.error(f"Error saving advert for user {user_id}: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred."}), 500
+
+
+
+@app.route('/api/unsave_advert', methods=['POST'])
+@login_required
+def unsave_advert():
+    """Unsaves an advert from the user's saved list."""
+    user_id = g.current_user.id
+    data = request.get_json()
+    advert_id = data.get('advert_id')
+
+    if not advert_id:
+        return jsonify({"success": False, "message": "Advert ID is required."}), 400
+
+    try:
+        # Find the document that matches both the user and advert ID
+        saved_advert_query = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        
+        saved_advert_doc = next(saved_advert_query, None)
+        
+        if saved_advert_doc:
+            db.collection('saved_adverts').document(saved_advert_doc.id).delete()
+            return jsonify({"success": True, "message": "Advert unsaved successfully."}), 200
+        else:
+            return jsonify({"success": False, "message": "Advert not found in saved list."}), 404
+
+    except Exception as e:
+        logger.error(f"Error unsaving advert for user {user_id}: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred."}), 500
+
+
+
+
+
+
 
 
 
@@ -4041,103 +4110,6 @@ def change_phone():
 
 
 
-# --- Helper Functions (Firestore) ---
-
-def get_plan_details(plan_id):
-    """
-    Fetches a single plan's details from the 'plans' Firestore collection by ID.
-    Returns None if the plan is not found.
-    """
-    try:
-        plan_ref = db.collection('plans').document(plan_id)
-        plan_doc = plan_ref.get()
-        if plan_doc.exists:
-            return plan_doc.to_dict()
-        else:
-            return None
-    except exceptions.NotFound:
-        # This is handled by plan_doc.exists, but good to have for robustness
-        logger.error(f"Firestore plan document not found for plan_id {plan_id}.")
-        return None
-    except Exception as e:
-        logger.error(f"Firestore error fetching plan details for plan_id {plan_id}: {e}")
-        return None
-
-
-def get_all_plans_from_db():
-    """Fetches all available subscription plans from the 'plans' collection."""
-    try:
-        plans_ref = db.collection('plans').order_by('amount', direction=firestore.Query.ASCENDING)
-        plans = [doc.to_dict() for doc in plans_ref.stream()]
-        return plans
-    except Exception as e:
-        logger.error(f"Firestore error fetching all plans: {e}")
-        return []
-
-def generate_unique_reference():
-    """Generates a unique payment reference number."""
-    return f"REF-{uuid.uuid4().hex[:10].upper()}-{int(time.time())}"
-
-
-def update_subscription_status(payment_reference, new_status, transaction_amount=None, transaction_currency=None):
-    """
-    Updates the status of a subscription in the 'subscriptions' collection.
-    It first finds the subscription document by the unique payment reference.
-    """
-    try:
-        # Find the subscription document by payment_reference
-        subscriptions_ref = db.collection('subscriptions')
-        query = subscriptions_ref.where('payment_reference', '==', payment_reference).limit(1)
-        docs = query.get()
-
-        if not docs:
-            logger.warning(f"Subscription with reference {payment_reference} not found.")
-            return False
-
-        subscription_doc = docs[0]
-        subscription_data = subscription_doc.to_dict()
-
-        if new_status == 'active':
-            if subscription_data.get('status') == 'active':
-                logger.info(f"Subscription with reference {payment_reference} is already active. No update needed.")
-                return True
-            if subscription_data.get('status') == 'failed':
-                logger.warning(f"Subscription with reference {payment_reference} is in 'failed' status. Cannot activate directly.")
-                return False
-
-            plan_id = subscription_data.get('plan_id')
-            plan_details = get_plan_details(plan_id)
-
-            if plan_details:
-                duration_days = plan_details['duration_days']
-                expiry_date = datetime.now() + timedelta(days=duration_days)
-
-                # Update the subscription document with the new status and expiry date
-                subscription_doc.reference.update({
-                    'status': new_status,
-                    'expiry_date': expiry_date,
-                    'transaction_amount': transaction_amount,
-                    'transaction_currency': transaction_currency,
-                    'updated_at': firestore.SERVER_TIMESTAMP # Use server timestamp for consistency
-                })
-            else:
-                logger.error(f"Plan details not found for plan_id {plan_id} linked to subscription reference {payment_reference} during activation.")
-                return False
-        else: # For 'pending' or 'failed' statuses
-            subscription_doc.reference.update({
-                'status': new_status,
-                'transaction_amount': transaction_amount,
-                'transaction_currency': transaction_currency,
-                'updated_at': firestore.SERVER_TIMESTAMP
-            })
-
-        logger.info(f"Subscription with reference {payment_reference} successfully updated to status: {new_status}.")
-        return True
-    except Exception as e:
-        logger.error(f"Firestore error updating subscription status for reference {payment_reference}: {e}")
-        return False
-
-
 
 
 
@@ -4194,185 +4166,6 @@ def send_notification(user_id, message, notification_type="info"):
 
 
 
-
-@app.route('/saved', methods=['GET', 'POST'])
-def saved_ads():
-    """
-    Handles saved adverts page, with options to clear all or clear sold.
-    - Uses a Firestore WriteBatch for efficient deletion.
-    - Fetches saved adverts by querying the saved_adverts collection.
-    """
-    current_user_id = session.get('user_id')
-    if not current_user_id:
-        flash('You must be logged in to view saved adverts.', 'error')
-        return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        action = request.form.get('action')
-        try:
-            batch = db.batch()
-            saved_adverts_query = db.collection('saved_adverts').where('user_id', '==', current_user_id).stream()
-            
-            if action == 'clear_all':
-                for doc in saved_adverts_query:
-                    batch.delete(doc.reference)
-                flash("All saved adverts cleared successfully.", 'success')
-            elif action == 'clear_sold':
-                for doc in saved_adverts_query:
-                    advert_ref = doc.to_dict()['advert_ref']
-                    advert_doc = advert_ref.get()
-                    if advert_doc.exists and advert_doc.to_dict().get('status') == 'sold':
-                        batch.delete(doc.reference)
-                flash("Sold adverts cleared from saved list successfully.", 'success')
-            
-            batch.commit()
-        except Exception as e:
-            logger.error(f"Error clearing saved ads: {e}")
-            flash(f"An error occurred while clearing saved adverts: {str(e)}", 'error')
-        
-        return redirect(url_for('saved_ads'))
-    
-    # GET request logic
-    search_query = request.args.get('q', '')
-    saved_ads_list = []
-    
-    # Query for saved adverts for the current user
-    saved_adverts_query = db.collection('saved_adverts').where('user_id', '==', current_user_id).order_by('saved_at', direction=firestore.Query.DESCENDING).stream()
-    
-    for saved_advert_doc in saved_adverts_query:
-        advert_ref = saved_advert_doc.to_dict()['advert_ref']
-        advert_doc = advert_ref.get()
-        if advert_doc.exists:
-            advert_data = advert_doc.to_dict()
-            # Filter based on search query, status and expiry date
-            title_match = search_query.lower() in advert_data.get('title', '').lower()
-            location_match = search_query.lower() in advert_data.get('location', '').lower()
-            
-            is_published = advert_data.get('status') == 'published'
-            expires_at = advert_data.get('expires_at')
-            is_not_expired = not expires_at or expires_at.date() > datetime.now().date()
-            
-            if (title_match or location_match) and is_published and is_not_expired:
-                # Get the username for the advert seller
-                user_ref = advert_data['user_ref']
-                user_doc = user_ref.get()
-                if user_doc.exists:
-                    advert_data['username'] = user_doc.to_dict().get('username')
-                saved_ads_list.append(advert_data)
-
-    return render_template('saved.html', saved_ads=saved_ads_list, query=search_query)
-
-
-@app.route('/toggle_saved_advert/<string:advert_id>', methods=['POST'])
-def toggle_saved_advert(advert_id):
-    """
-    Toggles an advert as saved/unsaved for the current user.
-    - Uses a Firestore transaction for atomic reads and writes.
-    """
-    current_user_id = session.get('user_id')
-    if not current_user_id:
-        return jsonify({'status': 'error', 'message': 'You must be logged in to save adverts.'}), 401
-
-    try:
-        # Use a transaction to ensure atomic check-then-write logic
-        transaction = db.transaction()
-        saved_doc_ref = db.collection('saved_adverts').document(f"{current_user_id}_{advert_id}")
-        
-        @firestore.transactional
-        def toggle_advert_in_transaction(transaction, saved_doc_ref):
-            saved_doc = saved_doc_ref.get(transaction=transaction)
-            
-            if saved_doc.exists:
-                # Unsave advert
-                transaction.delete(saved_doc_ref)
-                return {'status': 'success', 'action': 'unsaved', 'message': 'Advert removed from saved items.'}, 200
-            else:
-                # Save advert
-                advert_ref = db.collection('adverts').document(advert_id)
-                advert_doc = advert_ref.get(transaction=transaction)
-                
-                if not advert_doc.exists or advert_doc.to_dict().get('status') != 'published':
-                    return {'status': 'error', 'message': 'Advert not found or is inactive.'}, 404
-                
-                # Check for expiry date
-                expires_at = advert_doc.to_dict().get('expires_at')
-                if expires_at and expires_at.date() < datetime.now().date():
-                    return {'status': 'error', 'message': 'Advert has expired.'}, 404
-
-                transaction.set(saved_doc_ref, {
-                    'user_id': current_user_id,
-                    'advert_id': advert_id,
-                    'saved_at': datetime.now(),
-                    'advert_ref': advert_ref  # Store a reference for easy lookup
-                })
-                return {'status': 'success', 'action': 'saved', 'message': 'Advert saved successfully!'}, 200
-
-        return toggle_advert_in_transaction(transaction, saved_doc_ref)
-
-    except Exception as e:
-        logger.error(f"Unexpected error in toggle_saved_advert: {e}", exc_info=True)
-        return jsonify({'status': 'error', 'message': 'An unexpected error occurred.'}), 500
-
-@app.route('/saved_adverts')
-def saved_adverts():
-    """
-    Fetches and displays saved adverts. This is very similar to the GET logic in /saved.
-    """
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('You must be logged in to view saved adverts.', 'error')
-        return redirect(url_for('login'))
-
-    saved_adverts_list = []
-    try:
-        saved_query = db.collection('saved_adverts').where('user_id', '==', user_id).order_by('saved_at', direction=firestore.Query.DESCENDING).stream()
-        
-        for saved_doc in saved_query:
-            saved_data = saved_doc.to_dict()
-            # Use the stored DocumentReference to get the advert data efficiently
-            advert_ref = saved_data.get('advert_ref')
-            if advert_ref:
-                advert_doc = advert_ref.get()
-                if advert_doc.exists:
-                    advert_data = advert_doc.to_dict()
-                    # Only show published and non-expired adverts
-                    is_published = advert_data.get('status') == 'published'
-                    expires_at = advert_data.get('expires_at')
-                    is_not_expired = not expires_at or expires_at.date() > datetime.now().date()
-                    
-                    if is_published and is_not_expired:
-                        advert_data['id'] = advert_doc.id # Add the document ID to the dict
-                        saved_adverts_list.append(advert_data)
-    except Exception as e:
-        logger.error(f"Error fetching saved adverts: {e}", exc_info=True)
-        flash('An error occurred while loading saved adverts.', 'error')
-    
-    return render_template('saved_adverts.html', saved_adverts=saved_adverts_list)
-
-
-@app.route('/remove_saved_advert/<string:advert_id>', methods=['POST'])
-def remove_saved_advert(advert_id):
-    """
-    Removes a single advert from the user's saved list.
-    """
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify(status='error', message='You must be logged in to remove saved adverts.'), 401
-
-    try:
-        doc_ref = db.collection('saved_adverts').document(f"{user_id}_{advert_id}")
-        doc = doc_ref.get()
-        if doc.exists:
-            doc_ref.delete()
-            flash('Advert successfully removed from your saved list.', 'success')
-            return jsonify(status='success', message='Advert removed.')
-        else:
-            flash('Advert not found in your saved list.', 'warning')
-            return jsonify(status='error', message='Advert not found in saved list.'), 404
-    except Exception as e:
-        logger.error(f"Error removing saved advert: {e}", exc_info=True)
-        flash(f'An error occurred while removing the advert: {str(e)}', 'error')
-        return jsonify(status='error', message='An error occurred.'), 500
 
 @app.route('/report_advert/<string:advert_id>', methods=['POST'])
 def report_advert(advert_id):
@@ -6732,6 +6525,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
