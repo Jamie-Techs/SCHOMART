@@ -166,37 +166,37 @@
             color: #555;
             margin: 2px 0;
         }
-    
+        
 
         /* Responsive styles */
-    @media(max-width: 768px){
-        .filters { /* Adjust grid columns for smaller screens */
-            grid-template-columns: repeat(2, 1fr);
+        @media(max-width: 768px){
+            .filters { /* Adjust grid columns for smaller screens */
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .ad-card {
+                width: calc(50% - 20px);
+            }
+            #search-top {
+                flex-direction: column; /* Stack input and button vertically */
+                align-items: stretch;
+            }
+            #search-top input[type=text] {
+                width: 100%;
+            }
+            #search-top button {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+            }
         }
-        .ad-card {
-            width: calc(50% - 20px);
+        @media(max-width: 480px){
+            .filters { /* Adjust grid columns for smallest screens */
+                grid-template-columns: 1fr;
+            }
+            .ad-card {
+                width: 100%;
+            }
         }
-        #search-top {
-            flex-direction: column; /* Stack input and button vertically */
-            align-items: stretch;
-        }
-        #search-top input[type=text] {
-            width: 100%;
-        }
-        #search-top button {
-            width: 100%;
-            margin-left: 0;
-            margin-top: 10px;
-        }
-    }
-    @media(max-width: 480px){
-        .filters { /* Adjust grid columns for smallest screens */
-            grid-template-columns: 1fr;
-        }
-        .ad-card {
-            width: 100%;
-        }
-    }
         .no-results {
             text-align: center;
             width: 100%;
@@ -223,7 +223,7 @@
             position: absolute;
             background-color: #fff;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 4-px;
             width: 100%;
             max-height: 200px;
             overflow-y: auto;
@@ -283,34 +283,27 @@
                 </select>
             </div>
     
-            {# UPDATED LOCATION DROPDOWNS - Using standard <select> elements #}
             <div class="filter-group">
                 <label for="state-dropdown">State:</label>
-                <select id="state-dropdown" name="state_id">
+                <select id="state-dropdown" name="state">
                     <option value="">All States</option>
                     {% for state in states %}
-                        <option value="{{ state.id }}" {% if state.id == selected_state_id %}selected{% endif %}>{{ state.name }}</option>
+                        <option value="{{ state }}" {% if state == selected_state %}selected{% endif %}>{{ state }}</option>
                     {% endfor %}
                 </select>
             </div>
     
             <div class="filter-group">
                 <label for="location-dropdown">University:</label>
-                <select id="location-dropdown" name="location_id">
+                <select id="location-dropdown" name="school">
                     <option value="">All Universities</option>
                     {# Locations will be populated dynamically by JS #}
+                    {% if selected_school %}
+                        <option value="{{ selected_school }}" selected>{{ selected_school }}</option>
+                    {% endif %}
                 </select>
             </div>
-    
-            <div class="filter-group">
-                <label for="sublocation-dropdown">Sublocation:</label>
-                <select id="sublocation-dropdown" name="sublocation_id"> {# Corrected name attribute to 'sublocation_id' #}
-                    <option value="">All Sublocations</option>
-                    {# Sublocations will be populated dynamically by JS #}
-                </select>
-            </div>
-            {# END UPDATED LOCATION DROPDOWNS #}
-    
+            
             <div class="filter-group">
                 <label>Price Range (₦)</label>
                 <div class="price-range">
@@ -357,9 +350,9 @@
                     <h4>{{ advert.title }}</h4>
                     <p class="price">₦{{ "{:,.2f}".format(advert.price) }}</p>
                     <p>
-                        {% if advert.location_name %}{{ advert.location_name }}{% endif %}
-                        {% if advert.location_name and advert.sub_location_name %}, {% endif %}
-                        {% if advert.sub_location_name %}{{ advert.sub_location_name }}{% endif %}
+                        {% if advert.school %}{{ advert.school }}{% endif %}
+                        {% if advert.school and advert.state %}, {% endif %}
+                        {% if advert.state %}{{ advert.state }}{% endif %}
                     </p>
                     <p>Poster: {{ advert.poster_username }} </p>
                 </a>
@@ -374,17 +367,13 @@
             // --- Category/Subcategory Logic ---
             const categorySelect = document.getElementById('category');
             const subCategorySelect = document.getElementById('sub_category');
-            const initialSelectedCategory = categorySelect.value;
-            const initialSelectedSubCategory = "{{ selected_sub_category | default('') }}";
-    
-            function updateSubcategories(selectedCategory, selectedSub = '') {
+            
+            function updateSubcategories(selectedCategoryName, selectedSub = '') {
                 subCategorySelect.innerHTML = '<option value="">All Subcategories</option>';
-                if (selectedCategory) {
-                    fetch(`/get_subcategories/${selectedCategory}`)
+                if (selectedCategoryName) {
+                    fetch(`/get_subcategories_by_name/${selectedCategoryName}`)
                         .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                             return response.json();
                         })
                         .then(subcategories => {
@@ -398,12 +387,13 @@
                                 subCategorySelect.appendChild(option);
                             });
                         })
-                        .catch(error => {
-                            console.error('Error fetching subcategories:', error);
-                        });
+                        .catch(error => console.error('Error fetching subcategories:', error));
                 }
             }
     
+            // Initial population on page load
+            const initialSelectedCategory = categorySelect.value;
+            const initialSelectedSubCategory = "{{ selected_sub_category | default('') }}";
             if (initialSelectedCategory) {
                 updateSubcategories(initialSelectedCategory, initialSelectedSubCategory);
             }
@@ -412,94 +402,44 @@
                 updateSubcategories(this.value);
             });
     
-            // --- Location Dropdown Logic (State, Location, Sublocation) ---
+            // --- Location/School Dropdown Logic ---
             const stateDropdown = document.getElementById('state-dropdown');
-            const locationDropdown = document.getElementById('location-dropdown');
-            const sublocationDropdown = document.getElementById('sublocation-dropdown');
+            const schoolDropdown = document.getElementById('location-dropdown'); // Renamed to location-dropdown in HTML
     
-            const initialSelectedStateId = "{{ selected_state_id | default('') }}";
-            const initialSelectedLocationId = "{{ selected_location_id | default('') }}";
-            const initialSelectedSublocationId = "{{ selected_sublocation_id | default('') }}";
-    
-            // Function to populate a dropdown
-            async function populateDropdown(dropdownElement, url, selectedValue = '') {
-                dropdownElement.innerHTML = ''; // Clear existing options
-                let defaultOptionText = '';
-                if (dropdownElement.id === 'state-dropdown') defaultOptionText = 'All States';
-                else if (dropdownElement.id === 'location-dropdown') defaultOptionText = 'All Universities';
-                else if (dropdownElement.id === 'sublocation-dropdown') defaultOptionText = 'All Sublocations';
-    
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = defaultOptionText;
-                dropdownElement.appendChild(defaultOption);
-    
-                if (!url) {
-                    // If no URL (e.g., no state selected for locations), just add default option and disable
-                    dropdownElement.disabled = true;
-                    return;
-                }
-    
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-    
-                    data.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = item.name;
-                        if (String(item.id) === String(selectedValue)) {
-                            option.selected = true;
-                        }
-                        dropdownElement.appendChild(option);
-                    });
-                    dropdownElement.disabled = false; // Enable if data is loaded
-                } catch (error) {
-                    console.error(`Error fetching data for ${dropdownElement.id}:`, error);
-                    dropdownElement.disabled = true; // Disable on error
+            function updateSchools(selectedState, selectedSchool = '') {
+                schoolDropdown.innerHTML = '<option value="">All Universities</option>';
+                if (selectedState) {
+                    fetch(`/api/schools_by_state/${selectedState}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.json();
+                        })
+                        .then(schools => {
+                            schools.forEach(school => {
+                                const option = document.createElement('option');
+                                option.value = school.name;
+                                option.textContent = school.name;
+                                if (school.name === selectedSchool) {
+                                    option.selected = true;
+                                }
+                                schoolDropdown.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error fetching schools:', error));
                 }
             }
-    
-            // Event listener for State dropdown change
-            stateDropdown.addEventListener('change', function() {
-                const stateId = this.value;
-                // When state changes, clear and repopulate Location and Sublocation
-                locationDropdown.value = ''; // Reset location dropdown
-                sublocationDropdown.value = ''; // Reset sublocation dropdown
-                populateDropdown(locationDropdown, stateId ? `/api/locations_by_state/${stateId}` : null);
-                populateDropdown(sublocationDropdown, null); // Clear sublocations as well
-            });
-    
-            // Event listener for Location dropdown change
-            locationDropdown.addEventListener('change', function() {
-                const locationId = this.value;
-                // When location changes, clear and repopulate Sublocation
-                sublocationDropdown.value = ''; // Reset sublocation dropdown
-                populateDropdown(sublocationDropdown, locationId ? `/api/sublocations/${locationId}` : null);
-            });
     
             // Initial population on page load
-            // Populate locations based on initially selected state
-            if (initialSelectedStateId) {
-                populateDropdown(locationDropdown, `/api/locations_by_state/${initialSelectedStateId}`, initialSelectedLocationId)
-                    .then(() => {
-                        // After locations are populated, populate sublocations if an initial location was selected
-                        if (initialSelectedLocationId) {
-                            populateDropdown(sublocationDropdown, `/api/sublocations/${initialSelectedLocationId}`, initialSelectedSublocationId);
-                        } else {
-                            // If no initial location, disable sublocation dropdown
-                            sublocationDropdown.disabled = true;
-                        }
-                    });
-            } else {
-                // If no initial state, disable both location and sublocation dropdowns
-                locationDropdown.disabled = true;
-                sublocationDropdown.disabled = true;
+            const initialSelectedState = stateDropdown.value;
+            const initialSelectedSchool = "{{ selected_school | default('') }}";
+            if (initialSelectedState) {
+                updateSchools(initialSelectedState, initialSelectedSchool);
             }
+    
+            stateDropdown.addEventListener('change', function() {
+                updateSchools(this.value);
+            });
         });
     </script>
-    </body>
-    </html>
+</body>
+</html>
