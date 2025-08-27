@@ -1230,8 +1230,12 @@ def home():
                 followed_user_ids = get_followers_of_user(user_id)
 
         # Get the visibility order from SUBSCRIPTION_PLANS
-        visibility_order = {plan['visibility_level']: i for i, plan in enumerate(SUBSCRIPTION_PLANS.values())}
-        
+        # The visibility_order dictionary needs to include all plans, so it should be built from ADVERT_PLANS
+        visibility_order = {
+            plan['visibility_level']: i
+            for i, plan in enumerate(ADVERT_PLANS.values())
+        }
+
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
@@ -1240,28 +1244,37 @@ def home():
             advert_data = advert_doc.to_dict()
             advert_data['id'] = advert_doc.id
             
-            expires_at = advert_data.get('expires_at')
-            if expires_at and expires_at.replace(tzinfo=timezone.utc) > now:
+            published_at = advert_data.get('published_at')
+            duration_days = advert_data.get('advert_duration_days', 0)
+            
+            # CRITICAL FIX: Check for advert expiration using published_at and duration
+            # Ensure published_at is a timezone-aware datetime object
+            if published_at:
+                if not isinstance(published_at, datetime):
+                    published_at = published_at.to_datetime().astimezone(timezone.utc)
                 
-                # Fetch poster user data
-                poster_user_ref = db.collection('users').document(advert_data['user_id'])
-                poster_user_doc = poster_user_ref.get()
-                if poster_user_doc.exists:
-                    poster_user_data = poster_user_doc.to_dict()
-                    advert_data['poster_username'] = poster_user_data.get('username')
-                    advert_data['poster_role'] = poster_user_data.get('role')
-                else:
-                    advert_data['poster_username'] = 'Unknown'
-                    advert_data['poster_role'] = 'standard'
+                expiration_date = published_at + timedelta(days=duration_days)
                 
-                # Correctly fetch the image URL from the 'main_image' key
-                main_image_url = advert_data.get('main_image')
-                if main_image_url:
-                    advert_data['display_image'] = main_image_url
-                else:
-                    advert_data['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
-                
-                all_published_adverts.append(advert_data)
+                if expiration_date > now:
+                    # Fetch poster user data
+                    poster_user_ref = db.collection('users').document(advert_data['user_id'])
+                    poster_user_doc = poster_user_ref.get()
+                    if poster_user_doc.exists:
+                        poster_user_data = poster_user_doc.to_dict()
+                        advert_data['poster_username'] = poster_user_data.get('username')
+                        advert_data['poster_role'] = poster_user_data.get('role')
+                    else:
+                        advert_data['poster_username'] = 'Unknown'
+                        advert_data['poster_role'] = 'standard'
+                    
+                    # Correctly fetch the image URL from the 'main_image' key
+                    main_image_url = advert_data.get('main_image')
+                    if main_image_url:
+                        advert_data['display_image'] = main_image_url
+                    else:
+                        advert_data['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
+                    
+                    all_published_adverts.append(advert_data)
 
         # Separate admin/featured ads and general ads
         admin_ads_for_display = sorted([
@@ -6724,6 +6737,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
