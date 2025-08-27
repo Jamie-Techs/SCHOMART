@@ -2938,111 +2938,52 @@ def unsave_advert():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @app.route('/subscribe', methods=['GET', 'POST'])
 def subscribe():
-    user_id = session.get('user_id')
-    if not user_id:
-        flash('Please login first.', 'error')
-        return redirect(url_for('login'))
-
-    user_info = get_user_info(user_id)
-    if not user_info:
-        flash('User information not found. Please try logging in again.', 'error')
-        return redirect(url_for('login'))
-
-    all_plans = get_all_plans_from_db()
-    if not all_plans:
-        flash('No subscription plans available at this time. Please try again later.', 'error')
-        return redirect(url_for('profile'))
-
-    if request.method == 'POST':
-        selected_plan_id_str = request.form.get('plan')
-        payment_method_selected = request.form.get('payment_method')
-
-        if not selected_plan_id_str:
-            flash('Please select a subscription plan.', 'error')
-            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
-
-        selected_plan = next((p for p in all_plans if p['id'] == selected_plan_id_str), None)
-
-        if not selected_plan:
-            flash('Selected plan details could not be found. Please try again.', 'error')
-            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
-
-        plan_name = selected_plan['name']
-        plan_amount = selected_plan['amount']
-        plan_duration_days = selected_plan['duration_days']
-
-        # Handle Free Promo Plan
-        if plan_name == 'Free Promo Plan':
-            try:
-                # Firestore query to check if the user has an active Free Promo Plan
-                query_ref = db.collection('subscriptions').where('user_id', '==', user_id).where('plan_name', '==', 'Free Promo Plan').where('status', '==', 'active').limit(1)
-                docs = query_ref.get()
-                free_promo_used = len(docs) > 0
-            except Exception as e:
-                logging.error(f"Firestore error checking free promo usage for user {user_id}: {e}")
-                flash('An internal error occurred. Please try again.', 'error')
-                return redirect(url_for('subscribe'))
-
-            if free_promo_used:
-                flash('You have already used your Free Promo Plan.', 'error')
-                return redirect(url_for('subscribe'))
-            else:
-                expiry_date = date.today() + timedelta(days=plan_duration_days)
-                try:
-                    subscription_data = {
-                        'user_id': user_id,
-                        'plan_id': selected_plan.get('id'), # Assuming the plan ID is a string in Firestore
-                        'plan_name': plan_name,
-                        'status': 'active',
-                        'start_date': datetime.now(),
-                        'expiry_date': expiry_date,
-                        'payment_reference': 'FREE_PROMO_ACTIVATED',
-                        'transaction_amount': 0.00,
-                        'transaction_currency': 'N/A'
-                    }
-                    db.collection('subscriptions').add(subscription_data)
-                    flash(f'Successfully subscribed to {plan_name}!', 'success')
-                    return redirect(url_for('profile'))
-                except Exception as e:
-                    logging.error(f"Firestore error activating free promo plan for user {user_id}: {e}")
-                    flash('An error occurred while activating your free plan. Please try again.', 'error')
-                    return redirect(url_for('subscribe'))
-        
-        # Handle Bank Transfer Payment
-        if payment_method_selected == 'bank':
-            payment_reference = generate_unique_reference()
-            expiry_date = date.today() + timedelta(days=plan_duration_days)
-            try:
-                subscription_data = {
-                    'user_id': user_id,
-                    'plan_id': selected_plan.get('id'),
-                    'plan_name': plan_name,
-                    'status': 'pending',
-                    'start_date': datetime.now(),
-                    'expiry_date': expiry_date,
-                    'payment_reference': payment_reference,
-                    'transaction_amount': plan_amount,
-                    'transaction_currency': BANK_ACCOUNT_DETAILS['currency']
-                }
-                db.collection('subscriptions').add(subscription_data)
-                
-                session['bank_transfer_amount'] = float(plan_amount)
-                session['bank_account_details'] = BANK_ACCOUNT_DETAILS
-                session['bank_transfer_plan_name'] = plan_name
-                session['payment_reference'] = payment_reference
-                return redirect(url_for('bank_transfer_instructions_page'))
-            except Exception as e:
-                logging.error(f"Error saving pending bank transfer subscription for user {user_id}: {e}")
-                flash('An error occurred while preparing your bank transfer subscription. Please try again.', 'error')
-                return redirect(url_for('subscribe'))
-        else:
-            flash('Invalid payment method selected. Please choose Bank Transfer.', 'error')
-            return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
-    
-    # GET request
-    return render_template('subscribe.html', user_email=user_info['email'], plans=all_plans)
+     your free plan. Please try again.', 'error')
+                    
+    return render_template('subscribe.html')
 
 
 
@@ -3089,13 +3030,6 @@ def get_unread_notifications_count(user_id):
 
 
 
-
-
-
-
-
-
-
 @app.route("/messages")
 def messages():
     user_id = g.user.id
@@ -3114,254 +3048,6 @@ def messages():
         
         
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-
-# --- Helper Functions to fetch data from DB ---
-
-def get_all_locations():
-    # Firestore doesn't have a DISTINCT query. We'll get all adverts and create a unique set.
-    adverts_ref = db.collection('adverts')
-    locations = set()
-    for doc in adverts_ref.stream():
-        location = doc.to_dict().get('location')
-        if location:
-            locations.add(location)
-    return sorted(list(locations))
-
-def get_all_categories_with_subcategories():
-    categories_ref = db.collection('categories').order_by('name')
-    categories_data = []
-
-    for cat_doc in categories_ref.stream():
-        category_id = cat_doc.id
-        category_name = cat_doc.to_dict().get('name')
-        
-        # Now get subcategories for this category
-        subcategories_ref = db.collection('subcategories').where('category_id', '==', category_id).order_by('name')
-        subcategories_list = [sub_doc.to_dict().get('name') for sub_doc in subcategories_ref.stream()]
-        
-        categories_data.append({
-            'id': category_id,
-            'name': category_name,
-            'subcategories': subcategories_list
-        })
-    return categories_data
-
-def get_subcategories_for_category(category_name):
-    # First, find the category document ID
-    category_query = db.collection('categories').where('name', '==', category_name).limit(1)
-    category_docs = list(category_query.stream())
-    
-    if not category_docs:
-        return []
-
-    category_id = category_docs[0].id
-    
-    # Then, get the subcategories using the ID
-    subcategories_ref = db.collection('subcategories').where('category_id', '==', category_id).order_by('name')
-    subcategories_list = [sub_doc.to_dict().get('name') for sub_doc in subcategories_ref.stream()]
-    
-    return subcategories_list
-
-
-
-
-
-    
-def get_followers_of_user(user_id):
-    """Fetches the user IDs that the given user is following."""
-    # This assumes a 'followers' subcollection or similar structure.
-    # We will simulate this for now, but a proper implementation would query a 'followings' collection.
-    # For this example, we'll return a hardcoded list.
-    # In a real app, you would query a 'following' collection for documents where the 'follower_id' is the current user's ID.
-    return []
-
-
-@app.route('/search')
-def search():
-    adverts = []
-    all_states_data = get_all_states()
-    all_categories_data = get_all_categories_with_subcategories()
-    
-    # Get search parameters from the request
-    search_query = request.args.get('search_query', '').strip().lower()
-    selected_state_id = request.args.get('state_id', '')
-    selected_location_id = request.args.get('location_id', '')
-    selected_sublocation_id = request.args.get('sublocation_id', '')
-    category = request.args.get('category', '').strip()
-    sub_category = request.args.get('sub_category', '').strip()
-    price_min_str = request.args.get('price_min', '').strip()
-    price_max_str = request.args.get('price_max', '').strip()
-    condition = request.args.get('condition', '').strip()
-    negotiation = request.args.get('negotiation', '').strip()
-
-    # Get names for display from IDs
-    selected_state_name = get_state_info(selected_state_id)['name'] if selected_state_id and get_state_info(selected_state_id) else ''
-    selected_location_name = get_location_info(selected_location_id)['name'] if selected_location_id and get_location_info(selected_location_id) else ''
-    selected_sublocation_name = get_sub_location_info(selected_sublocation_id)['name'] if selected_sublocation_id and get_sub_location_info(selected_sublocation_id) else ''
-
-    # Get subcategories for the selected category for the dropdown
-    selected_category_subcategories = get_subcategories_for_category(category)
-
-    # Build the Firestore query
-    adverts_query = db.collection(ADVERTS_COLLECTION).where('status', '==', 'published')
-    
-    # Firestore does not support 'expires_at > NOW()' directly. You must use a a specific
-    # timestamp field and check against the current time. We'll use a `valid_until` field
-    # and assume it's a datetime object.
-    now = datetime.datetime.now()
-    adverts_query = adverts_query.where('valid_until', '>', now)
-
-    # Add filters for equality
-    if selected_state_id:
-        adverts_query = adverts_query.where('state_id', '==', selected_state_id)
-    if selected_location_id:
-        adverts_query = adverts_query.where('location_id', '==', selected_location_id)
-    if selected_sublocation_id:
-        adverts_query = adverts_query.where('sublocation_id', '==', selected_sublocation_id)
-    if category:
-        adverts_query = adverts_query.where('category', '==', category)
-    if sub_category:
-        adverts_query = adverts_query.where('sub_category', '==', sub_category)
-    if condition:
-        adverts_query = adverts_query.where('condition', '==', condition)
-    if negotiation:
-        is_negotiable = negotiation == 'yes'
-        adverts_query = adverts_query.where('negotiable', '==', is_negotiable)
-
-    # Firestore queries are simple. We can't do complex `AND` or `OR` queries with multiple `in` clauses
-    # or `>` on different fields. We must fetch and filter in-memory for some cases.
-    
-    # Price filtering
-    price_min = None
-    price_max = None
-    if price_min_str:
-        try:
-            price_min = float(price_min_str)
-            adverts_query = adverts_query.where('price', '>=', price_min)
-        except ValueError:
-            flash("Invalid minimum price entered. Please enter a number.", "warning")
-    if price_max_str:
-        try:
-            price_max = float(price_max_str)
-            adverts_query = adverts_query.where('price', '<=', price_max)
-        except ValueError:
-            flash("Invalid maximum price entered. Please enter a number.", "warning")
-
-    # Fetch initial results from Firestore
-    try:
-        adverts_stream = adverts_query.stream()
-        fetched_adverts = []
-        for doc in adverts_stream:
-            advert_data = doc.to_dict()
-            advert_data['id'] = doc.id # Add document ID
-            fetched_adverts.append(advert_data)
-        
-        adverts = fetched_adverts
-        
-        # Now, filter and sort the data in Python
-        # Text search for 'title' and 'description' (in-memory filtering)
-        if search_query:
-            adverts = [
-                a for a in adverts if 
-                search_query in a.get('title', '').lower() or 
-                search_query in a.get('description', '').lower()
-            ]
-
-        # Get user info for all fetched adverts in one batch to reduce queries
-        user_ids = {a.get('user_id') for a in adverts if a.get('user_id')}
-        users_info = {}
-        if user_ids:
-            # Firestore allows `in` queries for up to 10 user IDs
-            # If there are more, you'll need to batch the queries
-            for user_id_chunk in [list(user_ids)[i:i + 10] for i in range(0, len(user_ids), 10)]:
-                users_info_ref = db.collection(USERS_COLLECTION).where(firestore.FieldPath.document_id(), 'in', user_id_chunk)
-                users_docs = users_info_ref.stream()
-                for user_doc in users_docs:
-                    users_info[user_doc.id] = user_doc.to_dict()
-
-        for advert in adverts:
-            user_data = users_info.get(advert.get('user_id', ''))
-            if user_data:
-                advert['poster_username'] = user_data.get('username', 'N/A')
-                advert['is_verified'] = user_data.get('is_verified', False)
-                # You might need to add logic for following users here if needed
-            else:
-                advert['poster_username'] = 'N/A'
-                advert['is_verified'] = False
-
-        # Apply custom sorting logic in Python
-        visibility_order = {
-            'Ultimate': 1, 'Premium': 2, 'Top': 3, 'High': 4, 'Standard': 5
-        }
-        
-        # This sorts by multiple criteria in Python, which is not possible in a single Firestore query
-        adverts.sort(key=lambda a: (
-            # 1. Verified users first
-            not a.get('is_verified', False), 
-            # 2. Title match priority
-            0 if search_query and a.get('title', '').lower() == search_query.lower() else
-            1 if search_query and a.get('title', '').lower().startswith(search_query.lower()) else
-            2 if search_query and search_query.lower() in a.get('title', '').lower() else
-            3,
-            # 3. Visibility level
-            visibility_order.get(a.get('visibility_level', 'Standard'), 99),
-            # 4. Created_at (descending)
-            a.get('created_at', datetime.datetime.min),
-        ), reverse=False)
-        # Note: You need to store 'created_at' as a Firestore Timestamp or a datetime object.
-
-    except Exception as e:
-        flash(f"An unexpected error occurred during your search: {e}", "danger")
-        adverts = []
-        
-    return render_template('search.html',
-                            search_query=search_query,
-                            adverts=adverts,
-                            states=all_states_data,
-                            selected_state_id=selected_state_id,
-                            selected_state_name=selected_state_name,
-                            selected_location_id=selected_location_id,
-                            selected_location_name=selected_location_name,
-                            selected_sublocation_id=selected_sublocation_id,
-                            selected_sublocation_name=selected_sublocation_name,
-                            categories=all_categories_data,
-                            selected_category=category,
-                            selected_sub_category=sub_category,
-                            selected_price_min=price_min_str,
-                            selected_price_max=price_max_str,
-                            selected_condition=condition,
-                            selected_negotiation=negotiation,
-                            selected_category_subcategories=selected_category_subcategories)
-
-        
-        
-        
-    
-@app.route('/get_subcategories/<category_name>')
-def get_subcategories_api(category_name):
-    # This endpoint is for AJAX requests to dynamically load subcategories
-    subcategories = get_subcategories_for_category(category_name)
-    return jsonify(subcategories)
-      
-
-# Settings page
 @app.route('/settings')
 def settings():
     return render_template('settings.html')
@@ -6339,6 +6025,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
