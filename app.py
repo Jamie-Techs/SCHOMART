@@ -2668,6 +2668,7 @@ def referral_benefit():
 
 
 @app.route('/advert/<string:advert_id>')
+@login_required
 def advert_detail(advert_id):
     """
     Handles displaying a single advert detail page.
@@ -6338,6 +6339,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
