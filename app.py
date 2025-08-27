@@ -2901,49 +2901,59 @@ def save_advert():
 
 
 
-
-
 @app.route('/api/unsave_advert', methods=['POST'])
 @login_required
 def unsave_advert():
     """
     Removes a specific advert from the user's saved list.
+    This version is more robust in handling the request data.
     """
+    advert_id_to_remove = None
     try:
-        data = request.get_json(silent=True)
-        
-        # Check if the JSON payload is valid
-        if not data:
-            logging.error("Invalid or missing JSON payload in /api/unsave_advert.")
-            return jsonify({'success': False, 'message': 'Invalid request format.'}), 400
+        # Step 1: Check the Content-Type header
+        if request.headers.get('Content-Type') == 'application/json':
+            # This is the expected method, attempt to parse JSON
+            data = request.get_json(silent=True)
+            if data:
+                advert_id_to_remove = data.get('advert_id')
+        else:
+            # Fallback for unexpected content types or if request.get_json() fails
+            try:
+                # Attempt to parse raw data from the request body as JSON
+                raw_data = request.data.decode('utf-8')
+                if raw_data:
+                    data = json.loads(raw_data)
+                    advert_id_to_remove = data.get('advert_id')
+            except json.JSONDecodeError:
+                # If it's not JSON, maybe it's URL-encoded or something else
+                advert_id_to_remove = request.form.get('advert_id')
+                if not advert_id_to_remove:
+                    advert_id_to_remove = request.args.get('advert_id')
 
-        advert_id_to_remove = data.get('advert_id')
-        current_user_id = g.current_user.id
+    except Exception as e:
+        logger.error(f"Error parsing request body for unsave_advert: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': 'Invalid request data.'}), 400
 
-        # The backend now correctly checks for the presence of the advert_id
-        if not advert_id_to_remove:
-            logging.warning(f"Advert ID required for user {current_user_id}.")
-            return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
+    # Step 2: Validate the advert ID
+    current_user_id = g.current_user.id
+    if not advert_id_to_remove:
+        logging.warning(f"Advert ID required for user {current_user_id}. Data received: {request.data}")
+        return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
 
-        # Find the document using a unique composite ID
+    # Step 3: Perform the database operation
+    try:
         doc_ref = db.collection('saved_adverts').document(f'{current_user_id}_{advert_id_to_remove}')
         
-        # Check if the document exists before attempting to delete it
         if not doc_ref.get().exists:
             return jsonify({'success': False, 'message': 'Advert is not in your saved list.'}), 404
 
-        # Delete the document
         doc_ref.delete()
         
         return jsonify({'success': True, 'message': 'Advert removed successfully.'}), 200
 
     except Exception as e:
-        logger.error(f"Error removing saved advert for user {g.current_user.id}: {e}", exc_info=True)
+        logger.error(f"Error removing saved advert for user {current_user_id}: {e}", exc_info=True)
         return jsonify({'success': False, 'message': 'An unexpected error occurred.'}), 500
-
-
-
-
 
 
 
@@ -6358,6 +6368,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
