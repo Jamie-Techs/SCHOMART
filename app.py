@@ -3093,185 +3093,12 @@ def get_unread_notifications_count(user_id):
         return 0  # Default to 0 on any error
 
 
-def get_advert_info(advert_id: int) -> dict:
-    """
-    Fetches basic advert information (like title) from the 'adverts' collection.
-    
-    This function assumes the 'advert_id' from your original MySQL table
-    is used as the document ID in Firestore.
-    """
-    try:
-        # Get the document reference for the specific advert_id.
-        advert_ref = db.collection('adverts').document(str(advert_id))
-        
-        # Fetch the document.
-        advert_doc = advert_ref.get()
-        
-        # If the document exists, return a dictionary of its data.
-        if advert_doc.exists:
-            # We explicitly add the ID to the dictionary for consistency.
-            data = advert_doc.to_dict()
-            data['id'] = advert_doc.id
-            return data
-        else:
-            return {}  # Return an empty dictionary if the advert is not found
-            
-    except Exception as e:
-        # The 'logger' in your original code is likely 'current_app.logger' in a Flask context
-        current_app.logger.error(f"Error retrieving advert info for {advert_id}: {e}", exc_info=True)
-        return {}
-
-
-def sanitize_input(text):
-    """
-    Sanitizes text to prevent XSS (Cross-Site Scripting).
-    
-    This function is not database-specific. It's a general security measure
-    that you should use before rendering any user-provided data on a web page.
-    It remains unchanged as it's a good practice.
-    """
-    if text is None:
-        return ""
-    return text.replace('<', '&lt;').replace('>', '&gt;')
 
 
 
 
-# In-memory maps for Socket.IO, these do not need to be in the database
-user_sid_map = {}  # Map user_id to list of SIDs (for multiple tabs/devices)
-chat_room_map = {}  # Map room_id to set of user_ids in that room (for read receipts)
 
 
-def get_or_create_chat_thread(advert_id, user1_id, user2_id):
-    """
-    Helper function to find an existing chat thread or create a new one.
-    This avoids code duplication in the routes.
-    """
-    try:
-        # Query for an existing chat thread
-        chat_query = (
-            db.collection("chats")
-            .where(filter=FieldFilter("advert_id", "==", str(advert_id)))
-            .where(filter=FieldFilter("user1_id", "==", str(user1_id)))
-            .where(filter=FieldFilter("user2_id", "==", str(user2_id)))
-            .limit(1)
-        )
-        chat_docs = chat_query.stream()
-        chat_thread = next(chat_docs, None)
-
-        if chat_thread:
-            # If the chat thread exists, return its ID and document object
-            return chat_thread.id, chat_thread.to_dict()
-        else:
-            # If not, create a new one with initial data
-            new_chat_ref = db.collection("chats").add(
-                {
-                    "advert_id": str(advert_id),
-                    "user1_id": str(user1_id),
-                    "user2_id": str(user2_id),
-                    "last_message_content": None,
-                    "last_message_timestamp": None,
-                    "user1_unread_count": 0,
-                    "user2_unread_count": 0,
-                    "created_at": firestore.SERVER_TIMESTAMP,
-                    "updated_at": firestore.SERVER_TIMESTAMP,
-                }
-            )
-            current_app.logger.info(
-                f"Created new chat thread with ID: {new_chat_ref[1].id}"
-            )
-            # Fetch the newly created document to return its data
-            new_chat_doc = new_chat_ref[1].get()
-            return new_chat_doc.id, new_chat_doc.to_dict()
-
-    except Exception as e:
-        current_app.logger.error(
-            f"Error finding/creating chat thread for advert {advert_id}: {e}",
-            exc_info=True,
-        )
-        return None, None
-
-
-def fetch_chat_sidebar_data(user_id):
-    """
-    Helper function to fetch all chat threads for the sidebar.
-    This replaces the complex JOIN query with multiple Firestore queries.
-    """
-    chat_users = []
-    
-    # Get all chats where the current user is either user1 or user2
-    chats_query1 = db.collection('chats').where(filter=FieldFilter('user1_id', '==', str(user_id)))
-    chats_query2 = db.collection('chats').where(filter=FieldFilter('user2_id', '==', str(user_id)))
-    
-    # We combine the results in memory.
-    chats_stream = list(chats_query1.stream()) + list(chats_query2.stream())
-
-    # Sort the chats by last_message_timestamp in descending order
-    chats_stream.sort(key=lambda x: x.to_dict().get('last_message_timestamp', firestore.SERVER_TIMESTAMP), reverse=True)
-    
-    # Batch fetching related data to minimize reads
-    partner_ids = {
-        (
-            chat.to_dict()["user2_id"]
-            if chat.to_dict()["user1_id"] == str(user_id)
-            else chat.to_dict()["user1_id"]
-        )
-        for chat in chats_stream
-    }
-    advert_ids = {chat.to_dict()["advert_id"] for chat in chats_stream}
-
-    # Fetch all partner user and advert documents in a single batch
-    partner_docs = db.collection("users").where(filter=FieldFilter(firestore.FieldPath.document_id(), 'in', list(partner_ids))).stream()
-    advert_docs = db.collection("adverts").where(filter=FieldFilter(firestore.FieldPath.document_id(), 'in', list(advert_ids))).stream()
-
-    partner_cache = {doc.id: doc.to_dict() for doc in partner_docs}
-    advert_cache = {doc.id: doc.to_dict() for doc in advert_docs}
-
-    for chat_data in chats_stream:
-        chat_dict = chat_data.to_dict()
-        chat_id = chat_data.id
-        
-        # Determine the partner user and advert for the current chat
-        partner_id = (
-            chat_dict["user2_id"]
-            if chat_dict["user1_id"] == str(user_id)
-            else chat_dict["user1_id"]
-        )
-        advert_id = chat_dict["advert_id"]
-
-        partner_user_data = partner_cache.get(partner_id)
-        advert_data = advert_cache.get(advert_id)
-        
-        if not partner_user_data or not advert_data:
-            # Skip chats with missing data
-            continue
-
-        unread_count = (
-            chat_dict["user1_unread_count"]
-            if chat_dict["user1_id"] == str(user_id)
-            else chat_dict["user2_unread_count"]
-        )
-        last_message_timestamp = chat_dict.get("last_message_timestamp")
-        
-        chat_users.append(
-            {
-                "chat_id": chat_id,
-                "id": partner_id,
-                "username": partner_user_data.get("username"),
-                "profile_picture_url": get_profile_picture_url(
-                    partner_user_data.get("profile_picture")
-                ),
-                "last_message": chat_dict.get("last_message_content"),
-                "last_message_time": last_message_timestamp.strftime("%H:%M")
-                if last_message_timestamp
-                else "",
-                "unread": unread_count,
-                "advert_id": advert_id,
-                "advert_title": advert_data.get("title"),
-            }
-        )
-
-    return chat_users
 
 
 @app.route("/messages")
@@ -6517,6 +6344,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
