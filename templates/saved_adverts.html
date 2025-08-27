@@ -546,7 +546,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                // The body is correctly stringified with the 'advert_id' key
+                // The JSON body must be structured as a key-value pair
                 body: JSON.stringify({ advert_id: advertId }) 
             });
             const data = await response.json();
