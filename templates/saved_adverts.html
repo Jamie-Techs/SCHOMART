@@ -1,593 +1,590 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saved Adverts - Futo Jiji</title>
-    <!-- Link to Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Link to Google Fonts (Poppins) for modern typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #006B3C; /* Dark Green */
-            --secondary-color: #FDB813; /* Gold/Yellow */
-            --text-dark: #212529;
-            --text-medium: #495057;
-            --text-light: #6c757d;
-            --bg-light: #f8f9fa;
-            --bg-white: #ffffff;
-            --border-color: #e9ecef;
-            --shadow-light: rgba(0, 0, 0, 0.08);
-            --shadow-medium: rgba(0, 0, 0, 0.15);
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --info-color: #17a2b8;
-            --warning-color: #ffc107;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Adverts - Futo Jiji</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --text-dark: #212529;
+            --text-medium: #495057;
+            --text-light: #6c757d;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border-color: #e9ecef;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
+        }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-light);
-            margin: 0;
-            padding: 20px;
-            color: var(--text-dark);
-            line-height: 1.6;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
-            background: var(--bg-white);
-            padding: 30px; /* Increased padding */
-            border-radius: 12px; /* More rounded */
-            box-shadow: 0 8px 25px var(--shadow-medium);
-            display: flex;
-            flex-direction: column;
-            gap: 25px; /* Space between main sections */
-        }
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            gap: 15px; /* Space between elements */
-            margin-bottom: 20px; /* Space below header */
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border-color); /* Subtle separator */
-        }
-        .header-section h2 {
-            color: var(--primary-color);
-            margin: 0;
-            font-size: 2.2em;
-            flex-grow: 1; /* Allows title to take available space */
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .header-section h2 i {
-            color: var(--secondary-color);
-            font-size: 1.1em;
-        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            line-height: 1.6;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: var(--bg-white);
+            padding: 30px; /* Increased padding */
+            border-radius: 12px; /* More rounded */
+            box-shadow: 0 8px 25px var(--shadow-medium);
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Space between main sections */
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 15px; /* Space between elements */
+            margin-bottom: 20px; /* Space below header */
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color); /* Subtle separator */
+        }
+        .header-section h2 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2.2em;
+            flex-grow: 1; /* Allows title to take available space */
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .header-section h2 i {
+            color: var(--secondary-color);
+            font-size: 1.1em;
+        }
 
-        .header-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background-color: var(--primary-color);
-            color: var(--secondary-color);
-            border: 1px solid var(--primary-color);
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.95em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            white-space: nowrap; /* Prevent button text from wrapping */
-        }
-        .header-button:hover {
-            background-color: var(--secondary-color);
-            color: var(--primary-color);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
-        }
-        .header-button i {
-            font-size: 1.1em;
-        }
+        .header-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap; /* Prevent button text from wrapping */
+        }
+        .header-button:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+        .header-button i {
+            font-size: 1.1em;
+        }
 
-        .advert-list {
-            display: grid;
-            gap: 25px; /* Increased gap */
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted minmax for better card sizing */
-        }
-        .advert-item {
-            background: var(--bg-white);
-            border: 1px solid var(--border-color);
-            border-radius: 10px; /* More rounded */
-            overflow: hidden;
-            box-shadow: 0 4px 15px var(--shadow-light); /* Softer shadow */
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .advert-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .advert-item img {
-            width: 100%;
-            height: 200px; /* Slightly taller images */
-            object-fit: cover;
-            display: block;
-        }
-        .advert-details {
-            padding: 15px 20px; /* More padding */
-            flex-grow: 1;
-        }
-        .advert-details h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.4em; /* Larger title */
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        .advert-details p {
-            margin: 8px 0; /* More space between paragraphs */
-            font-size: 0.95em;
-            color: var(--text-medium);
-        }
-        .advert-details p strong {
-            color: var(--text-dark);
-        }
+        .advert-list {
+            display: grid;
+            gap: 25px; /* Increased gap */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted minmax for better card sizing */
+        }
+        .advert-item {
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: 10px; /* More rounded */
+            overflow: hidden;
+            box-shadow: 0 4px 15px var(--shadow-light); /* Softer shadow */
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .advert-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .advert-item img {
+            width: 100%;
+            height: 200px; /* Slightly taller images */
+            object-fit: cover;
+            display: block;
+        }
+        .advert-details {
+            padding: 15px 20px; /* More padding */
+            flex-grow: 1;
+        }
+        .advert-details h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.4em; /* Larger title */
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        .advert-details p {
+            margin: 8px 0; /* More space between paragraphs */
+            font-size: 0.95em;
+            color: var(--text-medium);
+        }
+        .advert-details p strong {
+            color: var(--text-dark);
+        }
 
-        .advert-actions {
-            padding: 15px 20px;
-            background-color: var(--bg-light); /* Lighter background for actions */
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .advert-actions .btn {
-            background-color: var(--primary-color);
-            color: var(--secondary-color);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px; /* Consistent rounded corners */
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.9em;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            flex: 1; /* Make buttons take equal width */
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .advert-actions .btn.remove {
-            background-color: var(--error-color); /* Red for remove */
-            color: var(--white-color);
-            border: 1px solid var(--error-color);
-        }
-        .advert-actions .btn:hover {
-            background-color: var(--secondary-color);
-            color: var(--primary-color);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .advert-actions .btn.remove:hover {
-            background-color: #bb2d3b; /* Darker red on hover */
-            border-color: #bb2d3b;
-        }
+        .advert-actions {
+            padding: 15px 20px;
+            background-color: var(--bg-light); /* Lighter background for actions */
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .advert-actions .btn {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px; /* Consistent rounded corners */
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1; /* Make buttons take equal width */
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .advert-actions .btn.remove {
+            background-color: var(--error-color); /* Red for remove */
+            color: var(--bg-white);
+            border: 1px solid var(--error-color);
+        }
+        .advert-actions .btn:hover {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .advert-actions .btn.remove:hover {
+            background-color: #bb2d3b; /* Darker red on hover */
+            border-color: #bb2d3b;
+        }
 
-        .no-adverts-message {
-            text-align: center;
-            padding: 40px;
-            background-color: #fcfcfc;
-            border: 2px dashed var(--border-color);
-            border-radius: 10px;
-            color: var(--text-light);
-            font-size: 1.1em;
-            margin-top: 20px;
-            box-shadow: 0 2px 8px var(--shadow-light);
-        }
+        .no-adverts-message {
+            text-align: center;
+            padding: 40px;
+            background-color: #fcfcfc;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 1.1em;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px var(--shadow-light);
+        }
 
-        /* --- Flash Messages --- */
-        .flashes {
-            list-style: none;
-            padding: 0;
-            margin-bottom: 20px;
-        }
+        /* --- Flash Messages --- */
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
 
-        .flashes li {
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            font-weight: 500;
-            border: 1px solid;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1em;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            opacity: 1;
-            transition: opacity 0.5s ease-out; /* For auto-hiding */
-        }
+        .flashes li {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1em;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            opacity: 1;
+            transition: opacity 0.5s ease-out; /* For auto-hiding */
+        }
 
-        .flashes li i {
-            font-size: 1.3em; /* Icon size for flash messages */
-            flex-shrink: 0;
-        }
+        .flashes li i {
+            font-size: 1.3em; /* Icon size for flash messages */
+            flex-shrink: 0;
+        }
 
-        .flashes .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .flashes .error, .flashes .danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
-        .flashes .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
-        .flashes .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+        .flashes .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .flashes .error, .flashes .danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .flashes .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .flashes .warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
 
-        /* --- Confirmation Modal --- */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6);
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+        /* --- Confirmation Modal --- */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
 
-        .modal-content {
-            background-color: var(--bg-white);
-            margin: auto;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            width: 90%;
-            max-width: 450px;
-            text-align: center;
-            position: relative;
-            animation: slideIn 0.3s ease-out;
-        }
+        .modal-content {
+            background-color: var(--bg-white);
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
 
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-        .modal-content .close-x {
-            color: var(--text-light);
-            font-size: 30px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
+        .modal-content .close-x {
+            color: var(--text-light);
+            font-size: 30px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
 
-        .modal-content .close-x:hover,
-        .modal-content .close-x:focus {
-            color: var(--text-dark);
-            text-decoration: none;
-        }
+        .modal-content .close-x:hover,
+        .modal-content .close-x:focus {
+            color: var(--text-dark);
+            text-decoration: none;
+        }
 
-        .modal-content h3 {
-            color: var(--primary-color);
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
+        .modal-content h3 {
+            color: var(--primary-color);
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-        .modal-content p {
-            font-size: 1.1em;
-            color: var(--text-dark);
-            margin-bottom: 30px;
-        }
+        .modal-content p {
+            font-size: 1.1em;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+        }
 
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
 
-        .modal-buttons button {
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-        }
+        .modal-buttons button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+        }
 
-        .modal-buttons .confirm-btn {
-            background-color: var(--error-color); /* Red for confirm removal */
-            color: var(--white-color);
-        }
+        .modal-buttons .confirm-btn {
+            background-color: var(--error-color); /* Red for confirm removal */
+            color: var(--bg-white);
+        }
 
-        .modal-buttons .confirm-btn:hover {
-            background-color: #bb2d3b;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+        .modal-buttons .confirm-btn:hover {
+            background-color: #bb2d3b;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
 
-        .modal-buttons .cancel-btn {
-            background-color: var(--border-color);
-            color: var(--text-dark);
-        }
+        .modal-buttons .cancel-btn {
+            background-color: var(--border-color);
+            color: var(--text-dark);
+        }
 
-        .modal-buttons .cancel-btn:hover {
-            background-color: #d1d9e0;
-        }
+        .modal-buttons .cancel-btn:hover {
+            background-color: #d1d9e0;
+        }
 
 
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .container {
-                padding: 25px;
-                margin: 15px auto;
-                gap: 20px;
-            }
-            .header-section {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-            .header-section h2 {
-                font-size: 1.8em;
-                justify-content: center;
-            }
-            .header-button {
-                width: 100%;
-                justify-content: center;
-            }
-            .advert-list {
-                grid-template-columns: 1fr; /* Stack cards on smaller tablets and mobiles */
-            }
-            .advert-item img {
-                height: 160px;
-            }
-            .advert-details h3 {
-                font-size: 1.2em;
-            }
-            .advert-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .advert-actions .btn {
-                width: 100%;
-            }
-        }
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 15px auto;
+                gap: 20px;
+            }
+            .header-section {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .header-section h2 {
+                font-size: 1.8em;
+                justify-content: center;
+            }
+            .header-button {
+                width: 100%;
+                justify-content: center;
+            }
+            .advert-list {
+                grid-template-columns: 1fr; /* Stack cards on smaller tablets and mobiles */
+            }
+            .advert-item img {
+                height: 160px;
+            }
+            .advert-details h3 {
+                font-size: 1.2em;
+            }
+            .advert-details p {
+                font-size: 0.95em;
+            }
+            .advert-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .advert-actions .btn {
+                width: 100%;
+            }
+        }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 15px;
-                margin: 10px auto;
-                border-radius: 8px;
-                gap: 15px;
-            }
-            .header-section h2 {
-                font-size: 1.6em;
-                gap: 10px;
-            }
-            .header-button {
-                padding: 8px 15px;
-                font-size: 0.85em;
-            }
-            .advert-item img {
-                height: 140px;
-            }
-            .advert-details h3 {
-                font-size: 1.1em;
-            }
-            .advert-details p {
-                font-size: 0.85em;
-            }
-            .advert-actions .btn {
-                padding: 8px 12px;
-                font-size: 0.8em;
-            }
-        }
-    </style>
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+                margin: 10px auto;
+                border-radius: 8px;
+                gap: 15px;
+            }
+            .header-section h2 {
+                font-size: 1.6em;
+                gap: 10px;
+            }
+            .header-button {
+                padding: 8px 15px;
+                font-size: 0.85em;
+            }
+            .advert-item img {
+                height: 140px;
+            }
+            .advert-details h3 {
+                font-size: 1.1em;
+            }
+            .advert-details p {
+                font-size: 0.85em;
+            }
+            .advert-actions .btn {
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header-section">
-        <h2><i class="fas fa-bookmark"></i> Your Saved Adverts</h2>
-        <a href="{{ url_for('home') }}" class="header-button">
-            <i class="fas fa-home"></i> Home
-        </a>
-        <a href="{{ url_for('profile') }}" class="header-button">
-            <i class="fas fa-user"></i> Profile
-        </a>
-        <a onclick="history.back()" class="header-button">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-    </div>
+    <div class="header-section">
+        <h2><i class="fas fa-bookmark"></i> Your Saved Adverts</h2>
+        <a href="{{ url_for('home') }}" class="header-button">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="{{ url_for('profile') }}" class="header-button">
+            <i class="fas fa-user"></i> Profile
+        </a>
+        <a onclick="history.back()" class="header-button">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
 
-    {# Flash Messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">
-                    <span class="alert-icon">
-                        {% if category == 'danger' %} <i class="fas fa-times-circle"></i>
-                        {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
-                        {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
-                        {% else %} <i class="fas fa-info-circle"></i>
-                        {% endif %}
-                    </span>
-                    {{ message }}
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    {% endwith %}
-    {# End Flash Messages #}
+    {# Flash Messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">
+                    <span class="alert-icon">
+                        {% if category == 'danger' %} <i class="fas fa-times-circle"></i>
+                        {% elif category == 'success' %} <i class="fas fa-check-circle"></i>
+                        {% elif category == 'warning' %} <i class="fas fa-exclamation-triangle"></i>
+                        {% else %} <i class="fas fa-info-circle"></i>
+                        {% endif %}
+                    </span>
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+    {# End Flash Messages #}
 
-    {% if saved_adverts %}
-        <div class="advert-list">
-            {% for advert in saved_adverts %}
-                <div class="advert-item" id="saved-advert-{{ advert.id }}">
-                    <img src="{{ url_for('static', filename='media/' + advert.main_image) }}" onerror="this.onerror=null;this.src='https://placehold.co/400x200/cccccc/333333?text=No+Image';" alt="{{ advert.title }}">
-                    <div class="advert-details">
-                        <h3>{{ advert.title }}</h3>
-                        <p><strong><i class="fas fa-tag"></i> Price:</strong> ₦{{ "{:,.2f}".format(advert.price) }}</p>
-                        <p><strong><i class="fas fa-map-marker-alt"></i> Location:</strong> {{ advert.location }}</p>
-                    </div>
-                    <div class="advert-actions">
-                        <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <button class="btn remove" onclick="showConfirmModal({{ advert.id }})">
-                            <i class="fas fa-trash-alt"></i> Remove
-                        </button>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="no-adverts-message">You haven't saved any adverts yet.</p>
-    {% endif %}
+    {% if saved_adverts %}
+        <div class="advert-list">
+            {% for advert in saved_adverts %}
+                <div class="advert-item" id="saved-advert-{{ advert.id }}">
+                    <img src="{{ advert.display_image }}" onerror="this.onerror=null;this.src='https://placehold.co/400x200/cccccc/333333?text=No+Image';" alt="{{ advert.title }}">
+                    <div class="advert-details">
+                        <h3>{{ advert.title }}</h3>
+                        <p><strong><i class="fas fa-tag"></i> Price:</strong> ₦{{ "{:,.2f}".format(advert.price) }}</p>
+                        <p><strong><i class="fas fa-map-marker-alt"></i> Location:</strong> {{ advert.location }}</p>
+                    </div>
+                    <div class="advert-actions">
+                        <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <button class="btn remove" onclick="showConfirmModal('{{ advert.id }}')">
+                            <i class="fas fa-trash-alt"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-adverts-message">You haven't saved any adverts yet.</p>
+    {% endif %}
 </div>
 
 {# Confirmation Modal #}
 <div id="confirmRemoveModal" class="modal">
-    <div class="modal-content">
-        <span class="close-x" onclick="closeConfirmModal()">&times;</span>
-        <h3><i class="fas fa-trash-alt"></i> Confirm Removal</h3>
-        <p>Are you sure you want to remove this advert from your saved list?</p>
-        <div class="modal-buttons">
-            <button class="confirm-btn" id="confirmRemoveBtn">Yes, Remove</button>
-            <button class="cancel-btn" onclick="closeConfirmModal()">Cancel</button>
-        </div>
-    </div>
+    <div class="modal-content">
+        <span class="close-x" onclick="closeConfirmModal()">&times;</span>
+        <h3><i class="fas fa-trash-alt"></i> Confirm Removal</h3>
+        <p>Are you sure you want to remove this advert from your saved list?</p>
+        <div class="modal-buttons">
+            <button class="confirm-btn" id="confirmRemoveBtn">Yes, Remove</button>
+            <button class="cancel-btn" onclick="closeConfirmModal()">Cancel</button>
+        </div>
+    </div>
 </div>
 
 {# Alert Modal for success/error messages #}
 <div id="alertModal" class="modal">
-    <div class="modal-content">
-        <span class="close-x" onclick="closeAlertModal()">&times;</span>
-        <h3 id="alertModalTitle"><i class="fas fa-info-circle"></i> Message</h3>
-        <p id="alertModalMessage"></p>
-        <div class="modal-buttons">
-            <button class="confirm-btn" onclick="closeAlertModal()">Okay</button>
-        </div>
-    </div>
+    <div class="modal-content">
+        <span class="close-x" onclick="closeAlertModal()">&times;</span>
+        <h3 id="alertModalTitle"><i class="fas fa-info-circle"></i> Message</h3>
+        <p id="alertModalMessage"></p>
+        <div class="modal-buttons">
+            <button class="confirm-btn" onclick="closeAlertModal()">Okay</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    let currentAdvertIdToRemove = null;
+    let currentAdvertIdToRemove = null;
 
-    // Functions to show/hide modals
-    function showConfirmModal(advertId) {
-        currentAdvertIdToRemove = advertId;
-        document.getElementById('confirmRemoveModal').classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-    }
+    // Functions to show/hide modals
+    function showConfirmModal(advertId) {
+        currentAdvertIdToRemove = advertId;
+        document.getElementById('confirmRemoveModal').classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
 
-    function closeConfirmModal() {
-        document.getElementById('confirmRemoveModal').classList.remove('active');
-        document.body.style.overflow = ''; // Restore background scrolling
-        currentAdvertIdToRemove = null;
-    }
+    function closeConfirmModal() {
+        document.getElementById('confirmRemoveModal').classList.remove('active');
+        document.body.style.overflow = ''; // Restore background scrolling
+        currentAdvertIdToRemove = null;
+    }
 
-    function showAlertModal(title, message, iconClass = 'fas fa-info-circle', titleColor = 'var(--primary-color)') {
-        document.getElementById('alertModalTitle').innerHTML = `<i class="${iconClass}"></i> ${title}`;
-        document.getElementById('alertModalTitle').style.color = titleColor;
-        document.getElementById('alertModalMessage').textContent = message;
-        document.getElementById('alertModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
+    function showAlertModal(title, message, iconClass = 'fas fa-info-circle', titleColor = 'var(--primary-color)') {
+        document.getElementById('alertModalTitle').innerHTML = `<i class="${iconClass}"></i> ${title}`;
+        document.getElementById('alertModalTitle').style.color = titleColor;
+        document.getElementById('alertModalMessage').textContent = message;
+        document.getElementById('alertModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 
-    function closeAlertModal() {
-        document.getElementById('alertModal').classList.remove('active');
-        document.body.style.overflow = '';
-        // Optionally reload page on alert close if removal requires full refresh
-        if (document.getElementById('advert-list').children.length === 0) {
-             window.location.reload(); 
-        }
-    }
+    function closeAlertModal() {
+        document.getElementById('alertModal').classList.remove('active');
+        document.body.style.overflow = '';
+        // Reload the page if the user removed their last advert
+        const advertList = document.querySelector('.advert-list');
+        if (advertList && advertList.children.length === 0) {
+            window.location.reload();
+        }
+    }
 
-    // Event listener for the "Yes, Remove" button in the confirmation modal
-    document.getElementById('confirmRemoveBtn').addEventListener('click', async () => {
-        if (currentAdvertIdToRemove) {
-            closeConfirmModal(); // Close confirmation modal immediately
-            await removeSavedAdvert(currentAdvertIdToRemove);
-        }
-    });
+    // Event listener for the "Yes, Remove" button in the confirmation modal
+    document.getElementById('confirmRemoveBtn').addEventListener('click', async () => {
+        if (currentAdvertIdToRemove) {
+            closeConfirmModal(); // Close confirmation modal immediately
+            await unsaveAdvert(currentAdvertIdToRemove);
+        }
+    });
 
-    async function removeSavedAdvert(advertId) {
-        try {
-            const response = await fetch(`/remove_saved_advert/${advertId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            const data = await response.json();
+    async function unsaveAdvert(advertId) {
+        try {
+            const response = await fetch(`/api/unsave_advert`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ advert_id: advertId })
+            });
+            const data = await response.json();
 
-            if (response.ok) {
-                showAlertModal('Success!', data.message, 'fas fa-check-circle', 'var(--success-color)');
-                // Remove the advert card from the DOM
-                const advertCard = document.getElementById(`saved-advert-${advertId}`);
-                if (advertCard) {
-                    advertCard.remove();
-                }
-                // Check if the list is empty after removal and display message/reload if needed
-                const advertList = document.querySelector('.advert-list');
-                const noAdvertsMessage = document.querySelector('.no-adverts-message');
-                if (advertList && advertList.children.length === 0) {
-                    if (noAdvertsMessage) {
-                        noAdvertsMessage.style.display = 'block'; // Show if already exists
-                    } else {
-                        // Create and append if it doesn't exist (less common)
-                        const p = document.createElement('p');
-                        p.className = 'no-adverts-message';
-                        p.textContent = "You haven't saved any adverts yet.";
-                        advertList.parentNode.insertBefore(p, advertList.nextSibling);
-                    }
-                    advertList.style.display = 'none'; // Hide the grid container
-                }
-            } else {
-                showAlertModal('Error!', data.message || 'Something went wrong.', 'fas fa-times-circle', 'var(--error-color)');
-            }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            showAlertModal('Error!', 'An unexpected error occurred. Please try again.', 'fas fa-times-circle', 'var(--error-color)');
-        }
-    }
+            if (response.ok && data.success) {
+                showAlertModal('Success!', data.message, 'fas fa-check-circle', 'var(--success-color)');
+                // Remove the advert card from the DOM
+                const advertCard = document.getElementById(`saved-advert-${advertId}`);
+                if (advertCard) {
+                    advertCard.remove();
+                }
+                const advertList = document.querySelector('.advert-list');
+                if (advertList && advertList.children.length === 0) {
+                    const container = document.querySelector('.container');
+                    const noAdvertsMessage = document.createElement('p');
+                    noAdvertsMessage.className = 'no-adverts-message';
+                    noAdvertsMessage.textContent = "You haven't saved any adverts yet.";
+                    container.appendChild(noAdvertsMessage);
+                    advertList.remove();
+                }
+            } else {
+                showAlertModal('Error!', data.message || 'Something went wrong.', 'fas fa-times-circle', 'var(--error-color)');
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            showAlertModal('Error!', 'An unexpected error occurred. Please try again.', 'fas fa-times-circle', 'var(--error-color)');
+        }
+    }
 
-    // Auto-hide flash messages (if any exist from server-side)
-    document.addEventListener('DOMContentLoaded', () => {
-        const flashes = document.querySelectorAll('.flashes li');
-        flashes.forEach(flash => {
-            setTimeout(() => {
-                flash.style.opacity = '0';
-                setTimeout(() => flash.remove(), 500);
-            }, 5000);
-        });
-    });
+    // Auto-hide flash messages (if any exist from server-side)
+    document.addEventListener('DOMContentLoaded', () => {
+        const flashes = document.querySelectorAll('.flashes li');
+        flashes.forEach(flash => {
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 500);
+            }, 5000);
+        });
+    });
 </script>
 </body>
 </html>
