@@ -2799,10 +2799,6 @@ def advert_detail(advert_id):
 
 
 
-
-# Assuming your other imports and setup are already in place
-# ...
-
 @app.route('/seller_profile/<seller_id>')
 def seller_profile_view(seller_id):
     current_user_id = session.get('user_id')
@@ -2826,22 +2822,17 @@ def seller_profile_view(seller_id):
         cover_photo_filename = seller_info.get('cover_photo')
         seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
         
-        # Add the seller's WhatsApp link to their info dictionary
         seller_phone = seller_info.get('phone_number')
         if seller_phone:
-            # We'll generate a simple message link here
             seller_info['whatsapp_link'] = f"https://wa.me/{seller_phone}"
 
         if seller_info.get('created_at') and hasattr(seller_info['created_at'], 'to_datetime'):
             seller_info['created_at'] = seller_info['created_at'].strftime('%Y-%m-%d %H:%M')
 
-        # ... (rest of your existing code for reviews, etc.)
-
         if current_user_id:
             followers_query = db.collection('followers').where('follower_id', '==', current_user_id).where('followed_id', '==', seller_id).limit(1)
             is_following = len(list(followers_query.stream())) > 0
 
-        # ✨ REVISED QUERY: Use .where() to filter by published status
         adverts_ref = db.collection('adverts').where('user_id', '==', seller_id).where('status', '==', 'published').order_by('created_at', direction=firestore.Query.DESCENDING)
         
         seller_adverts = []
@@ -2849,12 +2840,11 @@ def seller_profile_view(seller_id):
             advert = advert_doc.to_dict()
             advert['id'] = advert_doc.id
             
-            if advert.get('main_image'):
-                blob = bucket.blob(advert['main_image'])
-                if blob.exists():
-                    advert['display_image'] = blob.generate_signed_url(timedelta(minutes=15), method='GET')
-                else:
-                    advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
+            # CRITICAL FIX: The main_image field already contains the URL.
+            # No need to generate a signed URL again.
+            main_image_url = advert.get('main_image')
+            if main_image_url:
+                advert['display_image'] = main_image_url
             else:
                 advert['display_image'] = url_for('static', filename='images/default_advert_image.png')
 
@@ -2863,10 +2853,12 @@ def seller_profile_view(seller_id):
             if advert.get('expires_at') and hasattr(advert['expires_at'], 'to_datetime'):
                 advert['expires_at'] = advert['expires_at'].strftime('%Y-%m-%d %H:%M')
 
-            # We'll use the URL of the advert details page as the message content
             advert_url = url_for('advert_detail', advert_id=advert['id'], _external=True)
             pre_filled_message = f"Hello, I am interested in this advert from your profile: {advert_url}"
-            advert['whatsapp_link_with_message'] = f"https://wa.me/{seller_phone}?text={quote(pre_filled_message)}"
+            if seller_phone:
+                advert['whatsapp_link_with_message'] = f"https://wa.me/{seller_phone}?text={quote(pre_filled_message)}"
+            else:
+                advert['whatsapp_link_with_message'] = None
             
             seller_adverts.append(advert)
 
@@ -2879,6 +2871,9 @@ def seller_profile_view(seller_id):
         logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
+
+
+
 
 
 
@@ -6737,6 +6732,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
