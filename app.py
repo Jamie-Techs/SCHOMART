@@ -2244,8 +2244,6 @@ def admin_advert_review():
 
 
 
-
-
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
@@ -2253,8 +2251,8 @@ def admin_advert_approve():
     """
     Handles the approval of an advert.
 
-    Updates the advert's status to 'approved', sets the publication date,
-    and calculates the final expiry date.
+    Updates the advert's status to 'published' and sets the
+    publication date.
     """
     advert_id = request.form.get('advert_id')
     if not advert_id:
@@ -2264,17 +2262,21 @@ def admin_advert_approve():
     advert_doc = advert_ref.get()
 
     if advert_doc.exists:
-        advert_data = advert_doc.to_dict()
-        duration_days = advert_data.get("advert_duration_days", 30) # Default to 30 days if not set
-
+        # Correctly set the status to 'published'
+        # Set the publication date using a Firestore Server Timestamp
         advert_ref.update({
-            'status': 'approved',
-            'is_published': True,
-            'published_at': datetime.now(),
-            'expiry_date': datetime.now() + timedelta(days=duration_days)
+            'status': 'published',
+            'published_at': firestore.SERVER_TIMESTAMP
         })
 
     return redirect(url_for('admin_advert_review'))
+
+
+
+
+
+
+
 
 
 @app.route('/admin/adverts/reject', methods=['POST'])
@@ -6763,6 +6765,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
