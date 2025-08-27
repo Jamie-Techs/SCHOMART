@@ -1760,61 +1760,61 @@ def check_if_saved(user_id, advert_id):
 
 
 
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
 def sell(advert_id=None):
     advert = None
     if advert_id:
-        # Corrected line to get the advert from Firestore
+        # Correctly get the advert from Firestore
         advert_doc_ref = db.collection("adverts").document(advert_id)
         advert_doc = advert_doc_ref.get()
         if advert_doc.exists:
             advert = advert_doc.to_dict()
-    
+
     user_id = g.current_user.id
     user_data = get_user_info(user_id)
+    # This function needs to be corrected to use the right dictionary keys
+    # based on the plans you provided.
     available_options = get_user_advert_options(user_id)
     
     advert_data = {}
     is_repost = False
     
-    # Initialize form_data for both GET and POST requests
     form_data = {}
 
     if advert_id:
-        # This part is redundant as we already got the advert
         if not advert or advert.get('user_id') != user_id:
             flash("Advert not found or you don't have permission to edit.", "error")
             return redirect(url_for('list_adverts'))
         
         advert_data = advert
         is_repost = True
-        # If editing an existing advert (GET request with advert_id),
-        # populate the form_data with the advert's data.
         form_data = advert
     
     if request.method == 'POST':
-        # Overwrite form_data with POST data
         form_data = request.form.to_dict()
         files = request.files
         
         errors = validate_sell_form(form_data, files)
         
-        selected_option_type = form_data.get("posting_option")
-        selected_option = next((opt for opt in available_options if opt['type'] == selected_option_type), None)
+        # We need to get the key from the form data, not the plan name from a list.
+        selected_option_key = form_data.get("posting_option")
+        selected_option = SUBSCRIPTION_PLANS.get(selected_option_key) # Use .get() for a direct, safe lookup
         
+        # Check if the selected option is a free or referral plan from a separate dictionary
         if not selected_option:
-            # Append the error message to the list of errors
+            selected_option = REFERRAL_PLANS.get(int(selected_option_key.split('_')[1])) if selected_option_key and selected_option_key.startswith("referral") else None
+        if not selected_option and selected_option_key == "free_advert":
+            selected_option = FREE_ADVERT_PLAN
+
+        if not selected_option:
             errors.append("Invalid advert plan selected. Please choose a valid plan.")
 
         if errors:
             for error_msg in errors:
                 flash(error_msg, 'error')
             
-            # Re-render the form with the user's input and errors
             return render_template(
                 "sell.html",
                 user_data=user_data,
@@ -1831,14 +1831,12 @@ def sell(advert_id=None):
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
-            # --- The updated section to use the new category logic ---
-            # Get the category ID from the submitted category name
             category_name = form_data.get('category')
             category_id = get_category_id_from_name(category_name)
             
             advert_payload = {
                 "user_id": user_id,
-                "category_id": category_id, # This is the corrected line
+                "category_id": category_id,
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
                 "price": float(form_data.get('price')),
@@ -1850,14 +1848,13 @@ def sell(advert_id=None):
                 "main_image": main_image_url,
                 "additional_images": additional_images_urls,
                 "video": video_url,
-                "plan_name": selected_option.get("plan_name"),
+                "plan_name": selected_option_key, # Correctly save the plan KEY
                 "advert_duration_days": selected_option.get("advert_duration_days"),
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP
             }
-            # --- End of updated section ---
 
-            is_subscription = "cost_naira" in selected_option
+            is_subscription = selected_option.get('cost_naira') is not None
             
             if is_subscription:
                 advert_payload["status"] = "pending_payment"
@@ -1865,20 +1862,22 @@ def sell(advert_id=None):
                 new_advert_ref.set(advert_payload)
                 advert_id_for_payment = new_advert_ref.id
                 
-                return redirect(url_for('payment', advert_id=advert_id_for_payment, plan_name=selected_option['plan_name']))
+                flash("Your advert has been created. Please complete the payment.", "info")
+                # Corrected redirect URL
+                return redirect(url_for('payment', advert_id=advert_id_for_payment))
             else:
                 advert_payload["status"] = "pending_review"
-                # Use update() if reposting, set() for a new post
+                
                 if is_repost:
                     db.collection("adverts").document(advert_id).update(advert_payload)
                 else:
                     new_advert_ref = db.collection("adverts").document()
                     new_advert_ref.set(advert_payload)
                 
-                if selected_option_type == "free_advert":
+                if selected_option_key == "free_advert":
                     db.collection("users").document(user_id).update({"has_posted_free_ad": True})
-                elif selected_option_type.startswith("referral_"):
-                    cost = int(selected_option_type.split('_')[1])
+                elif selected_option_key.startswith("referral_"):
+                    cost = int(selected_option_key.split('_')[1])
                     db.collection("users").document(user_id).update({f"used_referral_{cost}_benefit": True})
                 
                 flash("Your advert has been submitted for review.", "success")
@@ -1889,7 +1888,6 @@ def sell(advert_id=None):
             flash("An unexpected error occurred. Please try again.", "error")
             return redirect(url_for('sell'))
 
-    # This is the return for GET requests, which was the original missing piece
     return render_template(
         "sell.html",
         user_data=user_data,
@@ -1901,6 +1899,19 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1986,10 +1997,12 @@ def submit_advert(advert_id):
 
 
 
-# Updated /adverts route
 @app.route('/adverts')
 @login_required
 def list_adverts():
+    """
+    Renders the list of a user's adverts, handling status updates and expiration.
+    """
     user_id = g.current_user.id
     adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
     adverts = []
@@ -2001,26 +2014,24 @@ def list_adverts():
         advert_data = doc.to_dict()
         advert_data['id'] = doc.id
         
-        status = advert_data.get('status', 'pending_review') # Default to pending_review
+        status = advert_data.get('status', 'pending_review')
         
         # Check for expiration if the advert is published
-        if status == 'published' and 'published_at' in advert_data and advert_data['published_at']:
-            # Use 'plan_name' to get details.
+        if status == 'published' and advert_data.get('published_at'):
             plan_name = advert_data.get('plan_name')
-            # Assuming SUBSCRIPTION_PLANS is a dictionary where keys are plan names
             plan_details = SUBSCRIPTION_PLANS.get(plan_name)
             
             if plan_details:
                 duration_days = plan_details.get('advert_duration_days', 0)
                 published_at = advert_data['published_at']
                 
-                # Check if published_at is a datetime object, convert if necessary
+                # Convert to datetime object if it's a Firestore Timestamp
                 if not isinstance(published_at, datetime):
-                    published_at = published_at.to_datetime()
+                    published_at = published_at.to_datetime().astimezone(timezone.utc)
                 
-                # Use timedelta correctly
+                # Use timedelta correctly with timezone-aware datetimes
                 expiration_date = published_at + timedelta(days=duration_days)
-                now = datetime.now(timezone.utc) # Ensure timezone awareness
+                now = datetime.now(timezone.utc)
                 
                 if now > expiration_date:
                     # Update status to 'expired' in Firestore
@@ -2028,8 +2039,13 @@ def list_adverts():
                     status = 'expired'
             
         # Check if the advert is expired and passed the 2-day grace period
-        if status == 'expired' and 'expired_at' in advert_data and advert_data['expired_at']:
-            expired_at = advert_data['expired_at'].to_datetime()
+        if status == 'expired' and advert_data.get('expired_at'):
+            expired_at = advert_data['expired_at']
+            
+            # Convert to datetime object if it's a Firestore Timestamp
+            if not isinstance(expired_at, datetime):
+                expired_at = expired_at.to_datetime().astimezone(timezone.utc)
+
             deletion_date = expired_at + timedelta(days=2)
             now = datetime.now(timezone.utc)
             
@@ -2045,7 +2061,7 @@ def list_adverts():
         advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
         advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
         
-        # Check and format 'created_at' using the correct datetime reference
+        # Format 'created_at' for display
         created_at = advert_data.get('created_at')
         if created_at and isinstance(created_at, datetime):
             advert_data['created_at'] = created_at.strftime('%Y-%m-%d %H:%M')
@@ -2054,28 +2070,17 @@ def list_adverts():
         else:
             advert_data['created_at'] = 'N/A'
             
-        # --- Add a key to control button display in the template ---
-        if advert_data['status'] == 'published':
-            advert_data['button_text'] = 'View Advert'
-            advert_data['button_url'] = url_for('advert_detail', advert_id=advert_data['id'])
-        elif advert_data['status'] == 'pending_payment':
-            advert_data['button_text'] = 'Make Payment'
-            advert_data['button_url'] = url_for('payment', advert_id=advert_data['id'])
-        elif advert_data['status'] == 'pending_review':
-            advert_data['button_text'] = 'Pending Review'
-            advert_data['button_url'] = '#' # Not a clickable link
-        elif advert_data['status'] == 'expired':
-            advert_data['button_text'] = 'Expired'
-            advert_data['button_url'] = '#'
-        # --- End of button logic addition ---
-            
         adverts.append(advert_data)
     
     # Process the batch deletion of expired adverts
     for advert_id in adverts_to_delete:
-        delete_advert_and_data(advert_id) # Call a new helper function
+        delete_advert_and_data(advert_id)
         
     return render_template("list_adverts.html", adverts=adverts)
+
+
+
+
 
 
 
@@ -6712,6 +6717,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
