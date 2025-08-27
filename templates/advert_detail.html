@@ -689,9 +689,9 @@
         <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
             <i class="fas fa-user"></i> Profile
         </a>
-        <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+     <!--   <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
             <i class="fas fa-bookmark"></i> Saved Adverts
-        </a>
+        </a> -->
         
         {# CORRECTION: This button was previously separate and now it's merged with the contact-actions section below. It's better practice to have one single "Save/Unsave" button for consistency. #}
     </div>
@@ -711,7 +711,7 @@
                 </div>
             </a>
         
-            {% if g.current_user and g.current_user.id != seller.id %}
+          <!-- {% if g.current_user and g.current_user.id != seller.id %}
                 <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
                     <button class="follow-btn" type="submit" id="followButton">
                         {% if is_following %}
@@ -721,9 +721,9 @@
                         {% endif %}
                     </button>
                 </form>
-            {% endif %}
+            {% endif %} -->
         </div>
-    </div>
+    </div> 
     
     <div class="media-gallery">
         <div class="image-slider">
@@ -779,7 +779,7 @@
         Message Seller
     </a>
 
-    {# CORRECTED: The button is now always displayed because the route is protected #}
+  <!--  {# CORRECTED: The button is now always displayed because the route is protected #}
     <button id="save-toggle-btn"
             class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
             data-advert-id="{{ advert.id }}"
@@ -789,7 +789,7 @@
         {% else %}
             <i class="far fa-bookmark"></i> Save
         {% endif %}
-    </button>
+    </button> -->
     
     <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
         <i class="fas fa-flag"></i> Report Advert
@@ -998,4 +998,5 @@
 </script>
 </body>
 </html>
+
 
