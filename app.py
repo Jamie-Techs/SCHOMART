@@ -2900,7 +2900,9 @@ def save_advert():
 
 
 
-# Assumes db is your Firestore client and login_required is your decorator
+
+
+
 @app.route('/api/unsave_advert', methods=['POST'])
 @login_required
 def unsave_advert():
@@ -2908,19 +2910,22 @@ def unsave_advert():
     Removes a specific advert from the user's saved list.
     """
     try:
-        # Check if the request body is valid JSON
-        if not request.is_json:
-            return jsonify({'success': False, 'message': 'Request must be JSON'}), 400
+        data = request.get_json(silent=True)
+        
+        # Check if the JSON payload is valid
+        if not data:
+            logging.error("Invalid or missing JSON payload in /api/unsave_advert.")
+            return jsonify({'success': False, 'message': 'Invalid request format.'}), 400
 
-        data = request.get_json()
         advert_id_to_remove = data.get('advert_id')
         current_user_id = g.current_user.id
 
+        # The backend now correctly checks for the presence of the advert_id
         if not advert_id_to_remove:
+            logging.warning(f"Advert ID required for user {current_user_id}.")
             return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
 
-        # Create a reference to the specific saved advert document
-        # We use a composite document ID to make it unique and easy to find/delete
+        # Find the document using a unique composite ID
         doc_ref = db.collection('saved_adverts').document(f'{current_user_id}_{advert_id_to_remove}')
         
         # Check if the document exists before attempting to delete it
@@ -2929,7 +2934,7 @@ def unsave_advert():
 
         # Delete the document
         doc_ref.delete()
-
+        
         return jsonify({'success': True, 'message': 'Advert removed successfully.'}), 200
 
     except Exception as e:
@@ -6353,6 +6358,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
