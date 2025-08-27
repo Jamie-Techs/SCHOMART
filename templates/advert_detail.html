@@ -633,19 +633,34 @@
     {# End Flash Messages #}
 
     <div class="top-navigation">
-        <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
-            <i class="fas fa-arrow-left"></i> Back
-        </button>
-        <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
-            <i class="fas fa-home"></i> Home
-        </a>
-        <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
-            <i class="fas fa-user"></i> Profile
-        </a>
-        <a href="{{ url_for('saved_adverts') }}" class="nav-button" title="View your Saved Adverts">
-            <i class="fas fa-bookmark"></i> Saved Adverts
-        </a>
-    </div>
+    <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
+        <i class="fas fa-home"></i> Home
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
+        <i class="fas fa-user"></i> Profile
+    </a>
+    <a href="{{ url_for('saved_adverts') }}" class="nav-button" title="View your Saved Adverts">
+        <i class="fas fa-bookmark"></i> Saved Adverts
+    </a>
+    
+    {% if g.current_user and g.current_user.is_authenticated and advert %}
+    <button class="nav-button" 
+            onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
+            title="Save or unsave this advert">
+        {% if is_saved %}
+            <i class="fas fa-bookmark"></i> Unsave
+        {% else %}
+            <i class="far fa-bookmark"></i> Save
+        {% endif %}
+    </button>
+    {% endif %}
+    
+</div>
+
+ 
     <div class="seller-info">
     <a href="{{ url_for('seller_profile_view',seller_id=seller.id) }}" class="button view-profile-button">
         
@@ -983,35 +998,39 @@
         }
     }
 
-    // JavaScript for Save/Unsave Advert
-    async function handleSaveToggle(advertId) {
-        const saveAdvertBtn = document.getElementById('saveAdvertBtn');
-        const isSaved = saveAdvertBtn.innerHTML.includes('Remove'); // Check current state
+   // Function to toggle save/unsave state and send API request
+async function toggleSaveAdvert(button, advertId) {
+    const isSaved = button.classList.contains('saved');
+    const endpoint = isSaved ? '/api/unsave_advert' : '/api/save_advert';
+    const action = isSaved ? 'unsaving' : 'saving';
 
-        const action = isSaved ? 'unsave' : 'save';
-        const url = `/toggle_saved_advert/${advertId}?action=${action}`;
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ advert_id: advertId })
+        });
+        
+        const data = await response.json();
 
-        try {
-            const response = await fetch(url, { method: 'POST' });
-            const data = await response.json();
-
-            if (data.success) {
-                if (data.is_saved) {
-                    saveAdvertBtn.innerHTML = '<img src="{{ url_for('static', filename='media/icons/unsave_icon.png') }}" alt="Remove" class="button-icon"> Remove from Saved';
-                    flashMessage('Advert saved successfully!', 'success');
-                } else {
-                    saveAdvertBtn.innerHTML = '<img src="{{ url_for('static', filename='media/icons/save_icon.png') }}" alt="Save" class="button-icon"> Save Advert';
-                    flashMessage('Advert removed from saved adverts.', 'info');
-                }
+        if (response.ok && data.success) {
+            if (isSaved) {
+                // Unsaved successfully, change button state
+                button.classList.remove('saved');
+                button.innerHTML = '<i class="far fa-bookmark"></i> Save';
             } else {
-                flashMessage(data.message || 'Error processing request.', 'error');
+                // Saved successfully, change button state
+                button.classList.add('saved');
+                button.innerHTML = '<i class="fas fa-bookmark"></i> Saved';
             }
-        } catch (error) {
-            console.error('Error:', error);
-            flashMessage('An unexpected error occurred.', 'error');
+        } else {
+            alert(`Error ${action} advert: ${data.message}`);
         }
+    } catch (error) {
+        console.error(`Fetch error ${action} advert:`, error);
+        alert('An unexpected error occurred. Please try again.');
     }
-
+} 
     // Function to display flash messages (if you have a dedicated flash message area)
     function flashMessage(message, category) {
         const flashContainer = document.querySelector('.flashes');
@@ -1052,6 +1071,7 @@
 </body>
 
 </html>
+
 
 
 
