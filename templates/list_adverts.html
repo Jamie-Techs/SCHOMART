@@ -145,6 +145,7 @@
         .advert-item.status-published .advert-status-header { background-color: #28a745; }
         .advert-item.status-expired .advert-status-header,
         .advert-item.status-paused .advert-status-header { background-color: #6c757d; }
+        .advert-item.status-pending_payment .advert-status-header { background-color: #17a2b8; color: var(--light-text); }
         .advert-content {
             padding: 1.25rem;
             flex-grow: 1;
@@ -227,6 +228,8 @@
         .btn.btn-warning:hover { background-color: #e0a800; }
         .btn.btn-info { background-color: #17a2b8; }
         .btn.btn-info:hover { background-color: #138496; }
+        .btn.btn-success { background-color: #28a745; }
+        .btn.btn-success:hover { background-color: #218838; }
         .no-adverts {
             text-align: center;
             color: #555;
@@ -348,7 +351,6 @@
                                 <li><strong>Location:</strong> {{ advert.location }}</li>
                                 <li><strong>Plan:</strong> {{ advert.plan_name }} (Visibility: {{ advert.visibility_level }})</li>
                                 <li><strong>Submitted On:</strong> {{ advert.created_at }}</li>
-                                {# NEW CODE: Display the expiration date if available #}
                                 {% if advert.expires_at %}
                                 <li><strong>Expires On:</strong> {{ advert.expires_at }}</li>
                                 {% endif %}
@@ -370,7 +372,14 @@
                         </a> {# Close the clickable link for published adverts #}
                     {% endif %}
                     <div class="advert-actions-footer">
-                        {% if advert.status == 'pending_review' %}
+                        {# --- NEW CODE BLOCK FOR PENDING PAYMENT --- #}
+                        {% if advert.status == 'pending_payment' %}
+                            <a href="{{ url_for('payment', advert_id=advert.id) }}" class="btn btn-info">Complete Payment</a>
+                            <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
+                            <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        {% elif advert.status == 'pending_review' %}
                             <span class="btn">Pending Review</span>
                             <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
                             <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
