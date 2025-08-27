@@ -1469,18 +1469,6 @@ def get_document(collection_name, doc_id):
         logger.error(f"Error fetching document '{doc_id}' from '{collection_name}': {e}")
     return None
 
-def get_user_info(user_id):
-    """Fetches user data, including the number of adverts."""
-    user_data = get_document("users", user_id)
-    if user_data:
-        try:
-            # Get the count of adverts for the user
-            adverts_count = db.collection("adverts").where("user_id", "==", user_id).count().get()[0].value
-            user_data['adverts_count'] = adverts_count
-        except Exception as e:
-            logger.error(f"Error getting advert count for user {user_id}: {e}")
-            user_data['adverts_count'] = 0
-    return user_data
 
 def get_active_subscription(user_id):
     """Finds the user's most recent active subscription."""
@@ -1697,23 +1685,19 @@ def check_if_following(follower_id, followee_id):
     
     return follower_doc.exists
 
+# New helper function to check if an advert is saved
 def check_if_saved(user_id, advert_id):
     """
-    Checks if a user has saved a specific advert.
+    Checks if a specific advert has been saved by a user.
     """
     if not user_id or not advert_id:
         return False
-
-    # Saved advert documents are named using the pattern "user_id_advert_id"
-    doc_id = f"{user_id}_{advert_id}"
-    saved_advert_doc = db.collection('saved_adverts').document(doc_id).get()
-    
-    return saved_advert_doc.exists
-
-
-
-
-
+    try:
+        saved_ref = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).get()
+        return len(saved_ref) > 0
+    except Exception as e:
+        logger.error(f"Error checking if advert {advert_id} is saved for user {user_id}: {e}", exc_info=True)
+        return False
 
 
 def get_subscription_plan(plan_type):
@@ -2674,6 +2658,11 @@ def referral_benefit():
 
 
 
+
+
+# You need to make sure you have your existing helper functions like
+# get_profile_picture_url, get_category_name, etc. here as well.
+
 @app.route('/advert/<string:advert_id>')
 def advert_detail(advert_id):
     """
@@ -2707,12 +2696,9 @@ def advert_detail(advert_id):
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
 
-            # This is the critical line that fixes the issue.
-            # It takes the filename and generates a full URL.
             profile_picture_filename = seller.get('profile_picture')
             seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
 
-            # Calculate and attach the seller's rating and review count
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
             review_count = 0
@@ -2732,7 +2718,9 @@ def advert_detail(advert_id):
         is_following = False
         is_saved = False
         if current_user_id:
+            # The is_following check remains the same
             is_following = check_if_following(current_user_id, seller['id'])
+            # The is_saved check now uses the new function
             is_saved = check_if_saved(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
@@ -2761,8 +2749,12 @@ def advert_detail(advert_id):
         )
 
     except Exception as e:
-        logging.error(f"Error fetching advert detail: {e}", exc_info=True)
+        logger.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
 
 
 
@@ -6525,6 +6517,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
