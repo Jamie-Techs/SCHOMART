@@ -768,36 +768,38 @@
         <h3>Description</h3>
         <p>{{ advert.description }}</p>
     </div>
+
     <div class="contact-actions">
-        {% if seller.phone_number %}
-            <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
-                <i class="fas fa-phone"></i> Call Seller
-            </a>
-        {% endif %}
-        <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
-            Message Seller
+    {% if seller.phone_number %}
+        <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
+            <i class="fas fa-phone"></i> Call Seller
         </a>
-        
-        {# CORRECTED SAVE BUTTON. IT USES is_saved variable from Flask to set its initial state. #}
-        {% if g.current_user and g.current_user.is_authenticated and advert %}
-            <button id="save-toggle-btn"
-                    class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
-                    data-advert-id="{{ advert.id }}"
-                    onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
-                {% if is_saved %}
-                    <i class="fas fa-bookmark"></i> Unsave
-                {% else %}
-                    <i class="far fa-bookmark"></i> Save
-                {% endif %}
-            </button>
+    {% endif %}
+    <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
+        Message Seller
+    </a>
+
+    {# CORRECTED: The button is now always displayed because the route is protected #}
+    <button id="save-toggle-btn"
+            class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
+            data-advert-id="{{ advert.id }}"
+            onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
+        {% if is_saved %}
+            <i class="fas fa-bookmark"></i> Unsave
+        {% else %}
+            <i class="far fa-bookmark"></i> Save
         {% endif %}
-        
-        <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
-            <i class="fas fa-flag"></i> Report Advert
-        </button>
-        <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
-            <i class="fas fa-share-alt"></i> Share
-        </button>
+    </button>
+    
+    <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
+        <i class="fas fa-flag"></i> Report Advert
+    </button>
+    <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
+        <i class="fas fa-share-alt"></i> Share
+    </button>
+    </div>
+
+
     </div>
     <div class="safety-tips">
         <h3>Safety Tips</h3>
@@ -996,3 +998,4 @@
 </script>
 </body>
 </html>
+
