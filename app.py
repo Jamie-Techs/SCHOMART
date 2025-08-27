@@ -1352,7 +1352,10 @@ def followers():
 
 
 
-# Plan details based on your instructions
+
+
+
+# Your advert plans
 SUBSCRIPTION_PLANS = {
     "starter": {"plan_name": "Starter", "cost_naira": 500, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"},
     "basic": {"plan_name": "Basic", "cost_naira": 1000, "advert_duration_days": 14, "max_adverts": 2, "visibility_level": "Standard"},
@@ -1363,23 +1366,22 @@ SUBSCRIPTION_PLANS = {
     "enterprise": {"plan_name": "Enterprise", "cost_naira": 10000, "advert_duration_days": 180, "max_adverts": 7, "visibility_level": "Premium"},
 }
 
-# The referral plans and their costs (in referrals)
-REFERRAL_PLANS = {
-    5: SUBSCRIPTION_PLANS["starter"],
-    10: SUBSCRIPTION_PLANS["basic"],
-    15: SUBSCRIPTION_PLANS["premium"],
-    20: SUBSCRIPTION_PLANS["small_business"],
-    30: SUBSCRIPTION_PLANS["medium_business"],
-    40: SUBSCRIPTION_PLANS["large_business"],
-    50: SUBSCRIPTION_PLANS["enterprise"],
+# One-time free advert plan
+FREE_ADVERT_PLAN = {
+    "plan_name": "Free", "cost_naira": None, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"
 }
 
-# The one-time free advert plan, distinct from others
-FREE_ADVERT_PLAN = {
-    "plan_name": "Free Advert",
-    "advert_duration_days": 7,
-    "visibility_level": "Standard"
+# Referral plans
+REFERRAL_PLANS = {
+    5: {"plan_name": "Referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    10: {"plan_name": "Referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
 }
+
+
+
+
+
+
 
 
 
@@ -1574,53 +1576,6 @@ def get_category_name(category_id):
             return name
     return "Unknown"
 
-def get_subscription_plan(plan_type):
-    return SUBSCRIPTION_PLANS.get(plan_type)
-
-def get_user_advert_options(user_id):
-    options = []
-    
-    # Add all subscription plans as a permanent option
-    for plan_type, plan_details in SUBSCRIPTION_PLANS.items():
-        options.append({
-            "type": plan_type,
-            "label": f"Subscription: {plan_details['plan_name']}",
-            "plan_name": plan_details['plan_name'],
-            "cost_naira": plan_details['cost_naira'],
-            "advert_duration_days": plan_details['advert_duration_days'],
-            "visibility_level": plan_details['visibility_level'],
-            "cost_description": f"₦{plan_details['cost_naira']}"
-        })
-
-    # Check for one-time free advert benefit.
-    user_info = get_user_info(user_id)
-    if not user_info.get("has_posted_free_ad", False):
-        options.append({
-            "type": "free_advert",
-            "label": f"Free Advert",
-            "plan_name": FREE_ADVERT_PLAN["plan_name"],
-            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
-            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
-            "cost_description": "One-time Free"
-        })
-
-    # Check for referral-based options.
-    referral_count = get_user_referral_count(user_id)
-    for cost, plan_details in REFERRAL_PLANS.items():
-        if referral_count >= cost and not user_info.get(f"used_referral_{cost}_benefit", False):
-            options.append({
-                "type": f"referral_{cost}",
-                "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
-                "plan_name": plan_details['plan_name'],
-                "advert_duration_days": plan_details['advert_duration_days'],
-                "visibility_level": plan_details['visibility_level'],
-                "cost_description": f"{cost} Referrals"
-            })
-            
-    return options
-
-
-
 
 def upload_file_to_firebase(file, folder):
     """
@@ -1760,22 +1715,66 @@ def check_if_saved(user_id, advert_id):
 
 
 
+
+
+def get_subscription_plan(plan_type):
+    return SUBSCRIPTION_PLANS.get(plan_type)
+
+def get_user_advert_options(user_id):
+    options = []
+    
+    # Add all subscription plans as a permanent option
+    for plan_type, plan_details in SUBSCRIPTION_PLANS.items():
+        options.append({
+            "type": plan_type,
+            "label": f"Subscription: {plan_details['plan_name']}",
+            "plan_name": plan_details['plan_name'],
+            "cost_naira": plan_details['cost_naira'],
+            "advert_duration_days": plan_details['advert_duration_days'],
+            "visibility_level": plan_details['visibility_level'],
+            "cost_description": f"₦{plan_details['cost_naira']}"
+        })
+
+    # Check for one-time free advert benefit.
+    user_info = get_user_info(user_id)
+    if not user_info.get("has_posted_free_ad", False):
+        options.append({
+            "type": "free_advert",
+            "label": "Free Advert",
+            "plan_name": FREE_ADVERT_PLAN["plan_name"],
+            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
+            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
+            "cost_description": "One-time Free"
+        })
+
+    # Check for referral-based options.
+    referral_count = get_user_referral_count(user_id)
+    for cost, plan_details in REFERRAL_PLANS.items():
+        if referral_count >= cost and not user_info.get(f"used_referral_{cost}_benefit", False):
+            options.append({
+                "type": f"referral_{cost}",
+                "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
+                "plan_name": plan_details['plan_name'],
+                "advert_duration_days": plan_details['advert_duration_days'],
+                "visibility_level": plan_details['visibility_level'],
+                "cost_description": f"{cost} Referrals"
+            })
+            
+    return options
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
 def sell(advert_id=None):
     advert = None
     if advert_id:
-        # Correctly get the advert from Firestore
         advert_doc_ref = db.collection("adverts").document(advert_id)
         advert_doc = advert_doc_ref.get()
         if advert_doc.exists:
             advert = advert_doc.to_dict()
-
+    
     user_id = g.current_user.id
     user_data = get_user_info(user_id)
-    # This function needs to be corrected to use the right dictionary keys
-    # based on the plans you provided.
     available_options = get_user_advert_options(user_id)
     
     advert_data = {}
@@ -1798,15 +1797,20 @@ def sell(advert_id=None):
         
         errors = validate_sell_form(form_data, files)
         
-        # We need to get the key from the form data, not the plan name from a list.
         selected_option_key = form_data.get("posting_option")
-        selected_option = SUBSCRIPTION_PLANS.get(selected_option_key) # Use .get() for a direct, safe lookup
-        
-        # Check if the selected option is a free or referral plan from a separate dictionary
-        if not selected_option:
-            selected_option = REFERRAL_PLANS.get(int(selected_option_key.split('_')[1])) if selected_option_key and selected_option_key.startswith("referral") else None
-        if not selected_option and selected_option_key == "free_advert":
+        selected_option = None
+
+        # Correctly check all three dictionaries for the selected plan
+        if selected_option_key in SUBSCRIPTION_PLANS:
+            selected_option = SUBSCRIPTION_PLANS.get(selected_option_key)
+        elif selected_option_key == "free_advert":
             selected_option = FREE_ADVERT_PLAN
+        elif selected_option_key.startswith("referral_"):
+            try:
+                cost = int(selected_option_key.split('_')[1])
+                selected_option = REFERRAL_PLANS.get(cost)
+            except (ValueError, IndexError):
+                pass # Invalid referral key, will be caught by the next check
 
         if not selected_option:
             errors.append("Invalid advert plan selected. Please choose a valid plan.")
@@ -1848,7 +1852,7 @@ def sell(advert_id=None):
                 "main_image": main_image_url,
                 "additional_images": additional_images_urls,
                 "video": video_url,
-                "plan_name": selected_option_key, # Correctly save the plan KEY
+                "plan_name": selected_option_key,
                 "advert_duration_days": selected_option.get("advert_duration_days"),
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP
@@ -1863,7 +1867,6 @@ def sell(advert_id=None):
                 advert_id_for_payment = new_advert_ref.id
                 
                 flash("Your advert has been created. Please complete the payment.", "info")
-                # Corrected redirect URL
                 return redirect(url_for('payment', advert_id=advert_id_for_payment))
             else:
                 advert_payload["status"] = "pending_review"
@@ -1899,6 +1902,17 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6717,6 +6731,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
