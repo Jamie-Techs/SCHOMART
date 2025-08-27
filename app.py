@@ -1352,13 +1352,13 @@ def followers():
 
 
 SUBSCRIPTION_PLANS = {
-    "starter": {"plan_name": "Starter", "cost_naira": 500, "advert_duration_days": 7, "visibility_level": "Standard"},
-    "basic": {"plan_name": "Basic", "cost_naira": 1000, "advert_duration_days": 14, "visibility_level": "Standard"},
-    "premium": {"plan_name": "Premium", "cost_naira": 1500, "advert_duration_days": 30, "visibility_level": "Featured"},
-    "small_business": {"plan_name": "Small Business", "cost_naira": 3000, "advert_duration_days": 30, "visibility_level": "Featured"},
-    "medium_business": {"plan_name": "Medium Business", "cost_naira": 5000, "advert_duration_days": 60, "visibility_level": "Featured"},
-    "large_business": {"plan_name": "Large Business", "cost_naira": 8000, "advert_duration_days": 90, "visibility_level": "Premium"},
-    "enterprise": {"plan_name": "Enterprise", "cost_naira": 10000, "advert_duration_days": 180, "visibility_level": "Premium"},
+    "starter": {"plan_name": "starter", "cost_naira": 500, "advert_duration_days": 7, "visibility_level": "Standard"},
+    "basic": {"plan_name": "basic", "cost_naira": 1000, "advert_duration_days": 14, "visibility_level": "Standard"},
+    "premium": {"plan_name": "premium", "cost_naira": 1500, "advert_duration_days": 30, "visibility_level": "Featured"},
+    "small_business": {"plan_name": "small_business", "cost_naira": 3000, "advert_duration_days": 30, "visibility_level": "Featured"},
+    "medium_business": {"plan_name": "medium_business", "cost_naira": 5000, "advert_duration_days": 60, "visibility_level": "Featured"},
+    "large_business": {"plan_name": "large_business", "cost_naira": 8000, "advert_duration_days": 90, "visibility_level": "Premium"},
+    "enterprise": {"plan_name": "enterprise", "cost_naira": 10000, "advert_duration_days": 180, "visibility_level": "Premium"},
         }
 
 
@@ -1367,13 +1367,13 @@ SUBSCRIPTION_PLANS = {
 
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
-    "plan_name": "Free", "cost_naira": None, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"
+    "plan_name": "free", "cost_naira": None, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"
 }
 
 # Referral plans
 REFERRAL_PLANS = {
-    5: {"plan_name": "Referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
-    10: {"plan_name": "Referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
+    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
 }
 
 
@@ -6732,6 +6732,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
