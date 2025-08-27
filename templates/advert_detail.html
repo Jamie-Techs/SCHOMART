@@ -761,7 +761,7 @@
         </a>
 
 
-        <button class="btn btn-save {% if advert.is_saved %} saved {% endif %}" 
+        <button class="save-btn {% if advert.is_saved %} saved {% endif %}" 
         onclick="toggleSaveAdvert(this, '{{ advert.id }}')" 
         data-advert-id="{{ advert.id }}">
     {% if advert.is_saved %}
@@ -1083,6 +1083,7 @@ async function toggleSaveAdvert(button, advertId) {
 </body>
 
 </html>
+
 
 
 
