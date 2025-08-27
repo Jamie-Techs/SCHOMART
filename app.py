@@ -2900,32 +2900,41 @@ def save_advert():
 
 
 
+# Assumes db is your Firestore client and login_required is your decorator
 @app.route('/api/unsave_advert', methods=['POST'])
 @login_required
 def unsave_advert():
-    """Unsaves an advert from the user's saved list."""
-    user_id = g.current_user.id
-    data = request.get_json()
-    advert_id = data.get('advert_id')
-
-    if not advert_id:
-        return jsonify({"success": False, "message": "Advert ID is required."}), 400
-
+    """
+    Removes a specific advert from the user's saved list.
+    """
     try:
-        # Find the document that matches both the user and advert ID
-        saved_advert_query = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        # Check if the request body is valid JSON
+        if not request.is_json:
+            return jsonify({'success': False, 'message': 'Request must be JSON'}), 400
+
+        data = request.get_json()
+        advert_id_to_remove = data.get('advert_id')
+        current_user_id = g.current_user.id
+
+        if not advert_id_to_remove:
+            return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
+
+        # Create a reference to the specific saved advert document
+        # We use a composite document ID to make it unique and easy to find/delete
+        doc_ref = db.collection('saved_adverts').document(f'{current_user_id}_{advert_id_to_remove}')
         
-        saved_advert_doc = next(saved_advert_query, None)
-        
-        if saved_advert_doc:
-            db.collection('saved_adverts').document(saved_advert_doc.id).delete()
-            return jsonify({"success": True, "message": "Advert unsaved successfully."}), 200
-        else:
-            return jsonify({"success": False, "message": "Advert not found in saved list."}), 404
+        # Check if the document exists before attempting to delete it
+        if not doc_ref.get().exists:
+            return jsonify({'success': False, 'message': 'Advert is not in your saved list.'}), 404
+
+        # Delete the document
+        doc_ref.delete()
+
+        return jsonify({'success': True, 'message': 'Advert removed successfully.'}), 200
 
     except Exception as e:
-        logger.error(f"Error unsaving advert for user {user_id}: {e}", exc_info=True)
-        return jsonify({"success": False, "message": "An error occurred."}), 500
+        logger.error(f"Error removing saved advert for user {g.current_user.id}: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': 'An unexpected error occurred.'}), 500
 
 
 
@@ -6344,6 +6353,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
