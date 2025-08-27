@@ -1351,20 +1351,19 @@ def followers():
 
 
 
-
-
-
-
-# Your advert plans
 SUBSCRIPTION_PLANS = {
-    "starter": {"plan_name": "Starter", "cost_naira": 500, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"},
-    "basic": {"plan_name": "Basic", "cost_naira": 1000, "advert_duration_days": 14, "max_adverts": 2, "visibility_level": "Standard"},
-    "premium": {"plan_name": "Premium", "cost_naira": 1500, "advert_duration_days": 30, "max_adverts": 3, "visibility_level": "Featured"},
-    "small_business": {"plan_name": "Small Business", "cost_naira": 3000, "advert_duration_days": 30, "max_adverts": 4, "visibility_level": "Featured"},
-    "medium_business": {"plan_name": "Medium Business", "cost_naira": 5000, "advert_duration_days": 60, "max_adverts": 5, "visibility_level": "Featured"},
-    "large_business": {"plan_name": "Large Business", "cost_naira": 8000, "advert_duration_days": 90, "max_adverts": 6, "visibility_level": "Premium"},
-    "enterprise": {"plan_name": "Enterprise", "cost_naira": 10000, "advert_duration_days": 180, "max_adverts": 7, "visibility_level": "Premium"},
-}
+    "starter": {"plan_name": "Starter", "cost_naira": 500, "advert_duration_days": 7, "visibility_level": "Standard"},
+    "basic": {"plan_name": "Basic", "cost_naira": 1000, "advert_duration_days": 14, "visibility_level": "Standard"},
+    "premium": {"plan_name": "Premium", "cost_naira": 1500, "advert_duration_days": 30, "visibility_level": "Featured"},
+    "small_business": {"plan_name": "Small Business", "cost_naira": 3000, "advert_duration_days": 30, "visibility_level": "Featured"},
+    "medium_business": {"plan_name": "Medium Business", "cost_naira": 5000, "advert_duration_days": 60, "visibility_level": "Featured"},
+    "large_business": {"plan_name": "Large Business", "cost_naira": 8000, "advert_duration_days": 90, "visibility_level": "Premium"},
+    "enterprise": {"plan_name": "Enterprise", "cost_naira": 10000, "advert_duration_days": 180, "visibility_level": "Premium"},
+        }
+
+
+
+
 
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
@@ -1970,11 +1969,22 @@ def submit_advert(advert_id):
         flash("Advert is not in a valid state for submission.", "error")
         return redirect(url_for('list_adverts'))
 
-    # Get the plan duration for expiration calculation
-    plan_name = advert.get('plan_name')
-    # Use advert.get to handle potential missing keys gracefully
-    plan_details = SUBSCRIPTION_PLANS.get(plan_name)
-    
+    # Get the plan_type from the advert
+    plan_type = advert.get('plan_name')
+    plan_details = None
+
+    # Correctly check all three dictionaries for the selected plan
+    if plan_type in SUBSCRIPTION_PLANS:
+        plan_details = SUBSCRIPTION_PLANS.get(plan_type)
+    elif plan_type == "free_advert":
+        plan_details = FREE_ADVERT_PLAN
+    elif plan_type.startswith("referral_"):
+        try:
+            cost = int(plan_type.split('_')[1])
+            plan_details = REFERRAL_PLANS.get(cost)
+        except (ValueError, IndexError):
+            pass
+
     if not plan_details:
         flash("Invalid subscription plan details.", "error")
         return redirect(url_for('list_adverts'))
@@ -1992,6 +2002,10 @@ def submit_advert(advert_id):
     
     flash("Your advert has been submitted for review. Thank you for your payment!", "success")
     return redirect(url_for('list_adverts'))
+
+
+
+
 
 
 
@@ -6718,6 +6732,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
