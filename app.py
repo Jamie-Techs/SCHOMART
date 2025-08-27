@@ -1233,7 +1233,7 @@ def home():
         # The visibility_order dictionary needs to include all plans, so it should be built from ADVERT_PLANS
         visibility_order = {
             plan['visibility_level']: i
-            for i, plan in enumerate(ADVERT_PLANS.values())
+            for i, plan in enumerate(SUBSCRIPTION_PLANS.values())
         }
 
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
@@ -6737,6 +6737,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
