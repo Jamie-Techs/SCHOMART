@@ -3238,28 +3238,6 @@ def support():
 
 
 
-# Replace the existing `delete_account` function with this one.
-@app.route('/delete-account', methods=['GET', 'POST'])
-@login_required
-def delete_account():
-    user_id = session['user_id']
-    
-    if request.method == 'POST':
-        try:
-            # Delete the user's document from the 'users' collection
-            db.collection('users').document(user_id).delete()
-            
-            # Clear the Flask session and log the user out
-            session.clear()
-            flash("Your account has been deleted.", "success")
-            return redirect(url_for('index'))
-            
-        except Exception as e:
-            flash(f"An error occurred while deleting the account: {e}", "error")
-            
-    return render_template('delete_account.html')
-
-
 # Replace the existing `update_location` function with this one.
 @app.route('/update-location', methods=['GET', 'POST'])
 @login_required
@@ -6174,6 +6152,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
