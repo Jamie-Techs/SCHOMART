@@ -2323,6 +2323,32 @@ def take_down_advert(advert_id):
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
 
+
+
+@app.route('/admin/action/dismiss_report/<advert_id>', methods=['POST'])
+@login_required
+@admin_required
+def dismiss_report(advert_id):
+    """Admin action to dismiss all reports for an advert."""
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists:
+        return jsonify({"message": "Advert not found."}), 404
+        
+    try:
+        # Change the advert's status from 'reported' back to 'published'
+        advert_ref.update({
+            'status': 'published'
+        })
+        return jsonify({"message": "Advert reports dismissed successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error dismissing report for advert {advert_id}: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+
+
+
 @app.route('/admin/reported_adverts')
 @login_required
 @admin_required
@@ -4512,6 +4538,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
