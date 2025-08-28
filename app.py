@@ -2443,7 +2443,7 @@ def admin_post_airtime():
                 return redirect(url_for('admin_post_airtime'))
 
             # --- Calculate expiry time ---
-            now = datetime.datetime.utcnow()
+            now = datetime.utcnow()
             if duration_unit == 'seconds':
                 expiry_time = now + timedelta(seconds=duration_value)
             elif duration_unit == 'minutes':
@@ -6149,6 +6149,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
