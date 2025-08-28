@@ -2265,66 +2265,10 @@ def admin_advert_reject():
     return redirect(url_for('admin_advert_review'))
 
 
-@app.route('/admin/reported_advert/<report_id>')
-@login_required
-@admin_required
-def reported_advert_details(report_id):
-    """
-    Displays detailed information about a single reported advert for admin review.
-    """
-    # 1. Fetch the report document
-    report_doc = db.collection('reports').document(report_id).get()
-    
-    if not report_doc.exists:
-        flash("Report not found.", "error")
-        return redirect(url_for('reported_adverts_admin'))
 
-    report = report_doc.to_dict()
-    report['report_id'] = report_doc.id
 
-    # 2. Fetch the advert and its owner's information
-    advert_id = report.get('advert_id')
-    advert_doc = db.collection('adverts').document(advert_id).get()
-    
-    if advert_doc.exists:
-        advert = advert_doc.to_dict()
-        report['advert_title'] = advert.get('title')
-        report['advert_description'] = advert.get('description')
-        report['advert_price'] = advert.get('price')
-        report['advert_status'] = advert.get('status')
-        report['advert_owner_id'] = advert.get('user_id')
-    else:
-        # Handle cases where the advert was already deleted
-        report['advert_title'] = 'Advert Not Found'
-        report['advert_description'] = 'N/A'
-        report['advert_price'] = 0
-        report['advert_status'] = 'deleted'
-        report['advert_owner_id'] = None
 
-    # 3. Fetch the advert owner's information
-    owner_info = get_user_info(report.get('advert_owner_id'))
-    if owner_info:
-        report['advert_owner_username'] = owner_info.get('username')
-        report['advert_owner_email'] = owner_info.get('email')
-        report['advert_owner_account_status'] = owner_info.get('account_status', 'active')
-    else:
-        report['advert_owner_username'] = 'N/A'
-        report['advert_owner_email'] = 'N/A'
-        report['advert_owner_account_status'] = 'N/A'
 
-    # 4. Fetch the reporter's information
-    reporter_id = report.get('reporter_id')
-    reporter_info = get_user_info(reporter_id)
-    if reporter_info:
-        report['reporter_username'] = reporter_info.get('username')
-        report['reporter_email'] = reporter_info.get('email')
-        report['reporter_account_status'] = reporter_info.get('account_status', 'active')
-    else:
-        report['reporter_username'] = 'N/A'
-        report['reporter_email'] = 'N/A'
-        report['reporter_account_status'] = 'N/A'
-        
-    return render_template('admin_reported_advert_details.html', report=report)
 
 @app.route('/admin/action/mark_resolved/<report_id>', methods=['POST'])
 @login_required
@@ -2337,13 +2281,15 @@ def mark_report_resolved(report_id):
     if not report_doc.exists:
         return jsonify({"message": "Report not found."}), 404
 
-    report_ref.update({
-        'status': 'resolved',
-        'resolved_at': firestore.SERVER_TIMESTAMP
-    })
-
-    return jsonify({"message": "Report marked as resolved successfully!"}), 200
-
+    try:
+        report_ref.update({
+            'status': 'resolved',
+            'resolved_at': firestore.SERVER_TIMESTAMP
+        })
+        return jsonify({"message": "Report marked as resolved successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error marking report {report_id} as resolved: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
 @app.route('/admin/action/suspend_user/<user_id>', methods=['POST'])
 @login_required
@@ -2356,13 +2302,15 @@ def suspend_user_account(user_id):
     if not user_doc.exists:
         return jsonify({"message": "User not found."}), 404
         
-    user_ref.update({
-        'is_active': False,
-        'account_status': 'suspended'
-    })
-    
-    return jsonify({"message": "User account suspended successfully!"}), 200
-
+    try:
+        user_ref.update({
+            'is_active': False,
+            'account_status': 'suspended'
+        })
+        return jsonify({"message": "User account suspended successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error suspending user {user_id}: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
 @app.route('/admin/action/take_down_advert/<advert_id>', methods=['POST'])
 @login_required
@@ -2375,12 +2323,64 @@ def take_down_advert(advert_id):
     if not advert_doc.exists:
         return jsonify({"message": "Advert not found."}), 404
 
-    advert_ref.update({
-        'status': 'taken_down',
-        'taken_down_at': firestore.SERVER_TIMESTAMP
-    })
+    try:
+        advert_ref.update({
+            'status': 'taken_down',
+            'taken_down_at': firestore.SERVER_TIMESTAMP
+        })
+        return jsonify({"message": "Advert taken down successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error taking down advert {advert_id}: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+@app.route('/admin/reported_adverts')
+@login_required
+@admin_required
+def reported_adverts_admin():
+    """
+    Renders a page with a list of all reported adverts awaiting admin review.
+    """
+    try:
+        # Fetch all reports that are 'pending'
+        reports_ref = db.collection('reports')
+        query = reports_ref.where('status', '==', 'pending').stream()
+        
+        reported_adverts = []
+        for doc in query:
+            report = doc.to_dict()
+            report['report_id'] = doc.id
+            
+            # Fetch the advert details
+            advert_doc = db.collection('adverts').document(report.get('advert_id')).get()
+            if advert_doc.exists:
+                advert_data = advert_doc.to_dict()
+                report['advert_title'] = advert_data.get('title', 'N/A')
+                report['advert_owner_id'] = advert_data.get('user_id')
+            else:
+                report['advert_title'] = 'Advert Not Found'
+                report['advert_owner_id'] = None
+
+            # Fetch the reporter's username
+            # Corrected: The field is likely 'user_id', not 'reporter_id' based on previous code.
+            reporter_info = get_user_info(report.get('user_id'))
+            if reporter_info:
+                report['reporter_username'] = reporter_info.get('username', 'N/A')
+            else:
+                report['reporter_username'] = 'N/A'
+                
+            reported_adverts.append(report)
+        
+        return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
     
-    return jsonify({"message": "Advert taken down successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error fetching reported adverts for admin page: {e}", exc_info=True)
+        flash("An unexpected error occurred while loading reports.", "error")
+        return redirect(url_for('admin_dashboard')) # Redirect to a safe page on error
+
+
+
+
+
 
 
 @app.route('/admin/reported_adverts')
@@ -2421,6 +2421,124 @@ def reported_adverts_admin():
         reported_adverts.append(report)
     
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
+
+
+
+
+
+@app.route('/submit_review', methods=['POST'])
+@login_required
+def submit_review():
+    """
+    Handles the submission of a new review for an advert.
+    This route requires a POST request with form data.
+    """
+    try:
+        # Get data from the form
+        advert_id = request.form.get('advert_id')
+        rating_str = request.form.get('rating')
+        comment = request.form.get('comment')
+        reviewee_id = request.form.get('reviewee_id')
+
+        # Basic input validation
+        if not all([advert_id, rating_str, comment, reviewee_id]):
+            flash('All fields are required to submit a review.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        try:
+            rating = int(rating_str)
+            if not 1 <= rating <= 5:
+                flash('Rating must be between 1 and 5.', 'error')
+                return redirect(url_for('advert_detail', advert_id=advert_id))
+        except ValueError:
+            flash('Invalid rating value.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        current_user_id = g.current_user.id
+        
+        # Prevent users from reviewing their own ads
+        if current_user_id == reviewee_id:
+            flash('You cannot review your own advert.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        # Check if the user has already submitted a review for this advert
+        existing_review_query = db.collection('reviews').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        existing_review = next(existing_review_query, None)
+        if existing_review:
+            flash('You have already submitted a review for this advert.', 'error')
+            return redirect(url_for('advert_detail', advert_id=advert_id))
+
+        # Data for the new review document
+        new_review_data = {
+            'advert_id': advert_id,
+            'user_id': current_user_id,
+            'reviewee_id': reviewee_id,
+            'rating': rating,
+            'comment': comment,
+            'created_at': datetime.now()
+        }
+
+        # Add the new review document to the 'reviews' collection
+        db.collection('reviews').add(new_review_data)
+
+        flash('Your review has been submitted successfully!', 'success')
+        
+    except Exception as e:
+        logging.error(f"Error submitting review: {e}", exc_info=True)
+        flash('An unexpected error occurred. Please try again.', 'error')
+        
+    return redirect(url_for('advert_detail', advert_id=advert_id))
+
+
+
+@app.route('/report_advert/<string:advert_id>', methods=['POST'])
+@login_required
+def report_advert(advert_id):
+    """
+    Adds a new report document to the Firestore 'reports' collection.
+    """
+    reason = request.form.get('reason')
+    user_id = g.current_user.id
+    
+    try:
+        report_data = {
+            'user_id': user_id,
+            'advert_id': advert_id,
+            'reason': reason,
+            'created_at': datetime.now()
+        }
+        # Add a new document to the 'reports' collection with an auto-generated ID
+        db.collection('reports').add(report_data)
+        flash("Report submitted.", 'success')
+    except Exception as e:
+        flash(f"Error submitting report: {e}", "danger")
+        logging.error(f"Error submitting report: {e}", exc_info=True)
+    
+    return redirect(request.referrer)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # --- Admin Function to Post New Airtime ---
@@ -6018,6 +6136,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
