@@ -250,8 +250,20 @@
                                     <button class="btn btn-danger btn-sm" onclick="takeDownAdvert('{{ advert.id }}')">
                                         <i class="fas fa-times-circle"></i> Take Down
                                     </button>
+                                {% endif %}
+                                {% if advert.seller_account_status == 'active' %}
                                     <button class="btn btn-warning btn-sm" onclick="suspendUser('{{ advert.seller_id }}')">
                                         <i class="fas fa-user-slash"></i> Suspend Seller
+                                    </button>
+                                {% elif advert.seller_account_status == 'suspended' %}
+                                    <button class="btn btn-success btn-sm" onclick="enableUser('{{ advert.seller_id }}')">
+                                        <i class="fas fa-user-check"></i> Enable Seller
+                                    </button>
+                                {% endif %}
+
+                                {% if advert.status == 'reported' %}
+                                    <button class="btn btn-success btn-sm" onclick="dismissReport('{{ advert.id }}')">
+                                        <i class="fas fa-check"></i> Dismiss Report
                                     </button>
                                 {% endif %}
                                 {% if advert.status == 'pending_review' %}
@@ -278,8 +290,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
     
     <script>
-        // ... (your existing copyToClipboard and flash message scripts) ...
-
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert("Advert ID copied to clipboard!");
@@ -324,27 +334,45 @@
             });
         }
         
+        // This function is for marking a single report as resolved (from a sub-collection)
         function markReportResolved(reportId) {
-            if (confirm('Are you sure you want to mark this report as resolved?')) {
+            if (confirm('Are you sure you want to mark this specific report as resolved?')) {
                 const url = `{{ url_for('mark_report_resolved', report_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', reportId);
                 handlePostRequest(url, 'Report marked as resolved.');
             }
         }
 
+        // This function is for taking down an entire advert
         function takeDownAdvert(advertId) {
             if (confirm('Are you sure you want to take down this advert? This action cannot be undone.')) {
                 const url = `{{ url_for('take_down_advert', advert_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', advertId);
                 handlePostRequest(url, 'Advert has been taken down.');
             }
         }
+        
+        // This function is for dismissing all reports on an advert and making it public again
+        function dismissReport(advertId) {
+            if (confirm('Are you sure you want to dismiss all reports for this advert? This will make the advert public again.')) {
+                const url = `{{ url_for('dismiss_report', advert_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', advertId);
+                handlePostRequest(url, 'Advert reports dismissed successfully.');
+            }
+        }
 
+        // This function is for suspending a user's account
         function suspendUser(userId) {
             if (confirm('Are you sure you want to suspend this user? This will disable their account.')) {
                 const url = `{{ url_for('suspend_user_account', user_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', userId);
                 handlePostRequest(url, 'User account has been suspended.');
             }
         }
-
+        
+        // This is the new function to enable a user's account
+        function enableUser(userId) {
+            if (confirm('Are you sure you want to enable this user?')) {
+                const url = `{{ url_for('enable_user_account', user_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', userId);
+                handlePostRequest(url, 'User account has been enabled.');
+            }
+        }
     </script>
 </body>
 </html>
