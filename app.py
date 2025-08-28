@@ -3788,105 +3788,6 @@ def send_notification(user_id, message, notification_type="info"):
 
 
 
-@app.route('/report_advert/<string:advert_id>', methods=['POST'])
-def report_advert(advert_id):
-    """
-    Adds a new report document to the Firestore 'reports' collection.
-    """
-    if 'user_id' not in session:
-        flash("You must be logged in to report abuse.")
-        return redirect(url_for('login'))
-    
-    reason = request.form.get('reason')
-    user_id = session.get('user_id')
-    
-    try:
-        report_data = {
-            'user_id': user_id,
-            'advert_id': advert_id,
-            'reason': reason,
-            'created_at': datetime.now()
-        }
-        # Add a new document to the 'reports' collection with an auto-generated ID
-        db.collection('reports').add(report_data)
-        flash("Report submitted.", 'success')
-    except Exception as e:
-        flash(f"Error submitting report: {e}", "danger")
-        logger.error(f"Error submitting report: {e}", exc_info=True)
-    
-    return redirect(request.referrer)
-
-
-
-
-
-@app.route('/submit_review', methods=['POST'])
-@login_required
-def submit_review():
-    """
-    Handles the submission of a new review for an advert.
-    This route requires a POST request with form data.
-    """
-    try:
-        # Get data from the form
-        advert_id = request.form.get('advert_id')
-        rating_str = request.form.get('rating')
-        comment = request.form.get('comment')
-        reviewee_id = request.form.get('reviewee_id')
-
-        # Basic input validation
-        if not all([advert_id, rating_str, comment, reviewee_id]):
-            flash('All fields are required to submit a review.', 'error')
-            return redirect(url_for('advert_detail', advert_id=advert_id))
-
-        try:
-            rating = int(rating_str)
-            if not 1 <= rating <= 5:
-                flash('Rating must be between 1 and 5.', 'error')
-                return redirect(url_for('advert_detail', advert_id=advert_id))
-        except ValueError:
-            flash('Invalid rating value.', 'error')
-            return redirect(url_for('advert_detail', advert_id=advert_id))
-
-        current_user_id = g.current_user.id
-        
-        # Prevent users from reviewing their own ads
-        if current_user_id == reviewee_id:
-            flash('You cannot review your own advert.', 'error')
-            return redirect(url_for('advert_detail', advert_id=advert_id))
-
-        # Check if the user has already submitted a review for this advert
-        existing_review_query = db.collection('reviews').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
-        existing_review = next(existing_review_query, None)
-        if existing_review:
-            flash('You have already submitted a review for this advert.', 'error')
-            return redirect(url_for('advert_detail', advert_id=advert_id))
-
-        # Data for the new review document
-        new_review_data = {
-            'advert_id': advert_id,
-            'user_id': current_user_id,
-            'reviewee_id': reviewee_id,
-            'rating': rating,
-            'comment': comment,
-            'created_at': datetime.now()
-        }
-
-        # Add the new review document to the 'reviews' collection
-        db.collection('reviews').add(new_review_data)
-
-        flash('Your review has been submitted successfully!', 'success')
-        
-    except Exception as e:
-        logging.error(f"Error submitting review: {e}", exc_info=True)
-        flash('An unexpected error occurred. Please try again.', 'error')
-        
-    return redirect(url_for('advert_detail', advert_id=advert_id))
-
-
-
-
-
 
 
 
@@ -3964,35 +3865,6 @@ def is_following(follower_id, followed_id):
         app.logger.error(f"Error checking follow status: {e}")
         return False
 
-def get_average_user_rating(user_id):
-    """
-    Fetches ratings from the 'reviews' collection and calculates the average.
-    
-    NOTE: Firestore does not have a native AVG function. This implementation
-    fetches all reviews for the user and calculates the average in-memory.
-    For a production application with many reviews, you might consider
-    storing the average rating as a field on the user document and updating it
-    whenever a new review is added.
-    """
-    if not user_id:
-        return 'N/A'
-    try:
-        ratings_query = db.collection("reviews").where("reviewee_id", "==", user_id)
-        ratings_docs = ratings_query.stream()
-        
-        total_rating = 0
-        count = 0
-        for doc in ratings_docs:
-            total_rating += doc.get('rating', 0)
-            count += 1
-            
-        if count > 0:
-            return round(total_rating / count, 1)
-        else:
-            return 'N/A'
-    except Exception as e:
-        app.logger.error(f"Error fetching average rating for user {user_id}: {e}")
-        return 'N/A'
 
 def get_study_materials_from_db(query=None, page=1, per_page=10):
     """
@@ -6146,6 +6018,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
