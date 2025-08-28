@@ -2407,16 +2407,11 @@ def reported_adverts_admin():
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
 
-
 # --- Admin Function to Post New Airtime ---
 @app.route('/admin/post_airtime', methods=['GET', 'POST'])
 @login_required  # This decorator runs first, ensuring g.current_user exists.
 @admin_required  # This decorator runs second, ensuring the user is an admin.
 def admin_post_airtime():
-    """
-    Handles the creation of a new airtime post by an admin.
-    Processes form data and saves post details to Firestore.
-    """
     if request.method == 'POST':
         try:
             # Get form data
@@ -2448,7 +2443,7 @@ def admin_post_airtime():
                 return redirect(url_for('admin_post_airtime'))
 
             # --- Calculate expiry time ---
-            now = datetime.utcnow()
+            now = datetime.datetime.utcnow()
             if duration_unit == 'seconds':
                 expiry_time = now + timedelta(seconds=duration_value)
             elif duration_unit == 'minutes':
@@ -2488,8 +2483,8 @@ def admin_post_airtime():
                 'image_url': image_url,
                 'created_at': firestore.SERVER_TIMESTAMP,
                 'expires_at': expiry_time,
-                # Access the user ID from the g.current_user object
-                'posted_by': g.current_user.uid
+                # Corrected line: Use the 'id' attribute of the User object
+                'posted_by': g.current_user.id 
             }
             db.collection('airtime_posts').add(airtime_post_data)
 
@@ -2504,6 +2499,11 @@ def admin_post_airtime():
 
     # Render the template for GET requests
     return render_template('admin_post_airtime.html')
+
+
+
+
+
 
 
 
@@ -6149,6 +6149,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
