@@ -2528,10 +2528,10 @@ def get_airtime_posts():
             post['id'] = doc.id
             post['digits'] = str(post.get('digits')) if post.get('digits') is not None else ''
 
-            # Corrected: Use the imported Timestamp class directly
-            if 'created_at' in post and isinstance(post['created_at'], Timestamp):
+            # Corrected: Use firestore.Timestamp, which is now available with the new import
+            if 'created_at' in post and isinstance(post['created_at'], firestore.Timestamp):
                 post['created_at'] = post['created_at'].isoformat()
-            if 'expires_at' in post and isinstance(post['expires_at'], Timestamp):
+            if 'expires_at' in post and isinstance(post['expires_at'], firestore.Timestamp):
                 post['expires_at'] = post['expires_at'].isoformat()
                 
             posts_data.append(post)
@@ -2544,6 +2544,7 @@ def get_airtime_posts():
     except Exception as e:
         logger.error(f"Error fetching airtime posts: {e}", exc_info=True)
         return jsonify({'message': f'Error fetching posts: {str(e)}'}), 500
+
 
 
 
@@ -6148,6 +6149,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
