@@ -810,44 +810,50 @@
             <li>Keep communication on the platform.</li>
         </ul>
     </div>
+
+
     <div class="reviews-section">
-        <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
-        {% if reviews %}
-            {% for review in reviews %}
-                <div class="review-box">
-                    <div class="reviewer-info">
-                        <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile">
-                        <span class="reviewer-name">{{ review.reviewer_username }}</span>
-                    </div>
-                    <div class="review-content">
-                        <div class="review-stars">
-                            {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
-                        </div>
-                        <p class="review-comment">{{ review.comment }}</p>
-                        <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                    </div>
+    <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
+    {% if reviews %}
+        {% for review in reviews %}
+            <div class="review-box">
+                <div class="reviewer-info">
+                    <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile">
+                    <span class="reviewer-name">{{ review.reviewer_username }}</span>
                 </div>
-            {% endfor %}
-        {% else %}
-            <p>No reviews yet for this advert. Be the first to leave a review!</p>
-        {% endif %}
-        <div class="review-form">
-            <h3>Submit Your Review</h3>
-            <form action="{{ url_for('submit_review', advert_id=advert.id) }}" method="POST">
-                <label for="rating">Your Rating:</label>
-                <div class="star-rating">
-                    <input type="radio" id="star5" name="rating" value="5" /><label for="star5" title="5 stars"></label>
-                    <input type="radio" id="star4" name="rating" value="4" /><label for="star4" title="4 stars"></label>
-                    <input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="3 stars"></label>
-                    <input type="radio" id="star2" name="rating" value="2" /><label for="star2" title="2 stars"></label>
-                    <input type="radio" id="star1" name="rating" value="1" /><label for="star1" title="1 star"></label>
+                <div class="review-content">
+                    <div class="review-stars">
+                        {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
+                    </div>
+                    <p class="review-comment">{{ review.comment }}</p>
+                    <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                 </div>
-                <label for="comment">Your Comment:</label>
-                <textarea id="comment" name="comment" rows="5" placeholder="Write your review here..." required></textarea>
-                <button type="submit" class="review-submit-btn">Submit Review</button>
-            </form>
-        </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No reviews yet for this advert. Be the first to leave a review!</p>
+    {% endif %}
+    <div class="review-form">
+        <h3>Submit Your Review</h3>
+        <form action="{{ url_for('submit_review') }}" method="POST">
+            <input type="hidden" name="advert_id" value="{{ advert.id }}">
+            <input type="hidden" name="reviewee_id" value="{{ advert.user_id }}">
+            
+            <label for="rating">Your Rating:</label>
+            <div class="star-rating">
+                <input type="radio" id="star5" name="rating" value="5" /><label for="star5" title="5 stars"></label>
+                <input type="radio" id="star4" name="rating" value="4" /><label for="star4" title="4 stars"></label>
+                <input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="3 stars"></label>
+                <input type="radio" id="star2" name="rating" value="2" /><label for="star2" title="2 stars"></label>
+                <input type="radio" id="star1" name="rating" value="1" /><label for="star1" title="1 star"></label>
+            </div>
+            <label for="comment">Your Comment:</label>
+            <textarea id="comment" name="comment" rows="5" placeholder="Write your review here..." required></textarea>
+            <button type="submit" class="review-submit-btn">Submit Review</button>
+        </form>
     </div>
+    </div>
+    
     <h3>Similar Adverts</h3>
     <div class="similar-adverts">
         {% if similar_adverts %}
@@ -998,5 +1004,6 @@
 </script>
 </body>
 </html>
+
 
 
