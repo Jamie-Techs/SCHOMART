@@ -334,32 +334,26 @@ def logout():
     return redirect(url_for('login'))
 
 
-
-# --- Route to Delete User Account ---
-@app.route('/delete-account', methods=['POST'])
-@login_required
-def delete_account():
+# --- New API route to delete user data from Firestore ---
+@app.route('/api/delete-user-data', methods=['POST'])
+@login_required # Ensures the user is logged in
+def delete_user_data_api():
     try:
-        user_to_delete_id = g.current_user.id
+        # The login_required decorator already ensures g.current_user exists
+        user_id = g.current_user.id
         
-        # 1. Delete the user's document from Firestore
-        db.collection('users').document(user_to_delete_id).delete()
-        
-        # 2. Delete the user from Firebase Authentication
-        auth.delete_user(user_to_delete_id)
-        
-        # 3. Clear the session
-        session.pop('user', None)
+        # You can add logic here to delete other data associated with the user
+        # For example, delete all their adverts
+        # db.collection('adverts').where('user_id', '==', user_id).stream() -> loop and delete
 
-        flash('Your account has been successfully deleted.', 'success')
-        # Redirect to the login page after deletion
-        return redirect(url_for('login_page'))
-    
+        # Delete the user's document from the 'users' collection
+        db.collection('users').document(user_id).delete()
+        
+        return jsonify({'message': 'User data deleted successfully.'}), 200
+
     except Exception as e:
-        logger.error(f"Error deleting user account {g.current_user.id}: {e}", exc_info=True)
-        flash("An error occurred while deleting your account. Please try again.", 'error')
-        return redirect(url_for('profile'))
-
+        logger.error(f"Failed to delete Firestore data for user {user_id}: {e}", exc_info=True)
+        return jsonify({'message': f'Server error during data cleanup: {str(e)}'}), 500
 
 
 
@@ -6152,6 +6146,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
