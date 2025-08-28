@@ -2333,53 +2333,6 @@ def take_down_advert(advert_id):
         logging.error(f"Error taking down advert {advert_id}: {e}", exc_info=True)
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
-@app.route('/admin/reported_adverts')
-@login_required
-@admin_required
-def reported_adverts_admin():
-    """
-    Renders a page with a list of all reported adverts awaiting admin review.
-    """
-    try:
-        # Fetch all reports that are 'pending'
-        reports_ref = db.collection('reports')
-        query = reports_ref.where('status', '==', 'pending').stream()
-        
-        reported_adverts = []
-        for doc in query:
-            report = doc.to_dict()
-            report['report_id'] = doc.id
-            
-            # Fetch the advert details
-            advert_doc = db.collection('adverts').document(report.get('advert_id')).get()
-            if advert_doc.exists:
-                advert_data = advert_doc.to_dict()
-                report['advert_title'] = advert_data.get('title', 'N/A')
-                report['advert_owner_id'] = advert_data.get('user_id')
-            else:
-                report['advert_title'] = 'Advert Not Found'
-                report['advert_owner_id'] = None
-
-            # Fetch the reporter's username
-            # Corrected: The field is likely 'user_id', not 'reporter_id' based on previous code.
-            reporter_info = get_user_info(report.get('user_id'))
-            if reporter_info:
-                report['reporter_username'] = reporter_info.get('username', 'N/A')
-            else:
-                report['reporter_username'] = 'N/A'
-                
-            reported_adverts.append(report)
-        
-        return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
-    
-    except Exception as e:
-        logging.error(f"Error fetching reported adverts for admin page: {e}", exc_info=True)
-        flash("An unexpected error occurred while loading reports.", "error")
-        return redirect(url_for('admin_dashboard')) # Redirect to a safe page on error
-
-
-
-
 
 
 
@@ -6136,6 +6089,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
