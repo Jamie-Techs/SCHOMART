@@ -212,13 +212,18 @@
                             {% endif %}
                             
                             <div class="mb-3 text-danger">
-                                <strong>Reports ({{ advert.reported_count }} total):</strong>
+                                <strong>Reports:</strong>
                                 {% if advert.reports %}
                                 <ul class="list-unstyled">
                                     {% for report in advert.reports %}
                                         <li>
                                             <i class="fas fa-flag me-1"></i> <strong>Reason:</strong> {{ report.reason }}<br>
                                             <small class="text-muted">By: {{ report.reporter_email }} on {{ report.reported_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            {% if report.id %}
+                                                <button class="btn btn-sm btn-link p-0 text-success" onclick="markReportResolved('{{ report.id }}')">
+                                                    <i class="fas fa-check-circle"></i> Mark Resolved
+                                                </button>
+                                            {% endif %}
                                         </li>
                                     {% endfor %}
                                 </ul>
@@ -242,13 +247,14 @@
                             </ul>
                             <div class="mt-3">
                                 {% if advert.status == 'reported' or advert.status == 'published' %}
-                                    <form action="{{ url_for('takedown_advert', advert_id=advert.id) }}" method="POST" class="d-inline">
-                                        <button type="submit" class="btn btn-danger btn-sm">Take Down</button>
-                                    </form>
-                                    <form action="{{ url_for('dismiss_report', advert_id=advert.id) }}" method="POST" class="d-inline">
-                                        <button type="submit" class="btn btn-success btn-sm">Dismiss Report</button>
-                                    </form>
-                                {% elif advert.status == 'pending_review' %}
+                                    <button class="btn btn-danger btn-sm" onclick="takeDownAdvert('{{ advert.id }}')">
+                                        <i class="fas fa-times-circle"></i> Take Down
+                                    </button>
+                                    <button class="btn btn-warning btn-sm" onclick="suspendUser('{{ advert.seller_id }}')">
+                                        <i class="fas fa-user-slash"></i> Suspend Seller
+                                    </button>
+                                {% endif %}
+                                {% if advert.status == 'pending_review' %}
                                     <span class="badge bg-secondary">Pending Review</span>
                                 {% elif advert.status == 'rejected' %}
                                     <span class="badge bg-danger">Rejected</span>
@@ -272,6 +278,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
     
     <script>
+        // ... (your existing copyToClipboard and flash message scripts) ...
+
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert("Advert ID copied to clipboard!");
@@ -290,6 +298,53 @@
                 }, 5000);
             });
         });
+
+        // The new JavaScript functions to handle the POST requests
+        function handlePostRequest(url, successMessage) {
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(successMessage);
+                // Reload the page to show the updated status
+                location.reload(); 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Error: ${error.message}`);
+            });
+        }
+        
+        function markReportResolved(reportId) {
+            if (confirm('Are you sure you want to mark this report as resolved?')) {
+                const url = `{{ url_for('mark_report_resolved', report_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', reportId);
+                handlePostRequest(url, 'Report marked as resolved.');
+            }
+        }
+
+        function takeDownAdvert(advertId) {
+            if (confirm('Are you sure you want to take down this advert? This action cannot be undone.')) {
+                const url = `{{ url_for('take_down_advert', advert_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', advertId);
+                handlePostRequest(url, 'Advert has been taken down.');
+            }
+        }
+
+        function suspendUser(userId) {
+            if (confirm('Are you sure you want to suspend this user? This will disable their account.')) {
+                const url = `{{ url_for('suspend_user_account', user_id='PLACEHOLDER') }}`.replace('PLACEHOLDER', userId);
+                handlePostRequest(url, 'User account has been suspended.');
+            }
+        }
+
     </script>
 </body>
 </html>
