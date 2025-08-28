@@ -54,8 +54,6 @@ from google.cloud.firestore_v1.base_query import FieldFilter, BaseCompositeFilte
 from google.cloud.firestore_v1 import Increment
 from google.oauth2 import service_account
 from google.cloud import storage as gcp_storage
-from google.cloud.firestore import Timestamp
-
 from firebase_functions import https_fn
 
 import boto3
@@ -2503,6 +2501,7 @@ def admin_post_airtime():
 
 
 
+
 # --- API Route to Fetch Active Airtime Posts ---
 @app.route('/api/airtime-posts', methods=['GET'])
 def get_airtime_posts():
@@ -2529,10 +2528,11 @@ def get_airtime_posts():
             post['id'] = doc.id
             post['digits'] = str(post.get('digits')) if post.get('digits') is not None else ''
 
-            # Corrected: Use firestore.Timestamp, which is now available with the new import
-            if 'created_at' in post and isinstance(post['created_at'], firestore.Timestamp):
+            # Corrected: Check for the type in a way that avoids using the Timestamp class
+            # This checks if the object looks like a Timestamp object by checking for its methods
+            if 'created_at' in post and hasattr(post['created_at'], 'isoformat'):
                 post['created_at'] = post['created_at'].isoformat()
-            if 'expires_at' in post and isinstance(post['expires_at'], firestore.Timestamp):
+            if 'expires_at' in post and hasattr(post['expires_at'], 'isoformat'):
                 post['expires_at'] = post['expires_at'].isoformat()
                 
             posts_data.append(post)
@@ -2545,6 +2545,7 @@ def get_airtime_posts():
     except Exception as e:
         logger.error(f"Error fetching airtime posts: {e}", exc_info=True)
         return jsonify({'message': f'Error fetching posts: {str(e)}'}), 500
+
 
 
 
@@ -6150,6 +6151,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
