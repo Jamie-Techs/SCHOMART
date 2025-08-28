@@ -2323,8 +2323,6 @@ def take_down_advert(advert_id):
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
 
-
-
 @app.route('/admin/reported_adverts')
 @login_required
 @admin_required
@@ -2345,11 +2343,18 @@ def admin_reported_adverts():
             reports_query = db.collection('adverts').document(advert_doc.id).collection('reports').stream()
             advert_data['reports'] = [report.to_dict() for report in reports_query]
             
-            # Fetch and add related data with default values
-            seller_doc = db.collection('users').document(advert_data.get('seller_id', '')).get()
-            advert_data['seller_username'] = seller_doc.to_dict().get('username', 'N/A') if seller_doc.exists else 'N/A'
-            advert_data['seller_email'] = seller_doc.to_dict().get('email', 'N/A') if seller_doc.exists else 'N/A'
+            # Use a variable for seller_id to avoid multiple calls
+            seller_id = advert_data.get('seller_id')
             
+            if seller_id:
+                seller_doc = db.collection('users').document(seller_id).get()
+                advert_data['seller_username'] = seller_doc.to_dict().get('username', 'N/A') if seller_doc.exists else 'N/A'
+                advert_data['seller_email'] = seller_doc.to_dict().get('email', 'N/A') if seller_doc.exists else 'N/A'
+            else:
+                # Handle the case where seller_id is missing or empty
+                advert_data['seller_username'] = 'Unknown'
+                advert_data['seller_email'] = 'Unknown'
+
             # ... (rest of your data fetching code for category, plan, etc.)
             
             reported_adverts.append(advert_data)
@@ -2357,9 +2362,16 @@ def admin_reported_adverts():
     except Exception as e:
         logging.error(f"An unexpected error occurred in reported_adverts_admin route: {e}", exc_info=True)
         flash("An error occurred while fetching reported adverts.", "error")
-        return redirect(url_for('profile'))
+        return redirect(url_for('admin_dashboard'))
 
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
+
+
+
+
+
+
+
 
 
 @app.route('/report_advert/<string:advert_id>', methods=['POST'])
@@ -4500,6 +4512,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
