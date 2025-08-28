@@ -3081,6 +3081,12 @@ def unsave_advert():
 
 
 
+@app.route('/subscribe', methods=['GET', 'POST'])
+def subscribe():
+     
+    return render_template('subscribe.html')
+
+
 
 
 
@@ -3221,6 +3227,376 @@ def get_schools_by_state(state_name):
 
 
 
+@app.route('/change-phone', methods=['GET', 'POST'])
+@login_required
+def change_phone():
+    user_id = session['user_id']
+    user_ref = db.collection('users').document(user_id)
+    
+    if request.method == 'POST':
+        new_phone_number_digits = request.form.get('new_phone_number')
+        
+        # --- Server-Side Validation ---
+        if not new_phone_number_digits:
+            flash("Phone number cannot be empty.", "error")
+            return redirect(url_for('change_phone'))
+        
+        if not re.fullmatch(r'\d{10}', new_phone_number_digits):
+            flash("Phone number must be exactly 10 digits and contain only numbers.", "error")
+            return redirect(url_for('change_phone'))
+            
+        if not re.match(r'^[789]', new_phone_number_digits):
+            flash("Phone number must start with 7, 8, or 9.", "error")
+            return redirect(url_for('change_phone'))
+            
+        # If all validations pass, proceed to save the phone number
+        try:
+            phone_to_save = '+234' + new_phone_number_digits
+            
+            # Update user's phone number in the database
+            user_ref.update({'phone_number': phone_to_save})
+            
+            # Here you would typically trigger the OTP sending process
+            # ... (e.g., call an external SMS service)
+            
+            flash("Your phone number has been successfully updated!", "success")
+            return redirect(url_for('profile'))
+            
+        except Exception as e:
+            flash(f"An error occurred while updating your phone number: {str(e)}", "error")
+            return redirect(url_for('change_phone'))
+    else:
+        # GET request: show current phone number details
+        user_doc = user_ref.get()
+        user = user_doc.to_dict() if user_doc.exists else {}
+        
+        # Pass the 'user' object to the template.
+        return render_template('change_phone_number.html', user=user)
+
+
+
+
+
+
+
+
+
+
+
+@app.route("/school_news")
+@login_required # Protects the page from non-logged-in users
+def school_news():
+    # The login_required decorator has already ensured g.current_user is available
+    current_user_role = getattr(g.current_user, 'role', 'user')
+    return render_template("school_news.html", current_user_role=current_user_role)
+
+@app.route("/api/school_news")
+def api_school_news():
+    search_query = request.args.get("q")
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    
+    # We don't need to get the user ID here unless you want to filter posts by user.
+    # The current implementation doesn't seem to do that, so we'll leave it as is.
+    current_user_id = g.current_user.id if 'current_user' in g else None
+
+    try:
+        posts, total_posts, error = fetch_posts_for_display("School News", search_query, page, per_page, current_user_id)
+
+        if error:
+            current_app.logger.error(f"Error fetching posts for API: {error}")
+            return (jsonify({"error": "Failed to fetch posts", "details": error}), 500)
+
+        posts_data = []
+        for post in posts:
+            post_date_str = post.get("post_date").isoformat() if isinstance(post.get("post_date"), datetime) else str(post.get("post_date", ""))
+            
+            posts_data.append({
+                "id": post["id"],
+                "title": post.get("title"),
+                "content": post.get("content"),
+                "external_link_url": post.get("external_link_url"),
+                "author_username": post.get("author_username"),
+                "author_user_id": post.get("author_user_id"),
+                "profile_picture_url": post.get("profile_picture_url", "/static/default_avatar.png"),
+                "post_date": post_date_str,
+                "media_type": post.get("media_type"),
+                "media_url": post.get("media_url"),
+                "reactions_count": post.get("reactions_count", 0),
+                "comments_count": post.get("comments_count", 0),
+                "download_file_path": post.get("download_file_path"),
+            })
+
+        return jsonify({
+            "posts": posts_data,
+            "total_posts": total_posts,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": (total_posts + per_page - 1) // per_page,
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error in api_school_news: {e}", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred."}), 500
+
+def fetch_single_post(post_id, current_user_id):
+    """
+    Fetches a single news post from Firestore by its ID.
+    The post ID is the document ID in the 'news_posts' collection.
+    """
+    if db is None:
+        return None
+    try:
+        # Using a collection reference and get the document directly
+        post_ref = db.collection("news_posts").document(str(post_id))
+        doc = post_ref.get()
+        if doc.exists:
+            post_data = doc.to_dict()
+            post_data['id'] = doc.id
+            return post_data
+    except Exception as e:
+        app.logger.error(f"Error fetching post {post_id} from Firestore: {e}", exc_info=True)
+    return None
+
+# ==============================================================================
+# FLASK ROUTES
+# These routes have been updated to use the Firestore helper functions.
+# ==============================================================================
+
+@app.route("/download_news_post_file/<string:post_id>")
+@login_required # Ensure only logged-in users can download
+def download_news_post_file(post_id):
+    current_user_id = g.current_user.id
+    post = fetch_single_post(post_id, current_user_id)
+
+    if not post:
+        flash("Post not found or expired.", "error")
+        return redirect(url_for("school_news"))
+
+    download_file_path = post.get("download_file_path")
+    if not download_file_path:
+        flash("No downloadable file available for this post.", "error")
+        return redirect(url_for("school_news"))
+
+    try:
+        # Assuming files are stored in a dedicated directory
+        filename = os.path.basename(download_file_path)
+        safe_filename = secure_filename(filename)
+
+        full_path_check = os.path.join(app.config["UPLOAD_FOLDER"], safe_filename)
+        # Check if the generated path is actually a file and starts with the UPLOAD_FOLDER path
+        if not os.path.isfile(full_path_check) or not full_path_check.startswith(os.path.realpath(app.config['UPLOAD_FOLDER'])):
+            app.logger.warning(f"Attempted to download suspicious file path: {safe_filename} outside UPLOAD_FOLDER. Full path: {full_path_check}")
+            flash('Invalid file path or file not found.', 'error')
+            return redirect(url_for('school_news'))
+
+        # Assuming allowed_file() is a helper function you have
+        def allowed_file(filename):
+            # Example implementation
+            ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
+            return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+        if not allowed_file(safe_filename):
+            app.logger.warning(f"Attempted to download file with disallowed extension: {safe_filename}")
+            flash("This file type is not allowed for download.", "error")
+            return redirect(url_for("school_news"))
+
+        app.logger.info(f"Serving file: {safe_filename} from {app.config['UPLOAD_FOLDER']}")
+        return send_from_directory(app.config["UPLOAD_FOLDER"], safe_filename, as_attachment=True)
+    except Exception as e:
+        app.logger.error(
+            f"Error serving file for post {post_id} (filename: {download_file_path}): {e}",
+            exc_info=True,
+        )
+        flash("An error occurred while trying to download the file.", "error")
+        return redirect(url_for("school_news"))
+
+
+
+
+
+@app.route("/full_post/<string:category_name>/<string:post_id>")
+@login_required # Ensure only logged-in users can view full posts
+def display_full_post(category_name, post_id):
+    """
+    Renders a dedicated page for a single post, displaying full content and all media.
+    """
+    current_user_id = g.current_user.id
+    current_user_role = getattr(g.current_user, 'role', 'user')
+
+    # Use the Firestore helper function
+    post = fetch_single_post(post_id, current_user_id)
+
+    if not post:
+        flash("Post not found.", "error")
+        return redirect(url_for("school_news"))
+
+    # Convert Firestore Timestamp to string for rendering
+    if isinstance(post.get("post_date"), firestore.SERVER_TIMESTAMP):
+        post["post_date_formatted"] = post["post_date"].strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        post["post_date_formatted"] = str(post.get("post_date", ""))
+
+    return render_template(
+        "full_post_detail.html", # Changed to new template name
+        post=post,
+        category_name=category_name,
+        current_user_role=current_user_role
+        )
+
+
+
+
+
+@app.route("/admin/create_post", methods=["GET", "POST"])
+@login_required
+@admin_required # This decorator ensures only admins can access this page
+def create_post():
+    """Handles the creation of new posts, study materials, and stories."""
+    # The decorators handle all authentication and authorization, so we can directly
+    # access g.current_user
+    user = g.current_user
+    user_is_admin = getattr(user, 'is_admin', False)
+
+    post_data = request.form.to_dict() if request.method == "POST" else {}
+
+    if request.method == "POST":
+        title = request.form.get("title")
+        content = request.form.get("content")
+        author_username = getattr(user, 'username', 'Unknown')
+        post_type = request.form.get("post_type")
+        submitted_external_link_url = request.form.get("link_url", "").strip()
+        display_on = request.form.getlist("display_on")
+        
+        is_story_post = post_type == "story"
+        is_study_material_post = "Study Hub" in display_on
+
+        # If the user is not an admin, they can only post to School Gist.
+        if not user_is_admin and not is_story_post and "School Gist" not in display_on:
+            display_on.append("School Gist")
+        
+        # --- VALIDATION ---
+        # The validation logic remains the same.
+        if not title or not title.strip():
+            flash("Please enter a title for your post.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+
+        if not content or not content.strip():
+            flash("Content (or caption/description) cannot be empty for this post type.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+
+        if not display_on and not is_story_post:
+            flash("Please select at least one page to display the post on.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        
+        # --- MEDIA PROCESSING ---
+        media_items_to_save = []
+
+        try:
+            # Handle uploaded files
+            media_files = request.files.getlist("media_files")
+            for media_file in media_files:
+                if media_file and media_file.filename != '':
+                    folder = "posts"
+                    if is_story_post:
+                        folder = "stories"
+                    elif is_study_material_post:
+                        folder = "study_materials"
+                    
+                    uploaded_url = upload_file_to_firebase(media_file, folder)
+                    if uploaded_url:
+                        media_items_to_save.append({
+                            "media_type": get_media_type_from_filename(media_file.filename),
+                            "media_path_or_url": uploaded_url,
+                        })
+
+        except Exception as e:
+            flash(f"An error occurred during file upload: {e}", "error")
+            logging.error(f"File upload error: {e}", exc_info=True)
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
+
+        # Validate submitted_external_link_url if provided
+        if submitted_external_link_url and not (submitted_external_link_url.startswith("http://") or submitted_external_link_url.startswith("https://")):
+            flash("External link must start with http:// or https://", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+            
+        if not content.strip() and not media_items_to_save and not submitted_external_link_url:
+            flash("Post must have content, uploaded media, or an external link.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+
+        try:
+            redirect_url = url_for("home") # Default redirect
+            
+            if is_study_material_post:
+                study_materials_ref = db.collection("study_materials")
+                # Assumes only one file is uploaded for study material
+                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
+                study_material_doc = {
+                    "title": title,
+                    "content": content,
+                    "category": "Study Material",
+                    "upload_date": datetime.now(),
+                    "file_path": file_path,
+                }
+                study_materials_ref.add(study_material_doc)
+                flash("Study Material uploaded successfully!", "success")
+                redirect_url = url_for("study_hub")
+
+            elif is_story_post:
+                stories_ref = db.collection("stories")
+                expires_at = datetime.now() + timedelta(hours=24)
+                story_media_item = media_items_to_save[0] if media_items_to_save else None
+                story_doc = {
+                    "user_id": user.id,
+                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
+                    "media_type": story_media_item["media_type"] if story_media_item else "text",
+                    "caption": content,
+                    "created_at": datetime.now(),
+                    "expires_at": expires_at,
+                }
+                stories_ref.add(story_doc)
+                flash("Story created successfully (will last 24 hours)!","success")
+                redirect_url = url_for("school_gist")
+
+            else:  # Regular post for School Gist/News
+                display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
+                if not display_on_for_posts:
+                    flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
+                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+
+                posts_ref = db.collection("posts")
+                duration_hours = 48
+                
+                post_doc = {
+                    "title": title,
+                    "content": content,
+                    "categories": display_on_for_posts,
+                    "author": author_username,
+                    "author_id": user.id,
+                    "post_date": datetime.now(),
+                    "duration_hours": duration_hours,
+                    "external_link_url": submitted_external_link_url,
+                    "media_items": media_items_to_save,
+                    "comments_count": 0,
+                    "reactions_breakdown": {},
+                    "total_reactions": 0,
+                }
+
+                posts_ref.add(post_doc)
+                
+                flash(f"Post created successfully (will last {duration_hours} hours)!","success")
+                if "School Gist" in display_on_for_posts:
+                    redirect_url = url_for("school_gist")
+                elif "School News" in display_on_for_posts:
+                    redirect_url = url_for("school_news")
+                
+            return redirect(redirect_url)
+
+        except Exception as e:
+            flash(f"An unexpected error occurred: {e}", "error")
+            logging.error(f"Error creating post: {e}", exc_info=True)
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
+
+    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
 
 
 
@@ -3250,21 +3626,49 @@ def get_schools_by_state(state_name):
 
 
 
+        
+@app.route('/leaderboard')
+def leaderboard():
+    """
+    Fetches user data from Firestore to display a leaderboard.
+    """
+    user_id = session.get('user_id')
+    leaderboard_users = []
+    referral_link = "#"
+    followed_ids = set()
 
+    try:
+        # 1. Fetch leaderboard data from Firestore
+        # The .order_by() method replaces the SQL 'ORDER BY referral_count DESC' clause.
+        users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).stream()
+        for doc in users_ref:
+            user_data = doc.to_dict()
+            leaderboard_users.append({
+                'id': doc.id,
+                'username': user_data.get('username', 'N/A'),
+                'profile_picture': user_data.get('profile_picture', get_profile_picture_url(doc.id)),
+                'referral_count': user_data.get('referral_count', 0)
+            })
 
+        if user_id:
+            # 2. Fetch the current user's referral code and generate the link
+            user_doc = db.collection('users').document(user_id).get()
+            if user_doc.exists:
+                referral_code = user_doc.to_dict().get('referral_code')
+                if referral_code:
+                    referral_link = f"http://127.0.0.1:5000/signup?ref={referral_code}"
 
+            # 3. Fetch the list of user IDs the current user is following
+            # We assume a 'followers' collection where each document stores who is following whom.
+            followers_ref = db.collection('followers').where(filter=FieldFilter('follower_id', '==', user_id)).stream()
+            followed_ids = {doc.to_dict().get('followed_id') for doc in followers_ref if doc.to_dict().get('followed_id')}
 
+    except Exception as e:
+        logger.error(f"Error fetching leaderboard data from Firestore: {e}", exc_info=True)
+        flash('An error occurred while fetching the leaderboard.', 'error')
 
-
-
-
-
-
-@app.route('/subscribe', methods=['GET', 'POST'])
-def subscribe():
-     
-    return render_template('subscribe.html')
-
+    # Pass the data to the template
+    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link, followed_ids=followed_ids)
 
 
 
@@ -3367,135 +3771,8 @@ def support():
 
 
 
-
-
-
-
-
-@app.route('/notification-settings', methods=['GET', 'POST'])
-@login_required
-def manage_notifications():
-    user_id = session['user_id']
-    settings_ref = db.collection('users').document(user_id).collection('settings').document('notifications')
-    
-    if request.method == 'POST':
-        notification_settings = {
-            'email_notifications': bool(request.form.get('email_notifications')),
-            'hot_deals': bool(request.form.get('hot_deals')),
-            'ad_info': bool(request.form.get('ad_info')),
-            'premium_packages': bool(request.form.get('premium_packages')),
-            'subscriptions': bool(request.form.get('subscriptions')),
-            'messages': bool(request.form.get('messages')),
-            'feedback': bool(request.form.get('feedback')),
-            'sms_info': bool(request.form.get('sms_info')),
-            'web_notification': bool(request.form.get('web_notification')),
-        }
-        
-        # Use set with merge=True to update or create the document
-        settings_ref.set(notification_settings, merge=True)
-        flash('Notification preferences updated!', 'success')
-        return redirect(url_for('manage_notifications'))
-        
-    # GET request: Fetch existing settings
-    settings_doc = settings_ref.get()
-    settings = settings_doc.to_dict() if settings_doc.exists else {}
-    return render_template('notifications.html', settings=settings)
-
-@app.route('/mark_all_read', methods=['POST'])
-@login_required
-def mark_all_read():
-    user_id = session['user_id']
-    notifications_ref = db.collection('users').document(user_id).collection('notifications')
-    
-    try:
-        # Get all unread notifications for the user
-        unread_notifications = notifications_ref.where('is_read', '==', False).stream()
-        
-        batch = db.batch()
-        for doc in unread_notifications:
-            batch.update(doc.reference, {'is_read': True})
-        
-        batch.commit()
-        flash('All notifications marked as read.', 'success')
-    except Exception as e:
-        flash(f'Error marking notifications as read: {str(e)}', 'danger')
-        
-    return redirect(url_for('manage_notifications'))
-
-@app.route('/clear_notifications', methods=['POST'])
-@login_required
-def clear_notifications():
-    user_id = session['user_id']
-    notifications_ref = db.collection('users').document(user_id).collection('notifications')
-    
-    try:
-        # Get all notifications for the user
-        all_notifications = notifications_ref.stream()
-        
-        batch = db.batch()
-        for doc in all_notifications:
-            batch.delete(doc.reference)
-        
-        batch.commit()
-        flash('All notifications cleared.', 'success')
-    except Exception as e:
-        flash(f'Error clearing notifications: {str(e)}', 'danger')
-        
-    return redirect(url_for('manage_notifications'))
-
-@app.route('/follow/<string:user_id>', methods=['POST'])
-
-
-
-
-        
         
 
-        
-        
-        
-@app.route('/leaderboard')
-def leaderboard():
-    """
-    Fetches user data from Firestore to display a leaderboard.
-    """
-    user_id = session.get('user_id')
-    leaderboard_users = []
-    referral_link = "#"
-    followed_ids = set()
-
-    try:
-        # 1. Fetch leaderboard data from Firestore
-        # The .order_by() method replaces the SQL 'ORDER BY referral_count DESC' clause.
-        users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).stream()
-        for doc in users_ref:
-            user_data = doc.to_dict()
-            leaderboard_users.append({
-                'id': doc.id,
-                'username': user_data.get('username', 'N/A'),
-                'profile_picture': user_data.get('profile_picture', get_profile_picture_url(doc.id)),
-                'referral_count': user_data.get('referral_count', 0)
-            })
-
-        if user_id:
-            # 2. Fetch the current user's referral code and generate the link
-            user_doc = db.collection('users').document(user_id).get()
-            if user_doc.exists:
-                referral_code = user_doc.to_dict().get('referral_code')
-                if referral_code:
-                    referral_link = f"http://127.0.0.1:5000/signup?ref={referral_code}"
-
-            # 3. Fetch the list of user IDs the current user is following
-            # We assume a 'followers' collection where each document stores who is following whom.
-            followers_ref = db.collection('followers').where(filter=FieldFilter('follower_id', '==', user_id)).stream()
-            followed_ids = {doc.to_dict().get('followed_id') for doc in followers_ref if doc.to_dict().get('followed_id')}
-
-    except Exception as e:
-        logger.error(f"Error fetching leaderboard data from Firestore: {e}", exc_info=True)
-        flash('An error occurred while fetching the leaderboard.', 'error')
-
-    # Pass the data to the template
-    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link, followed_ids=followed_ids)
 
 
 
@@ -3503,62 +3780,6 @@ def leaderboard():
 
 
 
-
-
-
-
-
-def generate_otp():
-    """Generates a 6-digit OTP."""
-    return f"{random.randint(100000, 999999)}"
-
-# --- Routes ---
-
-@app.route('/change-phone', methods=['GET', 'POST'])
-@login_required
-def change_phone():
-    user_id = session['user_id']
-    user_ref = db.collection('users').document(user_id)
-    
-    if request.method == 'POST':
-        new_phone_number_digits = request.form.get('new_phone_number')
-        
-        # --- Server-Side Validation ---
-        if not new_phone_number_digits:
-            flash("Phone number cannot be empty.", "error")
-            return redirect(url_for('change_phone'))
-        
-        if not re.fullmatch(r'\d{10}', new_phone_number_digits):
-            flash("Phone number must be exactly 10 digits and contain only numbers.", "error")
-            return redirect(url_for('change_phone'))
-            
-        if not re.match(r'^[789]', new_phone_number_digits):
-            flash("Phone number must start with 7, 8, or 9.", "error")
-            return redirect(url_for('change_phone'))
-            
-        # If all validations pass, proceed to save the phone number
-        try:
-            phone_to_save = '+234' + new_phone_number_digits
-            
-            # Update user's phone number in the database
-            user_ref.update({'phone_number': phone_to_save})
-            
-            # Here you would typically trigger the OTP sending process
-            # ... (e.g., call an external SMS service)
-            
-            flash("Your phone number has been successfully updated!", "success")
-            return redirect(url_for('profile'))
-            
-        except Exception as e:
-            flash(f"An error occurred while updating your phone number: {str(e)}", "error")
-            return redirect(url_for('change_phone'))
-    else:
-        # GET request: show current phone number details
-        user_doc = user_ref.get()
-        user = user_doc.to_dict() if user_doc.exists else {}
-        
-        # Pass the 'user' object to the template.
-        return render_template('change_phone_number.html', user=user)
 
 
 
@@ -3674,160 +3895,6 @@ def get_study_materials_from_db(query=None, page=1, per_page=10):
 
 
 
-
-
-@app.route("/school_news")
-def school_news():
-    current_user_id = get_current_user_id()
-    current_user_role = get_user_role(current_user_id)
-    return render_template("school_news.html", current_user_role=current_user_role)
-
-
-@app.route("/api/school_news")
-def api_school_news():
-    search_query = request.args.get("q")
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 10, type=int)
-    current_user_id = get_current_user_id()
-
-    try:
-        posts, total_posts, error = fetch_posts_for_display("School News", search_query, page, per_page, current_user_id)
-
-        if error:
-            current_app.logger.error(f"Error fetching posts for API: {error}")
-            return (jsonify({"error": "Failed to fetch posts", "details": error}), 500)
-
-        posts_data = []
-        for post in posts:
-            post_date_str = post.get("post_date").isoformat() if isinstance(post.get("post_date"), datetime) else str(post.get("post_date", ""))
-            
-            posts_data.append({
-                "id": post["id"],
-                "title": post.get("title"),
-                "content": post.get("content"),
-                "external_link_url": post.get("external_link_url"),
-                "author_username": post.get("author_username"),
-                "author_user_id": post.get("author_user_id"),
-                "profile_picture_url": post.get("profile_picture_url", "/static/default_avatar.png"),
-                "post_date": post_date_str,
-                "media_type": post.get("media_type"),
-                "media_url": post.get("media_url"),
-                "reactions_count": post.get("reactions_count", 0),
-                "comments_count": post.get("comments_count", 0),
-                "download_file_path": post.get("download_file_path"),
-            })
-
-        return jsonify({
-            "posts": posts_data,
-            "total_posts": total_posts,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": (total_posts + per_page - 1) // per_page,
-        })
-    except Exception as e:
-        current_app.logger.error(f"Error in api_school_news: {e}", exc_info=True)
-        return jsonify({"error": "An unexpected error occurred."}), 500
-
-def fetch_single_post(post_id, current_user_id):
-    """
-    Fetches a single news post from Firestore by its ID.
-    The post ID is the document ID in the 'news_posts' collection.
-    """
-    if db is None:
-        return None
-    try:
-        # Using a collection reference and get the document directly
-        post_ref = db.collection("news_posts").document(str(post_id))
-        doc = post_ref.get()
-        if doc.exists:
-            post_data = doc.to_dict()
-            post_data['id'] = doc.id
-            return post_data
-    except Exception as e:
-        app.logger.error(f"Error fetching post {post_id} from Firestore: {e}", exc_info=True)
-    return None
-
-
-
-# ==============================================================================
-# FLASK ROUTES
-# These routes have been updated to use the Firestore helper functions.
-# ==============================================================================
-
-@app.route("/download_news_post_file/<string:post_id>")
-def download_news_post_file(post_id):
-    current_user_id = get_current_user_id()
-    post = fetch_single_post(post_id, current_user_id)
-
-    if not post:
-        flash("Post not found or expired.", "error")
-        return redirect(url_for("school_news"))
-
-    download_file_path = post.get("download_file_path")
-    if not download_file_path:
-        flash("No downloadable file available for this post.", "error")
-        return redirect(url_for("school_news"))
-
-    try:
-        # This part of the logic remains the same, assuming files are stored locally
-        filename = os.path.basename(download_file_path)
-        safe_filename = secure_filename(filename)
-
-        full_path_check = os.path.join(app.config["UPLOAD_FOLDER"], safe_filename)
-        # Check if the generated path is actually a file and starts with the UPLOAD_FOLDER path
-        if not os.path.isfile(full_path_check) or not full_path_check.startswith(os.path.realpath(app.config['UPLOAD_FOLDER'])):
-            app.logger.warning(f"Attempted to download suspicious file path: {safe_filename} outside UPLOAD_FOLDER. Full path: {full_path_check}")
-            flash('Invalid file path or file not found.', 'error')
-            return redirect(url_for('school_news'))
-
-        # Assuming allowed_file() is a helper function you have
-        def allowed_file(filename):
-            # Example implementation
-            ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
-            return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-        if not allowed_file(safe_filename):
-            app.logger.warning(f"Attempted to download file with disallowed extension: {safe_filename}")
-            flash("This file type is not allowed for download.", "error")
-            return redirect(url_for("school_news"))
-
-        app.logger.info(f"Serving file: {safe_filename} from {app.config['UPLOAD_FOLDER']}")
-        return send_from_directory(app.config["UPLOAD_FOLDER"], safe_filename, as_attachment=True)
-    except Exception as e:
-        app.logger.error(
-            f"Error serving file for post {post_id} (filename: {download_file_path}): {e}",
-            exc_info=True,
-        )
-        flash("An error occurred while trying to download the file.", "error")
-        return redirect(url_for("school_news"))
-
-@app.route("/full_post/<string:category_name>/<string:post_id>")
-def display_full_post(category_name, post_id):
-    """
-    Renders a dedicated page for a single post, displaying full content and all media.
-    """
-    current_user_id = get_current_user_id()
-    current_user_role = get_user_role(current_user_id)
-
-    # Use the Firestore helper function
-    post = fetch_single_post(post_id, current_user_id)
-
-    if not post:
-        flash("Post not found.", "error")
-        return redirect(url_for("school_news"))
-
-    # Convert Firestore Timestamp to string for rendering
-    if isinstance(post.get("post_date"), firestore.SERVER_TIMESTAMP):
-        post["post_date_formatted"] = post["post_date"].strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        post["post_date_formatted"] = str(post.get("post_date", ""))
-
-    return render_template(
-        "full_post_detail.html", # Changed to new template name
-        post=post,
-        category_name=category_name,
-        current_user_role=current_user_role
-    )
 
 @app.route('/study_hub')
 def study_hub():
@@ -4023,169 +4090,6 @@ def download_file(filename):
 
 
 
-@app.route("/admin/create_post", methods=["GET", "POST"])
-@login_required # Assuming this decorator exists
-def create_post():
-    """Handles the creation of new posts, study materials, and stories."""
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        flash("You must be logged in to create posts.", "error")
-        return redirect(url_for("login"))
-
-    user_is_admin = is_admin(current_user_id)
-    post_data = request.form.to_dict() if request.method == "POST" else {}
-
-    if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
-        author_username = get_current_username()
-        post_type = request.form.get("post_type")
-        submitted_external_link_url = request.form.get("link_url", "").strip()
-        display_on = request.form.getlist("display_on")
-
-        is_story_post = post_type == "story"
-        is_study_material_post = "Study Hub" in display_on
-
-        if not user_is_admin and not is_story_post and "School Gist" not in display_on:
-            display_on.append("School Gist")
-
-        # --- VALIDATION ---
-        # The validation logic remains the same, as it's client-side input validation.
-        if not title or not title.strip():
-            flash("Please enter a title for your post.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        if not content or not content.strip():
-            flash("Content (or caption/description) cannot be empty for this post type.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        if not display_on and not is_story_post:
-            flash("Please select at least one page to display the post on.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        # --- MEDIA PROCESSING ---
-        media_items_to_save = []
-        order_counter = 0
-
-        media_files = request.files.getlist("media_files")
-        has_uploaded_files = media_files and media_files[0].filename != ""
-
-        if has_uploaded_files:
-            for media_file in media_files:
-                if media_file and allowed_file(media_file.filename):
-                    try:
-                        # Note: File saving logic is outside the scope of Firestore,
-                        # you will need a separate file storage solution like Firebase Storage.
-                        unique_filename = generate_unique_filename(media_file.filename)
-                        # We are just using a placeholder path for now
-                        uploaded_url = f"/downloads/{unique_filename}"
-
-                        media_type_for_item = get_media_type_from_extension(unique_filename)
-                        
-                        media_items_to_save.append({
-                            "media_type": media_type_for_item,
-                            "media_path_or_url": uploaded_url,
-                            "caption": "",
-                            "order_index": order_counter,
-                        })
-                        order_counter += 1
-
-                    except Exception as e:
-                        # Log the error and flash a message
-                        flash(f"Error uploading file {media_file.filename}: {e}", "error")
-                        return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
-                elif media_file and not allowed_file(media_file.filename):
-                    flash(f"File type not allowed for {media_file.filename}.", "error")
-                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        # Validate submitted_external_link_url if provided
-        if submitted_external_link_url and not (submitted_external_link_url.startswith("http://") or submitted_external_link_url.startswith("https://")):
-            flash("External link must start with http:// or https://", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        # Decide if a post needs content, media, or link at all
-        if not content.strip() and not media_items_to_save and not submitted_external_link_url:
-            flash("Post must have content, uploaded media, or an external link.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        try:
-            redirect_url = url_for("home") # Default redirect
-            
-            if is_study_material_post:
-                # Firestore will create the 'study_materials' collection if it doesn't exist
-                study_materials_ref = db.collection("study_materials")
-                study_material_doc = {
-                    "title": title,
-                    "content": content,
-                    "category": "Study Material",
-                    "upload_date": datetime.now(),
-                    "file_path": media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None,
-                }
-                study_materials_ref.add(study_material_doc)
-                flash("Study Material uploaded successfully!", "success")
-                redirect_url = url_for("study_hub")
-
-            elif is_story_post:
-                # Firestore will create the 'stories' collection if it doesn't exist
-                stories_ref = db.collection("stories")
-                expires_at = datetime.now() + timedelta(hours=24)
-                story_media_item = media_items_to_save[0] if media_items_to_save else None
-                story_doc = {
-                    "user_id": current_user_id,
-                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
-                    "media_type": story_media_item["media_type"] if story_media_item else "text",
-                    "caption": content,
-                    "created_at": datetime.now(),
-                    "expires_at": expires_at,
-                }
-                stories_ref.add(story_doc)
-                flash("Story created successfully (will last 24 hours)!","success")
-                redirect_url = url_for("school_gist")
-
-            else:  # Regular post for School Gist/News
-                display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
-                if not display_on_for_posts:
-                    flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
-                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-                # Firestore will create the 'posts' collection if it doesn't exist
-                posts_ref = db.collection("posts")
-                duration_hours = 48  # Default for regular posts
-                
-                post_doc = {
-                    "title": title,
-                    "content": content,
-                    "categories": display_on_for_posts, # Store as an array
-                    "author": author_username,
-                    "author_id": current_user_id,
-                    "post_date": datetime.now(),
-                    "duration_hours": duration_hours,
-                    "external_link_url": submitted_external_link_url,
-                    "media_items": media_items_to_save, # Embed media items as a sub-array of objects
-                    "comments_count": 0,
-                    "reactions_breakdown": {},
-                    "total_reactions": 0,
-                }
-
-                posts_ref.add(post_doc)
-                
-                flash(f"Post created successfully (will last {duration_hours} hours)!","success")
-                if "School Gist" in display_on_for_posts:
-                    redirect_url = url_for("school_gist")
-                elif "School News" in display_on_for_posts:
-                    redirect_url = url_for("school_news")
-                
-            return redirect(redirect_url)
-
-        except FirebaseError as e:
-            # Firestore client library handles most errors gracefully
-            flash(f"A Firestore error occurred: {e}", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
-
-    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
-
-
-
 
 
 
@@ -4246,6 +4150,92 @@ def api_calculate_cgpa():
 
 
 
+
+
+
+
+
+
+@app.route('/notification-settings', methods=['GET', 'POST'])
+@login_required
+def manage_notifications():
+    user_id = session['user_id']
+    settings_ref = db.collection('users').document(user_id).collection('settings').document('notifications')
+    
+    if request.method == 'POST':
+        notification_settings = {
+            'email_notifications': bool(request.form.get('email_notifications')),
+            'hot_deals': bool(request.form.get('hot_deals')),
+            'ad_info': bool(request.form.get('ad_info')),
+            'premium_packages': bool(request.form.get('premium_packages')),
+            'subscriptions': bool(request.form.get('subscriptions')),
+            'messages': bool(request.form.get('messages')),
+            'feedback': bool(request.form.get('feedback')),
+            'sms_info': bool(request.form.get('sms_info')),
+            'web_notification': bool(request.form.get('web_notification')),
+        }
+        
+        # Use set with merge=True to update or create the document
+        settings_ref.set(notification_settings, merge=True)
+        flash('Notification preferences updated!', 'success')
+        return redirect(url_for('manage_notifications'))
+        
+    # GET request: Fetch existing settings
+    settings_doc = settings_ref.get()
+    settings = settings_doc.to_dict() if settings_doc.exists else {}
+    return render_template('notifications.html', settings=settings)
+
+@app.route('/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_read():
+    user_id = session['user_id']
+    notifications_ref = db.collection('users').document(user_id).collection('notifications')
+    
+    try:
+        # Get all unread notifications for the user
+        unread_notifications = notifications_ref.where('is_read', '==', False).stream()
+        
+        batch = db.batch()
+        for doc in unread_notifications:
+            batch.update(doc.reference, {'is_read': True})
+        
+        batch.commit()
+        flash('All notifications marked as read.', 'success')
+    except Exception as e:
+        flash(f'Error marking notifications as read: {str(e)}', 'danger')
+        
+    return redirect(url_for('manage_notifications'))
+
+@app.route('/clear_notifications', methods=['POST'])
+@login_required
+def clear_notifications():
+    user_id = session['user_id']
+    notifications_ref = db.collection('users').document(user_id).collection('notifications')
+    
+    try:
+        # Get all notifications for the user
+        all_notifications = notifications_ref.stream()
+        
+        batch = db.batch()
+        for doc in all_notifications:
+            batch.delete(doc.reference)
+        
+        batch.commit()
+        flash('All notifications cleared.', 'success')
+    except Exception as e:
+        flash(f'Error clearing notifications: {str(e)}', 'danger')
+        
+    return redirect(url_for('manage_notifications'))
+
+@app.route('/follow/<string:user_id>', methods=['POST'])
+
+
+
+
+        
+        
+
+        
 
 
 
@@ -4561,6 +4551,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
