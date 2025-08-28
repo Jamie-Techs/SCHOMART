@@ -2465,11 +2465,60 @@ def report_advert(advert_id):
 
 
 
+@app.route('/admin/adverts/reported')
+@login_required
+@admin_required
+def admin_reported_adverts():
+    """
+    Admin route to list and manage reported adverts.
+    """
+    reported_adverts = []
+    try:
+        # Step 1: Query the 'adverts' collection for documents where reported_count > 0
+        adverts_ref = db.collection('adverts')
+        query = adverts_ref.where('reported_count', '>', 0).stream()
 
+        adverts_data = []
+        for doc in query:
+            advert_data = doc.to_dict()
+            advert_data['id'] = doc.id
+            adverts_data.append(advert_data)
+        
+        # Step 2: Fetch additional data (e.g., seller info, category, plan)
+        for advert in adverts_data:
+            # Fetch seller data for context
+            seller_ref = db.collection('users').document(advert.get('seller_id'))
+            seller_doc = seller_ref.get()
+            if seller_doc.exists:
+                seller_data = seller_doc.to_dict()
+                advert['seller_username'] = seller_data.get('username', 'N/A')
+                advert['seller_email'] = seller_data.get('email', 'N/A')
+            
+            # Fetch category name
+            category_ref = db.collection('categories').document(advert.get('category_id'))
+            category_doc = category_ref.get()
+            if category_doc.exists:
+                advert['category_name'] = category_doc.to_dict().get('name', 'N/A')
+                
+            # Fetch plan name and visibility
+            plan_ref = db.collection('plans').document(advert.get('plan_id'))
+            plan_doc = plan_ref.get()
+            if plan_doc.exists:
+                plan_data = plan_doc.to_dict()
+                advert['plan_name'] = plan_data.get('name', 'N/A')
+                advert['visibility_level'] = plan_data.get('visibility_level', 'N/A')
 
+            # Get the reports for this advert
+            reports_query = db.collection('adverts').document(advert['id']).collection('reports').stream()
+            advert['reports'] = [report.to_dict() for report in reports_query]
+            
+            reported_adverts.append(advert)
 
+    except Exception as e:
+        logging.error(f"Error fetching reported adverts: {e}", exc_info=True)
+        flash("An error occurred while fetching reported adverts.", "error")
 
-
+    return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
 
 
@@ -6083,6 +6132,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
