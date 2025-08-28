@@ -210,14 +210,28 @@
     </div>
   </section>
 
-    <!-- Updated Floating Live Chat Button -->
-  <div class="floating-live-chat" onclick="window.location.href='{{ url_for('live_admins_list') }}'">
-    <i class="fas fa-comments"></i> <!-- Font Awesome chat icon -->
-  </div>
+    
+    <div class="fixed bottom-5 right-5 z-[500] group">
+    <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
+        <i class="fas fa-question-circle"></i>
+    </button>
+
+    <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
+        <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+        <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+        <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+    </div>
+    </div>
 
   <!-- Footer -->
   <footer class="main-footer">
-    <p>&copy; 2024 Futo Jiji. All rights reserved.</p>
+    <p>&copy; 2025 SCHOMART. All rights reserved.</p>
   </footer>
 
   <script>
@@ -247,4 +261,5 @@
   </script>
 
 </body>
+
 </html>
