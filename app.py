@@ -2378,13 +2378,11 @@ def reported_adverts_admin():
 
 
 
-
 @app.route('/submit_review', methods=['POST'])
 @login_required
 def submit_review():
     """
     Handles the submission of a new review for an advert.
-    This route requires a POST request with form data.
     """
     try:
         # Get data from the form
@@ -2393,8 +2391,13 @@ def submit_review():
         comment = request.form.get('comment')
         reviewee_id = request.form.get('reviewee_id')
 
+        # This check is crucial to prevent the BuildError
+        if not advert_id:
+            flash('Advert ID is missing. Cannot submit review.', 'error')
+            return redirect(url_for('some_default_page')) # Redirect to a safe page
+
         # Basic input validation
-        if not all([advert_id, rating_str, comment, reviewee_id]):
+        if not all([rating_str, comment, reviewee_id]):
             flash('All fields are required to submit a review.', 'error')
             return redirect(url_for('advert_detail', advert_id=advert_id))
 
@@ -2441,6 +2444,8 @@ def submit_review():
         flash('An unexpected error occurred. Please try again.', 'error')
         
     return redirect(url_for('advert_detail', advert_id=advert_id))
+
+
 
 
 
@@ -6089,6 +6094,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
