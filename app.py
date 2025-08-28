@@ -2502,11 +2502,6 @@ def admin_post_airtime():
 
 
 
-
-
-
-
-
 # --- API Route to Fetch Active Airtime Posts ---
 @app.route('/api/airtime-posts', methods=['GET'])
 def get_airtime_posts():
@@ -2533,9 +2528,10 @@ def get_airtime_posts():
             post['id'] = doc.id
             post['digits'] = str(post.get('digits')) if post.get('digits') is not None else ''
 
-            if 'created_at' in post and isinstance(post['created_at'], firestore.Timestamp):
+            # Corrected: Use the imported Timestamp class directly
+            if 'created_at' in post and isinstance(post['created_at'], Timestamp):
                 post['created_at'] = post['created_at'].isoformat()
-            if 'expires_at' in post and isinstance(post['expires_at'], firestore.Timestamp):
+            if 'expires_at' in post and isinstance(post['expires_at'], Timestamp):
                 post['expires_at'] = post['expires_at'].isoformat()
                 
             posts_data.append(post)
@@ -2548,6 +2544,9 @@ def get_airtime_posts():
     except Exception as e:
         logger.error(f"Error fetching airtime posts: {e}", exc_info=True)
         return jsonify({'message': f'Error fetching posts: {str(e)}'}), 500
+
+
+
 
 
 # --- API Route to Delete Expired Airtime Posts (Triggered by Frontend JS) ---
@@ -6149,6 +6148,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
