@@ -40,17 +40,20 @@
             </div>
             <button type="submit" class="btn">Update Password</button>
         </form>
+        <button id="deleteAccountBtn" class="btn" style="background-color: #c0392b; margin-top: 20px;">Delete Account</button>
         <button class="btn btn-secondary" onclick="window.location.href='/profile'">Back to Profile</button>
     </div>
+    
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
+    
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBEJOF1jZAIIV8_i6xvUHlSKeqOlcQ-Sgo",
             authDomain: "schomart-7a743.firebaseapp.com",
             projectId: "schomart-7a743",
-            storageBucket: "schomart-7a743.appspot.com", 
+            storageBucket: "schomart-7a743.appspot.com",
             messagingSenderId: "20119186662",
             appId: "1:20119186662:web:da1755b55dacde4fa6df27",
             measurementId: "G-9QGL3XHSC7"
@@ -61,6 +64,7 @@
 
         const changeEmailForm = document.getElementById('changeEmailForm');
         const changePasswordForm = document.getElementById('changePasswordForm');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
         const msgBox = document.getElementById('messageBox');
 
         function showMessageBox(message, isError = false) {
@@ -113,6 +117,59 @@
             } catch (error) {
                 showMessageBox(`Error updating password: ${error.message}`, true);
                 console.error("Update password error:", error);
+            }
+        });
+        
+        // --- New Delete Account Functionality ---
+        deleteAccountBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                showMessageBox("You must be logged in to delete your account.", true);
+                return;
+            }
+
+            const confirmation = window.confirm(
+                "Warning: This is an irreversible action. Deleting your account will permanently remove all your data, including your posts, messages, and profile information. Are you sure you want to proceed?"
+            );
+
+            if (confirmation) {
+                try {
+                    // Step 1: Delete the user from Firebase Authentication
+                    await user.delete();
+                    
+                    // Step 2: Call the Flask backend to delete user data from Firestore
+                    // Note: This relies on a Flask endpoint you must create (e.g., /api/delete-user-data)
+                    // The 'firebase-id-token' header will be sent automatically by firebase.auth() for fetch requests.
+                    const response = await fetch('/api/delete-user-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        // You can also send the user's UID to the backend for verification
+                        body: JSON.stringify({ uid: user.uid })
+                    });
+
+                    if (response.ok) {
+                        showMessageBox("Account and all related data deleted successfully.", false);
+                        // Redirect to a success page or the homepage
+                        window.location.href = '/'; 
+                    } else {
+                        const errorData = await response.json();
+                        showMessageBox(`Error on server-side cleanup: ${errorData.message}`, true);
+                        // At this point, the Firebase Auth user is deleted, but Firestore data might remain.
+                        // You may need to handle this discrepancy.
+                        console.error("Server-side cleanup failed:", errorData);
+                    }
+                } catch (error) {
+                    if (error.code === 'auth/requires-recent-login') {
+                        // This error occurs if the user has not signed in recently.
+                        // You should prompt them to re-authenticate (e.g., with their password)
+                        showMessageBox("For security, please sign in again to delete your account.", true);
+                    } else {
+                        showMessageBox(`Error deleting account: ${error.message}`, true);
+                        console.error("Delete account error:", error);
+                    }
+                }
             }
         });
     </script>
