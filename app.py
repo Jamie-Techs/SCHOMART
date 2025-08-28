@@ -2340,68 +2340,43 @@ def take_down_advert(advert_id):
 @admin_required
 def admin_reported_adverts():
     """
-    Admin route to list and manage reported adverts.
+    Admin route to list and manage reported adverts by status.
     """
     reported_adverts = []
     try:
-        # Query the 'adverts' collection for documents where reported_count > 0
-        adverts_query = db.collection('adverts').where('reported_count', '>', 0).stream()
+        # Query adverts where the status is 'reported'
+        adverts_query = db.collection('adverts').where('status', '==', 'reported').stream()
 
-        # Loop through the adverts and fetch related data
         for advert_doc in adverts_query:
             advert_data = advert_doc.to_dict()
             advert_data['id'] = advert_doc.id
 
-            # Fetch the reports sub-collection for this specific advert
+            # Fetch the reports sub-collection for this advert
             reports_query = db.collection('adverts').document(advert_doc.id).collection('reports').stream()
             advert_data['reports'] = [report.to_dict() for report in reports_query]
             
-            # Fetch seller data (user who owns the advert)
-            seller_ref = db.collection('users').document(advert_data.get('seller_id', ''))
-            seller_doc = seller_ref.get()
-            if seller_doc.exists:
-                seller_data = seller_doc.to_dict()
-                advert_data['seller_username'] = seller_data.get('username', 'N/A')
-                advert_data['seller_email'] = seller_data.get('email', 'N/A')
-            else:
-                advert_data['seller_username'] = 'N/A'
-                advert_data['seller_email'] = 'N/A'
-
-            # Fetch category name
-            category_ref = db.collection('categories').document(advert_data.get('category_id', ''))
-            category_doc = category_ref.get()
-            advert_data['category_name'] = category_doc.to_dict().get('name', 'N/A') if category_doc.exists else 'N/A'
+            # Fetch and add related data with default values
+            seller_doc = db.collection('users').document(advert_data.get('seller_id', '')).get()
+            advert_data['seller_username'] = seller_doc.to_dict().get('username', 'N/A') if seller_doc.exists else 'N/A'
+            advert_data['seller_email'] = seller_doc.to_dict().get('email', 'N/A') if seller_doc.exists else 'N/A'
             
-            # Fetch plan details
-            plan_ref = db.collection('plans').document(advert_data.get('plan_id', ''))
-            plan_doc = plan_ref.get()
-            if plan_doc.exists:
-                plan_data = plan_doc.to_dict()
-                advert_data['plan_name'] = plan_data.get('name', 'N/A')
-                advert_data['visibility_level'] = plan_data.get('visibility_level', 'N/A')
-            else:
-                advert_data['plan_name'] = 'N/A'
-                advert_data['visibility_level'] = 'N/A'
+            # ... (rest of your data fetching code for category, plan, etc.)
             
             reported_adverts.append(advert_data)
 
     except Exception as e:
         logging.error(f"An unexpected error occurred in reported_adverts_admin route: {e}", exc_info=True)
         flash("An error occurred while fetching reported adverts.", "error")
-        return redirect(url_for('admin_dashboard')) # Redirect to a safe page
+        return redirect(url_for('admin_dashboard'))
 
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
-
-
-
 
 
 @app.route('/report_advert/<string:advert_id>', methods=['POST'])
 @login_required
 def report_advert(advert_id):
     """
-    Handles a user reporting an advert by atomically updating a counter
-    and creating a new report document in a sub-collection using a transaction.
+    Handles a user reporting an advert by adding a report and updating the advert's status.
     """
     try:
         reporter_uid = g.current_user.id
@@ -2409,40 +2384,17 @@ def report_advert(advert_id):
         
         advert_ref = db.collection('adverts').document(advert_id)
         
-        # Define the transaction logic in a self-contained function
-        # The transaction object is passed by the run() method
-        def update_report_count_and_add_report(transaction):
-            """
-            This function contains all the database operations for the transaction.
-            """
-            advert_doc = advert_ref.get(transaction=transaction)
-            if not advert_doc.exists:
-                raise Exception("Advert does not exist.")
-            
-            # Get the current reported_count, defaulting to 0 if it doesn't exist
-            current_reports = advert_doc.get('reported_count', 0)
-            
-            # Atomically increment the counter
-            transaction.update(advert_ref, {
-                'reported_count': current_reports + 1
-            })
-            
-            # Add the report details to a sub-collection
-            report_data = {
-                'reporter_id': reporter_uid,
-                'reporter_email': g.current_user.email,
-                'reason': reason,
-                'reported_at': datetime.utcnow()
-            }
-            # Add the document to the sub-collection within the transaction
-            # Note: The add() method on a collection is not transactional.
-            # It's better to explicitly set a document for consistency.
-            # db.collection('adverts').document(advert_id).collection('reports').add(report_data)
-            # The transaction will commit these changes as a single batch.
-            db.collection('adverts').document(advert_id).collection('reports').add(report_data)
-
-        # Run the entire transaction using the db.transaction().run() method
-        db.transaction().run(update_report_count_and_add_report)
+        # Add the detailed report to a sub-collection
+        report_data = {
+            'reporter_id': reporter_uid,
+            'reporter_email': g.current_user.email,
+            'reason': reason,
+            'reported_at': datetime.utcnow()
+        }
+        db.collection('adverts').document(advert_id).collection('reports').add(report_data)
+        
+        # Update the advert's status to 'reported'
+        advert_ref.update({'status': 'reported'})
         
         flash("Report submitted.", 'success')
     except Exception as e:
@@ -2450,6 +2402,17 @@ def report_advert(advert_id):
         flash(f"An error occurred while submitting your report. Please try again.", "danger")
     
     return redirect(request.referrer)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4547,6 +4510,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
