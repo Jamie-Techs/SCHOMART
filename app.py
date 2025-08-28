@@ -2932,8 +2932,136 @@ def unsave_advert():
 
 
 
+@app.route('/search', methods=['GET'])
+def search():
+    adverts = []
+    
+    # Get search parameters from the request
+    search_query = request.args.get('search_query', '').strip()
+    selected_state = request.args.get('state', '').strip()
+    selected_school = request.args.get('school', '').strip()
+    selected_category = request.args.get('category', '').strip()
+    price_min_str = request.args.get('price_min', '').strip()
+    price_max_str = request.args.get('price_max', '').strip()
+    selected_condition = request.args.get('condition', '').strip()
+    selected_negotiation = request.args.get('negotiation', '').strip()
+    
+    # Build the Firestore query
+    try:
+        adverts_query = db.collection('adverts').where('status', '==', 'published')
+        now = datetime.datetime.now()
+        adverts_query = adverts_query.where('valid_until', '>', now)
+        
+        # Add filters for equality
+        if selected_state:
+            adverts_query = adverts_query.where('state', '==', selected_state)
+        if selected_school:
+            adverts_query = adverts_query.where('school', '==', selected_school)
+        if selected_category:
+            adverts_query = adverts_query.where('category', '==', selected_category)
+        if selected_condition:
+            adverts_query = adverts_query.where('condition', '==', selected_condition)
+        if selected_negotiation:
+            is_negotiable = selected_negotiation == 'yes'
+            adverts_query = adverts_query.where('negotiable', '==', is_negotiable)
 
+        # Price filtering
+        price_min = None
+        price_max = None
+        if price_min_str:
+            try:
+                price_min = float(price_min_str)
+                adverts_query = adverts_query.where('price', '>=', price_min)
+            except ValueError:
+                flash("Invalid minimum price entered. Please enter a number.", "warning")
+        if price_max_str:
+            try:
+                price_max = float(price_max_str)
+                adverts_query = adverts_query.where('price', '<=', price_max)
+            except ValueError:
+                flash("Invalid maximum price entered. Please enter a number.", "warning")
 
+        # Fetch initial results from Firestore
+        adverts_stream = adverts_query.stream()
+        fetched_adverts = []
+        for doc in adverts_stream:
+            advert_data = doc.to_dict()
+            advert_data['id'] = doc.id
+            fetched_adverts.append(advert_data)
+        
+        adverts = fetched_adverts
+        
+        # Apply in-memory text search filtering
+        if search_query:
+            search_term = search_query.lower()
+            adverts = [
+                a for a in adverts if 
+                search_term in a.get('title', '').lower() or 
+                search_term in a.get('description', '').lower()
+            ]
+
+        # Get user info for all fetched adverts in one batch
+        user_ids = {a.get('user_id') for a in adverts if a.get('user_id')}
+        users_info = {}
+        if user_ids:
+            for user_id_chunk in [list(user_ids)[i:i + 10] for i in range(0, len(user_ids), 10)]:
+                users_docs = db.collection('users').where(firestore.FieldPath.document_id(), 'in', user_id_chunk).stream()
+                for user_doc in users_docs:
+                    users_info[user_doc.id] = user_doc.to_dict()
+
+        for advert in adverts:
+            user_data = users_info.get(advert.get('user_id', ''))
+            if user_data:
+                advert['poster_username'] = user_data.get('username', 'N/A')
+            else:
+                advert['poster_username'] = 'N/A'
+            
+            # Use the school and state from the advert data
+            advert['state'] = advert.get('state', 'N/A')
+            advert['school'] = advert.get('school', 'N/A')
+
+        # Apply custom sorting logic in Python
+        visibility_order = {
+            'Premium': 1, 'Featured': 2, 'Standard': 3
+        }
+        
+        adverts.sort(key=lambda a: (
+            # Exact title match priority
+            0 if search_query and a.get('title', '').lower() == search_query.lower() else
+            1 if search_query and a.get('title', '').lower().startswith(search_query.lower()) else
+            2 if search_query and search_query.lower() in a.get('title', '').lower() else
+            3,
+            # Visibility level
+            visibility_order.get(a.get('visibility_level', 'Standard'), 99),
+            # Created_at (descending)
+            a.get('created_at', datetime.datetime.min),
+        ), reverse=False)
+
+    except Exception as e:
+        flash(f"An unexpected error occurred during your search: {e}", "danger")
+        adverts = []
+        logging.error(f"Search route error: {e}", exc_info=True)
+            
+    return render_template('search.html',
+                           search_query=search_query,
+                           adverts=adverts,
+                           states=NIGERIAN_STATES,
+                           categories=CATEGORIES,
+                           selected_state=selected_state,
+                           selected_school=selected_school,
+                           selected_category=selected_category,
+                           selected_price_min=price_min_str,
+                           selected_price_max=price_max_str,
+                           selected_condition=selected_condition,
+                           selected_negotiation=selected_negotiation)
+
+# --- API Endpoints for dynamic dropdowns ---
+
+@app.route('/api/schools_by_state/<string:state_name>')
+def get_schools_by_state(state_name):
+    """API endpoint to get schools for a specific state."""
+    schools = NIGERIAN_SCHOOLS.get(state_name, [])
+    return jsonify(schools)
 
 
 
@@ -2981,8 +3109,7 @@ def unsave_advert():
 
 @app.route('/subscribe', methods=['GET', 'POST'])
 def subscribe():
-     your free plan. Please try again.', 'error')
-                    
+     
     return render_template('subscribe.html')
 
 
@@ -6025,6 +6152,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
