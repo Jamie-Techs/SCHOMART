@@ -827,8 +827,6 @@ def profile():
         return redirect(url_for('signup'))
 
 
-
-
 @app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
@@ -836,24 +834,26 @@ def personal_details():
     Handles displaying and updating a user's personal details.
     """
     try:
-        # 🐛 The CRITICAL FIX: The @login_required decorator ensures g.current_user is available.
-        # You should ALWAYS use g.current_user.id for the user's UID.
-        # The manual session checks are redundant and can cause issues.
         user_uid = g.current_user.id
         
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
         if not user_doc.exists:
-            logger.error(f"User document does not exist for UID: {user_uid}")
-            # The decorator already handles the logout, but this is a good safety check.
+            logging.error(f"User document does not exist for UID: {user_uid}")
             flash("User data not found. Please log in again.", "error")
             return redirect(url_for('signup'))
 
         user_data = user_doc.to_dict()
 
+        # 🐛 THE FIX: Provide default empty values for missing fields
+        # This prevents the 'UndefinedError' if a user document is missing these fields.
+        user_data['working_times'] = user_data.get('working_times', {})
+        user_data['working_days'] = user_data.get('working_days', [])
+        user_data['social_links'] = user_data.get('social_links', {})
+
         if request.method == 'POST':
-            # Extract form data
+            # ... (rest of your POST logic remains unchanged)
             first_name = request.form.get('first_name', '')
             last_name = request.form.get('last_name', '')
             businessname = request.form.get('businessname', '')
@@ -865,17 +865,17 @@ def personal_details():
             birthday = request.form.get('birthday', '')
             sex = request.form.get('sex', '')
             delivery_methods = request.form.getlist('delivery_methods')
-            working_days = request.form.getlist('working_days')
+            working_days_form = request.form.getlist('working_days') # Use a different variable name
             
-            working_times = {}
+            working_times_form = {}
             for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
-                if day in working_days:
-                    working_times[day] = {
+                if day in working_days_form:
+                    working_times_form[day] = {
                         'open': request.form.get(f'{day}_open'),
                         'close': request.form.get(f'{day}_close')
                     }
             
-            social_links = {
+            social_links_form = {
                 'website': request.form.get('social_links[website]', ''),
                 'instagram': request.form.get('social_links[instagram]', ''),
                 'facebook': request.form.get('social_links[facebook]', ''),
@@ -883,7 +883,6 @@ def personal_details():
                 'twitter': request.form.get('social_links[twitter]', '')
             }
             
-            # Construct the combined location string
             combined_location = ""
             if state and school and location:
                 combined_location = f"{state} > {school} > {location}"
@@ -904,14 +903,13 @@ def personal_details():
                 'full_location': combined_location,
                 'birthday': birthday,
                 'sex': sex,
-                'working_days': working_days,
-                'working_times': working_times,
+                'working_days': working_days_form,
+                'working_times': working_times_form,
                 'delivery_methods': delivery_methods,
-                'social_links': social_links,
+                'social_links': social_links_form,
             }
             
             try:
-                # Handle image uploads
                 profile_picture_file = request.files.get('profile_picture')
                 if profile_picture_file and profile_picture_file.filename and allowed_file(profile_picture_file.filename):
                     blob_path = f"users/{user_uid}/profile.jpg"
@@ -6085,6 +6083,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
