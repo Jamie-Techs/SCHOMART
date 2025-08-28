@@ -2408,7 +2408,8 @@ def report_advert(advert_id):
                 raise Exception("Advert does not exist.")
             
             # Get the current reported_count, defaulting to 0 if it doesn't exist
-            current_reports = advert_doc.get('reported_count') or 0
+            
+            current_reports = advert_doc.get('reported_count', 0)
             
             # Atomically increment the counter
             transaction.update(advert_ref, {
@@ -4530,6 +4531,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
