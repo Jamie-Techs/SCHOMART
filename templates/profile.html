@@ -117,7 +117,7 @@
 
             <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
                 <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Contact & Security</h3>
-                <p class="mb-2 text-sm"><strong class="font-bold">Email:</strong> {{ user.email }} (Verified: {{ 'Yes' if user.is_verified else 'No' }})</p>
+                <p class="mb-2 text-sm"><strong class="font-bold">Email:</strong> {{ user.email }} </p>
                 <p class="mb-2 text-sm"><a href="{{ url_for('account_settings') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-envelope mr-2"></i> Change Email</a></p>
                 <p class="mb-2 text-sm"><strong class="font-bold">Phone:</strong> {{ user.phone_number or 'None' }}</p>
                 <p class="mb-2 text-sm"><a href="{{ url_for('change_phone') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-phone-alt mr-2"></i> Change Phone Number</a></p>
