@@ -829,11 +829,6 @@ def profile():
 
 
 
-
-
-# Assuming your other imports and setup are already in place
-# ...
-
 @app.route('/profile/personal', methods=['GET', 'POST'])
 @login_required
 def personal_details():
@@ -841,17 +836,17 @@ def personal_details():
     Handles displaying and updating a user's personal details.
     """
     try:
-        # Correctly get the user ID from the session, as done in the working profile route
-        user_uid = session.get('user_id')
-        if not user_uid:
-            flash("User session expired. Please log in again.", "error")
-            return redirect(url_for('signup'))
+        # 🐛 The CRITICAL FIX: The @login_required decorator ensures g.current_user is available.
+        # You should ALWAYS use g.current_user.id for the user's UID.
+        # The manual session checks are redundant and can cause issues.
+        user_uid = g.current_user.id
         
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
         if not user_doc.exists:
             logger.error(f"User document does not exist for UID: {user_uid}")
+            # The decorator already handles the logout, but this is a good safety check.
             flash("User data not found. Please log in again.", "error")
             return redirect(url_for('signup'))
 
@@ -863,7 +858,6 @@ def personal_details():
             last_name = request.form.get('last_name', '')
             businessname = request.form.get('businessname', '')
             
-            # 🐞 CORRECTED: Use the `name` attributes from the form
             state = request.form.get('state', '')
             school = request.form.get('school', '')
             location = request.form.get('location', '')
@@ -890,14 +884,16 @@ def personal_details():
             }
             
             # Construct the combined location string
-            combined_location = f"{state} > {school} > {location}"
-            if not state:
-                combined_location = ''
-            elif not school:
-                combined_location = f"{state} > {location}"
-            elif not location:
+            combined_location = ""
+            if state and school and location:
+                combined_location = f"{state} > {school} > {location}"
+            elif state and school:
                 combined_location = f"{state} > {school}"
-
+            elif state and location:
+                combined_location = f"{state} > {location}"
+            elif state:
+                combined_location = state
+            
             update_data = {
                 'first_name': first_name,
                 'last_name': last_name,
@@ -921,8 +917,6 @@ def personal_details():
                     blob_path = f"users/{user_uid}/profile.jpg"
                     blob = bucket.blob(blob_path)
                     blob.upload_from_file(profile_picture_file, content_type=profile_picture_file.content_type)
-                    
-                    # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
                     update_data['profile_picture'] = blob_path
                 
                 cover_photo_file = request.files.get('cover_photo')
@@ -930,15 +924,13 @@ def personal_details():
                     blob_path_cover = f"users/{user_uid}/cover.jpg"
                     blob = bucket.blob(blob_path_cover)
                     blob.upload_from_file(cover_photo_file, content_type=cover_photo_file.content_type)
-                    
-                    # ✨ CRITICAL FIX: Add the Cloud Storage path to the update data
                     update_data['cover_photo'] = blob_path_cover
 
                 user_doc_ref.update(update_data)
                 flash('Profile updated successfully!', 'success')
                 return redirect(url_for('personal_details'))
             except Exception as e:
-                logger.error(f"Error updating user profile for UID {user_uid}: {e}", exc_info=True)
+                logging.error(f"Error updating user profile for UID {user_uid}: {e}", exc_info=True)
                 flash(f'An error occurred while updating your profile: {e}', 'error')
                 return redirect(url_for('personal_details'))
 
@@ -951,19 +943,18 @@ def personal_details():
             if profile_blob.exists():
                 profile_pic_url = profile_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
-            logger.error(f"Error generating profile pic URL for {user_uid}: {e}")
+            logging.error(f"Error generating profile pic URL for {user_uid}: {e}")
             
         try:
             cover_blob = bucket.blob(f"users/{user_uid}/cover.jpg")
             if cover_blob.exists():
                 cover_photo_url = cover_blob.generate_signed_url(timedelta(minutes=15), method='GET')
         except Exception as e:
-            logger.error(f"Error generating cover photo URL for {user_uid}: {e}")
+            logging.error(f"Error generating cover photo URL for {user_uid}: {e}")
 
         user_data['profile_picture_url'] = profile_pic_url
         user_data['cover_photo_url'] = cover_photo_url
         
-        # Ensure template variables are passed for the GET request
         NIGERIAN_STATES = list(NIGERIAN_SCHOOLS.keys())
         
         return render_template(
@@ -974,7 +965,7 @@ def personal_details():
         )
 
     except Exception as e:
-        logger.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
+        logging.error(f"An unexpected error occurred in personal details route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
 
@@ -6094,6 +6085,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
