@@ -2348,6 +2348,29 @@ def dismiss_report(advert_id):
 
 
 
+@app.route('/admin/action/enable_user/<user_id>', methods=['POST'])
+@login_required
+@admin_required
+def enable_user_account(user_id):
+    """Admin action to enable a user's account."""
+    user_ref = db.collection('users').document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return jsonify({"message": "User not found."}), 404
+        
+    try:
+        user_ref.update({
+            'is_active': True,
+            'account_status': 'active'
+        })
+        return jsonify({"message": "User account enabled successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error enabling user {user_id}: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+
+
 
 @app.route('/admin/reported_adverts')
 @login_required
@@ -4538,6 +4561,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
