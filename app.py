@@ -1760,7 +1760,16 @@ def get_user_advert_options(user_id):
 
 
 
-
+def run_in_transaction(func):
+    """
+    A custom decorator to handle transactions and pass
+    the transaction object to the wrapped function.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        transaction = db.transaction()
+        return func(transaction, *args, **kwargs)
+    return wrapper
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -2386,9 +2395,12 @@ def admin_reported_adverts():
 
 
 
+
+
 @app.route('/report_advert/<string:advert_id>', methods=['POST'])
 @login_required
-def report_advert(advert_id):
+@run_in_transaction # Use your custom decorator
+def report_advert(transaction, advert_id):
     """
     Handles a user reporting an advert by atomically updating a counter
     and creating a new report document in a sub-collection.
@@ -2399,41 +2411,37 @@ def report_advert(advert_id):
         
         # Reference the advert document
         advert_ref = db.collection('adverts').document(advert_id)
-
-        # Use a Firestore transaction for atomic updates
-        @firestore.transactional
-        def update_report_count_and_add_report(transaction: Transaction, advert_ref: firestore.DocumentReference):
-            advert_doc = advert_ref.get(transaction=transaction)
-            if not advert_doc.exists:
-                raise Exception("Advert does not exist.")
-            
-            # Get the current reported_count, defaulting to 0 if it doesn't exist
-            
-            current_reports = advert_doc.get('reported_count', 0)
-            
-            # Atomically increment the counter
-            transaction.update(advert_ref, {
-                'reported_count': current_reports + 1
-            })
-            
-            # Add the report details to a sub-collection
-            report_data = {
-                'reporter_id': reporter_uid,
-                'reporter_email': g.current_user.email,
-                'reason': reason,
-                'reported_at': datetime.utcnow()
-            }
-            db.collection('adverts').document(advert_id).collection('reports').add(report_data)
-
-        # Run the transaction
-        update_report_count_and_add_report(db.transaction(), advert_ref)
+        
+        # The transaction is now passed as the first argument
+        advert_doc = advert_ref.get(transaction=transaction)
+        if not advert_doc.exists:
+            raise Exception("Advert does not exist.")
+        
+        current_reports = advert_doc.get('reported_count', 0)
+        
+        # Atomically increment the counter
+        transaction.update(advert_ref, {
+            'reported_count': current_reports + 1
+        })
+        
+        # Add the report details to a sub-collection
+        report_data = {
+            'reporter_id': reporter_uid,
+            'reporter_email': g.current_user.email,
+            'reason': reason,
+            'reported_at': datetime.utcnow()
+        }
+        db.collection('adverts').document(advert_id).collection('reports').add(report_data)
         
         flash("Report submitted.", 'success')
+        return redirect(request.referrer)
+
     except Exception as e:
         logging.error(f"Error submitting report for advert {advert_id}: {e}", exc_info=True)
         flash(f"Error submitting report: {e}", "danger")
-    
-    return redirect(request.referrer)
+        return redirect(request.referrer)
+
+
 
 
 
@@ -4531,6 +4539,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
