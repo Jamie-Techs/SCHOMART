@@ -2932,6 +2932,11 @@ def unsave_advert():
 
 
 
+
+
+
+
+
 @app.route('/search', methods=['GET'])
 def search():
     adverts = []
@@ -2949,7 +2954,7 @@ def search():
     # Build the Firestore query
     try:
         adverts_query = db.collection('adverts').where('status', '==', 'published')
-        now = datetime.datetime.now()
+        now = datetime.now()
         adverts_query = adverts_query.where('valid_until', '>', now)
         
         # Add filters for equality
@@ -3034,7 +3039,7 @@ def search():
             # Visibility level
             visibility_order.get(a.get('visibility_level', 'Standard'), 99),
             # Created_at (descending)
-            a.get('created_at', datetime.datetime.min),
+            a.get('created_at', datetime.min),
         ), reverse=False)
 
     except Exception as e:
@@ -6152,6 +6157,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
