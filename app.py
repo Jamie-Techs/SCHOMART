@@ -1760,16 +1760,6 @@ def get_user_advert_options(user_id):
 
 
 
-def run_in_transaction(func):
-    """
-    A custom decorator to handle transactions and pass
-    the transaction object to the wrapped function.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        transaction = db.transaction()
-        return func(transaction, *args, **kwargs)
-    return wrapper
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -2367,7 +2357,7 @@ def admin_reported_adverts():
     except Exception as e:
         logging.error(f"An unexpected error occurred in reported_adverts_admin route: {e}", exc_info=True)
         flash("An error occurred while fetching reported adverts.", "error")
-        return redirect(url_for('admin_dashboard'))
+        return redirect(url_for('profile'))
 
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
@@ -4510,6 +4500,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
