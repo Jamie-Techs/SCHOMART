@@ -2328,41 +2328,120 @@ def take_down_advert(advert_id):
 @app.route('/admin/reported_adverts')
 @login_required
 @admin_required
-def reported_adverts_admin():
+def admin_reported_adverts():
     """
-    Renders a page with a list of all reported adverts awaiting admin review.
+    Admin route to list and manage reported adverts.
     """
-    reports_ref = db.collection('reports')
-    
-    # Fetch all reports that are 'pending'
-    # This is the default status for a new report
-    query = reports_ref.where('status', '==', 'pending').stream()
-    
     reported_adverts = []
-    for doc in query:
-        report = doc.to_dict()
-        report['report_id'] = doc.id
-        
-        # Fetch the advert details
-        advert_doc = db.collection('adverts').document(report.get('advert_id')).get()
-        if advert_doc.exists:
-            advert_data = advert_doc.to_dict()
-            report['advert_title'] = advert_data.get('title', 'N/A')
-            report['advert_owner_id'] = advert_data.get('user_id')
-        else:
-            report['advert_title'] = 'Advert Not Found'
-            report['advert_owner_id'] = None
+    try:
+        # Query the 'adverts' collection for documents where reported_count > 0
+        adverts_query = db.collection('adverts').where('reported_count', '>', 0).stream()
 
-        # Fetch the reporter's username
-        reporter_info = get_user_info(report.get('reporter_id'))
-        if reporter_info:
-            report['reporter_username'] = reporter_info.get('username', 'N/A')
-        else:
-            report['reporter_username'] = 'N/A'
+        # Loop through the adverts and fetch related data
+        for advert_doc in adverts_query:
+            advert_data = advert_doc.to_dict()
+            advert_data['id'] = advert_doc.id
+
+            # Fetch the reports sub-collection for this specific advert
+            reports_query = db.collection('adverts').document(advert_doc.id).collection('reports').stream()
+            advert_data['reports'] = [report.to_dict() for report in reports_query]
             
-        reported_adverts.append(report)
-    
+            # Fetch seller data (user who owns the advert)
+            seller_ref = db.collection('users').document(advert_data.get('seller_id', ''))
+            seller_doc = seller_ref.get()
+            if seller_doc.exists:
+                seller_data = seller_doc.to_dict()
+                advert_data['seller_username'] = seller_data.get('username', 'N/A')
+                advert_data['seller_email'] = seller_data.get('email', 'N/A')
+            else:
+                advert_data['seller_username'] = 'N/A'
+                advert_data['seller_email'] = 'N/A'
+
+            # Fetch category name
+            category_ref = db.collection('categories').document(advert_data.get('category_id', ''))
+            category_doc = category_ref.get()
+            advert_data['category_name'] = category_doc.to_dict().get('name', 'N/A') if category_doc.exists else 'N/A'
+            
+            # Fetch plan details
+            plan_ref = db.collection('plans').document(advert_data.get('plan_id', ''))
+            plan_doc = plan_ref.get()
+            if plan_doc.exists:
+                plan_data = plan_doc.to_dict()
+                advert_data['plan_name'] = plan_data.get('name', 'N/A')
+                advert_data['visibility_level'] = plan_data.get('visibility_level', 'N/A')
+            else:
+                advert_data['plan_name'] = 'N/A'
+                advert_data['visibility_level'] = 'N/A'
+            
+            reported_adverts.append(advert_data)
+
+    except Exception as e:
+        logging.error(f"An unexpected error occurred in reported_adverts_admin route: {e}", exc_info=True)
+        flash("An error occurred while fetching reported adverts.", "error")
+        return redirect(url_for('admin_dashboard')) # Redirect to a safe page
+
     return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
+
+
+
+
+@app.route('/report_advert/<string:advert_id>', methods=['POST'])
+@login_required
+def report_advert(advert_id):
+    """
+    Handles a user reporting an advert by atomically updating a counter
+    and creating a new report document in a sub-collection.
+    """
+    try:
+        reporter_uid = g.current_user.id
+        reason = request.form.get('reason', 'No reason provided')
+        
+        # Reference the advert document
+        advert_ref = db.collection('adverts').document(advert_id)
+
+        # Use a Firestore transaction for atomic updates
+        @firestore.transactional
+        def update_report_count_and_add_report(transaction: Transaction, advert_ref: firestore.DocumentReference):
+            advert_doc = advert_ref.get(transaction=transaction)
+            if not advert_doc.exists:
+                raise Exception("Advert does not exist.")
+            
+            # Get the current reported_count, defaulting to 0 if it doesn't exist
+            current_reports = advert_doc.get('reported_count') or 0
+            
+            # Atomically increment the counter
+            transaction.update(advert_ref, {
+                'reported_count': current_reports + 1
+            })
+            
+            # Add the report details to a sub-collection
+            report_data = {
+                'reporter_id': reporter_uid,
+                'reporter_email': g.current_user.email,
+                'reason': reason,
+                'reported_at': datetime.utcnow()
+            }
+            db.collection('adverts').document(advert_id).collection('reports').add(report_data)
+
+        # Run the transaction
+        update_report_count_and_add_report(db.transaction(), advert_ref)
+        
+        flash("Report submitted.", 'success')
+    except Exception as e:
+        logging.error(f"Error submitting report for advert {advert_id}: {e}", exc_info=True)
+        flash(f"Error submitting report: {e}", "danger")
+    
+    return redirect(request.referrer)
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2434,108 +2513,6 @@ def submit_review():
         
     return redirect(url_for('advert_detail', advert_id=advert_id))
 
-
-
-
-
-@app.route('/report_advert/<string:advert_id>', methods=['POST'])
-@login_required
-def report_advert(advert_id):
-    """
-    Adds a new report document to the Firestore 'reports' collection.
-    """
-    reason = request.form.get('reason')
-    user_id = g.current_user.id
-    
-    try:
-        report_data = {
-            'user_id': user_id,
-            'advert_id': advert_id,
-            'reason': reason,
-            'created_at': datetime.now()
-        }
-        # Add a new document to the 'reports' collection with an auto-generated ID
-        db.collection('reports').add(report_data)
-        flash("Report submitted.", 'success')
-    except Exception as e:
-        flash(f"Error submitting report: {e}", "danger")
-        logging.error(f"Error submitting report: {e}", exc_info=True)
-    
-    return redirect(request.referrer)
-
-
-
-@app.route('/admin/reported_adverts')
-@login_required
-@admin_required
-def admin_reported_adverts():
-    """
-    Admin route to list and manage reported adverts.
-    """
-    reported_adverts = []
-    try:
-        # Step 1: Query the 'adverts' collection for documents where reported_count > 0.
-        # This gets the top-level advert data.
-        adverts_ref = db.collection('adverts')
-        query = adverts_ref.where('reported_count', '>', 0).stream()
-
-        # Step 2: Loop through the results and fetch related data
-        for advert_doc in query:
-            advert_data = advert_doc.to_dict()
-            advert_data['id'] = advert_doc.id
-
-            # Fetch the sub-collection of reports for this specific advert
-            reports_query = db.collection('adverts').document(advert_doc.id).collection('reports').stream()
-            reports_list = []
-            for report_doc in reports_query:
-                report_data = report_doc.to_dict()
-                reports_list.append(report_data)
-            advert_data['reports'] = reports_list
-            
-            # If there are no reports for some reason (e.g., a data mismatch), skip this advert
-            if not reports_list:
-                continue
-
-            # Fetch seller data
-            seller_ref = db.collection('users').document(advert_data.get('seller_id', ''))
-            seller_doc = seller_ref.get()
-            if seller_doc.exists:
-                seller_data = seller_doc.to_dict()
-                advert_data['seller_username'] = seller_data.get('username', 'N/A')
-                advert_data['seller_email'] = seller_data.get('email', 'N/A')
-            else:
-                advert_data['seller_username'] = 'N/A'
-                advert_data['seller_email'] = 'N/A'
-
-            # Fetch category name
-            category_ref = db.collection('categories').document(advert_data.get('category_id', ''))
-            category_doc = category_ref.get()
-            if category_doc.exists:
-                advert_data['category_name'] = category_doc.to_dict().get('name', 'N/A')
-            else:
-                advert_data['category_name'] = 'N/A'
-            
-            # Fetch plan name and visibility
-            plan_ref = db.collection('plans').document(advert_data.get('plan_id', ''))
-            plan_doc = plan_ref.get()
-            if plan_doc.exists:
-                plan_data = plan_doc.to_dict()
-                advert_data['plan_name'] = plan_data.get('name', 'N/A')
-                advert_data['visibility_level'] = plan_data.get('visibility_level', 'N/A')
-            else:
-                advert_data['plan_name'] = 'N/A'
-                advert_data['visibility_level'] = 'N/A'
-
-            # Add the complete advert data to the final list
-            reported_adverts.append(advert_data)
-
-    except Exception as e:
-        logging.error(f"An error occurred in the reported_adverts_admin route: {e}", exc_info=True)
-        flash("An error occurred while fetching reported adverts.", "error")
-        return redirect(url_for('home'))
-
-    # Render the template with the correctly formatted data
-    return render_template('admin_reported_adverts.html', reported_adverts=reported_adverts)
 
 
 
@@ -4552,6 +4529,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
