@@ -22,7 +22,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h2 {
-            color: #007bff;
+            color: #006B3C;
             text-align: center;
             margin-bottom: 25px;
         }
@@ -134,6 +134,27 @@
             margin-left: 5px;
             cursor: pointer;
         }
+        .bg-primary {
+            background-color: #006B3C !important;
+        }
+        .btn-success {
+            background-color: #006B3C;
+            border-color: #006B3C;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background-color: #005632;
+            border-color: #005632;
+        }
+        .btn-info {
+            background-color: #FDB813 !important;
+            border-color: #FDB813 !important;
+            color: #000;
+        }
+        .btn-info:hover {
+            background-color: #d19a11 !important;
+            border-color: #d19a11 !important;
+        }
     </style>
 </head>
 <body>
@@ -150,9 +171,9 @@
             </a>
         </div>
 
-        <h2>Adverts Awaiting Review</h2>
+        <h2>Reported Adverts Awaiting Review</h2>
 
-        {# Display Flash messages - kept similar to your base.html's flash message handling #}
+        {# Display Flash messages #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -170,9 +191,10 @@
             {% endif %}
         {% endwith %}
 
-        {% if adverts %}
+        {% if reported_adverts %}
             <div class="row">
-                {% for advert in adverts %}
+                {# 🐛 FIX: Loop over the 'reported_adverts' variable passed from the Flask route #}
+                {% for advert in reported_adverts %}
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card h-100">
                         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -188,8 +210,24 @@
                             <h5 class="card-title">{{ advert.title }}</h5>
                             <p class="card-text">{{ advert.description[:150] }}...</p>
                             {% if advert.main_image %}
-                                <img src="{{ url_for('static', filename='uploads/' + advert.main_image) }}" class="img-fluid mb-2" alt="Main Image" style="max-height: 200px; object-fit: contain;">
+                                <img src="{{ advert.main_image }}" class="img-fluid mb-2" alt="Main Image" style="max-height: 200px; object-fit: contain;">
                             {% endif %}
+                            
+                            {# 🐛 NEW: Section to display the reported reasons #}
+                            {% if advert.reported_count > 0 %}
+                            <div class="mb-3 text-danger">
+                                <strong>Reports ({{ advert.reported_count }} total):</strong>
+                                <ul class="list-unstyled">
+                                    {% for report in advert.reports %}
+                                        <li>
+                                            <i class="fas fa-flag me-1"></i> <strong>Reason:</strong> {{ report.reason }}<br>
+                                            <small class="text-muted">By: {{ report.reporter_email }} on {{ report.reported_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item"><strong>Seller:</strong> {{ advert.seller_username }} ({{ advert.seller_email }})</li>
                                 <li class="list-group-item"><strong>Category:</strong> {{ advert.category_name }}</li>
@@ -263,7 +301,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" crossorigin="anonymous"></script>
     
     <script>
-        // Copy to clipboard function
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert("Advert ID copied to clipboard!");
@@ -273,7 +310,6 @@
             });
         }
 
-        // Optional: Fade out flash messages after a few seconds
         document.addEventListener('DOMContentLoaded', () => {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(alert => {
