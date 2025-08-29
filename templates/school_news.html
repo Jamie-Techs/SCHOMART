@@ -288,73 +288,69 @@
             padding: 0 5px;
         }
 
-        .document-link {
-            display: inline-flex;
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: background-color 0.3s ease;
+        /* NOTE: The .document-link class has been removed. */
+
+        .post-footer {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
         }
 
-        .document-link i {
-            color: var(--white-text);
-        }
-
-        .document-link:hover {
-            background-color: var(--accent-color);
-            color: var(--white-text);
-            transform: translateY(-1px);
-        }
-
-        .post small {
-            display: block;
-            margin-bottom: 15px;
+        .post-meta {
             color: #777;
             font-size: 0.9em;
             display: flex;
             align-items: center;
             gap: 8px;
-            border-top: 1px dashed var(--border-color);
-            padding-top: 15px;
-            margin-top: 15px;
         }
 
-        /* --- Admin Actions --- */
-        .admin-actions {
+        .post-actions {
             display: flex;
-            justify-content: flex-end;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--border-color);
+            gap: 10px;
         }
 
-        .delete-btn {
-            background-color: #dc3545; /* Red for delete */
+        .action-btn {
+            background-color: var(--primary-color);
             color: var(--white-text);
-            border: 1px solid #dc3545;
-            padding: 10px 15px;
+            border: none;
+            padding: 8px 12px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 600;
-            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
             display: inline-flex;
             align-items: center;
             gap: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+        
+        .action-btn i {
+            color: var(--white-text);
+        }
+        
+        .action-btn:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        /* --- Admin Actions --- */
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545; /* Red for delete */
+            border: 1px solid #dc3545;
+            color: var(--white-text);
+        }
 
         .delete-btn:hover {
             background-color: #c82333;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         /* --- Pagination Styling --- */
@@ -563,12 +559,21 @@
             .post p {
                 font-size: 0.95em;
             }
-            .admin-actions {
-                flex-direction: column;
-                align-items: stretch;
+            .post small {
+                font-size: 0.9em;
             }
-            .delete-btn {
+            .post-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .post-actions {
                 width: 100%;
+                justify-content: flex-end;
+            }
+            .action-btn {
+                flex-grow: 1;
+                justify-content: center;
             }
             .pagination {
                 flex-wrap: wrap;
@@ -692,8 +697,7 @@
             let currentPage = 1;
             let totalPages = 1;
             const postsPerPage = 10;
-            // A simple way to check if the user is an admin. In a real app, this should be done securely on the backend.
-            const isAdmin = {{ g.user.is_admin | tojson }};
+            const isAdmin = {{ g.current_user.is_admin | tojson }};
 
             async function fetchAndRenderPosts(query = '', page = 1) {
                 container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
@@ -722,6 +726,35 @@
                 }
             }
 
+            // New function to handle sharing posts
+            async function sharePost(postId, postTitle) {
+                const url = `${window.location.origin}/full_post/School News/${postId}`;
+                
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: postTitle,
+                            url: url,
+                        });
+                        console.log('Post shared successfully!');
+                    } catch (error) {
+                        console.error('Error sharing post:', error);
+                        if (error.name !== 'AbortError') {
+                            showNotification('error', 'Failed to share post.');
+                        }
+                    }
+                } else {
+                    // Fallback for browsers that do not support the Web Share API
+                    try {
+                        await navigator.clipboard.writeText(url);
+                        showNotification('success', 'Post link copied to clipboard!');
+                    } catch (err) {
+                        console.error('Failed to copy link: ', err);
+                        showNotification('error', 'Could not copy link to clipboard.');
+                    }
+                }
+            }
+
             function renderPosts(postsToRender) {
                 container.innerHTML = '';
 
@@ -736,100 +769,89 @@
                     div.setAttribute('data-post-id', post.id);
 
                     let mediaHTML = '';
-                    const postMediaItems = Array.isArray(post.media_items) ? post.media_items : [];
+                    // The backend now only sends a single media item, so we directly use post.media_url and post.media_type
+                    const mediaUrl = post.media_url;
+                    const mediaType = post.media_type;
+                    const postTitle = post.title;
+                    const postUrl = `/full_post/School News/${post.id}`;
 
-                    postMediaItems.forEach(mediaItem => {
-                        const url = mediaItem.media_path_or_url;
-                        const type = mediaItem.media_type;
-                        const caption = mediaItem.caption || '';
-                        
-                        if (url) {
-                            if (type === 'image') {
-                                mediaHTML += `<div class="media-item">
-                                    <img src="${url}" alt="${caption}" class="media-preview">
-                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                </div>`;
-                            } else if (type === 'video') {
-                                mediaHTML += `<div class="media-item">
-                                    <video class="media-preview" controls>
-                                        <source src="${url}" type="video/mp4">
-                                        Your browser does not support the video tag.
-                                    </video>
-                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                </div>`;
-                            }
-                            // The original code had an audio and document section.
-                            // I've removed them based on the prompt's request to only display images and videos.
-                            // If you need to add them back, you can uncomment the original code or use the logic below:
-                            /*
-                            else if (type === 'audio') {
-                                mediaHTML += `<div class="media-item">
-                                    <audio controls class="media-preview">
-                                        <source src="${url}" type="audio/mpeg">
-                                        Your browser does not support the audio element.
-                                    </audio>
-                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                </div>`;
-                            } else if (type === 'document') {
-                                const filename = url.split('/').pop();
-                                mediaHTML += `<div class="media-item">
-                                    <a href="${url_for('download_news_post_file', post_id=post.id)}" class="document-link" download>
-                                        <i class="fas fa-download"></i>
-                                        <span>Download File (${filename})</span>
-                                    </a>
-                                </div>`;
-                            }
-                            */
+                    if (mediaUrl && mediaType) {
+                        if (mediaType === 'image') {
+                            mediaHTML += `<div class="media-item">
+                                <a href="${postUrl}"><img src="${mediaUrl}" alt="${postTitle}" class="media-preview"></a>
+                            </div>`;
+                        } else if (mediaType === 'video') {
+                            mediaHTML += `<div class="media-item">
+                                <a href="${postUrl}"><video class="media-preview" controls>
+                                    <source src="${mediaUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video></a>
+                            </div>`;
+                        } else if (mediaType === 'audio') {
+                            mediaHTML += `<div class="media-item">
+                                <a href="${postUrl}"><audio controls class="media-preview">
+                                    <source src="${mediaUrl}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio></a>
+                            </div>`;
                         }
-                    });
+                    }
 
-                    const deleteBtnHTML = isAdmin ? `<div class="admin-actions"><button class="delete-btn" data-id="${post.id}"><i class="fas fa-trash-alt"></i> Delete Post</button></div>` : '';
-                    
+                    const adminActionsHTML = isAdmin ? `<div class="admin-actions"><button class="delete-btn action-btn" data-id="${post.id}"><i class="fas fa-trash-alt"></i> Delete</button></div>` : '';
+
                     const postContentHTML = `
-                        <h3><a href="/full_post/School News/${post.id}" class="post-title-link">${post.title}</a></h3>
-                        <p class="post-content-full">${post.content}</p>
+                        <h3><a href="${postUrl}" class="post-title-link">${post.title}</a></h3>
+                        <p>${post.content}</p>
                         ${mediaHTML}
-                        <small>
-                            <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.created_at).toLocaleDateString()}
-                        </small>
-                        ${deleteBtnHTML}`;
+                        <div class="post-footer">
+                            <span class="post-meta">
+                                <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.post_date).toLocaleDateString()}
+                            </span>
+                            <div class="post-actions">
+                                <button class="share-btn action-btn" data-id="${post.id}" data-title="${post.title}"><i class="fas fa-share-alt"></i> Share</button>
+                                ${adminActionsHTML}
+                            </div>
+                        </div>`;
 
                     div.innerHTML = postContentHTML;
                     container.appendChild(div);
                 });
 
-                // Add event listeners for delete buttons
-                if (isAdmin) {
-                    document.querySelectorAll('.delete-btn').forEach(button => {
-                        button.addEventListener('click', async (e) => {
-                            const postId = e.currentTarget.dataset.id;
-                            if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-                                try {
-                                    const response = await fetch(`/api/school_news/${postId}`, {
-                                        method: 'DELETE',
-                                        headers: {
-                                            'Content-Type': 'application/json'
-                                        },
-                                        // In a real app, you would include a CSRF token and proper authentication headers
-                                    });
-
-                                    if (response.ok) {
-                                        e.currentTarget.closest('.post').remove();
-                                        showNotification('success', 'Post deleted successfully!');
-                                        // Re-fetch posts to update pagination
-                                        fetchAndRenderPosts(searchInput.value, currentPage);
-                                    } else {
-                                        const errorData = await response.json();
-                                        showNotification('error', `Failed to delete post: ${errorData.message || 'Unknown error.'}`);
-                                    }
-                                } catch (error) {
-                                    console.error('Error deleting post:', error);
-                                    showNotification('error', 'An error occurred while deleting the post.');
+                // Add event listeners for delete and share buttons
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const postId = e.currentTarget.dataset.id;
+                        if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                            try {
+                                const response = await fetch(`/api/school_news/${postId}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                });
+                                if (response.ok) {
+                                    e.currentTarget.closest('.post').remove();
+                                    showNotification('success', 'Post deleted successfully!');
+                                    fetchAndRenderPosts(searchInput.value, currentPage);
+                                } else {
+                                    const errorData = await response.json();
+                                    showNotification('error', `Failed to delete post: ${errorData.message || 'Unknown error.'}`);
                                 }
+                            } catch (error) {
+                                console.error('Error deleting post:', error);
+                                showNotification('error', 'An error occurred while deleting the post.');
                             }
-                        });
+                        }
                     });
-                }
+                });
+
+                document.querySelectorAll('.share-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const postId = e.currentTarget.dataset.id;
+                        const postTitle = e.currentTarget.dataset.title;
+                        sharePost(postId, postTitle);
+                    });
+                });
             }
 
             function updatePagination(total, page) {
@@ -837,7 +859,7 @@
                 currentPage = page;
                 currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
                 prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages;
+                nextPageBtn.disabled = currentPage >= totalPages;
             }
 
             function showNotification(type, message) {
@@ -848,7 +870,8 @@
 
                 const notification = document.createElement('div');
                 notification.className = `custom-notification ${type}`;
-                notification.innerHTML = `<span class="notification-icon"><i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></span> ${message}`;
+                const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle');
+                notification.innerHTML = `<span class="notification-icon"><i class="fas ${icon}"></i></span> ${message}`;
                 document.body.appendChild(notification);
 
                 setTimeout(() => {
