@@ -3627,9 +3627,7 @@ def create_post():
                 # Updated the flash message to not mention a duration
                 flash("Post created successfully!","success")
                 
-                if "School Gist" in display_on_for_posts:
-                    redirect_url = url_for("school_gist")
-                elif "School News" in display_on_for_posts:
+                
                     redirect_url = url_for("school_news")
                 
             return redirect(redirect_url)
@@ -4603,6 +4601,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
