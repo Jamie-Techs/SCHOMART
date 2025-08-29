@@ -3460,183 +3460,174 @@ def display_full_post(category_name, post_id):
 
 
 
-
-
-
-
-
-
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
-@admin_required # This decorator ensures only admins can access this page
+@admin_required  # This decorator ensures only admins can access this page
 def create_post():
-    """Handles the creation of new posts, study materials, and stories."""
-    # The decorators handle all authentication and authorization, so we can directly
-    # access g.current_user
-    user = g.current_user
-    user_is_admin = getattr(user, 'is_admin', False)
+    """Handles the creation of new posts, study materials, and stories."""
+    # The decorators handle all authentication and authorization, so we can directly
+    # access g.current_user
+    user = g.current_user
+    user_is_admin = getattr(user, 'is_admin', False)
 
-    post_data = request.form.to_dict() if request.method == "POST" else {}
+    post_data = request.form.to_dict() if request.method == "POST" else {}
 
-    if request.method == "POST":
-        title = request.form.get("title")
-        content = request.form.get("content")
-        author_username = getattr(user, 'username', 'Unknown')
-        post_type = request.form.get("post_type")
-        submitted_external_link_url = request.form.get("link_url", "").strip()
-        display_on = request.form.getlist("display_on")
-        
-        is_story_post = post_type == "story"
-        is_study_material_post = "Study Hub" in display_on
+    if request.method == "POST":
+        title = request.form.get("title")
+        content = request.form.get("content")
+        author_username = getattr(user, 'username', 'Unknown')
+        post_type = request.form.get("post_type")
+        submitted_external_link_url = request.form.get("link_url", "").strip()
+        display_on = request.form.getlist("display_on")
+        
+        is_story_post = post_type == "story"
+        is_study_material_post = "Study Hub" in display_on
 
-        # If the user is not an admin, they can only post to School Gist.
-        if not user_is_admin and not is_story_post and "School Gist" not in display_on:
-            display_on.append("School Gist")
-        
-        # --- VALIDATION ---
-        # The validation logic remains the same.
-        if not title or not title.strip():
-            flash("Please enter a title for your post.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        # If the user is not an admin, they can only post to School Gist.
+        if not user_is_admin and not is_story_post and "School Gist" not in display_on:
+            display_on.append("School Gist")
+        
+        # --- VALIDATION ---
+        # The validation logic remains the same.
+        if not title or not title.strip():
+            flash("Please enter a title for your post.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-        if not content or not content.strip():
-            flash("Content (or caption/description) cannot be empty for this post type.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        if not content or not content.strip():
+            flash("Content (or caption/description) cannot be empty for this post type.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-        if not display_on and not is_story_post:
-            flash("Please select at least one page to display the post on.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-        
-        # --- MEDIA PROCESSING ---
-        media_items_to_save = []
+        if not display_on and not is_story_post:
+            flash("Please select at least one page to display the post on.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        
+        # --- MEDIA PROCESSING ---
+        media_items_to_save = []
 
-        try:
-            # Handle uploaded files
-            media_files = request.files.getlist("media_files")
-            for media_file in media_files:
-                if media_file and media_file.filename != '':
-                    folder = "posts"
-                    if is_story_post:
-                        folder = "stories"
-                    elif is_study_material_post:
-                        folder = "study_materials"
-                    
-                    uploaded_url = upload_file_to_firebase(media_file, folder)
-                    if uploaded_url:
-                        media_items_to_save.append({
-                            "media_type": get_media_type_from_extension(media_file.filename), 
-                            "media_path_or_url": uploaded_url,
-                        })
+        try:
+            # Handle uploaded files
+            media_files = request.files.getlist("media_files")
+            for media_file in media_files:
+                if media_file and media_file.filename != '':
+                    folder = "posts"
+                    if is_story_post:
+                        folder = "stories"
+                    elif is_study_material_post:
+                        folder = "study_materials"
+                    
+                    uploaded_url = upload_file_to_firebase(media_file, folder)
+                    if uploaded_url:
+                        media_items_to_save.append({
+                            "media_type": get_media_type_from_extension(media_file.filename), 
+                            "media_path_or_url": uploaded_url,
+                        })
 
-        except Exception as e:
-            flash(f"An error occurred during file upload: {e}", "error")
-            logging.error(f"File upload error: {e}", exc_info=True)
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
+        except Exception as e:
+            flash(f"An error occurred during file upload: {e}", "error")
+            logging.error(f"File upload error: {e}", exc_info=True)
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
-        # Validate submitted_external_link_url if provided
-        if submitted_external_link_url and not (submitted_external_link_url.startswith("http://") or submitted_external_link_url.startswith("https://")):
-            flash("External link must start with http:// or https://", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-            
-        if not content.strip() and not media_items_to_save and not submitted_external_link_url:
-            flash("Post must have content, uploaded media, or an external link.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        # Validate submitted_external_link_url if provided
+        if submitted_external_link_url and not (submitted_external_link_url.startswith("http://") or submitted_external_link_url.startswith("https://")):
+            flash("External link must start with http:// or https://", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+            
+        if not content.strip() and not media_items_to_save and not submitted_external_link_url:
+            flash("Post must have content, uploaded media, or an external link.", "error")
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-        try:
-            redirect_url = url_for("home") # Default redirect
-            
-            if is_study_material_post:
-                study_materials_ref = db.collection("study_materials")
-                # Assumes only one file is uploaded for study material
-                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
-                study_material_doc = {
-                    "title": title,
-                    "content": content,
-                    "category": "Study Material",
-                    "upload_date": datetime.now(),
-                    "file_path": file_path,
-                }
-                study_materials_ref.add(study_material_doc)
-                flash("Study Material uploaded successfully!", "success")
-                redirect_url = url_for("study_hub")
+        try:
+            redirect_url = url_for("home")  # Default redirect
+            
+            if is_study_material_post:
+                study_materials_ref = db.collection("study_materials")
+                # Assumes only one file is uploaded for study material
+                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
+                study_material_doc = {
+                    "title": title,
+                    "content": content,
+                    "category": "Study Material",
+                    "upload_date": datetime.now(),
+                    "file_path": file_path,
+                }
+                study_materials_ref.add(study_material_doc)
+                flash("Study Material uploaded successfully!", "success")
+                redirect_url = url_for("study_hub")
 
-            elif is_story_post:
-                stories_ref = db.collection("stories")
-                expires_at = datetime.now() + timedelta(hours=24)
-                story_media_item = media_items_to_save[0] if media_items_to_save else None
-                story_doc = {
-                    "user_id": user.id,
-                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
-                    "media_type": story_media_item["media_type"] if story_media_item else "text",
-                    "caption": content,
-                    "created_at": datetime.now(),
-                    "expires_at": expires_at,
-                }
-                stories_ref.add(story_doc)
-                flash("Story created successfully (will last 24 hours)!","success")
-                redirect_url = url_for("school_gist")
+            elif is_story_post:
+                stories_ref = db.collection("stories")
+                expires_at = datetime.now() + timedelta(hours=24)
+                story_media_item = media_items_to_save[0] if media_items_to_save else None
+                story_doc = {
+                    "user_id": user.id,
+                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
+                    "media_type": story_media_item["media_type"] if story_media_item else "text",
+                    "caption": content,
+                    "created_at": datetime.now(),
+                    "expires_at": expires_at,
+                }
+                stories_ref.add(story_doc)
+                flash("Story created successfully (will last 24 hours)!","success")
+                redirect_url = url_for("school_gist")
 
-            else:  # Regular post for School Gist/News
-                display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
-                if not display_on_for_posts:
-                    flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
-                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+            else:  # Regular post for School Gist/News
+                display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
+                if not display_on_for_posts:
+                    flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
+                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-                posts_ref = db.collection("posts")
-                duration_hours = 48
-                
-                # Determine if comments/reactions should be included
-                # This conditional check is the key change
-                if "School News" in display_on_for_posts and "School Gist" not in display_on_for_posts:
-                    # Post for School News only
-                    post_doc = {
-                        "title": title,
-                        "content": content,
-                        "categories": display_on_for_posts,
-                        "author": author_username,
-                        "author_id": user.id,
-                        "post_date": datetime.now(),
-                        "duration_hours": duration_hours,
-                        "external_link_url": submitted_external_link_url,
-                        "media_items": media_items_to_save,
-                    }
-                else:
-                    # Post for School Gist or both
-                    post_doc = {
-                        "title": title,
-                        "content": content,
-                        "categories": display_on_for_posts,
-                        "author": author_username,
-                        "author_id": user.id,
-                        "post_date": datetime.now(),
-                        "duration_hours": duration_hours,
-                        "external_link_url": submitted_external_link_url,
-                        "media_items": media_items_to_save,
-                        "comments_count": 0,
-                        "reactions_breakdown": {},
-                        "total_reactions": 0,
-                    }
-
-
-                posts_ref.add(post_doc)
-                
-                flash(f"Post created successfully (will last {duration_hours} hours)!","success")
-                if "School Gist" in display_on_for_posts:
-                    redirect_url = url_for("school_gist")
-                elif "School News" in display_on_for_posts:
-                    redirect_url = url_for("school_news")
-                
-            return redirect(redirect_url)
-
-        except Exception as e:
-            flash(f"An unexpected error occurred: {e}", "error")
-            logging.error(f"Error creating post: {e}", exc_info=True)
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
-
-    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
+                posts_ref = db.collection("posts")
+                duration_hours = 48
+                
+                # Determine if comments/reactions should be included
+                # This conditional check is the key change
+                if "School News" in display_on_for_posts and "School Gist" not in display_on_for_posts:
+                    # Post for School News only
+                    post_doc = {
+                        "title": title,
+                        "content": content,
+                        "categories": display_on_for_posts,
+                        "author": author_username,
+                        "author_id": user.id,
+                        "post_date": datetime.now(),
+                        "duration_hours": duration_hours,
+                        "external_link_url": submitted_external_link_url,
+                        "media_items": media_items_to_save,
+                    }
+                else:
+                    # Post for School Gist or both
+                    post_doc = {
+                        "title": title,
+                        "content": content,
+                        "categories": display_on_for_posts,
+                        "author": author_username,
+                        "author_id": user.id,
+                        "post_date": datetime.now(),
+                        "duration_hours": duration_hours,
+                        "external_link_url": submitted_external_link_url,
+                        "media_items": media_items_to_save,
+                        "comments_count": 0,
+                        "reactions_breakdown": {},
+                        "total_reactions": 0,
+                    }
 
 
+                posts_ref.add(post_doc)
+                
+                flash(f"Post created successfully (will last {duration_hours} hours)!","success")
+                if "School Gist" in display_on_for_posts:
+                    redirect_url = url_for("school_gist")
+                elif "School News" in display_on_for_posts:
+                    redirect_url = url_for("school_news")
+                
+            return redirect(redirect_url)
 
+        except Exception as e:
+            flash(f"An unexpected error occurred: {e}", "error")
+            logging.error(f"Error creating post: {e}", exc_info=True)
+            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
+
+    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
 
 
 
@@ -4595,6 +4586,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
