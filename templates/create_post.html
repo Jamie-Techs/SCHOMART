@@ -286,13 +286,13 @@
                 <div class="form-group" id="mediaTypeGroup">
                     <label>Media Type:</label>
                     <div class="radio-group flex flex-wrap gap-4">
-                        <label id="mediaTypeTextLabel">
-                            <input type="radio" name="media_type" value="text" id="mediaTypeText" checked> Text
+                        <label>
+                            <input type="radio" name="media_type" value="none" id="mediaTypeNone" checked> No Media
                         </label>
-                        <label id="mediaTypeImageLabel">
+                        <label>
                             <input type="radio" name="media_type" value="image" id="mediaTypeImage"> Image
                         </label>
-                        <label id="mediaTypeVideoLabel">
+                        <label>
                             <input type="radio" name="media_type" value="video" id="mediaTypeVideo"> Video
                         </label>
                     </div>
@@ -304,7 +304,7 @@
                     <p class="text-sm text-gray-500 mt-2">Allowed types vary by media type selection. (Images: png, jpg, jpeg, gif; Videos: mp4, mov)</p>
                 </div>
                 
-                <div class="form-group" id="linkUrlGroup">
+                <div class="form-group" id="linkUrlGroup" style="display: none;">
                     <label for="link_url">Paste Link URL (optional):</label>
                     <input type="text" id="link_url" name="link_url" placeholder="https://www.example.com/your-link">
                     <p class="text-sm text-gray-500 mt-2">If you provide a URL and no media file for media types (Image, Video), this post will be considered a 'Link' type.</p>
@@ -320,74 +320,58 @@
             const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
             const mediaFilesGroup = document.getElementById('mediaFilesGroup');
             const mediaFilesInput = document.getElementById('media_files');
-            const titleInput = document.getElementById('title');
-            const contentInput = document.getElementById('content');
-            const linkUrlInput = document.getElementById('link_url');
+            const linkUrlGroup = document.getElementById('linkUrlGroup');
             const form = document.getElementById('create-post-form');
-            const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-
-            const ACCEPT_TYPES = {
-                'image': 'image/*',
-                'video': 'video/*',
-                'audio': 'audio/*',
-                'document': 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.document,text/plain'
-            };
 
             function updateMediaFieldVisibility() {
                 const selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
-                if (selectedMediaType === 'text') {
-                    mediaFilesGroup.style.display = 'none';
-                    mediaFilesInput.removeAttribute('accept');
-                } else {
+                
+                mediaFilesGroup.style.display = 'none';
+                linkUrlGroup.style.display = 'none';
+                mediaFilesInput.removeAttribute('required');
+                mediaFilesInput.value = ''; // Clear file input on change
+
+                if (selectedMediaType === 'image') {
                     mediaFilesGroup.style.display = 'block';
-                    mediaFilesInput.setAttribute('accept', ACCEPT_TYPES[selectedMediaType]);
+                    mediaFilesInput.setAttribute('accept', 'image/*');
+                } else if (selectedMediaType === 'video') {
+                    mediaFilesGroup.style.display = 'block';
+                    mediaFilesInput.setAttribute('accept', 'video/mp4,video/mov,video/avi');
                 }
+                
+                linkUrlGroup.style.display = 'block';
             }
 
             mediaTypeRadios.forEach(radio => {
                 radio.addEventListener('change', updateMediaFieldVisibility);
             });
 
-            // Initial call to set up the form based on default values
             updateMediaFieldVisibility();
 
-            // Client-side file size validation
-            mediaFilesInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    const file = this.files[0];
-                    if (file.size > MAX_FILE_SIZE) {
-                        alert(`File size exceeds the 50MB limit. Please choose a smaller file. (Current: ${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
-                        this.value = ''; // Clear the selected file
-                    }
-                }
-            });
-
-            // Final validation before form submission (client-side)
             form.addEventListener('submit', function(event) {
-                const formTitle = titleInput.value.trim();
-                const formContent = contentInput.value.trim();
-                const formLink = linkUrlInput.value.trim();
-                const formFileSelected = mediaFilesInput.files.length > 0;
-                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
+                const title = document.getElementById('title').value.trim();
+                const content = document.getElementById('content').value.trim();
+                const link_url = document.getElementById('link_url').value.trim();
+                const media_files = mediaFilesInput.files.length > 0;
 
-                if (!formTitle) {
+                const selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
+
+                if (!title) {
                     alert('Please enter a title for your post.');
                     event.preventDefault();
-                    titleInput.focus();
                     return;
                 }
-                
-                if (!formContent && !formFileSelected && !formLink) {
-                    alert('Post must have content, an uploaded file, or a link.');
+
+                if (selectedMediaType !== 'none' && !media_files && !link_url) {
+                    alert('Please upload a file or provide a link for the selected media type.');
                     event.preventDefault();
-                    contentInput.focus();
                     return;
                 }
-                
-                if (currentMediaType !== 'text' && !formFileSelected && !formLink) {
-                    alert('You must either upload a file or provide a link for the selected media type.');
+
+                if (selectedMediaType === 'none' && !content && !link_url) {
+                    alert('Your post must have content or a link.');
                     event.preventDefault();
-                    mediaFilesInput.focus();
+                    return;
                 }
             });
         });
