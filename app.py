@@ -3278,38 +3278,62 @@ def change_phone():
 
 
 
-
-
-
-# --------------------------------------------------------------------------
-# HELPER FUNCTIONS (UNCHANGED)
-# --------------------------------------------------------------------------
 def get_media_type_from_extension(filename):
     """Determines media type based on file extension."""
     if not filename:
-        return 'unknown'
-    extension = filename.rsplit('.', 1)[-1].lower()
-    if extension in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']:
-        return 'image'
-    elif extension in ['mp4', 'mov', 'avi', 'mkv', 'webm']:
-        return 'video'
-    elif extension in ['mp3', 'wav', 'ogg', 'aac']:
-        return 'audio'
-    elif extension in ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'zip', 'rar']:
-        return 'document'
-    return 'unknown'
+        return "text"
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in ['png', 'jpg', 'jpeg', 'gif']:
+        return "image"
+    if ext in ['mp4', 'mov', 'avi', 'mkv']:
+        return "video"
+    if ext in ['mp3', 'wav', 'aac']:
+        return "audio"
+    if ext in ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt']:
+        return "document"
+    return "unknown"
 
-def fetch_posts_for_display(category, search_query, page, per_page, current_user_id=None):
+
+def upload_file_to_firebase(file, folder):
     """
-    Fetches paginated and searchable posts from Firestore.
+    Uploads a file to Firebase Storage.
+    Returns the public URL of the uploaded file on success, None otherwise.
+    """
+    if not file or not file.filename:
+        return None
+
+    filename = secure_filename(file.filename)
+    extension = os.path.splitext(filename)[1]
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    destination_path = f"{folder}/{unique_filename}"
+
+    try:
+        blob = bucket.blob(destination_path)
+        blob.upload_from_file(file, content_type=file.content_type)
+        blob.make_public()
+        return blob.public_url
+    except Exception as e:
+        logging.error(f"Failed to upload file to Firebase Storage: {e}")
+        return None
+
+
+def fetch_posts_for_display(category, search_query):
+    """
+    Fetches all searchable posts from Firestore for a given category.
+    No pagination is applied as per user's request.
     """
     if db is None:
         return [], 0, "Database connection not established."
 
     try:
-        posts_ref = db.collection('posts').where('categories', 'array_contains', category)
-        total_posts_query = posts_ref.stream()
-        all_posts = [doc.to_dict() for doc in total_posts_query]
+        posts_ref = db.collection('posts')
+        # Efficiently query for posts that contain the specified category
+        posts_query = posts_ref.where('categories', 'array_contains', category).stream()
+        all_posts = [doc.to_dict() for doc in posts_query]
+        
+        # Add document ID to each post
+        for doc in all_posts:
+            doc['id'] = doc.get('id', 'unknown') # Assuming 'id' is already a field
         
         if search_query:
             search_query_lower = search_query.lower()
@@ -3321,112 +3345,23 @@ def fetch_posts_for_display(category, search_query, page, per_page, current_user
         else:
             filtered_posts = all_posts
         
+        # Sort by post date in descending order
         filtered_posts.sort(key=lambda x: x.get('post_date', datetime.min), reverse=True)
 
-        start_index = (page - 1) * per_page
-        end_index = start_index + per_page
-        paginated_posts = filtered_posts[start_index:end_index]
-        
-        # Add the document ID to each post
-        final_posts = []
-        for doc_data in paginated_posts:
-            # Assuming doc_data already has 'id' or you retrieve it here.
-            # In a real scenario, you'd get the ID from the Firestore document object.
-            # Let's mock a scenario where the ID is added.
-            if 'id' not in doc_data:
-                # Find the doc_id. This is inefficient but demonstrates the point.
-                # A better way is to store the ID as a field on creation.
-                for doc in db.collection('posts').where('title', '==', doc_data.get('title')).where('content', '==', doc_data.get('content')).stream():
-                    doc_data['id'] = doc.id
-                    break
-            final_posts.append(doc_data)
-
-        return final_posts, len(filtered_posts), None
+        return filtered_posts, len(filtered_posts), None
     except Exception as e:
-        logging.error(f"Error fetching posts for display: {e}", exc_info=True)
+        logging.error(f"Error fetching posts: {e}", exc_info=True)
         return [], 0, str(e)
 
 
-
-
-
-@app.route("/school_news")
-@login_required 
-def school_news():
+def fetch_single_post(post_id):
     """
-    Renders the school news page.
-    """
-    is_admin = getattr(g.current_user, 'is_admin', False)
-    return render_template("school_news.html", is_admin=is_admin)
-
-
-
-# --------------------------------------------------------------------------
-# FLASK ROUTES
-# --------------------------------------------------------------------------
-@app.route("/api/school_news")
-def api_school_news():
-    search_query = request.args.get("q")
-    page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 10, type=int)
-    
-    current_user_id = g.current_user.id if 'current_user' in g else None
-
-    try:
-        posts, total_posts, error = fetch_posts_for_display("School News", search_query, page, per_page, current_user_id)
-
-        if error:
-            current_app.logger.error(f"Error fetching posts for API: {error}")
-            return (jsonify({"error": "Failed to fetch posts", "details": error}), 500)
-
-        posts_data = []
-        for post in posts:
-            post_date = post.get("post_date")
-            post_date_str = post_date.isoformat() if isinstance(post_date, datetime) else str(post_date)
-            
-            # Extract the first media item for the preview, if any
-            first_media_item = post.get("media_items", [])[0] if post.get("media_items") else {}
-            
-            posts_data.append({
-                "id": post.get("id"),
-                "title": post.get("title"),
-                "content": post.get("content"),
-                "external_link_url": post.get("external_link_url"),
-                "author_username": post.get("author"),
-                "author_user_id": post.get("author_id"),
-                "post_date": post_date_str,
-                "media_type": first_media_item.get("media_type"),
-                "media_url": first_media_item.get("media_path_or_url"),
-                # The 'download_file_path' key has been removed as requested.
-                "reactions_count": post.get("total_reactions", 0),
-                "comments_count": post.get("comments_count", 0),
-            })
-
-        return jsonify({
-            "posts": posts_data,
-            "total_posts": total_posts,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": (total_posts + per_page - 1) // per_page,
-        })
-    except Exception as e:
-        current_app.logger.error(f"Error in api_school_news: {e}", exc_info=True)
-        return jsonify({"error": "An unexpected error occurred."}), 500
-
-
-
-
-
-
-def fetch_single_post(post_id, current_user_id):
-    """
-    Fetches a single news post from Firestore by its ID.
-    The post ID is the document ID in the 'news_posts' collection.
+    Fetches a single post from Firestore by its ID from the 'posts' collection.
     """
     if db is None:
         return None
     try:
-        post_ref = db.collection("news_posts").document(str(post_id))
+        post_ref = db.collection("posts").document(post_id)
         doc = post_ref.get()
         if doc.exists:
             post_data = doc.to_dict()
@@ -3437,61 +3372,16 @@ def fetch_single_post(post_id, current_user_id):
     return None
 
 
-@app.route("/full_post/<string:category_name>/<string:post_id>")
-@login_required 
-def display_full_post(category_name, post_id):
-    """
-    Renders a dedicated page for a single post, displaying full content and all media.
-    """
-    current_user_id = g.current_user.id
-    current_user_role = getattr(g.current_user, 'role', 'user')
-
-    post = fetch_single_post(post_id, current_user_id)
-
-    if not post:
-        flash("Post not found.", "error")
-        return redirect(url_for("school_news"))
-
-    if isinstance(post.get("post_date"), firestore.SERVER_TIMESTAMP):
-        post["post_date_formatted"] = post["post_date"].strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        post["post_date_formatted"] = str(post.get("post_date", ""))
-
-    return render_template(
-        "full_post_detail.html", 
-        post=post,
-        category_name=category_name,
-        current_user_role=current_user_role
-        )
-
-
-
-# In your app.py or routes.py file
-
-@app.route("/posts/<post_id>")
-def view_post(post_id):
-    """Fetches and displays a single post by its ID."""
+def delete_media_from_firebase(media_url):
+    """Deletes a file from Firebase Storage given its public URL."""
     try:
-        post_ref = db.collection("posts").document(post_id)
-        post_doc = post_ref.get()
-
-        if not post_doc.exists:
-            flash("Sorry, that post was not found.", "error")
-            return render_template("404.html"), 404
-
-        post_data = post_doc.to_dict()
-        post_data['id'] = post_doc.id # Add the document ID to the data
-
-        # Render the template with the post data
-        return render_template("view_post.html", post=post_data)
-
+        blob = bucket.blob(media_url.split(f"schomart-7a743.appspot.com/")[1])
+        blob.delete()
+        logging.info(f"Successfully deleted media at URL: {media_url}")
+        return True
     except Exception as e:
-        logging.error(f"Error viewing post {post_id}: {e}", exc_info=True)
-        flash("An error occurred while trying to view the post.", "error")
-        return redirect(url_for("home"))
-
-
-
+        logging.error(f"Failed to delete media from Firebase Storage: {e}")
+        return False
 
 
 
@@ -3499,58 +3389,37 @@ def view_post(post_id):
 @login_required
 @admin_required
 def create_post():
-    """Handles the creation of new posts, study materials, and stories."""
+    """Handles the creation of new posts for the School News page."""
     user = g.current_user
     user_is_admin = getattr(user, 'is_admin', False)
 
     post_data = request.form.to_dict() if request.method == "POST" else {}
-
     if request.method == "POST":
         title = request.form.get("title")
         content = request.form.get("content")
         author_username = getattr(user, 'username', 'Unknown')
-        post_type = request.form.get("post_type")
         submitted_external_link_url = request.form.get("link_url", "").strip()
-        display_on = request.form.getlist("display_on")
         
-        is_story_post = post_type == "story"
-        is_study_material_post = "Study Hub" in display_on
-
-        if not user_is_admin and not is_story_post and "School Gist" not in display_on:
-            display_on.append("School Gist")
+        # All posts are now regular posts and will be displayed on School News
+        display_on = ["School News"] 
         
         # --- VALIDATION ---
         if not title or not title.strip():
             flash("Please enter a title for your post.", "error")
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-        if not content or not content.strip():
-            flash("Content (or caption/description) cannot be empty for this post type.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-        
-        # The check for `display_on` is no longer needed since a post will always be displayed.
-        # This resolves the "choose at least 1 page" error.
-        
         # --- MEDIA PROCESSING ---
         media_items_to_save = []
-
         try:
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
-                    folder = "posts"
-                    if is_story_post:
-                        folder = "stories"
-                    elif is_study_material_post:
-                        folder = "study_materials"
-                    
-                    uploaded_url = upload_file_to_firebase(media_file, folder)
+                    uploaded_url = upload_file_to_firebase(media_file, "posts")
                     if uploaded_url:
                         media_items_to_save.append({
                             "media_type": get_media_type_from_extension(media_file.filename), 
                             "media_path_or_url": uploaded_url,
                         })
-
         except Exception as e:
             flash(f"An error occurred during file upload: {e}", "error")
             logging.error(f"File upload error: {e}", exc_info=True)
@@ -3565,75 +3434,24 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
         try:
-            redirect_url = url_for("home")
-            
-            if is_study_material_post:
-                study_materials_ref = db.collection("study_materials")
-                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
-                study_material_doc = {
-                    "title": title,
-                    "content": content,
-                    "category": "Study Material",
-                    "upload_date": datetime.now(),
-                    "file_path": file_path,
-                }
-                study_materials_ref.add(study_material_doc)
-                flash("Study Material uploaded successfully!", "success")
-                redirect_url = url_for("study_hub")
+            posts_ref = db.collection("posts")
+            post_doc = {
+                "title": title,
+                "content": content,
+                "categories": display_on,
+                "author": author_username,
+                "author_id": user.id,
+                "post_date": datetime.now(),
+                "external_link_url": submitted_external_link_url,
+                "media_items": media_items_to_save,
+                "comments_count": 0,
+                "reactions_breakdown": {},
+                "total_reactions": 0,
+            }
 
-            elif is_story_post:
-                stories_ref = db.collection("stories")
-                # The duration for stories is kept as per the original design
-                expires_at = datetime.now() + timedelta(hours=96)
-                story_media_item = media_items_to_save[0] if media_items_to_save else None
-                story_doc = {
-                    "user_id": user.id,
-                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
-                    "media_type": story_media_item["media_type"] if story_media_item else "text",
-                    "caption": content,
-                    "created_at": datetime.now(),
-                    "expires_at": expires_at,
-                }
-                stories_ref.add(story_doc)
-                flash("Story created successfully (will last 96 hours)!","success")
-                redirect_url = url_for("school_gist")
-            
-            else:
-                display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
-                
-                # We are no longer checking for `display_on_for_posts` to be not empty
-                # as a post will be created regardless and displayed on the school news page
-
-                posts_ref = db.collection("posts")
-                
-                # Removed the `duration_hours` variable entirely
-                post_doc = {
-                    "title": title,
-                    "content": content,
-                    "categories": display_on_for_posts,
-                    "author": author_username,
-                    "author_id": user.id,
-                    "post_date": datetime.now(),
-                    "external_link_url": submitted_external_link_url,
-                    "media_items": media_items_to_save,
-                    "comments_count": 0,
-                    "reactions_breakdown": {},
-                    "total_reactions": 0,
-                }
-
-                update_time, new_post_ref = posts_ref.add(post_doc)
-                new_post_id = new_post_ref.id
-
-                # Updated the flash message to not mention a duration
-                flash("Post created successfully!","success")
-                
-                
-                if "School Gist" in display_on_for_posts:
-                    redirect_url = url_for("school_news")
-                elif "School News" in display_on_for_posts:
-                    redirect_url = url_for("school_news")
-                
-            return redirect(redirect_url)
+            posts_ref.add(post_doc)
+            flash("Post created successfully!", "success")
+            return redirect(url_for("school_news"))
 
         except Exception as e:
             flash(f"An unexpected error occurred: {e}", "error")
@@ -3643,28 +3461,88 @@ def create_post():
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
 
 
+@app.route("/school_news")
+@login_required
+def school_news():
+    """
+    Renders the school news page, which now fetches and displays all posts
+    on a single page.
+    """
+    is_admin = getattr(g.current_user, 'is_admin', False)
+    search_query = request.args.get("q")
+    
+    posts, total_posts, error = fetch_posts_for_display("School News", search_query)
+    
+    if error:
+        flash(f"Error loading posts: {error}", "error")
+        posts = []
+
+    return render_template("school_news.html", posts=posts, is_admin=is_admin, search_query=search_query)
 
 
+@app.route("/admin/delete_post/<string:post_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_post(post_id):
+    """
+    Handles the deletion of a post, including its media files from Firebase Storage.
+    """
+    try:
+        post_ref = db.collection("posts").document(post_id)
+        post_doc = post_ref.get()
+
+        if not post_doc.exists:
+            flash("Post not found.", "error")
+            return redirect(url_for("school_news"))
+
+        post_data = post_doc.to_dict()
+
+        # Delete all associated media files from Firebase Storage
+        if 'media_items' in post_data and isinstance(post_data['media_items'], list):
+            for media_item in post_data['media_items']:
+                media_url = media_item.get('media_path_or_url')
+                if media_url:
+                    delete_media_from_firebase(media_url)
+
+        # Delete the post document from Firestore
+        post_ref.delete()
+        flash("Post deleted successfully!", "success")
+    except Exception as e:
+        flash(f"An error occurred while deleting the post: {e}", "error")
+        logging.error(f"Error deleting post {post_id}: {e}", exc_info=True)
+        
+    return redirect(url_for("school_news"))
 
 
+# Note: The `full_post` and `api_school_news` routes are now merged into a single `school_news` page
+# to comply with the single-page display requirement.
+# `view_post` route is kept but modified to use the correct collection.
+@app.route("/posts/<post_id>")
+@login_required
+def view_post(post_id):
+    """Fetches and displays a single post by its ID."""
+    try:
+        post_ref = db.collection("posts").document(post_id)
+        post_doc = post_ref.get()
 
+        if not post_doc.exists:
+            flash("Sorry, that post was not found.", "error")
+            return render_template("404.html"), 404
 
+        post_data = post_doc.to_dict()
+        post_data['id'] = post_doc.id
 
+        # Render the template with the post data
+        return render_template("view_post.html", post=post_data)
 
+    except Exception as e:
+        logging.error(f"Error viewing post {post_id}: {e}", exc_info=True)
+        flash("An error occurred while trying to view the post.", "error")
+        return redirect(url_for("home"))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+# The user-provided `handle_file_uploads` function for `adverts` is not used in this context.
+# We are now using a more direct approach within `create_post` and the `upload_file_to_firebase` helper.
+# The user-provided `display_full_post` is also now replaced by the refined `school_news` and `view_post` routes.
 
 
 
@@ -4604,6 +4482,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
