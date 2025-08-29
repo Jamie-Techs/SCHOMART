@@ -3584,7 +3584,7 @@ def create_post():
             elif is_story_post:
                 stories_ref = db.collection("stories")
                 # The duration for stories is kept as per the original design
-                expires_at = datetime.now() + timedelta(hours=24)
+                expires_at = datetime.now() + timedelta(hours=96)
                 story_media_item = media_items_to_save[0] if media_items_to_save else None
                 story_doc = {
                     "user_id": user.id,
@@ -3595,7 +3595,7 @@ def create_post():
                     "expires_at": expires_at,
                 }
                 stories_ref.add(story_doc)
-                flash("Story created successfully (will last 24 hours)!","success")
+                flash("Story created successfully (will last 96 hours)!","success")
                 redirect_url = url_for("school_gist")
             
             else:
@@ -3628,6 +3628,9 @@ def create_post():
                 flash("Post created successfully!","success")
                 
                 
+                if "School Gist" in display_on_for_posts:
+                    redirect_url = url_for("school_news")
+                elif "School News" in display_on_for_posts:
                     redirect_url = url_for("school_news")
                 
             return redirect(redirect_url)
@@ -4601,6 +4604,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
