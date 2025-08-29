@@ -3458,15 +3458,42 @@ def display_full_post(category_name, post_id):
 
 
 
+# In your app.py or routes.py file
+
+@app.route("/posts/<post_id>")
+def view_post(post_id):
+    """Fetches and displays a single post by its ID."""
+    try:
+        post_ref = db.collection("posts").document(post_id)
+        post_doc = post_ref.get()
+
+        if not post_doc.exists:
+            flash("Sorry, that post was not found.", "error")
+            return render_template("404.html"), 404
+
+        post_data = post_doc.to_dict()
+        post_data['id'] = post_doc.id # Add the document ID to the data
+
+        # Render the template with the post data
+        return render_template("view_post.html", post=post_data)
+
+    except Exception as e:
+        logging.error(f"Error viewing post {post_id}: {e}", exc_info=True)
+        flash("An error occurred while trying to view the post.", "error")
+        return redirect(url_for("home"))
+
+
+
+
+
+
 
 
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
-@admin_required  # This decorator ensures only admins can access this page
+@admin_required
 def create_post():
     """Handles the creation of new posts, study materials, and stories."""
-    # The decorators handle all authentication and authorization, so we can directly
-    # access g.current_user
     user = g.current_user
     user_is_admin = getattr(user, 'is_admin', False)
 
@@ -3483,12 +3510,10 @@ def create_post():
         is_story_post = post_type == "story"
         is_study_material_post = "Study Hub" in display_on
 
-        # If the user is not an admin, they can only post to School Gist.
         if not user_is_admin and not is_story_post and "School Gist" not in display_on:
             display_on.append("School Gist")
         
         # --- VALIDATION ---
-        # The validation logic remains the same.
         if not title or not title.strip():
             flash("Please enter a title for your post.", "error")
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
@@ -3505,7 +3530,6 @@ def create_post():
         media_items_to_save = []
 
         try:
-            # Handle uploaded files
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
@@ -3527,7 +3551,6 @@ def create_post():
             logging.error(f"File upload error: {e}", exc_info=True)
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
-        # Validate submitted_external_link_url if provided
         if submitted_external_link_url and not (submitted_external_link_url.startswith("http://") or submitted_external_link_url.startswith("https://")):
             flash("External link must start with http:// or https://", "error")
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
@@ -3537,40 +3560,15 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
         try:
-            redirect_url = url_for("home")  # Default redirect
+            redirect_url = url_for("home")
             
             if is_study_material_post:
-                study_materials_ref = db.collection("study_materials")
-                # Assumes only one file is uploaded for study material
-                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
-                study_material_doc = {
-                    "title": title,
-                    "content": content,
-                    "category": "Study Material",
-                    "upload_date": datetime.now(),
-                    "file_path": file_path,
-                }
-                study_materials_ref.add(study_material_doc)
-                flash("Study Material uploaded successfully!", "success")
-                redirect_url = url_for("study_hub")
+                # ... (study material creation logic) ...
 
             elif is_story_post:
-                stories_ref = db.collection("stories")
-                expires_at = datetime.now() + timedelta(hours=24)
-                story_media_item = media_items_to_save[0] if media_items_to_save else None
-                story_doc = {
-                    "user_id": user.id,
-                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
-                    "media_type": story_media_item["media_type"] if story_media_item else "text",
-                    "caption": content,
-                    "created_at": datetime.now(),
-                    "expires_at": expires_at,
-                }
-                stories_ref.add(story_doc)
-                flash("Story created successfully (will last 24 hours)!","success")
-                redirect_url = url_for("school_gist")
+                # ... (story creation logic) ...
 
-            else:  # Regular post for School Gist/News
+            else:
                 display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
                 if not display_on_for_posts:
                     flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
@@ -3580,9 +3578,7 @@ def create_post():
                 duration_hours = 48
                 
                 # Determine if comments/reactions should be included
-                # This conditional check is the key change
                 if "School News" in display_on_for_posts and "School Gist" not in display_on_for_posts:
-                    # Post for School News only
                     post_doc = {
                         "title": title,
                         "content": content,
@@ -3595,7 +3591,6 @@ def create_post():
                         "media_items": media_items_to_save,
                     }
                 else:
-                    # Post for School Gist or both
                     post_doc = {
                         "title": title,
                         "content": content,
@@ -3611,9 +3606,10 @@ def create_post():
                         "total_reactions": 0,
                     }
 
+                # This is the updated part to correctly get the document ID
+                update_time, new_post_ref = posts_ref.add(post_doc)
+                new_post_id = new_post_ref.id
 
-                posts_ref.add(post_doc)
-                
                 flash(f"Post created successfully (will last {duration_hours} hours)!","success")
                 if "School Gist" in display_on_for_posts:
                     redirect_url = url_for("school_gist")
@@ -3628,12 +3624,7 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
-
-
-
-
-
-
+    
 
 
 
@@ -4586,6 +4577,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
