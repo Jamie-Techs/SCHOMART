@@ -3527,10 +3527,9 @@ def create_post():
         if not content or not content.strip():
             flash("Content (or caption/description) cannot be empty for this post type.", "error")
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
-
-        if not display_on and not is_story_post:
-            flash("Please select at least one page to display the post on.", "error")
-            return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+        
+        # The check for `display_on` is no longer needed since a post will always be displayed.
+        # This resolves the "choose at least 1 page" error.
         
         # --- MEDIA PROCESSING ---
         media_items_to_save = []
@@ -3582,9 +3581,9 @@ def create_post():
                 flash("Study Material uploaded successfully!", "success")
                 redirect_url = url_for("study_hub")
 
-            # This `elif` block needs to be at the same indentation level as the `if` block above it
             elif is_story_post:
                 stories_ref = db.collection("stories")
+                # The duration for stories is kept as per the original design
                 expires_at = datetime.now() + timedelta(hours=24)
                 story_media_item = media_items_to_save[0] if media_items_to_save else None
                 story_doc = {
@@ -3599,48 +3598,35 @@ def create_post():
                 flash("Story created successfully (will last 24 hours)!","success")
                 redirect_url = url_for("school_gist")
             
-            # The `else` block also needs to be at the same indentation level
             else:
                 display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
-                if not display_on_for_posts:
-                    flash("Please select a valid display page for a regular post (School Gist or School News).", "error")
-                    return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
+                
+                # We are no longer checking for `display_on_for_posts` to be not empty
+                # as a post will be created regardless and displayed on the school news page
 
                 posts_ref = db.collection("posts")
-                duration_hours = 48
                 
-                if "School News" in display_on_for_posts and "School Gist" not in display_on_for_posts:
-                    post_doc = {
-                        "title": title,
-                        "content": content,
-                        "categories": display_on_for_posts,
-                        "author": author_username,
-                        "author_id": user.id,
-                        "post_date": datetime.now(),
-                        "duration_hours": duration_hours,
-                        "external_link_url": submitted_external_link_url,
-                        "media_items": media_items_to_save,
-                    }
-                else:
-                    post_doc = {
-                        "title": title,
-                        "content": content,
-                        "categories": display_on_for_posts,
-                        "author": author_username,
-                        "author_id": user.id,
-                        "post_date": datetime.now(),
-                        "duration_hours": duration_hours,
-                        "external_link_url": submitted_external_link_url,
-                        "media_items": media_items_to_save,
-                        "comments_count": 0,
-                        "reactions_breakdown": {},
-                        "total_reactions": 0,
-                    }
+                # Removed the `duration_hours` variable entirely
+                post_doc = {
+                    "title": title,
+                    "content": content,
+                    "categories": display_on_for_posts,
+                    "author": author_username,
+                    "author_id": user.id,
+                    "post_date": datetime.now(),
+                    "external_link_url": submitted_external_link_url,
+                    "media_items": media_items_to_save,
+                    "comments_count": 0,
+                    "reactions_breakdown": {},
+                    "total_reactions": 0,
+                }
 
                 update_time, new_post_ref = posts_ref.add(post_doc)
                 new_post_id = new_post_ref.id
 
-                flash(f"Post created successfully (will last {duration_hours} hours)!","success")
+                # Updated the flash message to not mention a duration
+                flash("Post created successfully!","success")
+                
                 if "School Gist" in display_on_for_posts:
                     redirect_url = url_for("school_gist")
                 elif "School News" in display_on_for_posts:
@@ -3654,8 +3640,6 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
-
-
 
 
 
@@ -4619,6 +4603,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
