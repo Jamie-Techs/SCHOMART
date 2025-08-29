@@ -753,306 +753,169 @@
             <button id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('postsContainer');
-            const searchInput = document.getElementById('searchInput');
-            const searchButton = document.getElementById('searchButton');
-            const prevPageBtn = document.getElementById('prevPage');
-            const nextPageBtn = document.getElementById('nextPage');
-            const currentPageSpan = document.getElementById('currentPage');
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('postsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const currentPageSpan = document.getElementById('currentPage');
 
-            let currentPage = 1;
-            let totalPages = 1;
-            const postsPerPage = 10;
+        let currentPage = 1;
+        let totalPages = 1;
+        const postsPerPage = 10;
 
-            async function fetchAndRenderPosts(query = '', page = 1) {
-                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
+        async function fetchAndRenderPosts(query = '', page = 1) {
+            container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
 
-                const url = new URL('/api/school_news', window.location.origin);
-                url.searchParams.append('page', page);
-                url.searchParams.append('per_page', postsPerPage);
-                if (query) {
-                    url.searchParams.append('q', query);
-                }
-
-                try {
-                    const res = await fetch(url);
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
-                        container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
-                        return;
-                    }
-                    const data = await res.json();
-                    renderPosts(data.posts);
-                    updatePagination(data.total_pages, data.page);
-                } catch (error) {
-                    console.error('Error fetching school news:', error);
-                    container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
-                }
+            const url = new URL('/api/school_news', window.location.origin);
+            url.searchParams.append('page', page);
+            url.searchParams.append('per_page', postsPerPage);
+            if (query) {
+                url.searchParams.append('q', query);
             }
 
-            function renderPosts(postsToRender) {
-                container.innerHTML = ''; // Clear existing posts
-
-                if (!postsToRender || postsToRender.length === 0) {
-                    container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
+                    container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
                     return;
                 }
+                const data = await res.json();
+                renderPosts(data.posts);
+                updatePagination(data.total_pages, data.page);
+            } catch (error) {
+                console.error('Error fetching school news:', error);
+                container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
+            }
+        }
 
-                postsToRender.forEach(post => {
-                    const div = document.createElement('div');
-                    div.className = 'post';
-                    div.setAttribute('data-post-id', post.id);
+        function renderPosts(postsToRender) {
+            container.innerHTML = ''; // Clear existing posts
 
-                    let mediaHTML = '';
-                    const previewMediaCount = 2; // Show up to 2 media items in the preview
-                    if (post.post_media_items && post.post_media_items.length > 0) {
-                        post.post_media_items.slice(0, previewMediaCount).forEach(mediaItem => {
-                            const url = mediaItem.media_path_or_url;
-                            const type = mediaItem.media_type;
-                            const caption = mediaItem.caption || '';
+            if (!postsToRender || postsToRender.length === 0) {
+                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
+                return;
+            }
 
+            postsToRender.forEach(post => {
+                const div = document.createElement('div');
+                div.className = 'post';
+                div.setAttribute('data-post-id', post.id);
+
+                let mediaHTML = '';
+                const previewMediaCount = 2; // Show up to 2 media items in the preview
+                // Check if media_items exists and is an array
+                const postMediaItems = Array.isArray(post.media_items) ? post.media_items : [];
+
+                if (postMediaItems.length > 0) {
+                    postMediaItems.slice(0, previewMediaCount).forEach(mediaItem => {
+                        const url = mediaItem.media_path_or_url;
+                        const type = mediaItem.media_type;
+                        const caption = mediaItem.caption || '';
+                        
+                        // Check for valid URL before rendering
+                        if (url) {
                             if (type === 'image') {
                                 mediaHTML += `<div class="media-item">
-                                        <img src="${url}" alt="${caption}" class="media-preview">
-                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                    </div>`;
+                                    <img src="${url}" alt="${caption}" class="media-preview">
+                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                </div>`;
                             } else if (type === 'video') {
                                 mediaHTML += `<div class="media-item">
-                                        <video class="media-preview" controls>
-                                            <source src="${url}" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                    </div>`;
+                                    <video class="media-preview" controls>
+                                        <source src="${url}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                </div>`;
                             } else if (type === 'audio') {
                                 mediaHTML += `<div class="media-item">
-                                        <audio controls class="media-preview">
-                                            <source src="${url}" type="audio/mpeg">
-                                            Your browser does not support the audio element.
-                                        </audio>
-                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                    </div>`;
+                                    <audio controls class="media-preview">
+                                        <source src="${url}" type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    ${caption ? `<p class="media-caption">${caption}</p>` : ''}
+                                </div>`;
                             } else if (type === 'document') {
                                 const filename = url.split('/').pop();
                                 mediaHTML += `<div class="media-item">
-                                        <p><i class="fas fa-file-alt"></i> Document: <a href="${url}" download class="document-link">${filename} <i class="fas fa-download"></i></a></p>
-                                        ${caption ? `<p class="media-caption">${caption}</p>` : ''}
-                                    </div>`;
+                                    <a href="${url_for('download_news_post_file', post_id=post.id)}" class="document-link" download>
+                                        <i class="fas fa-download"></i>
+                                        <span>Download File (${filename})</span>
+                                    </a>
+                                </div>`;
                             }
-                        });
-                    }
-
-                    const maxContentLength = 200;
-                    const isContentLong = post.content && post.content.length > maxContentLength;
-                    const postContentPreview = isContentLong ? post.content.substring(0, maxContentLength) + '...' : post.content || '';
-
-                    const readMoreLink = isContentLong ? `<span class="read-more-link" data-post-id="${post.id}">Read More</span>` : '';
-                    const fullContent = isContentLong ? `<span class="post-content-full" style="display:none;">${post.content || ''} <span class="read-less-link" data-post-id="${post.id}">Read Less</span></span>` : '';
-
-                    div.innerHTML = `
-                        <h3><a href="#" class="post-title-link" data-post-id="${post.id}"><i class="fas fa-bullhorn"></i> ${post.title}</a></h3>
-                        <small><i class="fas fa-calendar-alt"></i> ${new Date(post.created_at).toLocaleDateString()} by <i class="fas fa-user-edit"></i> ${post.author || 'Admin'}</small>
-                        <p class="post-content-preview">${postContentPreview} ${readMoreLink}</p>
-                        ${fullContent}
-                        ${mediaHTML}
-                        ${post.post_media_items && post.post_media_items.length > previewMediaCount ? 
-                            `<button class="view-all-media-btn" data-post-id="${post.id}"><i class="fas fa-images"></i> View All Media (${post.post_media_items.length})</button>` : ''}
-                        <div class="actions">
-                            <button class="share-button" data-post-title="${post.title}" data-post-url="${window.location.origin}/school_news/${post.id}"><i class="fas fa-share-alt"></i> Share</button>
-                            <button class="download-post-button" data-post-id="${post.id}"><i class="fas fa-download"></i> Download Post</button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-
-                document.querySelectorAll('.read-more-link').forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        const postId = event.target.dataset.postId;
-                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-                        const preview = postElement.querySelector('.post-content-preview');
-                        const full = postElement.querySelector('.post-content-full');
-
-                        preview.style.display = 'none';
-                        full.style.display = 'inline'; // Use inline to keep it flowing with text
-                    });
-                });
-
-                document.querySelectorAll('.read-less-link').forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        const postId = event.target.dataset.postId;
-                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-                        const preview = postElement.querySelector('.post-content-preview');
-                        const full = postElement.querySelector('.post-content-full');
-
-                        preview.style.display = 'inline';
-                        full.style.display = 'none';
-                    });
-                });
-
-                document.querySelectorAll('.post-title-link').forEach(link => {
-                    link.addEventListener('click', (event) => {
-                        event.preventDefault(); // Prevent default link behavior
-                        const postId = event.target.dataset.postId;
-                        // You could expand the post content or navigate to a detail page here
-                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-                        const preview = postElement.querySelector('.post-content-preview');
-                        const full = postElement.querySelector('.post-content-full');
-
-                        if (full && full.style.display === 'none') {
-                            preview.style.display = 'none';
-                            full.style.display = 'inline';
-                        } else if (full) {
-                            preview.style.display = 'inline';
-                            full.style.display = 'none';
                         }
                     });
-                });
-
-                document.querySelectorAll('.share-button').forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        const postTitle = event.target.dataset.postTitle;
-                        const postUrl = event.target.dataset.postUrl;
-                        if (navigator.share) {
-                            navigator.share({
-                                title: postTitle,
-                                url: postUrl,
-                            }).then(() => {
-                                showNotification('Post shared successfully!', 'success');
-                            }).catch(console.error);
-                        } else {
-                            // Fallback for browsers that do not support the Web Share API
-                            copyToClipboard(postUrl);
-                            showNotification('Link copied to clipboard!', 'info');
-                        }
-                    });
-                });
-
-                // Event listener for the new "Download Post" button
-                document.querySelectorAll('.download-post-button').forEach(button => {
-                    button.addEventListener('click', (event) => {
-                        const postId = event.target.dataset.postId;
-                        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-                        const postTitle = postElement.querySelector('h3 a').textContent.trim();
-                        const postContent = postElement.querySelector('.post-content-full') ? 
-                                             postElement.querySelector('.post-content-full').textContent.replace('Read Less', '').trim() :
-                                             postElement.querySelector('.post-content-preview').textContent.replace('Read More', '').trim();
-                        const postDate = postElement.querySelector('small').textContent.trim();
-
-                        downloadPost(postTitle, postContent, postDate);
-                    });
-                });
-
-                document.querySelectorAll('.view-all-media-btn').forEach(button => {
-                    button.addEventListener('click', async (event) => {
-                        const postId = event.target.dataset.postId;
-                        // In a real application, you'd fetch all media for this post
-                        // For this example, we'll just alert that more media exist
-                        showNotification(`Fetching all media for post ID: ${postId} (Feature to be implemented)`, 'info');
-                    });
-                });
-            }
-
-            // Function to handle post download
-            function downloadPost(title, content, date) {
-                const filename = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
-                const textContent = `Title: ${title}\nDate: ${date}\n\n${content}`;
-                
-                const blob = new Blob([textContent], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url); // Clean up the URL object
-                
-                showNotification('Post downloaded successfully!', 'success');
-            }
-
-            function updatePagination(total_pages, current_page) {
-                totalPages = total_pages;
-                currentPage = current_page;
-                currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
-
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage === totalPages;
-            }
-
-            prevPageBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    fetchAndRenderPosts(searchInput.value, currentPage);
                 }
-            });
-
-            nextPageBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    fetchAndRenderPosts(searchInput.value, currentPage);
-                }
-            });
-
-            searchButton.addEventListener('click', () => {
-                currentPage = 1; // Reset to first page on new search
-                fetchAndRenderPosts(searchInput.value, currentPage);
-            });
-
-            searchInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    currentPage = 1; // Reset to first page on new search
-                    fetchAndRenderPosts(searchInput.value, currentPage);
-                }
-            });
-
-            function copyToClipboard(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-            }
-
-            function showNotification(message, type = 'info', duration = 3000) {
-                let notification = document.querySelector('.custom-notification');
-                if (!notification) {
-                    notification = document.createElement('div');
-                    notification.className = 'custom-notification';
-                    document.body.appendChild(notification);
-                }
-
-                notification.className = `custom-notification ${type}`;
-                const icon = type === 'success' ? 'fa-check-circle' :
-                             type === 'error' ? 'fa-times-circle' :
-                             type === 'warning' ? 'fa-exclamation-triangle' :
-                             'fa-info-circle';
                 
-                notification.innerHTML = `<span class="notification-icon"><i class="fas ${icon}"></i></span> ${message}`;
-                
-                setTimeout(() => {
-                    notification.classList.add('show');
-                }, 10); // Small delay to trigger transition
+                const postContentHTML = `
+                    <h3>
+                        <a href="/full_post/School News/${post.id}" class="post-title-link">${post.title}</a>
+                    </h3>
+                    <p class="post-content-preview">
+                        ${post.content.length > 250 ? post.content.substring(0, 250) + '...' : post.content}
+                        ${post.content.length > 250 ? `<a href="/full_post/School News/${post.id}" class="read-more-link">Read More</a>` : ''}
+                    </p>
+                    ${mediaHTML}
+                    <small>
+                        <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.post_date).toLocaleDateString()}
+                    </small>
+                    <div class="actions">
+                        <a href="/full_post/School News/${post.id}" class="button">
+                            <button><i class="fas fa-comments"></i> Comments (${post.comments_count})</button>
+                        </a>
+                        <a href="/full_post/School News/${post.id}" class="button">
+                            <button><i class="fas fa-heart"></i> Reactions (${post.reactions_count})</button>
+                        </a>
+                    </div>
+                `;
 
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    // Optional: remove element after transition for cleaner DOM
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.parentNode.removeChild(notification);
-                        }
-                    }, 500); 
-                }, duration);
+                div.innerHTML = postContentHTML;
+                container.appendChild(div);
+            });
+        }
+        
+        function updatePagination(total_pages, current_page) {
+            currentPage = current_page;
+            totalPages = total_pages;
+            currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage >= totalPages;
+        }
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                fetchAndRenderPosts(searchInput.value, currentPage - 1);
             }
-
-            // Initial fetch of posts when the page loads
-            fetchAndRenderPosts();
         });
-    </script>
+
+        nextPageBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                fetchAndRenderPosts(searchInput.value, currentPage + 1);
+            }
+        });
+
+        searchButton.addEventListener('click', () => {
+            currentPage = 1; // Reset to first page on new search
+            fetchAndRenderPosts(searchInput.value, currentPage);
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchButton.click();
+            }
+        });
+
+        // Initial fetch
+        fetchAndRenderPosts();
+    });
+</script>
+
+   
 </body>
 </html>
