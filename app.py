@@ -3347,6 +3347,20 @@ def fetch_posts_for_display(category, search_query, page, per_page, current_user
         return [], 0, str(e)
 
 
+
+
+
+@app.route("/school_news")
+@login_required 
+def school_news():
+    """
+    Renders the school news page.
+    """
+    is_admin = getattr(g.current_user, 'is_admin', False)
+    return render_template("school_news.html", is_admin=is_admin)
+
+
+
 # --------------------------------------------------------------------------
 # FLASK ROUTES
 # --------------------------------------------------------------------------
@@ -3401,23 +3415,6 @@ def api_school_news():
 
 
 
-
-
-@app.route("/school_news", methods=['GET'])
-def school_news():
-    query = request.args.get('q', '').strip()
-
-    if query:
-        # Filter posts based on the search query
-        posts = SchoolNews.query.filter(
-            (SchoolNews.title.ilike(f"%{query}%")) |
-            (SchoolNews.content.ilike(f"%{query}%"))
-        ).order_by(SchoolNews.post_date.desc()).all()
-    else:
-        # Get all posts without a search query
-        posts = SchoolNews.query.order_by(SchoolNews.post_date.desc()).all()
-
-    return render_template("school_news.html", posts=posts)
 
 
 
@@ -4622,6 +4619,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
