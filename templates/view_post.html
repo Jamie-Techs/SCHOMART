@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ post.title }}</title>
+</head>
+<body>
+    <div class="post-detail-container">
+        <h1>{{ post.title }}</h1>
+        <div class="post-meta">
+            <span>By {{ post.author }}</span>
+            <span>Posted on {{ post.post_date.strftime('%B %d, %Y') }}</span>
+        </div>
+
+        <p>{{ post.content }}</p>
+
+        {% if post.external_link_url %}
+            <p><strong>External Link:</strong> <a href="{{ post.external_link_url }}" target="_blank">{{ post.external_link_url }}</a></p>
+        {% endif %}
+
+        <div class="post-media-gallery">
+            {% for media in post.media_items %}
+                <div class="media-item">
+                    {% if media.media_type == 'image' %}
+                        <a href="{{ media.media_path_or_url }}" target="_blank">
+                            <img src="{{ media.media_path_or_url }}" alt="Post media" class="img-fluid">
+                        </a>
+                    {% elif media.media_type == 'video' %}
+                        <video controls class="img-fluid">
+                            <source src="{{ media.media_path_or_url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+</body>
+</html>
