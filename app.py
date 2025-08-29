@@ -3491,6 +3491,8 @@ def create_post():
         # --- MEDIA PROCESSING ---
         media_items_to_save = []
 
+        # ... (rest of the create_post function) ...
+
         try:
             # Handle uploaded files
             media_files = request.files.getlist("media_files")
@@ -3505,11 +3507,17 @@ def create_post():
                     uploaded_url = upload_file_to_firebase(media_file, folder)
                     if uploaded_url:
                         media_items_to_save.append({
-                            "media_type": get_media_type_from_filename(media_file.filename),
+                            # Corrected the function name here
+                            "media_type": get_media_type_from_extension(media_file.filename), 
                             "media_path_or_url": uploaded_url,
                         })
 
         except Exception as e:
+# ... (rest of the function) ...
+
+
+
+        
             flash(f"An error occurred during file upload: {e}", "error")
             logging.error(f"File upload error: {e}", exc_info=True)
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
@@ -4551,6 +4559,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
