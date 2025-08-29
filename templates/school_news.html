@@ -125,7 +125,7 @@
             border-top: 1px solid var(--border-color);
             padding: 15px 20px;
             display: flex;
-            justify-content: flex-end; /* Align to the right side */
+            justify-content: space-between;
             align-items: center;
         }
         .post-actions .btn {
@@ -144,7 +144,11 @@
         .delete-btn {
             color: #d9534f;
             cursor: pointer;
-            margin-right: auto; /* Push the delete button to the left */
+        }
+        .share-btn {
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-left: auto;
         }
     </style>
 </head>
@@ -219,6 +223,9 @@
                                 </button>
                             </form>
                         {% endif %}
+                        <button class="share-btn" onclick="copyPostLink('{{ url_for('view_post', post_id=post.id, _external=True) }}')">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
                     </div>
                 </div>
             {% endfor %}
@@ -228,5 +235,15 @@
             </div>
         {% endif %}
     </div>
+    <script>
+        function copyPostLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Link copied to clipboard!");
+            }).catch(err => {
+                console.error("Failed to copy link: ", err);
+                alert("Failed to copy link. Please try again or copy manually.");
+            });
+        }
+    </script>
 </body>
 </html>
