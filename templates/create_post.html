@@ -273,7 +273,7 @@
         </div>
 
         <div class="form-container">
-            <form action="{{ url_for('create_post') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('create_post') }}" method="POST" enctype="multipart/form-data" id="create-post-form">
                 <div class="form-group">
                     <label for="post_type">Choose Post Type:</label>
                     <div class="radio-group flex flex-wrap gap-4">
@@ -345,7 +345,7 @@
                         </label>
                     </div>
                     <p class="text-sm text-gray-500 mt-2" id="mediaTypeHint">
-                        Select 'Text' for content without files. For other types, you must upload a file. 'Study Hub' posts automatically become 'Document' type.
+                        Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.
                     </p>
                 </div>
 
@@ -372,12 +372,13 @@
             const radioStory = document.getElementById('radioStory');
             const displayOnGroup = document.getElementById('displayOnGroup');
             const mediaTypeGroup = document.getElementById('mediaTypeGroup');
-            
+            const form = document.getElementById('create-post-form');
+
             // Conditionally rendered elements
             const studyHubCheckbox = document.getElementById('studyHubCheckbox');
             const schoolGistCheckbox = document.getElementById('schoolGistCheckbox');
             const schoolNewsCheckbox = document.getElementById('schoolNewsCheckbox');
-            
+
             const mediaFilesGroup = document.getElementById('mediaFilesGroup');
             const mediaFilesInput = document.getElementById('media_files');
             const titleInput = document.getElementById('title');
@@ -388,13 +389,13 @@
             const mediaTypeVideo = document.getElementById('mediaTypeVideo');
             const mediaTypeAudio = document.getElementById('mediaTypeAudio');
             const mediaTypeDocument = document.getElementById('mediaTypeDocument');
-            
+
             const mediaTypeTextLabel = document.getElementById('mediaTypeTextLabel');
             const mediaTypeImageLabel = document.getElementById('mediaTypeImageLabel');
             const mediaTypeVideoLabel = document.getElementById('mediaTypeVideoLabel');
             const mediaTypeAudioLabel = document.getElementById('mediaTypeAudioLabel');
             const mediaTypeDocumentLabel = document.getElementById('mediaTypeDocumentLabel');
-            
+
             const postDurationInfo = document.getElementById('postDurationInfo');
             const storyDurationInfo = document.getElementById('storyDurationInfo');
             const linkUrlInput = document.getElementById('link_url');
@@ -415,24 +416,22 @@
             // Function to apply rules for media type, including file input visibility and 'accept' attribute
             function applyMediaTypeRules(currentMediaType) {
                 // Reset file input state and required attributes for media/link
-                mediaFilesGroup.style.display = 'none';
-                mediaFilesInput.removeAttribute('required');
-                mediaFilesInput.value = ''; // Clear selected file when media type changes
-                mediaFilesInput.setAttribute('accept', ''); // Clear accept attribute initially
-                linkUrlInput.removeAttribute('required'); // Always clear required on link_url initially
+                mediaFilesGroup.style.display = 'block';
+                mediaFilesInput.removeAttribute('accept');
+                linkUrlInput.removeAttribute('required');
 
                 // Logic based on the selected media type
                 if (currentMediaType === 'text') {
                     mediaFilesGroup.style.display = 'none';
+                    mediaFilesInput.removeAttribute('required');
+                    linkUrlInput.removeAttribute('required'); // Link is optional for text
                 } else if (ACCEPT_TYPES[currentMediaType]) {
                     mediaFilesGroup.style.display = 'block';
                     mediaFilesInput.setAttribute('accept', ACCEPT_TYPES[currentMediaType]);
+                    // No 'required' attribute here, handled by onsubmit validation
                 } else {
                     console.warn('Unknown or unhandled media type selected:', currentMediaType);
                 }
-                
-                // The linkUrlGroup visibility is now handled by updateVisibilityAndStates
-                // based on post_type, not solely by media_type
             }
 
 
@@ -441,10 +440,6 @@
                 let selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
 
                 // --- GLOBAL RESET & INITIAL VISIBILITY ---
-                radioRegularPost.disabled = false;
-                radioStory.disabled = false;
-                
-                // Re-show all media type labels and re-enable radios
                 mediaTypeRadios.forEach(radio => radio.disabled = false);
                 mediaTypeTextLabel.style.display = 'inline-flex';
                 mediaTypeImageLabel.style.display = 'inline-flex';
@@ -452,17 +447,18 @@
                 mediaTypeAudioLabel.style.display = 'inline-flex';
                 mediaTypeDocumentLabel.style.display = 'inline-flex';
 
-                mediaTypeGroup.style.display = 'block'; // Ensure media type group is visible
-                displayOnGroup.style.display = 'block'; // Ensure display on group is visible
-                linkUrlGroup.style.display = 'block'; // Assume visible by default, then hide if necessary
-                
-                // Reset required attributes for main inputs
-                titleInput.setAttribute('required', 'required'); // Title required by default for regular posts
-                contentInput.removeAttribute('required'); // Content is not always required initially, handled by final validation.
+                mediaTypeGroup.style.display = 'block';
+                displayOnGroup.style.display = 'block';
+                linkUrlGroup.style.display = 'block';
+
+                titleInput.setAttribute('required', 'required');
+                contentInput.removeAttribute('required');
 
                 postDurationInfo.classList.add('hidden');
                 storyDurationInfo.classList.add('hidden');
-                mediaTypeHint.textContent = "Select 'Text' for content without files. For other types, you must upload a file. 'Study Hub' posts automatically become 'Document' type.";
+
+                // Reset hints
+                mediaTypeHint.textContent = "Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.";
 
 
                 // Re-enable all display_on checkboxes for admins, handle display for non-admins
@@ -478,42 +474,26 @@
 
                 // --- LOGIC BASED ON POST TYPE ---
                 if (selectedPostType === 'story') {
-                    displayOnGroup.style.display = 'none'; // Hide display on for stories
-                    titleInput.removeAttribute('required'); // Title not strictly required for stories, but caption (content) is.
-                    linkUrlGroup.style.display = 'none'; // <<<--- HIDE URL FOR STORIES
-                    linkUrlInput.value = ''; // Clear any pre-filled URL when switching to story
-                    linkUrlInput.removeAttribute('required'); // Ensure it's not required for stories
+                    displayOnGroup.style.display = 'none';
+                    titleInput.removeAttribute('required');
+                    storyDurationInfo.classList.remove('hidden');
 
-                    storyDurationInfo.classList.remove('hidden'); // Show story duration
-                    mediaTypeHint.textContent = "Stories only support Images, Videos, or Text content (with optional links). Documents and Audio are not allowed.";
-
-
-                    // Disable and uncheck all display_on checkboxes if they exist (for admin only here)
-                    document.querySelectorAll('#displayOnGroup input[type="checkbox"]').forEach(cb => {
-                        cb.disabled = true;
-                        cb.checked = false;
-                    });
-
-                    // For stories, allow text, image, video. Hide document and audio.
                     mediaTypeDocumentLabel.style.display = 'none';
                     mediaTypeDocument.disabled = true;
                     mediaTypeAudioLabel.style.display = 'none';
                     mediaTypeAudio.disabled = true;
 
-                    // If document or audio was selected, switch to text (default for stories)
+                    // If document or audio was selected, switch to text
                     if (selectedMediaType === 'document' || selectedMediaType === 'audio') {
-                        mediaTypeText.checked = true; // Default to text if an invalid media type was selected for story
-                        selectedMediaType = 'text'; // Update the variable too
+                        mediaTypeText.checked = true;
+                        selectedMediaType = 'text';
                     }
 
                 } else { // regular_post
-                    postDurationInfo.classList.remove('hidden'); // Show regular post duration
-                    linkUrlGroup.style.display = 'block'; // Show URL for regular posts
-
+                    postDurationInfo.classList.remove('hidden');
 
                     // --- LOGIC BASED ON DISPLAY_ON CHECKBOXES FOR REGULAR POSTS ---
                     if (studyHubCheckbox && studyHubCheckbox.checked) {
-                        // If Study Hub is checked, disable and uncheck School Gist and School News (if they exist for admin)
                         if (schoolGistCheckbox) {
                             schoolGistCheckbox.disabled = true;
                             schoolGistCheckbox.checked = false;
@@ -523,33 +503,21 @@
                             schoolNewsCheckbox.checked = false;
                         }
 
-                        mediaTypeGroup.style.display = 'none'; // Hide media type selection for Study Hub
-                        mediaTypeDocument.checked = true; // Automatically set media type to document
-                        selectedMediaType = 'document'; // Update selectedMediaType
+                        mediaTypeGroup.style.display = 'none';
+                        mediaTypeDocument.checked = true;
+                        selectedMediaType = 'document';
                         mediaTypeHint.textContent = "For Study Hub, only Document type is allowed. You must upload a document or material file.";
-
-                        // Disable all other media type radios
-                        mediaTypeRadios.forEach(radio => {
-                            if (radio.value !== 'document') {
-                                radio.disabled = true;
-                            }
-                        });
-
-                    } else { // School Gist or School News (or neither selected yet, but it's a regular post)
-                        // Re-enable display_on checkboxes if they were disabled by previous logic
+                    } else {
                         if (studyHubCheckbox) studyHubCheckbox.disabled = false;
                         if (schoolGistCheckbox) schoolGistCheckbox.disabled = false;
                         if (schoolNewsCheckbox) schoolNewsCheckbox.disabled = false;
 
-                        mediaTypeHint.textContent = "For Regular Posts (School Gist/News), only Image, Video, or Text content (with optional links) is generally accepted. Audio and Document are not allowed.";
-
-                        // For regular posts (Gist/News), hide audio and document options
                         mediaTypeAudioLabel.style.display = 'none';
                         mediaTypeAudio.disabled = true;
                         mediaTypeDocumentLabel.style.display = 'none';
                         mediaTypeDocument.disabled = true;
 
-                        // If audio or document was selected, switch to text (default for regular posts)
+                        // If audio or document was selected, switch to text
                         if (selectedMediaType === 'audio' || selectedMediaType === 'document') {
                             mediaTypeText.checked = true;
                             selectedMediaType = 'text';
@@ -562,22 +530,71 @@
 
             } // End of updateVisibilityAndStates function
 
+            // Function for final client-side validation before submission
+            function validateRequiredFields() {
+                const currentPostType = document.querySelector('input[name="post_type"]:checked').value;
+                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
+                const formTitle = titleInput.value.trim();
+                const formContent = contentInput.value.trim();
+                const formLink = linkUrlInput.value.trim();
+                const formFileSelected = mediaFilesInput.files.length > 0;
+                const isStudyHubSelected = studyHubCheckbox && studyHubCheckbox.checked && USER_IS_ADMIN;
+
+                // Rule 1: Validate title for regular posts
+                if (currentPostType === 'regular_post' && formTitle === '') {
+                    alert('Please enter a title for your regular post.');
+                    titleInput.focus();
+                    return false;
+                }
+                
+                // Rule 2: Validate Study Hub requirements
+                if (isStudyHubSelected) {
+                    if (!formFileSelected) {
+                        alert('For Study Hub materials, you must upload a document or media file.');
+                        mediaFilesInput.focus();
+                        return false;
+                    }
+                    if (formContent === '') {
+                        alert('Please provide a description for your Study Hub material.');
+                        contentInput.focus();
+                        return false;
+                    }
+                }
+
+                // Rule 3: Validate Story content requirements
+                if (currentPostType === 'story') {
+                    if (!formContent && !formFileSelected) {
+                        alert('For a story, please provide a caption or upload an image/video.');
+                        contentInput.focus();
+                        return false;
+                    }
+                }
+
+                // Rule 4: Validate file OR link for non-text posts
+                if (currentMediaType !== 'text' && !isStudyHubSelected) {
+                    if (!formFileSelected && !formLink) {
+                        alert('You must either upload a file or provide a link for this media type.');
+                        mediaFilesInput.focus();
+                        return false;
+                    }
+                }
+
+                return true;
+            }
 
             // Initial call to set up the form based on default/pre-filled values
             updateVisibilityAndStates();
 
-            // Event Listeners for Post Type
+            // Event Listeners
             radioRegularPost.addEventListener('change', updateVisibilityAndStates);
             radioStory.addEventListener('change', updateVisibilityAndStates);
 
-            // Event Listeners for Media Type (if media type group is visible)
             mediaTypeRadios.forEach(radio => {
                 radio.addEventListener('change', function() {
                     applyMediaTypeRules(this.value);
                 });
             });
 
-            // Event Listener for Study Hub checkbox (if it exists)
             if (studyHubCheckbox) {
                 studyHubCheckbox.addEventListener('change', updateVisibilityAndStates);
             }
@@ -593,111 +610,12 @@
                 }
             });
 
-
             // Final validation before form submission (client-side)
-            document.querySelector('form').onsubmit = function(event) {
-                const currentPostType = document.querySelector('input[name="post_type"]:checked').value;
-                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
-                const formTitle = titleInput.value.trim();
-                const formContent = contentInput.value.trim();
-                const formLink = linkUrlInput.value.trim();
-                const formFileSelected = mediaFilesInput.files.length > 0;
-
-                // Validate title for regular posts
-                if (currentPostType === 'regular_post' && formTitle === '') {
-                    alert('Please enter a title for your regular post.');
-                    titleInput.focus();
+            form.addEventListener('submit', function(event) {
+                if (!validateRequiredFields()) {
                     event.preventDefault();
-                    return false;
                 }
-
-                const isStudyHubSelected = studyHubCheckbox && studyHubCheckbox.checked && USER_IS_ADMIN;
-
-                if (isStudyHubSelected) {
-                    // Study Hub MUST have a file AND content
-                    if (!formFileSelected) {
-                        alert('For Study Hub materials, you must upload a document or media file.');
-                        mediaFilesInput.focus();
-                        event.preventDefault();
-                        return false;
-                    }
-                    if (formContent === '') {
-                        alert('Please provide a description for your Study Hub material.');
-                        contentInput.focus();
-                        event.preventDefault();
-                        return false;
-                    }
-                } else if (currentPostType === 'story') {
-                    // Stories require content OR an uploaded file. Link is optional, but the field is hidden.
-                    if (!formContent && !formFileSelected) { // Removed formLink check here for strict validation of visible fields
-                        alert('For a story, please provide a caption or upload an image/video.');
-                        // Prioritize content input if no file is provided
-                        if (!formFileSelected) {
-                            contentInput.focus();
-                        } else {
-                            mediaFilesInput.focus();
-                        }
-                        event.preventDefault();
-                        return false;
-                    }
-                    // For stories, if a file is uploaded, ensure it's image or video
-                    if (formFileSelected) {
-                        const fileType = mediaFilesInput.files[0].type;
-                        if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
-                            alert('Stories only support image or video uploads.');
-                            mediaFilesInput.value = '';
-                            event.preventDefault();
-                            return false;
-                        }
-                    }
-
-                } else { // Regular Post (School Gist/News)
-                    // Regular posts require content, a link, OR an uploaded file.
-                    if (!formContent && !formLink && !formFileSelected) {
-                        alert('For a regular post, please provide content, a link, or upload media.');
-                        // Prioritize content input if nothing else is provided
-                        if (!formLink && !formFileSelected) {
-                            contentInput.focus();
-                        } else if (!formContent && !formFileSelected) {
-                            linkUrlInput.focus();
-                        } else if (!formContent && !formLink) {
-                            mediaFilesInput.focus();
-                        }
-                        event.preventDefault();
-                        return false;
-                    }
-
-                    // For regular posts, if it's not a text post, and no file is uploaded, and no link is provided, prompt the user.
-                    if (currentMediaType !== 'text' && !formFileSelected && !formLink) {
-                        alert(`Please upload a file or provide a link for the selected media type (${currentMediaType}).`);
-                        // Focus on file input first, then link if file is not an option or already filled.
-                        mediaFilesInput.focus();
-                        event.preventDefault();
-                        return false;
-                    }
-                }
-
-                // If a file is selected, ensure it's within the size limit (re-check here as well for robustness)
-                if (formFileSelected && mediaFilesInput.files[0].size > MAX_FILE_SIZE) {
-                    alert(`File size exceeds the 50MB limit. Please choose a smaller file. (Current: ${(mediaFilesInput.files[0].size / (1024 * 1024)).toFixed(2)} MB)`);
-                    mediaFilesInput.value = ''; // Clear the selected file
-                    event.preventDefault();
-                    return false;
-                }
-
-                // Validate the `display_on` checkboxes for regular posts if admin
-                if (currentPostType === 'regular_post' && USER_IS_ADMIN) {
-                    const selectedDisplayOptions = document.querySelectorAll('#displayOnGroup input[type="checkbox"]:checked');
-                    if (selectedDisplayOptions.length === 0) {
-                        alert('Please select at least one page to display the post on (School Gist, School News, or Study Hub).');
-                        event.preventDefault();
-                        return false;
-                    }
-                }
-                
-                return true; // Allow form submission
-            };
-
+            });
         });
     </script>
 </body>
