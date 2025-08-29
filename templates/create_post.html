@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create New Post/Material</title>
+    <title>Create New Post</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +38,7 @@
             text-align: center;
             box-shadow: var(--box-shadow);
             position: relative;
-            z-index: 10; /* Ensure header is above other content */
+            z-index: 10;
         }
 
         .header h1 {
@@ -58,25 +58,24 @@
         }
 
         .header-button {
-            background-color: var(--accent-color); /* Changed to accent-color for contrast */
-            color: var(--white-text); /* Force text to be white */
+            background-color: var(--accent-color);
+            color: var(--white-text);
             padding: 10px 15px;
             border-radius: var(--border-radius);
             text-decoration: none;
             font-weight: 600;
             transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: inline-flex; /* To align icon and text */
-            align-items: center; /* To vertically align icon and text */
-            gap: 5px; /* Space between icon and text */
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .header-button:hover {
-            background-color: #004d2b; /* Slightly darker accent on hover */
+            background-color: #004d2b;
             transform: translateY(-2px);
         }
 
-        /* Ensure icons and text inside header-button are white */
         .header-button i,
         .header-button span {
             color: var(--white-text);
@@ -128,7 +127,7 @@
         .form-group input[type="text"],
         .form-group textarea,
         .form-group select,
-        .form-group input[type="file"] { /* Added file input styling */
+        .form-group input[type="file"] {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border-color);
@@ -140,7 +139,7 @@
         .form-group input[type="text"]:focus,
         .form-group textarea:focus,
         .form-group select:focus,
-        .form-group input[type="file"]:focus { /* Added file input focus style */
+        .form-group input[type="file"]:focus {
             border-color: var(--secondary-color);
             outline: none;
             box-shadow: 0 0 0 2px rgba(253, 184, 19, 0.2);
@@ -256,7 +255,7 @@
                 <i class="fas fa-user"></i> <span>Profile</span>
             </a>
         </div>
-        <h1>Create New Post / Material</h1>
+        <h1>Create New Post</h1>
     </div>
 
     <div class="container-wrapper">
@@ -275,137 +274,58 @@
         <div class="form-container">
             <form action="{{ url_for('create_post') }}" method="POST" enctype="multipart/form-data" id="create-post-form">
                 <div class="form-group">
-                    <label for="post_type">Choose Post Type:</label>
-                    <div class="radio-group flex flex-wrap gap-4">
-                        <label>
-                            <input type="radio" name="post_type" value="regular_post" id="radioRegularPost" {% if post_data.post_type == 'regular_post' or not post_data.post_type %}checked{% endif %}> Regular Post
-                        </label>
-                        <label>
-                            <input type="radio" name="post_type" value="story" id="radioStory" {% if post_data.post_type == 'story' %}checked{% endif %}> Story
-                        </label>
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">
-                        <span id="postDurationInfo" {% if post_data.post_type == 'story' %}class="hidden"{% endif %}>Regular Posts last 48 hours.</span>
-                        <span id="storyDurationInfo" {% if post_data.post_type != 'story' %}class="hidden"{% endif %}>Stories last 24 hours.</span>
-                    </p>
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required value="{{ post_data.title or '' }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="title">Title (Max 20 words):</label>
-                    <input type="text" id="title" name="title" required value="{{ post_data.title or '' }}" maxlength="100">
+                    <label for="content">Content / Description:</label>
+                    <textarea id="content" name="content" rows="6" placeholder="Enter post content or a description"></textarea>
                 </div>
-
-                <div class="form-group">
-                    <label for="content">Content (Max 200 words):</label>
-                    <textarea id="content" name="content" rows="6" placeholder="Enter post content or material description" maxlength="1200">{{ post_data.content or '' }}</textarea>
-                </div>
-
-                <div class="form-group" id="displayOnGroup">
-                    <label>Display On:</label>
-                    <div class="checkbox-group flex flex-wrap gap-4">
-                        {% if user_is_admin %}
-                        <label id="schoolGistOption">
-                            <input type="checkbox" name="display_on" value="School Gist" id="schoolGistCheckbox" {% if 'School Gist' in post_data.display_on %}checked{% endif %}>
-                            School Gist
-                        </label>
-                        <label id="schoolNewsOption">
-                            <input type="checkbox" name="display_on" value="School News" id="schoolNewsCheckbox" {% if 'School News' in post_data.display_on %}checked{% endif %}>
-                            School News
-                        </label>
-                        <label id="studyHubOption">
-                            <input type="checkbox" name="display_on" value="Study Hub" id="studyHubCheckbox" {% if 'Study Hub' in post_data.display_on %}checked{% endif %}>
-                            Study Hub (Study Material)
-                        </label>
-                        {% else %}
-                        <input type="hidden" name="display_on" value="School Gist">
-                        <p class="text-sm text-gray-500 mt-2">
-                            This post will be displayed on **School Gist**.
-                        </p>
-                        {% endif %}
-                    </div>
-                </div>
-
+                
                 <div class="form-group" id="mediaTypeGroup">
                     <label>Media Type:</label>
                     <div class="radio-group flex flex-wrap gap-4">
                         <label id="mediaTypeTextLabel">
-                            <input type="radio" name="media_type" value="text" id="mediaTypeText" {% if post_data.media_type == 'text' or not post_data.media_type %}checked{% endif %}> Text
+                            <input type="radio" name="media_type" value="text" id="mediaTypeText" checked> Text
                         </label>
                         <label id="mediaTypeImageLabel">
-                            <input type="radio" name="media_type" value="image" id="mediaTypeImage" {% if post_data.media_type == 'image' %}checked{% endif %}> Image
+                            <input type="radio" name="media_type" value="image" id="mediaTypeImage"> Image
                         </label>
                         <label id="mediaTypeVideoLabel">
-                            <input type="radio" name="media_type" value="video" id="mediaTypeVideo" {% if post_data.media_type == 'video' %}checked{% endif %}> Video
-                        </label>
-                        <label id="mediaTypeAudioLabel">
-                            <input type="radio" name="media_type" value="audio" id="mediaTypeAudio" {% if post_data.media_type == 'audio' %}checked{% endif %}> Audio
-                        </label>
-                        <label id="mediaTypeDocumentLabel">
-                            <input type="radio" name="media_type" value="document" id="mediaTypeDocument" {% if post_data.media_type == 'document' %}checked{% endif %}> Document
+                            <input type="radio" name="media_type" value="video" id="mediaTypeVideo"> Video
                         </label>
                     </div>
-                    <p class="text-sm text-gray-500 mt-2" id="mediaTypeHint">
-                        Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.
-                    </p>
                 </div>
 
+                <div class="form-group" id="mediaFilesGroup" style="display: none;">
+                    <label for="media_files">Upload Media (Max 50MB):</label>
+                    <input type="file" id="media_files" name="media_files" accept="">
+                    <p class="text-sm text-gray-500 mt-2">Allowed types vary by media type selection. (Images: png, jpg, jpeg, gif; Videos: mp4, mov)</p>
+                </div>
+                
                 <div class="form-group" id="linkUrlGroup">
                     <label for="link_url">Paste Link URL (optional):</label>
-                    <input type="text" id="link_url" name="link_url" placeholder="https://www.example.com/your-link" value="{{ post_data.link_url or '' }}">
-                    <p class="text-sm text-gray-500 mt-2">If you provide a URL and no media file for media types (Image, Video, Audio, Document), this post will be considered a 'Link' type with the selected media type's context.</p>
+                    <input type="text" id="link_url" name="link_url" placeholder="https://www.example.com/your-link">
+                    <p class="text-sm text-gray-500 mt-2">If you provide a URL and no media file for media types (Image, Video), this post will be considered a 'Link' type.</p>
                 </div>
 
-                <div class="form-group" id="mediaFilesGroup">
-                    <label for="media_files">Upload Media/File (Max 50MB):</label>
-                    <input type="file" id="media_files" name="media_files" accept="">
-                    <p class="text-sm text-gray-500 mt-2">Allowed types vary by media type selection. All downloadable files will have "SCHOMART" watermark applied to them.</p>
-                </div>
-
-                <button type="submit" class="submit-button">Create Post / Upload Material</button>
+                <button type="submit" class="submit-button">Create Post</button>
             </form>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const radioRegularPost = document.getElementById('radioRegularPost');
-            const radioStory = document.getElementById('radioStory');
-            const displayOnGroup = document.getElementById('displayOnGroup');
-            const mediaTypeGroup = document.getElementById('mediaTypeGroup');
-            const form = document.getElementById('create-post-form');
-
-            // Conditionally rendered elements
-            const studyHubCheckbox = document.getElementById('studyHubCheckbox');
-            const schoolGistCheckbox = document.getElementById('schoolGistCheckbox');
-            const schoolNewsCheckbox = document.getElementById('schoolNewsCheckbox');
-
+            const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
             const mediaFilesGroup = document.getElementById('mediaFilesGroup');
             const mediaFilesInput = document.getElementById('media_files');
             const titleInput = document.getElementById('title');
             const contentInput = document.getElementById('content');
-            const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
-            const mediaTypeText = document.getElementById('mediaTypeText');
-            const mediaTypeImage = document.getElementById('mediaTypeImage');
-            const mediaTypeVideo = document.getElementById('mediaTypeVideo');
-            const mediaTypeAudio = document.getElementById('mediaTypeAudio');
-            const mediaTypeDocument = document.getElementById('mediaTypeDocument');
-
-            const mediaTypeTextLabel = document.getElementById('mediaTypeTextLabel');
-            const mediaTypeImageLabel = document.getElementById('mediaTypeImageLabel');
-            const mediaTypeVideoLabel = document.getElementById('mediaTypeVideoLabel');
-            const mediaTypeAudioLabel = document.getElementById('mediaTypeAudioLabel');
-            const mediaTypeDocumentLabel = document.getElementById('mediaTypeDocumentLabel');
-
-            const postDurationInfo = document.getElementById('postDurationInfo');
-            const storyDurationInfo = document.getElementById('storyDurationInfo');
             const linkUrlInput = document.getElementById('link_url');
-            const linkUrlGroup = document.getElementById('linkUrlGroup');
-            const mediaTypeHint = document.getElementById('mediaTypeHint');
-
-            const USER_IS_ADMIN = {{ 'true' if user_is_admin else 'false' }};
+            const form = document.getElementById('create-post-form');
             const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
-            // Define accepted file types for each media type
             const ACCEPT_TYPES = {
                 'image': 'image/*',
                 'video': 'video/*',
@@ -413,191 +333,23 @@
                 'document': 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.document,text/plain'
             };
 
-            // Function to apply rules for media type, including file input visibility and 'accept' attribute
-            function applyMediaTypeRules(currentMediaType) {
-                // Reset file input state and required attributes for media/link
-                mediaFilesGroup.style.display = 'block';
-                mediaFilesInput.removeAttribute('accept');
-                linkUrlInput.removeAttribute('required');
-
-                // Logic based on the selected media type
-                if (currentMediaType === 'text') {
+            function updateMediaFieldVisibility() {
+                const selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
+                if (selectedMediaType === 'text') {
                     mediaFilesGroup.style.display = 'none';
-                    mediaFilesInput.removeAttribute('required');
-                    linkUrlInput.removeAttribute('required'); // Link is optional for text
-                } else if (ACCEPT_TYPES[currentMediaType]) {
-                    mediaFilesGroup.style.display = 'block';
-                    mediaFilesInput.setAttribute('accept', ACCEPT_TYPES[currentMediaType]);
-                    // No 'required' attribute here, handled by onsubmit validation
+                    mediaFilesInput.removeAttribute('accept');
                 } else {
-                    console.warn('Unknown or unhandled media type selected:', currentMediaType);
+                    mediaFilesGroup.style.display = 'block';
+                    mediaFilesInput.setAttribute('accept', ACCEPT_TYPES[selectedMediaType]);
                 }
             }
-
-
-            function updateVisibilityAndStates() {
-                const selectedPostType = document.querySelector('input[name="post_type"]:checked').value;
-                let selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
-
-                // --- GLOBAL RESET & INITIAL VISIBILITY ---
-                mediaTypeRadios.forEach(radio => radio.disabled = false);
-                mediaTypeTextLabel.style.display = 'inline-flex';
-                mediaTypeImageLabel.style.display = 'inline-flex';
-                mediaTypeVideoLabel.style.display = 'inline-flex';
-                mediaTypeAudioLabel.style.display = 'inline-flex';
-                mediaTypeDocumentLabel.style.display = 'inline-flex';
-
-                mediaTypeGroup.style.display = 'block';
-                displayOnGroup.style.display = 'block';
-                linkUrlGroup.style.display = 'block';
-
-                titleInput.setAttribute('required', 'required');
-                contentInput.removeAttribute('required');
-
-                postDurationInfo.classList.add('hidden');
-                storyDurationInfo.classList.add('hidden');
-
-                // Reset hints
-                mediaTypeHint.textContent = "Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.";
-
-
-                // Re-enable all display_on checkboxes for admins, handle display for non-admins
-                if (schoolGistCheckbox) schoolGistCheckbox.disabled = false;
-                if (schoolNewsCheckbox) {
-                    schoolNewsCheckbox.disabled = false;
-                    schoolNewsCheckbox.closest('label').style.display = USER_IS_ADMIN ? 'inline-flex' : 'none';
-                }
-                if (studyHubCheckbox) {
-                    studyHubCheckbox.disabled = false;
-                    studyHubCheckbox.closest('label').style.display = USER_IS_ADMIN ? 'inline-flex' : 'none';
-                }
-
-                // --- LOGIC BASED ON POST TYPE ---
-                if (selectedPostType === 'story') {
-                    displayOnGroup.style.display = 'none';
-                    titleInput.removeAttribute('required');
-                    storyDurationInfo.classList.remove('hidden');
-
-                    mediaTypeDocumentLabel.style.display = 'none';
-                    mediaTypeDocument.disabled = true;
-                    mediaTypeAudioLabel.style.display = 'none';
-                    mediaTypeAudio.disabled = true;
-
-                    // If document or audio was selected, switch to text
-                    if (selectedMediaType === 'document' || selectedMediaType === 'audio') {
-                        mediaTypeText.checked = true;
-                        selectedMediaType = 'text';
-                    }
-
-                } else { // regular_post
-                    postDurationInfo.classList.remove('hidden');
-
-                    // --- LOGIC BASED ON DISPLAY_ON CHECKBOXES FOR REGULAR POSTS ---
-                    if (studyHubCheckbox && studyHubCheckbox.checked) {
-                        if (schoolGistCheckbox) {
-                            schoolGistCheckbox.disabled = true;
-                            schoolGistCheckbox.checked = false;
-                        }
-                        if (schoolNewsCheckbox) {
-                            schoolNewsCheckbox.disabled = true;
-                            schoolNewsCheckbox.checked = false;
-                        }
-
-                        mediaTypeGroup.style.display = 'none';
-                        mediaTypeDocument.checked = true;
-                        selectedMediaType = 'document';
-                        mediaTypeHint.textContent = "For Study Hub, only Document type is allowed. You must upload a document or material file.";
-                    } else {
-                        if (studyHubCheckbox) studyHubCheckbox.disabled = false;
-                        if (schoolGistCheckbox) schoolGistCheckbox.disabled = false;
-                        if (schoolNewsCheckbox) schoolNewsCheckbox.disabled = false;
-
-                        mediaTypeAudioLabel.style.display = 'none';
-                        mediaTypeAudio.disabled = true;
-                        mediaTypeDocumentLabel.style.display = 'none';
-                        mediaTypeDocument.disabled = true;
-
-                        // If audio or document was selected, switch to text
-                        if (selectedMediaType === 'audio' || selectedMediaType === 'document') {
-                            mediaTypeText.checked = true;
-                            selectedMediaType = 'text';
-                        }
-                    }
-                }
-
-                // --- Apply media type rules AFTER all post type and display_on logic ---
-                applyMediaTypeRules(selectedMediaType);
-
-            } // End of updateVisibilityAndStates function
-
-            // Function for final client-side validation before submission
-            function validateRequiredFields() {
-                const currentPostType = document.querySelector('input[name="post_type"]:checked').value;
-                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
-                const formTitle = titleInput.value.trim();
-                const formContent = contentInput.value.trim();
-                const formLink = linkUrlInput.value.trim();
-                const formFileSelected = mediaFilesInput.files.length > 0;
-                const isStudyHubSelected = studyHubCheckbox && studyHubCheckbox.checked && USER_IS_ADMIN;
-
-                // Rule 1: Validate title for regular posts
-                if (currentPostType === 'regular_post' && formTitle === '') {
-                    alert('Please enter a title for your regular post.');
-                    titleInput.focus();
-                    return false;
-                }
-                
-                // Rule 2: Validate Study Hub requirements
-                if (isStudyHubSelected) {
-                    if (!formFileSelected) {
-                        alert('For Study Hub materials, you must upload a document or media file.');
-                        mediaFilesInput.focus();
-                        return false;
-                    }
-                    if (formContent === '') {
-                        alert('Please provide a description for your Study Hub material.');
-                        contentInput.focus();
-                        return false;
-                    }
-                }
-
-                // Rule 3: Validate Story content requirements
-                if (currentPostType === 'story') {
-                    if (!formContent && !formFileSelected) {
-                        alert('For a story, please provide a caption or upload an image/video.');
-                        contentInput.focus();
-                        return false;
-                    }
-                }
-
-                // Rule 4: Validate file OR link for non-text posts
-                if (currentMediaType !== 'text' && !isStudyHubSelected) {
-                    if (!formFileSelected && !formLink) {
-                        alert('You must either upload a file or provide a link for this media type.');
-                        mediaFilesInput.focus();
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            // Initial call to set up the form based on default/pre-filled values
-            updateVisibilityAndStates();
-
-            // Event Listeners
-            radioRegularPost.addEventListener('change', updateVisibilityAndStates);
-            radioStory.addEventListener('change', updateVisibilityAndStates);
 
             mediaTypeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    applyMediaTypeRules(this.value);
-                });
+                radio.addEventListener('change', updateMediaFieldVisibility);
             });
 
-            if (studyHubCheckbox) {
-                studyHubCheckbox.addEventListener('change', updateVisibilityAndStates);
-            }
+            // Initial call to set up the form based on default values
+            updateMediaFieldVisibility();
 
             // Client-side file size validation
             mediaFilesInput.addEventListener('change', function() {
@@ -612,8 +364,30 @@
 
             // Final validation before form submission (client-side)
             form.addEventListener('submit', function(event) {
-                if (!validateRequiredFields()) {
+                const formTitle = titleInput.value.trim();
+                const formContent = contentInput.value.trim();
+                const formLink = linkUrlInput.value.trim();
+                const formFileSelected = mediaFilesInput.files.length > 0;
+                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
+
+                if (!formTitle) {
+                    alert('Please enter a title for your post.');
                     event.preventDefault();
+                    titleInput.focus();
+                    return;
+                }
+                
+                if (!formContent && !formFileSelected && !formLink) {
+                    alert('Post must have content, an uploaded file, or a link.');
+                    event.preventDefault();
+                    contentInput.focus();
+                    return;
+                }
+                
+                if (currentMediaType !== 'text' && !formFileSelected && !formLink) {
+                    alert('You must either upload a file or provide a link for the selected media type.');
+                    event.preventDefault();
+                    mediaFilesInput.focus();
                 }
             });
         });
