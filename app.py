@@ -3276,7 +3276,9 @@ def change_phone():
 
 
 
-
+# --------------------------------------------------------------------------
+# HELPER FUNCTIONS
+# --------------------------------------------------------------------------
 
 def get_media_type_from_extension(filename):
     """Determines media type based on file extension."""
@@ -3320,20 +3322,21 @@ def upload_file_to_firebase(file, folder):
 def fetch_posts_for_display(category, search_query):
     """
     Fetches all searchable posts from Firestore for a given category.
-    No pagination is applied as per user's request.
+    Includes the document ID in each post dictionary.
     """
     if db is None:
         return [], 0, "Database connection not established."
 
     try:
         posts_ref = db.collection('posts')
-        # Efficiently query for posts that contain the specified category
         posts_query = posts_ref.where('categories', 'array_contains', category).stream()
-        all_posts = [doc.to_dict() for doc in posts_query]
         
-        # Add document ID to each post
-        for doc in all_posts:
-            doc['id'] = doc.get('id', 'unknown') # Assuming 'id' is already a field
+        all_posts = []
+        for doc in posts_query:
+            post_data = doc.to_dict()
+            # CRITICAL FIX: Add the document ID from the Firestore document object
+            post_data['id'] = doc.id 
+            all_posts.append(post_data)
         
         if search_query:
             search_query_lower = search_query.lower()
@@ -3345,7 +3348,6 @@ def fetch_posts_for_display(category, search_query):
         else:
             filtered_posts = all_posts
         
-        # Sort by post date in descending order
         filtered_posts.sort(key=lambda x: x.get('post_date', datetime.min), reverse=True)
 
         return filtered_posts, len(filtered_posts), None
@@ -3400,15 +3402,12 @@ def create_post():
         author_username = getattr(user, 'username', 'Unknown')
         submitted_external_link_url = request.form.get("link_url", "").strip()
         
-        # All posts are now regular posts and will be displayed on School News
         display_on = ["School News"] 
         
-        # --- VALIDATION ---
         if not title or not title.strip():
             flash("Please enter a title for your post.", "error")
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 400
 
-        # --- MEDIA PROCESSING ---
         media_items_to_save = []
         try:
             media_files = request.files.getlist("media_files")
@@ -3444,9 +3443,7 @@ def create_post():
                 "post_date": datetime.now(),
                 "external_link_url": submitted_external_link_url,
                 "media_items": media_items_to_save,
-                "comments_count": 0,
-                "reactions_breakdown": {},
-                "total_reactions": 0,
+                # Removed 'comments_count' and related fields as requested
             }
 
             posts_ref.add(post_doc)
@@ -3514,9 +3511,6 @@ def delete_post(post_id):
     return redirect(url_for("school_news"))
 
 
-# Note: The `full_post` and `api_school_news` routes are now merged into a single `school_news` page
-# to comply with the single-page display requirement.
-# `view_post` route is kept but modified to use the correct collection.
 @app.route("/posts/<post_id>")
 @login_required
 def view_post(post_id):
@@ -3526,13 +3520,13 @@ def view_post(post_id):
         post_doc = post_ref.get()
 
         if not post_doc.exists:
+            # FIX: Use `redirect` to avoid the TemplateNotFound error
             flash("Sorry, that post was not found.", "error")
-            return render_template("404.html"), 404
+            return redirect(url_for('school_news'))
 
         post_data = post_doc.to_dict()
         post_data['id'] = post_doc.id
 
-        # Render the template with the post data
         return render_template("view_post.html", post=post_data)
 
     except Exception as e:
@@ -3540,9 +3534,9 @@ def view_post(post_id):
         flash("An error occurred while trying to view the post.", "error")
         return redirect(url_for("home"))
 
-# The user-provided `handle_file_uploads` function for `adverts` is not used in this context.
-# We are now using a more direct approach within `create_post` and the `upload_file_to_firebase` helper.
-# The user-provided `display_full_post` is also now replaced by the refined `school_news` and `view_post` routes.
+
+
+
 
 
 
@@ -4482,6 +4476,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
