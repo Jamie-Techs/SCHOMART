@@ -19,25 +19,25 @@
             --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
             --border-radius: 8px;
             --transition-speed: 0.3s ease;
-            --max-content-width: 900px; /* New: Max width for main content */
+            --max-content-width: 900px;
         }
-        
+
         /* --- Base Styles & Reset --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--light-background);
             color: var(--text-color);
             line-height: 1.6;
-            -webkit-font-smoothing: antialiased; /* Smoother font rendering */
-            scroll-behavior: smooth; /* Smooth scrolling for anchor links */
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
         }
-        
+
         /* --- Reusable Container --- */
         .container {
             width: 90%;
@@ -45,7 +45,7 @@
             margin: 20px auto;
             padding: 0 15px;
         }
-        
+
         /* --- Header Section --- */
         .header {
             background-color: var(--primary-color);
@@ -58,7 +58,7 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .header h1 {
             margin: 0;
             font-size: 2.8em;
@@ -67,13 +67,14 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            font-weight: 700; /* Make header text bolder */
+            font-weight: 700;
         }
+
         .header h1 i {
             color: var(--secondary-color);
             font-size: 1em;
         }
-        
+
         .home-button {
             position: absolute;
             left: 20px;
@@ -90,18 +91,19 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle border */
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
+
         .home-button i {
             color: var(--white-text);
         }
-        
+
         .home-button:hover {
             background-color: var(--accent-color);
-            transform: translateY(-50%) scale(1.03); /* Slight scale for hover */
+            transform: translateY(-50%) scale(1.03);
             color: var(--white-text);
         }
-        
+
         /* --- Tab Navigation --- */
         .tab-nav {
             display: flex;
@@ -110,9 +112,9 @@
             background-color: var(--card-background);
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
-            overflow: hidden; /* Ensures rounded corners apply correctly */
+            overflow: hidden;
         }
-        
+
         .tab-nav a {
             flex: 1;
             text-align: center;
@@ -122,36 +124,39 @@
             font-weight: 600;
             font-size: 1.1em;
             transition: all var(--transition-speed);
-            border-bottom: 3px solid transparent; /* Highlight active tab */
+            border-bottom: 3px solid transparent;
             white-space: nowrap;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
+
         .tab-nav a i {
             color: var(--primary-color);
         }
-        
+
         .tab-nav a:hover {
             background-color: var(--light-green-background);
             color: var(--accent-color);
         }
+
         .tab-nav a:hover i {
             color: var(--accent-color);
         }
-        
+
         .tab-nav a.active {
             background-color: var(--primary-color);
             color: var(--white-text);
             border-bottom-color: var(--secondary-color);
             cursor: default;
-            box-shadow: inset 0 -3px 0 var(--secondary-color); /* Stronger active indicator */
+            box-shadow: inset 0 -3px 0 var(--secondary-color);
         }
+
         .tab-nav a.active i {
             color: var(--white-text);
         }
-        
+
         /* --- Search Container --- */
         .search-container {
             margin-bottom: 30px;
@@ -159,9 +164,9 @@
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            align-items: center; /* Align items vertically in center */
+            align-items: center;
         }
-        
+
         .search-container input[type="text"] {
             flex-grow: 1;
             padding: 12px 15px;
@@ -171,13 +176,13 @@
             max-width: 400px;
             transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
         }
-        
+
         .search-container input[type="text"]:focus {
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2);
             outline: none;
         }
-        
+
         .search-container button {
             padding: 12px 20px;
             background-color: var(--primary-color);
@@ -193,22 +198,23 @@
             gap: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .search-container button i {
             color: var(--white-text);
         }
-        
+
         .search-container button:hover {
             background-color: var(--accent-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* More prominent shadow on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
-        
+
         /* --- Posts Styling --- */
         #postsContainer {
             display: grid;
             gap: 25px;
         }
-        
+
         .post {
             background-color: var(--card-background);
             border: 1px solid var(--border-color);
@@ -217,12 +223,12 @@
             box-shadow: var(--box-shadow);
             transition: transform var(--transition-speed), box-shadow var(--transition-speed);
         }
-        
+
         .post:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12); /* Slightly larger shadow on hover */
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
         }
-        
+
         .post h3 {
             margin-bottom: 10px;
             font-size: 1.5em;
@@ -230,74 +236,60 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: 700; /* Bolder post titles */
+            font-weight: 700;
         }
-        .post h3 i {
-            color: var(--primary-color);
-        }
-        
+
         .post h3 a {
             text-decoration: none;
             color: inherit;
             transition: color var(--transition-speed);
         }
-        
+
         .post h3 a:hover {
             color: var(--secondary-color);
         }
-        
+
         .post p {
             margin-bottom: 15px;
             color: #555;
         }
-        .post p .read-more-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: bold;
-            transition: color var(--transition-speed);
-        }
-        .post p .read-more-link:hover {
-            color: var(--secondary-color);
-            text-decoration: underline;
-        }
         
         /* --- Media Specific Styles --- */
         .media-item {
-            margin-top: 15px; /* Space above each media item */
-            margin-bottom: 20px; /* Space below each media item */
+            margin-top: 15px;
+            margin-bottom: 20px;
             text-align: center;
-            background-color: var(--light-background); /* Slight background for media item */
+            background-color: var(--light-background);
             padding: 10px;
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
         }
-        
+
         .media-preview {
             max-width: 100%;
             height: auto;
             border-radius: var(--border-radius);
             display: block;
-            margin: 0 auto; /* Center image/video */
-            object-fit: contain; /* Ensure media fits without cropping */
+            margin: 0 auto;
+            object-fit: contain;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        
+
         video.media-preview, audio.media-preview {
             width: 100%;
-            max-height: 350px; /* Slightly increased max-height for videos/audio */
+            max-height: 350px;
         }
-        
+
         .media-caption {
             font-style: italic;
             color: #666;
             margin-top: 10px;
             font-size: 0.9em;
-            padding: 0 5px; /* Little padding for caption */
+            padding: 0 5px;
         }
-        
-        /* Style for download link for documents */
+
         .document-link {
-            display: inline-flex; /* Changed to inline-flex for better alignment */
+            display: inline-flex;
             background-color: var(--primary-color);
             color: var(--white-text);
             padding: 8px 15px;
@@ -310,15 +302,17 @@
             gap: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .document-link i {
             color: var(--white-text);
         }
+
         .document-link:hover {
             background-color: var(--accent-color);
             color: var(--white-text);
             transform: translateY(-1px);
         }
-        
+
         .post small {
             display: block;
             margin-bottom: 15px;
@@ -327,56 +321,42 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            border-top: 1px dashed var(--border-color); /* Subtle separator */
+            border-top: 1px dashed var(--border-color);
             padding-top: 15px;
             margin-top: 15px;
         }
-        .post small i {
-            color: #777;
-        }
-        
-        
-        .actions {
+
+        /* --- Admin Actions --- */
+        .admin-actions {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            justify-content: flex-end;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid var(--border-color);
-            justify-content: flex-end; /* Align buttons to the right */
         }
-        
-        .actions button, .actions a.button button { /* Corrected selector for anchor wrapping button */
-            background-color: var(--primary-color);
+
+        .delete-btn {
+            background-color: #dc3545; /* Red for delete */
             color: var(--white-text);
-            border: 1px solid var(--primary-color);
+            border: 1px solid #dc3545;
             padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 600;
-            transition: background-color var(--transition-speed), transform var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
             display: inline-flex;
             align-items: center;
             gap: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .actions button i, .actions a.button button i {
-            color: var(--white-text);
-        }
-        
-        .actions button:hover, .actions a.button button:hover {
-            background-color: var(--accent-color);
+
+        .delete-btn:hover {
+            background-color: #c82333;
             transform: translateY(-1px);
-            color: var(--white-text);
-            border-color: var(--accent-color);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
-        .actions a.button { /* Ensure the anchor itself doesn't have default styling */
-            text-decoration: none;
-        }
-        
-        
+
         /* --- Pagination Styling --- */
         .pagination {
             display: flex;
@@ -388,7 +368,7 @@
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
         }
-        
+
         .pagination button {
             padding: 10px 15px;
             border: 1px solid var(--primary-color);
@@ -402,30 +382,33 @@
             align-items: center;
             gap: 5px;
         }
+
         .pagination button i {
             color: var(--white-text);
         }
-        
+
         .pagination button:hover:not(:disabled) {
             background-color: var(--accent-color);
             color: var(--white-text);
             border-color: var(--accent-color);
             transform: translateY(-1px);
         }
+
         .pagination button:hover:not(:disabled) i {
             color: var(--white-text);
         }
-        
+
         .pagination button:disabled {
             background-color: #e0e0e0;
             color: #999;
             cursor: not-allowed;
             border-color: #ccc;
         }
+
         .pagination button:disabled i {
             color: #999;
         }
-        
+
         .pagination span {
             padding: 10px 15px;
             color: var(--text-color);
@@ -433,107 +416,111 @@
             display: flex;
             align-items: center;
         }
-        
-        /* Flash Messages */
+
+        /* Flash Messages & Notifications (Kept for completeness) */
         .flashes {
             list-style: none;
             padding: 0;
             margin: 0;
-            position: relative; /* Changed from absolute to relative, so it pushes content down */
+            position: relative;
             width: 100%;
-            z-index: 999; /* Ensure it's above normal content but below fixed notifications */
+            z-index: 999;
         }
+
         .flashes li {
-            padding: 12px 20px; /* Slightly more padding */
-            margin-bottom: 0; /* No margin-bottom for a continuous bar */
+            padding: 12px 20px;
+            margin-bottom: 0;
             border-radius: 0;
             font-weight: bold;
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
-            border-left: 5px solid; /* Stronger left border for emphasis */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 5px solid;
             font-size: 0.95em;
         }
+
         .flashes li.error {
             background-color: #f8d7da;
             color: #721c24;
-            border-color: #dc3545; /* Specific border color */
+            border-color: #dc3545;
         }
+
         .flashes li.success {
             background-color: #d4edda;
             color: #155724;
             border-color: #28a745;
         }
+
         .flashes li.warning {
             background-color: #fff3cd;
             color: #856404;
             border-color: #ffc107;
         }
+
         .flashes li.info {
             background-color: #d1ecf1;
             color: #0c5460;
             border-color: #17a2b8;
         }
+
         .flashes li i {
             font-size: 1.2em;
-            margin-right: 5px; /* Space between icon and text */
+            margin-right: 5px;
         }
-        
-        /* Custom Notification Styles */
+
         .custom-notification {
             position: fixed;
-            bottom: 20px; /* Changed from top to bottom */
+            bottom: 20px;
             right: 20px;
             padding: 15px 20px;
             border-radius: 8px;
             font-weight: bold;
             z-index: 1000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateY(120%); /* Changed for bottom entry */
+            transform: translateY(120%);
             opacity: 0;
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s ease-out; /* Bouncier entry */
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s ease-out;
             display: flex;
             align-items: center;
             gap: 10px;
-            border-left: 5px solid; /* Added for consistency with flashes */
+            border-left: 5px solid;
         }
-        
+
         .custom-notification.show {
             transform: translateY(0);
             opacity: 1;
         }
-        
+
         .custom-notification.success {
             background-color: #d4edda;
             color: #155724;
             border-color: #28a745;
         }
-        
+
         .custom-notification.error {
             background-color: #f8d7da;
             color: #721c24;
             border-color: #dc3545;
         }
-        
+
         .custom-notification.warning {
             background-color: #fff3cd;
             color: #856404;
             border-color: #ffc107;
         }
-        
+
         .custom-notification.info {
             background-color: #d1ecf1;
             color: #0c5460;
             border-color: #17a2b8;
         }
-        
+
         .notification-icon i {
             font-size: 1.5em;
-            flex-shrink: 0; /* Prevent icon from shrinking */
+            flex-shrink: 0;
         }
-        
-        
+
         /* --- Responsive Adjustments --- */
         @media (max-width: 768px) {
             .header {
@@ -556,13 +543,13 @@
             }
             .search-container {
                 flex-direction: column;
-                align-items: stretch; /* Stretch input and button */
+                align-items: stretch;
             }
             .search-container input[type="text"] {
                 max-width: 100%;
             }
             .search-container button {
-                width: 100%; /* Full width button on smaller screens */
+                width: 100%;
             }
             #postsContainer {
                 gap: 20px;
@@ -576,24 +563,24 @@
             .post p {
                 font-size: 0.95em;
             }
-            .actions {
-                flex-direction: column; /* Stack buttons on smaller screens */
-                align-items: stretch; /* Make them full width */
+            .admin-actions {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .actions button, .actions a.button button {
+            .delete-btn {
                 width: 100%;
             }
             .pagination {
-                flex-wrap: wrap; /* Allow pagination buttons to wrap */
+                flex-wrap: wrap;
                 padding: 10px;
             }
             .pagination button, .pagination span {
-                flex-basis: calc(50% - 5px); /* Two items per row */
+                flex-basis: calc(50% - 5px);
                 text-align: center;
                 justify-content: center;
             }
         }
-        
+
         @media (max-width: 480px) {
             .container {
                 width: 95%;
@@ -602,18 +589,18 @@
             .header h1 {
                 font-size: 1.6em;
                 gap: 6px;
-                padding-right: 60px; /* Make space for home button if it wraps */
+                padding-right: 60px;
                 padding-left: 60px;
             }
             .home-button {
-                position: static; /* Position normally within flow */
+                position: static;
                 transform: none;
-                margin: 10px auto 0; /* Center it below header */
+                margin: 10px auto 0;
                 display: block;
-                width: fit-content; /* Only take necessary width */
+                width: fit-content;
             }
             .header {
-                flex-direction: column; /* Stack header elements */
+                flex-direction: column;
                 padding-bottom: 10px;
             }
             .tab-nav {
@@ -639,73 +626,13 @@
                 font-size: 0.8em;
             }
             .custom-notification {
-                top: auto; /* Remove top property */
-                bottom: 10px; /* Position at the bottom */
+                top: auto;
+                bottom: 10px;
                 right: 10px;
-                left: 10px; /* Occupy full width on small screens */
+                left: 10px;
                 width: auto;
                 padding: 10px 15px;
             }
-        }
-        
-        /* Styles for the post content toggle */
-        .post-content-preview, .post-content-full {
-            margin-bottom: 10px;
-        }
-        
-        .read-more-link, .read-less-link, .post-title-link {
-            color: var(--primary-color); /* Use primary color for links */
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold; /* Make them bold */
-        }
-        
-        .read-more-link:hover, .read-less-link:hover, .post-title-link:hover {
-            text-decoration: underline;
-            color: var(--secondary-color); /* Change color on hover */
-        }
-        
-        .view-all-media-btn {
-            background-color: var(--primary-color); /* Use primary color for view all media */
-            color: var(--white-text);
-            border: 1px solid var(--primary-color);
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-top: 10px;
-            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .view-all-media-btn:hover {
-            background-color: var(--accent-color);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        
-        .download-button {
-            background-color: var(--primary-color); /* Consistent primary color */
-            color: var(--white-text);
-            border: 1px solid var(--primary-color);
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-top: 10px;
-            margin-left: 10px; /* Space from other buttons */
-            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .download-button:hover {
-            background-color: var(--accent-color); /* Consistent hover color */
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
     </style>
 </head>
@@ -754,70 +681,68 @@
         </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('postsContainer');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const prevPageBtn = document.getElementById('prevPage');
-        const nextPageBtn = document.getElementById('nextPage');
-        const currentPageSpan = document.getElementById('currentPage');
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('postsContainer');
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const currentPageSpan = document.getElementById('currentPage');
 
-        let currentPage = 1;
-        let totalPages = 1;
-        const postsPerPage = 10;
+            let currentPage = 1;
+            let totalPages = 1;
+            const postsPerPage = 10;
+            // A simple way to check if the user is an admin. In a real app, this should be done securely on the backend.
+            const isAdmin = {{ g.user.is_admin | tojson }};
 
-        async function fetchAndRenderPosts(query = '', page = 1) {
-            container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
+            async function fetchAndRenderPosts(query = '', page = 1) {
+                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
 
-            const url = new URL('/api/school_news', window.location.origin);
-            url.searchParams.append('page', page);
-            url.searchParams.append('per_page', postsPerPage);
-            if (query) {
-                url.searchParams.append('q', query);
+                const url = new URL('/api/school_news', window.location.origin);
+                url.searchParams.append('page', page);
+                url.searchParams.append('per_page', postsPerPage);
+                if (query) {
+                    url.searchParams.append('q', query);
+                }
+
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
+                        container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
+                        return;
+                    }
+                    const data = await res.json();
+                    renderPosts(data.posts);
+                    updatePagination(data.total_pages, data.page);
+                } catch (error) {
+                    console.error('Error fetching school news:', error);
+                    container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
+                }
             }
 
-            try {
-                const res = await fetch(url);
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
-                    container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
+            function renderPosts(postsToRender) {
+                container.innerHTML = '';
+
+                if (!postsToRender || postsToRender.length === 0) {
+                    container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
                     return;
                 }
-                const data = await res.json();
-                renderPosts(data.posts);
-                updatePagination(data.total_pages, data.page);
-            } catch (error) {
-                console.error('Error fetching school news:', error);
-                container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
-            }
-        }
 
-        function renderPosts(postsToRender) {
-            container.innerHTML = ''; // Clear existing posts
+                postsToRender.forEach(post => {
+                    const div = document.createElement('div');
+                    div.className = 'post';
+                    div.setAttribute('data-post-id', post.id);
 
-            if (!postsToRender || postsToRender.length === 0) {
-                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
-                return;
-            }
+                    let mediaHTML = '';
+                    const postMediaItems = Array.isArray(post.media_items) ? post.media_items : [];
 
-            postsToRender.forEach(post => {
-                const div = document.createElement('div');
-                div.className = 'post';
-                div.setAttribute('data-post-id', post.id);
-
-                let mediaHTML = '';
-                const previewMediaCount = 2; // Show up to 2 media items in the preview
-                // Check if media_items exists and is an array
-                const postMediaItems = Array.isArray(post.media_items) ? post.media_items : [];
-
-                if (postMediaItems.length > 0) {
-                    postMediaItems.slice(0, previewMediaCount).forEach(mediaItem => {
+                    postMediaItems.forEach(mediaItem => {
                         const url = mediaItem.media_path_or_url;
                         const type = mediaItem.media_type;
                         const caption = mediaItem.caption || '';
                         
-                        // Check for valid URL before rendering
                         if (url) {
                             if (type === 'image') {
                                 mediaHTML += `<div class="media-item">
@@ -832,7 +757,12 @@
                                     </video>
                                     ${caption ? `<p class="media-caption">${caption}</p>` : ''}
                                 </div>`;
-                            } else if (type === 'audio') {
+                            }
+                            // The original code had an audio and document section.
+                            // I've removed them based on the prompt's request to only display images and videos.
+                            // If you need to add them back, you can uncomment the original code or use the logic below:
+                            /*
+                            else if (type === 'audio') {
                                 mediaHTML += `<div class="media-item">
                                     <audio controls class="media-preview">
                                         <source src="${url}" type="audio/mpeg">
@@ -849,73 +779,118 @@
                                     </a>
                                 </div>`;
                             }
+                            */
                         }
                     });
+
+                    const deleteBtnHTML = isAdmin ? `<div class="admin-actions"><button class="delete-btn" data-id="${post.id}"><i class="fas fa-trash-alt"></i> Delete Post</button></div>` : '';
+                    
+                    const postContentHTML = `
+                        <h3><a href="/full_post/School News/${post.id}" class="post-title-link">${post.title}</a></h3>
+                        <p class="post-content-full">${post.content}</p>
+                        ${mediaHTML}
+                        <small>
+                            <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.created_at).toLocaleDateString()}
+                        </small>
+                        ${deleteBtnHTML}`;
+
+                    div.innerHTML = postContentHTML;
+                    container.appendChild(div);
+                });
+
+                // Add event listeners for delete buttons
+                if (isAdmin) {
+                    document.querySelectorAll('.delete-btn').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const postId = e.currentTarget.dataset.id;
+                            if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+                                try {
+                                    const response = await fetch(`/api/school_news/${postId}`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        // In a real app, you would include a CSRF token and proper authentication headers
+                                    });
+
+                                    if (response.ok) {
+                                        e.currentTarget.closest('.post').remove();
+                                        showNotification('success', 'Post deleted successfully!');
+                                        // Re-fetch posts to update pagination
+                                        fetchAndRenderPosts(searchInput.value, currentPage);
+                                    } else {
+                                        const errorData = await response.json();
+                                        showNotification('error', `Failed to delete post: ${errorData.message || 'Unknown error.'}`);
+                                    }
+                                } catch (error) {
+                                    console.error('Error deleting post:', error);
+                                    showNotification('error', 'An error occurred while deleting the post.');
+                                }
+                            }
+                        });
+                    });
                 }
-                
-                const postContentHTML = `
-                    <h3>
-                        <a href="/full_post/School News/${post.id}" class="post-title-link">${post.title}</a>
-                    </h3>
-                    <p class="post-content-preview">
-                        ${post.content.length > 250 ? post.content.substring(0, 250) + '...' : post.content}
-                        ${post.content.length > 250 ? `<a href="/full_post/School News/${post.id}" class="read-more-link">Read More</a>` : ''}
-                    </p>
-                    ${mediaHTML}
-                    <small>
-                        <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.post_date).toLocaleDateString()}
-                    </small>
-                    <div class="actions">
-                        <a href="/full_post/School News/${post.id}" class="button">
-                            <button><i class="fas fa-comments"></i> Comments (${post.comments_count})</button>
-                        </a>
-                        <a href="/full_post/School News/${post.id}" class="button">
-                            <button><i class="fas fa-heart"></i> Reactions (${post.reactions_count})</button>
-                        </a>
-                    </div>
-                `;
+            }
 
-                div.innerHTML = postContentHTML;
-                container.appendChild(div);
+            function updatePagination(total, page) {
+                totalPages = total;
+                currentPage = page;
+                currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+
+            function showNotification(type, message) {
+                const existingNotification = document.querySelector('.custom-notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+
+                const notification = document.createElement('div');
+                notification.className = `custom-notification ${type}`;
+                notification.innerHTML = `<span class="notification-icon"><i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i></span> ${message}`;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 500);
+                }, 5000);
+            }
+
+            // Event Listeners
+            searchButton.addEventListener('click', () => {
+                currentPage = 1;
+                fetchAndRenderPosts(searchInput.value, currentPage);
             });
-        }
-        
-        function updatePagination(total_pages, current_page) {
-            currentPage = current_page;
-            totalPages = total_pages;
-            currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
-            prevPageBtn.disabled = currentPage === 1;
-            nextPageBtn.disabled = currentPage >= totalPages;
-        }
 
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                fetchAndRenderPosts(searchInput.value, currentPage - 1);
-            }
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    currentPage = 1;
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    fetchAndRenderPosts(searchInput.value, currentPage);
+                }
+            });
+
+            // Initial fetch
+            fetchAndRenderPosts();
         });
-
-        nextPageBtn.addEventListener('click', () => {
-            if (currentPage < totalPages) {
-                fetchAndRenderPosts(searchInput.value, currentPage + 1);
-            }
-        });
-
-        searchButton.addEventListener('click', () => {
-            currentPage = 1; // Reset to first page on new search
-            fetchAndRenderPosts(searchInput.value, currentPage);
-        });
-
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchButton.click();
-            }
-        });
-
-        // Initial fetch
-        fetchAndRenderPosts();
-    });
-</script>
-
-   
+    </script>
 </body>
 </html>
