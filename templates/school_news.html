@@ -125,7 +125,7 @@
             border-top: 1px solid var(--border-color);
             padding: 15px 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end; /* Align to the right side */
             align-items: center;
         }
         .post-actions .btn {
@@ -144,13 +144,14 @@
         .delete-btn {
             color: #d9534f;
             cursor: pointer;
+            margin-right: auto; /* Push the delete button to the left */
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="header">
         <div class="header-buttons">
-            <a href="/admin/create_post" class="header-button">
+            <a href="{{ url_for('create_post') }}" class="header-button">
                 <i class="fas fa-plus"></i>
                 <span>New Post</span>
             </a>
@@ -218,9 +219,6 @@
                                 </button>
                             </form>
                         {% endif %}
-                        <a href="{{ url_for('view_post', post_id=post.id) }}" class="btn">
-                            <i class="fas fa-comments"></i> Comments ({{ post.comments_count }})
-                        </a>
                     </div>
                 </div>
             {% endfor %}
