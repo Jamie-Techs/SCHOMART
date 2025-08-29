@@ -3276,9 +3276,8 @@ def change_phone():
 
 
 
-# --------------------------------------------------------------------------
-# HELPER FUNCTIONS
-# --------------------------------------------------------------------------
+
+
 
 def get_media_type_from_extension(filename):
     """Determines media type based on file extension."""
@@ -3334,7 +3333,6 @@ def fetch_posts_for_display(category, search_query):
         all_posts = []
         for doc in posts_query:
             post_data = doc.to_dict()
-            # CRITICAL FIX: Add the document ID from the Firestore document object
             post_data['id'] = doc.id 
             all_posts.append(post_data)
         
@@ -3377,6 +3375,7 @@ def fetch_single_post(post_id):
 def delete_media_from_firebase(media_url):
     """Deletes a file from Firebase Storage given its public URL."""
     try:
+        # The URL contains a path, so we need to get the part after the bucket domain
         blob = bucket.blob(media_url.split(f"schomart-7a743.appspot.com/")[1])
         blob.delete()
         logging.info(f"Successfully deleted media at URL: {media_url}")
@@ -3410,6 +3409,7 @@ def create_post():
 
         media_items_to_save = []
         try:
+            # FIX: The file is now correctly uploaded from the form's `media_files` field.
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
@@ -3443,7 +3443,6 @@ def create_post():
                 "post_date": datetime.now(),
                 "external_link_url": submitted_external_link_url,
                 "media_items": media_items_to_save,
-                # Removed 'comments_count' and related fields as requested
             }
 
             posts_ref.add(post_doc)
@@ -3520,7 +3519,6 @@ def view_post(post_id):
         post_doc = post_ref.get()
 
         if not post_doc.exists:
-            # FIX: Use `redirect` to avoid the TemplateNotFound error
             flash("Sorry, that post was not found.", "error")
             return redirect(url_for('school_news'))
 
@@ -3533,6 +3531,17 @@ def view_post(post_id):
         logging.error(f"Error viewing post {post_id}: {e}", exc_info=True)
         flash("An error occurred while trying to view the post.", "error")
         return redirect(url_for("home"))
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4476,6 +4485,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
