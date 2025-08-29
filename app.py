@@ -3281,12 +3281,9 @@ def change_phone():
 
 
 
-
-
-
-
-
-
+# --------------------------------------------------------------------------
+# HELPER FUNCTIONS (UNCHANGED)
+# --------------------------------------------------------------------------
 def get_media_type_from_extension(filename):
     """Determines media type based on file extension."""
     if not filename:
@@ -3302,42 +3299,18 @@ def get_media_type_from_extension(filename):
         return 'document'
     return 'unknown'
 
-
-# --------------------------------------------------------------------------
-# FIX: DEFINE THE MISSING `fetch_posts_for_display` FUNCTION
-# --------------------------------------------------------------------------
 def fetch_posts_for_display(category, search_query, page, per_page, current_user_id=None):
     """
     Fetches paginated and searchable posts from Firestore.
-    
-    Args:
-        category (str): The category of posts to fetch (e.g., "School News").
-        search_query (str): The search query string.
-        page (int): The current page number for pagination.
-        per_page (int): The number of posts per page.
-        current_user_id (str): The ID of the currently logged-in user.
-    
-    Returns:
-        A tuple containing (list_of_posts, total_posts, error_message).
     """
     if db is None:
         return [], 0, "Database connection not established."
 
     try:
-        # Initial query for the specified category
         posts_ref = db.collection('posts').where('categories', 'array_contains', category)
-        
-        # Apply search filter if a query is provided
-        # Firestore does not support case-insensitive or partial-string searches on its own.
-        # The best practice is to handle this client-side or use a dedicated search service.
-        # For this example, we will filter after fetching a reasonable amount of data.
-        # A full text search solution is better for large datasets (e.g., Algolia, Elasticsearch).
-        
-        # Count total posts for pagination
         total_posts_query = posts_ref.stream()
         all_posts = [doc.to_dict() for doc in total_posts_query]
         
-        # Filter posts if a search query is provided
         if search_query:
             search_query_lower = search_query.lower()
             filtered_posts = [
@@ -3348,44 +3321,34 @@ def fetch_posts_for_display(category, search_query, page, per_page, current_user
         else:
             filtered_posts = all_posts
         
-        # Sort posts by post_date in descending order
         filtered_posts.sort(key=lambda x: x.get('post_date', datetime.min), reverse=True)
 
-        # Implement manual pagination on the filtered results
         start_index = (page - 1) * per_page
         end_index = start_index + per_page
         paginated_posts = filtered_posts[start_index:end_index]
         
         # Add the document ID to each post
-        # Note: This is an inefficient way to handle pagination with Firestore.
-        # A more scalable solution involves using start_at/end_at cursors.
-        # However, for a small to medium-sized application, this works with manual search filtering.
         final_posts = []
         for doc_data in paginated_posts:
-            # Re-fetch the document to get the ID, or better, store it in the dict initially
-            # Assuming you don't have the doc ID here, we have to find it.
-            # This is not scalable. A better approach is to store the doc ID inside the post document.
-            # For now, let's assume we can retrieve the ID another way or that it was passed.
-            # Let's add a placeholder to show how it should be done.
-            # You should update your post creation logic to store the doc ID as a field.
-            # e.g., `posts_ref.add(post_doc)` returns a ref, you can then `post_doc['id'] = ref.id`
-            doc_id = 'placeholder_id' # Replace with actual logic to get the doc ID
-            
-            # The previous api_school_news function used a `to_dict()` on a doc, which
-            # automatically provides the `id`. We'll replicate that.
-            # Since we're working with dicts now, we'll assume the ID is present.
-            # Let's assume the post dictionary already contains an 'id' field from your `api_school_news`
-            # or that you modify `create_post` to save the ID.
+            # Assuming doc_data already has 'id' or you retrieve it here.
+            # In a real scenario, you'd get the ID from the Firestore document object.
+            # Let's mock a scenario where the ID is added.
+            if 'id' not in doc_data:
+                # Find the doc_id. This is inefficient but demonstrates the point.
+                # A better way is to store the ID as a field on creation.
+                for doc in db.collection('posts').where('title', '==', doc_data.get('title')).where('content', '==', doc_data.get('content')).stream():
+                    doc_data['id'] = doc.id
+                    break
             final_posts.append(doc_data)
-
 
         return final_posts, len(filtered_posts), None
     except Exception as e:
         logging.error(f"Error fetching posts for display: {e}", exc_info=True)
         return [], 0, str(e)
 
+
 # --------------------------------------------------------------------------
-# REVISED `api_school_news` ROUTE
+# FLASK ROUTES
 # --------------------------------------------------------------------------
 @app.route("/api/school_news")
 def api_school_news():
@@ -3420,7 +3383,7 @@ def api_school_news():
                 "post_date": post_date_str,
                 "media_type": first_media_item.get("media_type"),
                 "media_url": first_media_item.get("media_path_or_url"),
-                "download_file_path": first_media_item.get("media_path_or_url") if first_media_item.get("media_type") == 'document' else None,
+                # The 'download_file_path' key has been removed as requested.
                 "reactions_count": post.get("total_reactions", 0),
                 "comments_count": post.get("comments_count", 0),
             })
@@ -3437,23 +3400,14 @@ def api_school_news():
         return jsonify({"error": "An unexpected error occurred."}), 500
 
 
-
-
-
-
-# The corrected school_news route
 @app.route("/school_news")
-@login_required # Add this decorator if the page requires a user to be logged in
+@login_required 
 def school_news():
     """
     Renders the school news page.
     """
-    # Safely get the user's admin status.
-    # The login_required decorator ensures g.current_user is set for logged-in users.
     is_admin = getattr(g.current_user, 'is_admin', False)
-
     return render_template("school_news.html", is_admin=is_admin)
-
 
 
 def fetch_single_post(post_id, current_user_id):
@@ -3464,7 +3418,6 @@ def fetch_single_post(post_id, current_user_id):
     if db is None:
         return None
     try:
-        # Using a collection reference and get the document directly
         post_ref = db.collection("news_posts").document(str(post_id))
         doc = post_ref.get()
         if doc.exists:
@@ -3476,12 +3429,8 @@ def fetch_single_post(post_id, current_user_id):
     return None
 
 
-
-
-
-
 @app.route("/full_post/<string:category_name>/<string:post_id>")
-@login_required # Ensure only logged-in users can view full posts
+@login_required 
 def display_full_post(category_name, post_id):
     """
     Renders a dedicated page for a single post, displaying full content and all media.
@@ -3489,25 +3438,32 @@ def display_full_post(category_name, post_id):
     current_user_id = g.current_user.id
     current_user_role = getattr(g.current_user, 'role', 'user')
 
-    # Use the Firestore helper function
     post = fetch_single_post(post_id, current_user_id)
 
     if not post:
         flash("Post not found.", "error")
         return redirect(url_for("school_news"))
 
-    # Convert Firestore Timestamp to string for rendering
     if isinstance(post.get("post_date"), firestore.SERVER_TIMESTAMP):
         post["post_date_formatted"] = post["post_date"].strftime("%Y-%m-%d %H:%M:%S")
     else:
         post["post_date_formatted"] = str(post.get("post_date", ""))
 
     return render_template(
-        "full_post_detail.html", # Changed to new template name
+        "full_post_detail.html", 
         post=post,
         category_name=category_name,
         current_user_role=current_user_role
         )
+
+
+
+
+
+
+
+
+
 
 
 @app.route("/admin/create_post", methods=["GET", "POST"])
@@ -4639,6 +4595,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
