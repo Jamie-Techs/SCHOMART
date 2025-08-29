@@ -97,6 +97,27 @@
             border-radius: var(--border-radius);
             margin-bottom: 20px;
         }
+        .post-actions-bottom {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .share-btn {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .share-btn:hover {
+            background-color: #e9e9e9;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -142,7 +163,22 @@
                     {% endif %}
                 </div>
             {% endfor %}
+            <div class="post-actions-bottom">
+                <button class="share-btn" onclick="copyPostLink('{{ url_for('view_post', post_id=post.id, _external=True) }}')">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
         </div>
     </div>
+    <script>
+        function copyPostLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Link copied to clipboard!");
+            }).catch(err => {
+                console.error("Failed to copy link: ", err);
+                alert("Failed to copy link. Please try again or copy manually.");
+            });
+        }
+    </script>
 </body>
 </html>
