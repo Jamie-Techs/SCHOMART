@@ -3400,14 +3400,25 @@ def api_school_news():
         return jsonify({"error": "An unexpected error occurred."}), 500
 
 
-@app.route("/school_news")
-@login_required 
+
+
+
+@app.route("/school_news", methods=['GET'])
 def school_news():
-    """
-    Renders the school news page.
-    """
-    is_admin = getattr(g.current_user, 'is_admin', False)
-    return render_template("school_news.html", is_admin=is_admin)
+    query = request.args.get('q', '').strip()
+
+    if query:
+        # Filter posts based on the search query
+        posts = SchoolNews.query.filter(
+            (SchoolNews.title.ilike(f"%{query}%")) |
+            (SchoolNews.content.ilike(f"%{query}%"))
+        ).order_by(SchoolNews.post_date.desc()).all()
+    else:
+        # Get all posts without a search query
+        posts = SchoolNews.query.order_by(SchoolNews.post_date.desc()).all()
+
+    return render_template("school_news.html", posts=posts)
+
 
 
 def fetch_single_post(post_id, current_user_id):
@@ -4611,6 +4622,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
