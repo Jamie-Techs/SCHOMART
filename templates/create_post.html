@@ -1,164 +1,353 @@
-<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Conditionally rendered elements
-            const studyHubCheckbox = document.getElementById('studyHubCheckbox');
-            const schoolGistCheckbox = document.getElementById('schoolGistCheckbox');
-            const schoolNewsCheckbox = document.getElementById('schoolNewsCheckbox');
-            const displayOnGroup = document.getElementById('displayOnGroup');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Post/Material</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #006B3C; /* Dark Green */
+            --secondary-color: #FDB813; /* Gold/Yellow */
+            --accent-color: #00391F; /* Even Darker Green */
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --light-green-background: #EFF7EF;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+        }
 
-            const mediaTypeGroup = document.getElementById('mediaTypeGroup');
-            const mediaFilesGroup = document.getElementById('mediaFilesGroup');
-            const mediaFilesInput = document.getElementById('media_files');
-            const titleInput = document.getElementById('title');
-            const contentInput = document.getElementById('content');
-            const mediaTypeRadios = document.querySelectorAll('input[name="media_type"]');
-            const mediaTypeText = document.getElementById('mediaTypeText');
-            const mediaTypeAudio = document.getElementById('mediaTypeAudio');
-            const mediaTypeDocument = document.getElementById('mediaTypeDocument');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
 
-            const mediaTypeAudioLabel = document.getElementById('mediaTypeAudioLabel');
-            const mediaTypeDocumentLabel = document.getElementById('mediaTypeDocumentLabel');
+        /* Header */
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            z-index: 10; /* Ensure header is above other content */
+        }
 
-            const linkUrlInput = document.getElementById('link_url');
-            const mediaTypeHint = document.getElementById('mediaTypeHint');
-            const form = document.getElementById('create-post-form');
-            const USER_IS_ADMIN = {{ 'true' if user_is_admin else 'false' }};
-            const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            color: var(--white-text);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
 
-            // Define accepted file types for each media type
-            const ACCEPT_TYPES = {
-                'image': 'image/*',
-                'video': 'video/*',
-                'audio': 'audio/*',
-                'document': 'application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.document,text/plain'
-            };
+        .header-buttons {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+        }
 
-            function applyMediaTypeRules(currentMediaType) {
-                mediaFilesGroup.style.display = 'block';
-                mediaFilesInput.removeAttribute('accept');
-                if (currentMediaType === 'text') {
-                    mediaFilesGroup.style.display = 'none';
-                } else if (ACCEPT_TYPES[currentMediaType]) {
-                    mediaFilesInput.setAttribute('accept', ACCEPT_TYPES[currentMediaType]);
-                }
+        .header-button {
+            background-color: var(--accent-color); /* Changed to accent-color for contrast */
+            color: var(--white-text); /* Force text to be white */
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: inline-flex; /* To align icon and text */
+            align-items: center; /* To vertically align icon and text */
+            gap: 5px; /* Space between icon and text */
+        }
+
+        .header-button:hover {
+            background-color: #004d2b; /* Slightly darker accent on hover */
+            transform: translateY(-2px);
+        }
+
+        /* Ensure icons and text inside header-button are white */
+        .header-button i,
+        .header-button span {
+            color: var(--white-text);
+        }
+
+        .container-wrapper {
+            width: 90%;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* Flash Messages */
+        #flash-messages div {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            animation: slideInFromTop 0.5s ease-out;
+        }
+        @keyframes slideInFromTop {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .bg-red-100 { background-color: #fee2e2; } .text-red-700 { color: #b91c1c; }
+        .bg-green-100 { background-color: #d1fae5; } .text-green-700 { color: #065f46; }
+        .bg-blue-100 { background-color: #dbeafe; } .text-blue-700 { color: #1e40af; }
+
+
+        .form-container {
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group select,
+        .form-group input[type="file"] { /* Added file input styling */
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus,
+        .form-group input[type="file"]:focus { /* Added file input focus style */
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(253, 184, 19, 0.2);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .checkbox-group label,
+        .radio-group label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            font-weight: normal;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .checkbox-group label:hover,
+        .radio-group label:hover {
+            color: var(--primary-color);
+        }
+
+        .checkbox-group input[type="checkbox"],
+        .radio-group input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .submit-button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2em;
             }
-
-            function updateVisibilityAndStates() {
-                let selectedMediaType = document.querySelector('input[name="media_type"]:checked').value;
-
-                // --- GLOBAL RESET & INITIAL VISIBILITY ---
-                mediaTypeRadios.forEach(radio => radio.disabled = false);
-                mediaTypeAudioLabel.style.display = 'inline-flex';
-                mediaTypeDocumentLabel.style.display = 'inline-flex';
-                mediaTypeGroup.style.display = 'block';
-                titleInput.setAttribute('required', 'required');
-                contentInput.removeAttribute('required');
-
-                if (schoolGistCheckbox) schoolGistCheckbox.disabled = false;
-                if (schoolNewsCheckbox) schoolNewsCheckbox.disabled = false;
-                if (studyHubCheckbox) studyHubCheckbox.disabled = false;
-
-
-                // --- LOGIC BASED ON DISPLAY_ON CHECKBOXES ---
-                if (studyHubCheckbox && studyHubCheckbox.checked) {
-                    if (schoolGistCheckbox) schoolGistCheckbox.disabled = true;
-                    if (schoolNewsCheckbox) schoolNewsCheckbox.disabled = true;
-
-                    mediaTypeGroup.style.display = 'none';
-                    mediaTypeDocument.checked = true;
-                    selectedMediaType = 'document';
-                    mediaTypeHint.textContent = "For Study Hub, only Document type is allowed. You must upload a document or material file.";
-                } else {
-                    mediaTypeAudioLabel.style.display = 'none';
-                    mediaTypeAudio.disabled = true;
-                    mediaTypeDocumentLabel.style.display = 'none';
-                    mediaTypeDocument.disabled = true;
-
-                    // If audio or document was selected, switch to text
-                    if (selectedMediaType === 'audio' || selectedMediaType === 'document') {
-                        mediaTypeText.checked = true;
-                        selectedMediaType = 'text';
-                    }
-                    mediaTypeHint.textContent = "Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.";
-                }
-
-                applyMediaTypeRules(selectedMediaType);
+            .header-buttons {
+                left: 10px;
+                gap: 5px;
             }
-
-            function validateRequiredFields() {
-                const currentMediaType = document.querySelector('input[name="media_type"]:checked').value;
-                const formTitle = titleInput.value.trim();
-                const formContent = contentInput.value.trim();
-                const formFileSelected = mediaFilesInput.files.length > 0;
-                const isStudyHubSelected = studyHubCheckbox && studyHubCheckbox.checked && USER_IS_ADMIN;
-
-                if (formTitle === '') {
-                    alert('Please enter a title for your post.');
-                    titleInput.focus();
-                    return false;
-                }
-                
-                if (isStudyHubSelected) {
-                    if (!formFileSelected) {
-                        alert('For Study Hub materials, you must upload a document or media file.');
-                        mediaFilesInput.focus();
-                        return false;
-                    }
-                    if (formContent === '') {
-                        alert('Please provide a description for your Study Hub material.');
-                        contentInput.focus();
-                        return false;
-                    }
-                }
-
-                if (currentMediaType !== 'text' && !isStudyHubSelected) {
-                    if (!formFileSelected && !linkUrlInput.value.trim()) {
-                        alert('You must either upload a file or provide a link for this media type.');
-                        mediaFilesInput.focus();
-                        return false;
-                    }
-                }
-                return true;
+            .header-button {
+                padding: 8px 12px;
+                font-size: 0.9em;
             }
-
-            updateVisibilityAndStates();
-
-            mediaTypeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    applyMediaTypeRules(this.value);
-                });
-            });
-
-            if (studyHubCheckbox) {
-                studyHubCheckbox.addEventListener('change', updateVisibilityAndStates);
+            .form-container {
+                padding: 20px;
             }
-            if (schoolGistCheckbox) {
-                schoolGistCheckbox.addEventListener('change', () => {
-                    if (studyHubCheckbox && studyHubCheckbox.checked) schoolGistCheckbox.checked = false;
-                });
+            .form-group label {
+                font-size: 0.95em;
             }
-            if (schoolNewsCheckbox) {
-                schoolNewsCheckbox.addEventListener('change', () => {
-                    if (studyHubCheckbox && studyHubCheckbox.checked) schoolNewsCheckbox.checked = false;
-                });
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 10px;
+                font-size: 0.95em;
             }
+        }
 
-            mediaFilesInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    const file = this.files[0];
-                    if (file.size > MAX_FILE_SIZE) {
-                        alert(`File size exceeds the 50MB limit. Please choose a smaller file. (Current: ${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
-                        this.value = '';
-                    }
-                }
-            });
+        @media (max-width: 480px) {
+            .container-wrapper {
+                width: 95%;
+            }
+            .header h1 {
+                font-size: 1.8em;
+            }
+            .header-buttons {
+                position: static;
+                transform: none;
+                margin: 10px auto;
+                justify-content: center;
+                display: flex;
+                width: 100%;
+            }
+            .checkbox-group label,
+            .radio-group label {
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="header">
+        <div class="header-buttons">
+            <a onclick="history.back()" class="header-button btn-back" title="Go back to previous page">
+                <i class="fas fa-arrow-left"></i> <span>Back</span>
+            </a>
+            <a href="/profile" class="header-button">
+                <i class="fas fa-user"></i> <span>Profile</span>
+            </a>
+        </div>
+        <h1>Create New Post / Material</h1>
+    </div>
 
-            form.addEventListener('submit', function(event) {
-                if (!validateRequiredFields()) {
-                    event.preventDefault();
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+    <div class="container-wrapper">
+        <div id="flash-messages" class="mb-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="p-3 mb-2 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="form-container">
+            <form action="{{ url_for('create_post') }}" method="POST" enctype="multipart/form-data" id="create-post-form">
+                                <input type="hidden" name="post_type" value="regular_post">
+
+                <div class="form-group">
+                    <label for="title">Title (Max 20 words):</label>
+                    <input type="text" id="title" name="title" required value="{{ post_data.title or '' }}" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="content">Content (Max 200 words):</label>
+                    <textarea id="content" name="content" rows="6" placeholder="Enter post content or material description" maxlength="1200">{{ post_data.content or '' }}</textarea>
+                </div>
+
+                <div class="form-group" id="displayOnGroup">
+                    <label>Display On:</label>
+                    <div class="checkbox-group flex flex-wrap gap-4">
+                        {% if user_is_admin %}
+                        <label id="schoolGistOption">
+                            <input type="checkbox" name="display_on" value="School Gist" id="schoolGistCheckbox" {% if 'School Gist' in post_data.display_on %}checked{% endif %}>
+                            School Gist
+                        </label>
+                        <label id="schoolNewsOption">
+                            <input type="checkbox" name="display_on" value="School News" id="schoolNewsCheckbox" {% if 'School News' in post_data.display_on %}checked{% endif %}>
+                            School News
+                        </label>
+                        <label id="studyHubOption">
+                            <input type="checkbox" name="display_on" value="Study Hub" id="studyHubCheckbox" {% if 'Study Hub' in post_data.display_on %}checked{% endif %}>
+                            Study Hub (Study Material)
+                        </label>
+                        {% else %}
+                        <input type="hidden" name="display_on" value="School Gist">
+                        <p class="text-sm text-gray-500 mt-2">
+                            This post will be displayed on **School Gist**.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group" id="mediaTypeGroup">
+                    <label>Media Type:</label>
+                    <div class="radio-group flex flex-wrap gap-4">
+                        <label id="mediaTypeTextLabel">
+                            <input type="radio" name="media_type" value="text" id="mediaTypeText" {% if post_data.media_type == 'text' or not post_data.media_type %}checked{% endif %}> Text
+                        </label>
+                        <label id="mediaTypeImageLabel">
+                            <input type="radio" name="media_type" value="image" id="mediaTypeImage" {% if post_data.media_type == 'image' %}checked{% endif %}> Image
+                        </label>
+                        <label id="mediaTypeVideoLabel">
+                            <input type="radio" name="media_type" value="video" id="mediaTypeVideo" {% if post_data.media_type == 'video' %}checked{% endif %}> Video
+                        </label>
+                        <label id="mediaTypeAudioLabel">
+                            <input type="radio" name="media_type" value="audio" id="mediaTypeAudio" {% if post_data.media_type == 'audio' %}checked{% endif %}> Audio
+                        </label>
+                        <label id="mediaTypeDocumentLabel">
+                            <input type="radio" name="media_type" value="document" id="mediaTypeDocument" {% if post_data.media_type == 'document' %}checked{% endif %}> Document
+                        </label>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2" id="mediaTypeHint">
+                        Select 'Text' for content without files. For other types, you must upload a file or provide a link. 'Study Hub' posts automatically become 'Document' type.
+                    </p>
+                </div>
+
+                <div class="form-group" id="linkUrlGroup">
+                    <label for="link_url">Paste Link URL (optional):</label>
+                    <input type="text" id="link_url" name="link_url" placeholder="https://www.example.com/your-link" value="{{ post_data.link_url or '' }}">
+                    <p class="text-sm text-gray-500 mt-2">If you provide a URL and no media file for media types (Image, Video, Audio, Document), this post will be considered a 'Link' type with the selected media type's context.</p>
+                </div>
+
+                <div class="form-group" id="mediaFilesGroup">
+                    <label for="media_files">Upload Media/File (Max 50MB):</label>
+                    <input type="file" id="media_files" name="media_files" accept="">
+                    <p class="text-sm text-gray-500 mt-2">Allowed types vary by media type selection. All downloadable files will have "SCHOMART" watermark applied to them.</p>
+                </div>
+
+                <button type="submit" class="submit-button">Create Post / Upload Material</button>
+            </form>
+        </div>
+    </div>
