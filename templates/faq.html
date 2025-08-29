@@ -1,265 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FAQ - Futo Jiji</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #ffffff;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>FAQ - Futo Jiji</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
 
-    /* Header Section */
-    header {
-      background-color: #006B3C;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
+        /* Header Section */
+        header {
+            background-color: #006B3C;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
 
-    header h1 {
-      margin: 0;
-      font-size: 36px;
-    }
+        header h1 {
+            margin: 0;
+            font-size: 36px;
+        }
 
-    /* Search Section */
-    .search-section {
-      padding: 20px;
-      text-align: center;
-      background-color: #f9f9f9;
-    }
+        /* Search Section */
+        .search-section {
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
 
-    .search-section input {
-      width: 100%;
-      max-width: 400px;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
+        .search-section input {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
 
-    /* FAQ Section */
-    .faq-section {
-      padding: 40px 20px;
-    }
+        /* FAQ Section */
+        .faq-section {
+            padding: 40px 20px;
+        }
 
-    .faq-category {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+        .faq-category {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
-    .faq-category h2 {
-      font-size: 24px;
-      color: #006B3C;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
+        .faq-category h2 {
+            font-size: 24px;
+            color: #006B3C;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
 
-    .faq-item {
-      background-color: #f0f0f0;
-      padding: 20px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
+        .faq-item {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
-    .faq-item h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      color: #006B3C;
-    }
+        .faq-item h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #006B3C;
+        }
 
-    .faq-item p {
-      font-size: 16px;
-      margin-top: 10px;
-      display: none;
-      color: #333;
-    }
+        .faq-item p {
+            font-size: 16px;
+            margin-top: 10px;
+            display: none;
+            color: #333;
+        }
 
-    .faq-item.active p {
-      display: block;
-    }
+        .faq-item.active p {
+            display: block;
+        }
 
-    /* Footer */
-    .main-footer {
-      background-color: #00391F;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      margin-top: 40px;
-    }
+        /* Footer */
+        .main-footer {
+            background-color: #00391F;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
 
-    /* Media Queries */
-    @media (max-width: 768px) {
-      .search-section input {
-        width: 90%;
-      }
-    }
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .search-section input {
+                width: 90%;
+            }
+        }
 
-    @media (max-width: 480px) {
-      .search-section input {
-        width: 100%;
-      }
-    }
+        @media (max-width: 480px) {
+            .search-section input {
+                width: 100%;
+            }
+        }
 
-    /* Updated Floating Button Styling */
-    .floating-live-chat { /* Renamed class */
-      position: fixed;
-      bottom: 25px;
-      right: 25px;
-      background-color: #006B3C;
-      color: white;
-      padding: 15px; /* Slightly larger padding for the icon */
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      z-index: 999;
-      transition: background-color 0.3s ease;
-      display: flex; /* For centering the icon */
-      align-items: center;
-      justify-content: center;
-      font-size: 24px; /* Size for the Font Awesome icon */
-    }
+        /* Updated Floating Help/Contact Us Styling */
+        .help-container {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 500;
+        }
 
-    .floating-live-chat:hover {
-      background-color: #FDB813;
-    }
+        .floating-help-button {
+            background-color: #006B3C;
+            color: white;
+            width: 56px; /* equivalent to w-14 */
+            height: 56px; /* equivalent to h-14 */
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: none;
+        }
 
-    /* Remove img specific styles as we are using a font icon now */
-    /* .floating-help img {
-      width: 24px;
-      height: 24px;
-    } */
-  </style>
+        .floating-help-button:hover {
+            transform: scale(1.1);
+            background-color: #004D28;
+        }
+
+        .help-list {
+            position: absolute;
+            bottom: 72px; /* 56px (button height) + 16px (space-y-2) */
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px; /* equivalent to space-y-2 */
+            opacity: 0;
+            transform: scale(0);
+            transform-origin: bottom right;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .help-container:hover .help-list {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .help-list a {
+            background-color: #006B3C;
+            color: white;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .help-list a:hover {
+            transform: scale(1.1);
+            background-color: #004D28;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Header Section -->
-  <header>
-    <h1>Frequently Asked Questions</h1>
-  </header>
+    <header>
+        <h1>Frequently Asked Questions</h1>
+    </header>
 
-  <!-- Search Section -->
-  <section class="search-section">
-    <input type="text" placeholder="Search for questions..." id="search-bar" />
-  </section>
+    <section class="search-section">
+        <input type="text" placeholder="Search for questions..." id="search-bar" />
+    </section>
 
-  <!-- FAQ Section -->
-  <section class="faq-section">
-    <div class="faq-category">
-      <h2>Popular</h2>
+    <section class="faq-section">
+        <div class="faq-category">
+            <h2>Popular</h2>
 
-      <div class="faq-item">
-        <h3>How do I contact Support Team?</h3>
-        <p>To contact our Support Team, you can use our live chat or email us at support@jiji.ng. Live chat is the fastest way to get a response, and email is ideal for non-urgent cases. For detailed assistance, provide as much information as possible.</p>
-      </div>
+            <div class="faq-item">
+                <h3>How do I contact Support Team?</h3>
+                <p>To contact our Support Team, you can use our live chat or email us at support@jiji.ng. Live chat is the fastest way to get a response, and email is ideal for non-urgent cases. For detailed assistance, provide as much information as possible.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>What does "ads limit" mean?</h3>
-        <p>"Ads limit" refers to the maximum number of advertisements you can post at once. It is based on your subscription plan or account status. If you reach this limit, you will need to upgrade your account or wait until some ads expire to post more.</p>
-      </div>
+            <div class="faq-item">
+                <h3>What does "ads limit" mean?</h3>
+                <p>"Ads limit" refers to the maximum number of advertisements you can post at once. It is based on your subscription plan or account status. If you reach this limit, you will need to upgrade your account or wait until some ads expire to post more.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>How can I sell on Jiji?</h3>
-        <p>To sell on Jiji, you need to create an account, post your products with detailed descriptions, and manage your listings. To increase visibility, consider using premium services and promotions like Boost Packages or Pro Sales campaigns.</p>
-      </div>
+            <div class="faq-item">
+                <h3>How can I sell on Jiji?</h3>
+                <p>To sell on Jiji, you need to create an account, post your products with detailed descriptions, and manage your listings. To increase visibility, consider using premium services and promotions like Boost Packages or Pro Sales campaigns.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>How to buy something on Jiji?</h3>
-        <p>Buying on Jiji is easy. Browse through listings, contact the seller directly through the messaging feature, and arrange payment and delivery. Always ensure the legitimacy of the seller and product before making a purchase.</p>
-      </div>
+            <div class="faq-item">
+                <h3>How to buy something on Jiji?</h3>
+                <p>Buying on Jiji is easy. Browse through listings, contact the seller directly through the messaging feature, and arrange payment and delivery. Always ensure the legitimacy of the seller and product before making a purchase.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>How to report illegal activity on Jiji?</h3>
-        <p>If you notice illegal activity on Jiji, please report it immediately by using the "Report" feature on the listing or by contacting our support team with detailed information. This helps us maintain a safe marketplace for all users.</p>
-      </div>
+            <div class="faq-item">
+                <h3>How to report illegal activity on Jiji?</h3>
+                <p>If you notice illegal activity on Jiji, please report it immediately by using the "Report" feature on the listing or by contacting our support team with detailed information. This helps us maintain a safe marketplace for all users.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>What are Premium Services?</h3>
-        <p>Premium Services include features like boosted ad visibility, priority customer support, and enhanced ad placement. These services help you get more exposure and improve your chances of making a sale faster.</p>
-      </div>
+            <div class="faq-item">
+                <h3>What are Premium Services?</h3>
+                <p>Premium Services include features like boosted ad visibility, priority customer support, and enhanced ad placement. These services help you get more exposure and improve your chances of making a sale faster.</p>
+            </div>
 
-      <h2>General Information</h2>
+            <h2>General Information</h2>
 
-      <div class="faq-item">
-        <h3>What is a "marketplace"?</h3>
-        <p>A marketplace is an online platform where buyers and sellers can meet, interact, and trade goods or services. Jiji serves as a marketplace, allowing individuals and businesses to list products for sale.</p>
-      </div>
+            <div class="faq-item">
+                <h3>What is a "marketplace"?</h3>
+                <p>A marketplace is an online platform where buyers and sellers can meet, interact, and trade goods or services. Jiji serves as a marketplace, allowing individuals and businesses to list products for sale.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>Do you have any stores?</h3>
-        <p>We do not have physical stores. Jiji is an online marketplace where sellers can list their products directly. Sellers range from individuals to businesses, providing a wide range of goods and services.</p>
-      </div>
+            <div class="faq-item">
+                <h3>Do you have any stores?</h3>
+                <p>We do not have physical stores. Jiji is an online marketplace where sellers can list their products directly. Sellers range from individuals to businesses, providing a wide range of goods and services.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>Do you have a delivery?</h3>
-        <p>Jiji does not handle deliveries directly, but we provide the platform for sellers and buyers to communicate and arrange deliveries. Many sellers offer delivery services, or you can arrange delivery yourself with the seller.</p>
-      </div>
+            <div class="faq-item">
+                <h3>Do you have a delivery?</h3>
+                <p>Jiji does not handle deliveries directly, but we provide the platform for sellers and buyers to communicate and arrange deliveries. Many sellers offer delivery services, or you can arrange delivery yourself with the seller.</p>
+            </div>
 
-      <div class="faq-item">
-        <h3>Can I unsubscribe from the newsletter?</h3>
-        <p>Yes, you can unsubscribe from our newsletter anytime. Just click on the unsubscribe link provided at the bottom of the email, or you can manage your email preferences through your account settings.</p>
-      </div>
-      
-    </div>
-  </section>
+            <div class="faq-item">
+                <h3>Can I unsubscribe from the newsletter?</h3>
+                <p>Yes, you can unsubscribe from our newsletter anytime. Just click on the unsubscribe link provided at the bottom of the email, or you can manage your email preferences through your account settings.</p>
+            </div>
 
-    
-    <div class="fixed bottom-5 right-5 z-[500] group">
-    <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
-        <i class="fas fa-question-circle"></i>
-    </button>
+        </div>
+    </section>
 
-    <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
-        <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
-            <i class="fab fa-whatsapp"></i>
-        </a>
-        <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
-            <i class="fab fa-whatsapp"></i>
-        </a>
-        <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
-            <i class="fab fa-whatsapp"></i>
-        </a>
-    </div>
+    <div class="help-container">
+        <button class="floating-help-button" title="Contact a live admin">
+            <i class="fas fa-question-circle"></i>
+        </button>
+
+        <div class="help-list">
+            <a href="https://wa.me/23481244567" target="_blank" title="Contact General Support">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="https://wa.me/23490512345" target="_blank" title="Contact Sales Team">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="https://wa.me/23470678901" target="_blank" title="Contact Technical Support">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>
     </div>
 
-  <!-- Footer -->
-  <footer class="main-footer">
-    <p>&copy; 2025 SCHOMART. All rights reserved.</p>
-  </footer>
+    <footer class="main-footer">
+        <p>&copy; 2025 SCHOMART. All rights reserved.</p>
+    </footer>
 
-  <script>
-    // FAQ Toggle
-    const faqItems = document.querySelectorAll('.faq-item');
+    <script>
+        // FAQ Toggle
+        const faqItems = document.querySelectorAll('.faq-item');
 
-    faqItems.forEach(item => {
-      item.querySelector('h3').addEventListener('click', () => {
-        item.classList.toggle('active');
-      });
-    });
+        faqItems.forEach(item => {
+            item.querySelector('h3').addEventListener('click', () => {
+                item.classList.toggle('active');
+            });
+        });
 
-    // Search functionality
-    const searchBar = document.getElementById('search-bar');
-    searchBar.addEventListener('input', function() {
-      const query = this.value.toLowerCase();
-      const faqItems = document.querySelectorAll('.faq-item');
-      faqItems.forEach(item => {
-        const question = item.querySelector('h3').textContent.toLowerCase();
-        if (question.includes(query)) {
-          item.style.display = 'block';
-        } else {
-          item.style.display = 'none';
-        }
-      });
-    });
-  </script>
-
+        // Search functionality
+        const searchBar = document.getElementById('search-bar');
+        searchBar.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('h3').textContent.toLowerCase();
+                if (question.includes(query)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    </script>
 </body>
-
 </html>
