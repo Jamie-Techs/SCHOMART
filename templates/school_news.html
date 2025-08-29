@@ -157,7 +157,7 @@
             color: var(--white-text);
         }
 
-        /* --- Search Container --- */
+        /* --- Search Container (Kept for frontend styling) --- */
         .search-container {
             margin-bottom: 30px;
             display: flex;
@@ -210,12 +210,12 @@
         }
 
         /* --- Posts Styling --- */
-        #postsContainer {
+        .posts-container {
             display: grid;
             gap: 25px;
         }
 
-        .post {
+        .post-card {
             background-color: var(--card-background);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
@@ -224,12 +224,12 @@
             transition: transform var(--transition-speed), box-shadow var(--transition-speed);
         }
 
-        .post:hover {
+        .post-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
         }
 
-        .post h3 {
+        .post-card h3 {
             margin-bottom: 10px;
             font-size: 1.5em;
             color: var(--primary-color);
@@ -239,23 +239,22 @@
             font-weight: 700;
         }
 
-        .post h3 a {
+        .post-card h3 a {
             text-decoration: none;
             color: inherit;
             transition: color var(--transition-speed);
         }
 
-        .post h3 a:hover {
+        .post-card h3 a:hover {
             color: var(--secondary-color);
         }
 
-        .post p {
+        .post-card p {
             margin-bottom: 15px;
             color: #555;
         }
         
-        /* --- Media Specific Styles --- */
-        .media-item {
+        .post-media-preview {
             margin-top: 15px;
             margin-bottom: 20px;
             text-align: center;
@@ -265,7 +264,7 @@
             border: 1px solid var(--border-color);
         }
 
-        .media-preview {
+        .post-media-preview img, .post-media-preview video {
             max-width: 100%;
             height: auto;
             border-radius: var(--border-radius);
@@ -274,22 +273,7 @@
             object-fit: contain;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        video.media-preview, audio.media-preview {
-            width: 100%;
-            max-height: 350px;
-        }
-
-        .media-caption {
-            font-style: italic;
-            color: #666;
-            margin-top: 10px;
-            font-size: 0.9em;
-            padding: 0 5px;
-        }
-
-        /* NOTE: The .document-link class has been removed. */
-
+        
         .post-footer {
             display: flex;
             justify-content: space-between;
@@ -365,7 +349,7 @@
             box-shadow: var(--box-shadow);
         }
 
-        .pagination button {
+        .pagination a, .pagination button {
             padding: 10px 15px;
             border: 1px solid var(--primary-color);
             border-radius: var(--border-radius);
@@ -374,23 +358,24 @@
             cursor: pointer;
             transition: all var(--transition-speed);
             font-weight: 600;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 5px;
         }
 
-        .pagination button i {
+        .pagination a i, .pagination button i {
             color: var(--white-text);
         }
-
-        .pagination button:hover:not(:disabled) {
+        
+        .pagination a:hover, .pagination button:hover:not(:disabled) {
             background-color: var(--accent-color);
             color: var(--white-text);
             border-color: var(--accent-color);
             transform: translateY(-1px);
         }
 
-        .pagination button:hover:not(:disabled) i {
+        .pagination a:hover i, .pagination button:hover:not(:disabled) i {
             color: var(--white-text);
         }
 
@@ -465,59 +450,7 @@
             margin-right: 5px;
         }
 
-        .custom-notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateY(120%);
-            opacity: 0;
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s ease-out;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-left: 5px solid;
-        }
-
-        .custom-notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .custom-notification.success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #28a745;
-        }
-
-        .custom-notification.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #dc3545;
-        }
-
-        .custom-notification.warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-color: #ffc107;
-        }
-
-        .custom-notification.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border-color: #17a2b8;
-        }
-
-        .notification-icon i {
-            font-size: 1.5em;
-            flex-shrink: 0;
-        }
-
-        /* --- Responsive Adjustments --- */
+        /* Responsive Adjustments */
         @media (max-width: 768px) {
             .header {
                 padding: 12px 0;
@@ -547,19 +480,19 @@
             .search-container button {
                 width: 100%;
             }
-            #postsContainer {
+            .posts-container {
                 gap: 20px;
             }
-            .post {
+            .post-card {
                 padding: 18px;
             }
-            .post h3 {
+            .post-card h3 {
                 font-size: 1.3em;
             }
-            .post p {
+            .post-card p {
                 font-size: 0.95em;
             }
-            .post small {
+            .post-card small {
                 font-size: 0.9em;
             }
             .post-footer {
@@ -579,7 +512,7 @@
                 flex-wrap: wrap;
                 padding: 10px;
             }
-            .pagination button, .pagination span {
+            .pagination a, .pagination button, .pagination span {
                 flex-basis: calc(50% - 5px);
                 text-align: center;
                 justify-content: center;
@@ -621,22 +554,14 @@
             .tab-nav a:last-child {
                 border-bottom: none;
             }
-            .post h3 {
+            .post-card h3 {
                 font-size: 1.15em;
             }
-            .post p {
+            .post-card p {
                 font-size: 0.88em;
             }
-            .post small {
+            .post-card small {
                 font-size: 0.8em;
-            }
-            .custom-notification {
-                top: auto;
-                bottom: 10px;
-                right: 10px;
-                left: 10px;
-                width: auto;
-                padding: 10px 15px;
             }
         }
     </style>
@@ -661,15 +586,15 @@
     {% endwith %}
 
     <div class="header">
-        <a href="/" class="home-button"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('home') }}" class="home-button"><i class="fas fa-home"></i> Home</a>
         <h1><i class="fas fa-newspaper"></i> School News</h1>
     </div>
 
     <div class="container">
         <div class="tab-nav">
-            <a href="/school_gist"><i class="fas fa-graduation-cap"></i> School Gist</a>
-            <a href="/school_news" class="active"><i class="fas fa-newspaper"></i> School News</a>
-            <a href="/study_hub"><i class="fas fa-book-open"></i> Study Material</a>
+            <a href="{{ url_for('school_gist') }}"><i class="fas fa-graduation-cap"></i> School Gist</a>
+            <a href="{{ url_for('school_news') }}" class="active"><i class="fas fa-newspaper"></i> School News</a>
+            <a href="{{ url_for('study_hub') }}"><i class="fas fa-book-open"></i> Study Material</a>
         </div>
 
         <div class="search-container">
@@ -677,243 +602,69 @@
             <button id="searchButton"><i class="fas fa-search"></i> Search</button>
         </div>
 
-        <div id="postsContainer"></div>
+        <div class="posts-container">
+            {% if not posts %}
+                <p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts to display yet.</p>
+            {% else %}
+                {% for post in posts %}
+                    <div class="post-card">
+                        <h3>
+                            <a href="{{ url_for('view_post', post_id=post.id) }}">{{ post.title }}</a>
+                        </h3>
+                        <p>{{ post.content | truncate(150, True) }}</p>
 
-        <div class="pagination">
-            <button id="prevPage" disabled><i class="fas fa-chevron-left"></i> Previous</button>
-            <span id="currentPage">Page 1</span>
-            <button id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
-        </div>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('postsContainer');
-            const searchInput = document.getElementById('searchInput');
-            const searchButton = document.getElementById('searchButton');
-            const prevPageBtn = document.getElementById('prevPage');
-            const nextPageBtn = document.getElementById('nextPage');
-            const currentPageSpan = document.getElementById('currentPage');
+                        {% if post.media_items %}
+                            {% set first_media = post.media_items[0] %}
+                            <div class="post-media-preview">
+                                {% if first_media.media_type == 'image' %}
+                                    <a href="{{ url_for('view_post', post_id=post.id) }}">
+                                        <img src="{{ first_media.media_path_or_url }}" alt="Post image" class="img-fluid rounded">
+                                    </a>
+                                {% elif first_media.media_type == 'video' %}
+                                    <video controls class="img-fluid rounded">
+                                        <source src="{{ first_media.media_path_or_url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                {% endif %}
+                            </div>
+                        {% endif %}
 
-            let currentPage = 1;
-            let totalPages = 1;
-            const postsPerPage = 10;
-            const isAdmin = {{ g.current_user.is_admin | tojson }};
-
-            async function fetchAndRenderPosts(query = '', page = 1) {
-                container.innerHTML = '<p style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading news...</p>';
-
-                const url = new URL('/api/school_news', window.location.origin);
-                url.searchParams.append('page', page);
-                url.searchParams.append('per_page', postsPerPage);
-                if (query) {
-                    url.searchParams.append('q', query);
-                }
-
-                try {
-                    const res = await fetch(url);
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
-                        container.innerHTML = `<p style="text-align: center; color: red;"><i class="fas fa-exclamation-circle"></i> Failed to load news: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
-                        return;
-                    }
-                    const data = await res.json();
-                    renderPosts(data.posts);
-                    updatePagination(data.total_pages, data.page);
-                } catch (error) {
-                    console.error('Error fetching school news:', error);
-                    container.innerHTML = '<p style="text-align: center; color: red;"><i class="fas fa-exclamation-triangle"></i> An error occurred while loading news. Please check your network connection.</p>';
-                }
-            }
-
-            // New function to handle sharing posts
-            async function sharePost(postId, postTitle) {
-                const url = `${window.location.origin}/full_post/School News/${postId}`;
-                
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            title: postTitle,
-                            url: url,
-                        });
-                        console.log('Post shared successfully!');
-                    } catch (error) {
-                        console.error('Error sharing post:', error);
-                        if (error.name !== 'AbortError') {
-                            showNotification('error', 'Failed to share post.');
-                        }
-                    }
-                } else {
-                    // Fallback for browsers that do not support the Web Share API
-                    try {
-                        await navigator.clipboard.writeText(url);
-                        showNotification('success', 'Post link copied to clipboard!');
-                    } catch (err) {
-                        console.error('Failed to copy link: ', err);
-                        showNotification('error', 'Could not copy link to clipboard.');
-                    }
-                }
-            }
-
-            function renderPosts(postsToRender) {
-                container.innerHTML = '';
-
-                if (!postsToRender || postsToRender.length === 0) {
-                    container.innerHTML = '<p style="text-align: center;"><i class="fas fa-box-open"></i> No news posts found for this query.</p>';
-                    return;
-                }
-
-                postsToRender.forEach(post => {
-                    const div = document.createElement('div');
-                    div.className = 'post';
-                    div.setAttribute('data-post-id', post.id);
-
-                    let mediaHTML = '';
-                    // The backend now only sends a single media item, so we directly use post.media_url and post.media_type
-                    const mediaUrl = post.media_url;
-                    const mediaType = post.media_type;
-                    const postTitle = post.title;
-                    const postUrl = `/full_post/School News/${post.id}`;
-
-                    if (mediaUrl && mediaType) {
-                        if (mediaType === 'image') {
-                            mediaHTML += `<div class="media-item">
-                                <a href="${postUrl}"><img src="${mediaUrl}" alt="${postTitle}" class="media-preview"></a>
-                            </div>`;
-                        } else if (mediaType === 'video') {
-                            mediaHTML += `<div class="media-item">
-                                <a href="${postUrl}"><video class="media-preview" controls>
-                                    <source src="${mediaUrl}" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video></a>
-                            </div>`;
-                        } else if (mediaType === 'audio') {
-                            mediaHTML += `<div class="media-item">
-                                <a href="${postUrl}"><audio controls class="media-preview">
-                                    <source src="${mediaUrl}" type="audio/mpeg">
-                                    Your browser does not support the audio element.
-                                </audio></a>
-                            </div>`;
-                        }
-                    }
-
-                    const adminActionsHTML = isAdmin ? `<div class="admin-actions"><button class="delete-btn action-btn" data-id="${post.id}"><i class="fas fa-trash-alt"></i> Delete</button></div>` : '';
-
-                    const postContentHTML = `
-                        <h3><a href="${postUrl}" class="post-title-link">${post.title}</a></h3>
-                        <p>${post.content}</p>
-                        ${mediaHTML}
                         <div class="post-footer">
                             <span class="post-meta">
-                                <i class="fas fa-calendar-alt"></i> Posted on: ${new Date(post.post_date).toLocaleDateString()}
+                                <i class="fas fa-calendar-alt"></i> Posted on: {{ post.post_date.strftime('%B %d, %Y') }}
                             </span>
                             <div class="post-actions">
-                                <button class="share-btn action-btn" data-id="${post.id}" data-title="${post.title}"><i class="fas fa-share-alt"></i> Share</button>
-                                ${adminActionsHTML}
+                                <a href="{{ url_for('view_post', post_id=post.id) }}" class="action-btn">
+                                    <i class="fas fa-expand-alt"></i> Read more...
+                                </a>
+                                {% if g.current_user and g.current_user.is_admin %}
+                                    <form action="{{ url_for('delete_post', post_id=post.id) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="delete-btn action-btn" onclick="return confirm('Are you sure you want to delete this post?');">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </button>
+                                    </form>
+                                {% endif %}
                             </div>
-                        </div>`;
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
 
-                    div.innerHTML = postContentHTML;
-                    container.appendChild(div);
-                });
-
-                // Add event listeners for delete and share buttons
-                document.querySelectorAll('.delete-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const postId = e.currentTarget.dataset.id;
-                        if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-                            try {
-                                const response = await fetch(`/api/school_news/${postId}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                });
-                                if (response.ok) {
-                                    e.currentTarget.closest('.post').remove();
-                                    showNotification('success', 'Post deleted successfully!');
-                                    fetchAndRenderPosts(searchInput.value, currentPage);
-                                } else {
-                                    const errorData = await response.json();
-                                    showNotification('error', `Failed to delete post: ${errorData.message || 'Unknown error.'}`);
-                                }
-                            } catch (error) {
-                                console.error('Error deleting post:', error);
-                                showNotification('error', 'An error occurred while deleting the post.');
-                            }
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.share-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const postId = e.currentTarget.dataset.id;
-                        const postTitle = e.currentTarget.dataset.title;
-                        sharePost(postId, postTitle);
-                    });
-                });
-            }
-
-            function updatePagination(total, page) {
-                totalPages = total;
-                currentPage = page;
-                currentPageSpan.textContent = `Page ${currentPage} of ${totalPages}`;
-                prevPageBtn.disabled = currentPage === 1;
-                nextPageBtn.disabled = currentPage >= totalPages;
-            }
-
-            function showNotification(type, message) {
-                const existingNotification = document.querySelector('.custom-notification');
-                if (existingNotification) {
-                    existingNotification.remove();
-                }
-
-                const notification = document.createElement('div');
-                notification.className = `custom-notification ${type}`;
-                const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle');
-                notification.innerHTML = `<span class="notification-icon"><i class="fas ${icon}"></i></span> ${message}`;
-                document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.classList.add('show');
-                }, 10);
-
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => notification.remove(), 500);
-                }, 5000);
-            }
-
-            // Event Listeners
-            searchButton.addEventListener('click', () => {
-                currentPage = 1;
-                fetchAndRenderPosts(searchInput.value, currentPage);
-            });
-
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    currentPage = 1;
-                    fetchAndRenderPosts(searchInput.value, currentPage);
-                }
-            });
-
-            prevPageBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    fetchAndRenderPosts(searchInput.value, currentPage);
-                }
-            });
-
-            nextPageBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    fetchAndRenderPosts(searchInput.value, currentPage);
-                }
-            });
-
-            // Initial fetch
-            fetchAndRenderPosts();
-        });
-    </script>
+        <div class="pagination">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('school_news', page=pagination.prev_num) }}"><i class="fas fa-chevron-left"></i> Previous</a>
+            {% else %}
+                <button disabled><i class="fas fa-chevron-left"></i> Previous</button>
+            {% endif %}
+            <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+                <a href="{{ url_for('school_news', page=pagination.next_num) }}">Next <i class="fas fa-chevron-right"></i></a>
+            {% else %}
+                <button disabled>Next <i class="fas fa-chevron-right"></i></button>
+            {% endif %}
+        </div>
+    </div>
+    
 </body>
 </html>
