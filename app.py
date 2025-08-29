@@ -3487,8 +3487,6 @@ def view_post(post_id):
 
 
 
-
-
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -3563,11 +3561,37 @@ def create_post():
             redirect_url = url_for("home")
             
             if is_study_material_post:
-                # ... (study material creation logic) ...
+                study_materials_ref = db.collection("study_materials")
+                file_path = media_items_to_save[0]["media_path_or_url"] if media_items_to_save else None
+                study_material_doc = {
+                    "title": title,
+                    "content": content,
+                    "category": "Study Material",
+                    "upload_date": datetime.now(),
+                    "file_path": file_path,
+                }
+                study_materials_ref.add(study_material_doc)
+                flash("Study Material uploaded successfully!", "success")
+                redirect_url = url_for("study_hub")
 
+            # This `elif` block needs to be at the same indentation level as the `if` block above it
             elif is_story_post:
-                # ... (story creation logic) ...
-
+                stories_ref = db.collection("stories")
+                expires_at = datetime.now() + timedelta(hours=24)
+                story_media_item = media_items_to_save[0] if media_items_to_save else None
+                story_doc = {
+                    "user_id": user.id,
+                    "media_url": story_media_item["media_path_or_url"] if story_media_item else None,
+                    "media_type": story_media_item["media_type"] if story_media_item else "text",
+                    "caption": content,
+                    "created_at": datetime.now(),
+                    "expires_at": expires_at,
+                }
+                stories_ref.add(story_doc)
+                flash("Story created successfully (will last 24 hours)!","success")
+                redirect_url = url_for("school_gist")
+            
+            # The `else` block also needs to be at the same indentation level
             else:
                 display_on_for_posts = [cat for cat in display_on if cat != "Study Hub"]
                 if not display_on_for_posts:
@@ -3577,7 +3601,6 @@ def create_post():
                 posts_ref = db.collection("posts")
                 duration_hours = 48
                 
-                # Determine if comments/reactions should be included
                 if "School News" in display_on_for_posts and "School Gist" not in display_on_for_posts:
                     post_doc = {
                         "title": title,
@@ -3606,7 +3629,6 @@ def create_post():
                         "total_reactions": 0,
                     }
 
-                # This is the updated part to correctly get the document ID
                 update_time, new_post_ref = posts_ref.add(post_doc)
                 new_post_id = new_post_ref.id
 
@@ -3624,7 +3646,19 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4577,6 +4611,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
