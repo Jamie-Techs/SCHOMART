@@ -638,7 +638,7 @@
             <div class="user-card">
                 <div class="serial-number">{{ loop.index }}</div>
                 <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
-                    <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='default_avatar.png') }}';">
+                    <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
                     <span class="username">{{ user.username }}</span>
                 </a>
                 <div class="referral-count">{{ user.referral_count }} Referrals <i class="fas fa-users"></i></div>
@@ -692,16 +692,18 @@
         });
     });
 
-    // Share referral link
+    // Share referral link - Corrected to use the same logic as your profile page
     function shareLink() {
-        const referralText = document.getElementById("referralLink").textContent;
-        // Use document.execCommand('copy') for better compatibility in iframe environments
+        const referralLinkInput = document.getElementById('referralLink');
+        // Create a temporary input element to hold the text
         const tempInput = document.createElement('textarea');
-        tempInput.value = referralText;
+        tempInput.value = referralLinkInput.textContent;
         document.body.appendChild(tempInput);
         tempInput.select();
+        tempInput.setSelectionRange(0, 99999);
+        
         try {
-            document.execCommand('copy');
+            document.execCommand("copy");
             showNotification("Referral link copied to clipboard!", "success", "fas fa-clipboard-check");
         } catch (err) {
             console.error('Failed to copy text: ', err);
