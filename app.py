@@ -3795,24 +3795,10 @@ def support():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+# --- Helper Functions (Corrected and Consolidated) ---
+# Removed the redundant `is_admin()` and `get_current_user_id()` as they are replaced by decorators.
 
 def get_study_material_by_id_from_db(material_id):
-    """
-    Fetches a single study material by its ID from Firestore, including related
-    state and university names.
-    """
     if db is None:
         app_logger.error("Firestore database instance is not available.")
         return None
@@ -3848,10 +3834,6 @@ def get_study_material_by_id_from_db(material_id):
         return None
 
 def get_media_type_from_extension(file_path):
-    """
-    Determines the media type based on a file extension.
-    Updated to explicitly support documents.
-    """
     if not file_path or not isinstance(file_path, str):
         return 'unknown'
         
@@ -3871,9 +3853,6 @@ def get_media_type_from_extension(file_path):
     return 'unknown'
 
 def get_study_materials_from_db(query=None):
-    """
-    Fetches all study materials from Firestore without pagination.
-    """
     if db is None:
         app_logger.error("Firestore database instance is not available.")
         return [], 0, "Database not initialized."
@@ -3895,14 +3874,28 @@ def get_study_materials_from_db(query=None):
         app_logger.error(f"Error fetching study materials: {e}", exc_info=True)
         return [], 0, str(e)
 
-
+def get_states_from_db():
+    try:
+        states_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("states").stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in states_ref]
+    except Exception as e:
+        app_logger.error(f"Failed to load states: {e}")
+        return []
+def get_locations_for_state(state_id):
+    try:
+        locations_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("locations").where("state_id", "==", state_id).stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in locations_ref]
+    except Exception as e:
+        app_logger.error(f"Failed to load locations for state {state_id}: {e}")
+        return []
 
 # --- Flask Routes ---
 @app.route('/study_hub')
+@login_required # Use the decorator to protect the route
 def study_hub():
     """Renders the main study hub page with initial data for filters."""
-    current_user_id = get_current_user_id()
-    current_user_role = get_user_role(current_user_id)
+    # The user's role and ID are now available on the `g` object
+    current_user_role = 'admin' if getattr(g.current_user, 'is_admin', False) else 'user'
     session['user_role'] = current_user_role
 
     states = []
@@ -3924,22 +3917,21 @@ def study_hub():
     )
 
 @app.route('/admin/post_material')
+@login_required
+@admin_required # Use the decorator for permission checks
 def post_material_page():
     """Renders the admin page for posting study materials."""
-    if not is_admin():
-        flash("You do not have permission to access this page.", "error")
-        return redirect(url_for('study_hub'))
-    
+    # The decorators handle permission checks, so the manual `if not is_admin()` is no longer needed.
     states = get_states_from_db()
     
     return render_template('post_material.html', states=states)
 
 @app.route('/api/post_material', methods=['POST'])
+@login_required
+@admin_required # Use the decorator for permission checks
 def api_post_material():
     """API endpoint to post a new study material."""
-    if not is_admin():
-        return jsonify({"error": "Unauthorized"}), 403
-
+    # The decorators handle permission checks, so the manual `if not is_admin()` is no longer needed.
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
     
@@ -4025,16 +4017,13 @@ def api_study_materials():
             material = material_doc.to_dict()
             material['id'] = material_doc.id
             
-            # Format upload date
             if isinstance(material.get('upload_date'), datetime):
                 material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
             else:
                 material['upload_date'] = str(material.get('upload_date', ''))
             
-            # Use helper to get media type
             material['media_type'] = get_media_type_from_extension(material.get('file_path'))
             
-            # Fetch related data (state and university name)
             state_name = "N/A"
             university_name = "N/A"
             location_id_doc = material.get('location_id')
@@ -4075,7 +4064,6 @@ def api_study_materials():
 
 @app.route('/api/study_materials/<string:material_id>', methods=['GET'])
 def api_study_material_detail(material_id):
-    """API endpoint to fetch details for a single study material."""
     try:
         material = get_study_material_by_id_from_db(material_id)
         if material:
@@ -4094,7 +4082,6 @@ def api_study_material_detail(material_id):
 
 @app.route('/downloads/<path:filename>')
 def download_file(filename):
-    """Handles the download of files from the server's local storage."""
     if 'UPLOAD_FOLDER' not in app.config:
         app_logger.error('UPLOAD_FOLDER is not configured in the application.')
         flash('Server configuration error: Upload folder not defined.', 'error')
@@ -4114,6 +4101,16 @@ def download_file(filename):
         app_logger.error(f"Error serving file {filename}: {e}", exc_info=True)
         flash('An error occurred while trying to download the file.', 'error')
         return redirect(url_for('study_hub'))
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4596,6 +4593,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
