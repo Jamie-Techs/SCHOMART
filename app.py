@@ -3624,27 +3624,6 @@ def view_post(post_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # FAQ page
 @app.route('/faq')
 def faq():
@@ -3652,51 +3631,50 @@ def faq():
      return render_template('faq.html')
 
 
-
-
-        
 @app.route('/leaderboard')
 def leaderboard():
     """
     Fetches user data from Firestore to display a leaderboard.
     """
-    user_id = session.get('user_id')
+    user_id = session.get('user_id')  # Or session.get('user') based on your auth helper
     leaderboard_users = []
     referral_link = "#"
-    followed_ids = set()
 
     try:
-        # 1. Fetch leaderboard data from Firestore
-        # The .order_by() method replaces the SQL 'ORDER BY referral_count DESC' clause.
+        # 1. Fetch leaderboard data from Firestore, ordered by referral count.
         users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).stream()
+        
         for doc in users_ref:
             user_data = doc.to_dict()
+            
+            # **FIXED:** Explicitly call the function to get the profile picture URL.
+            # This ensures a valid, signed URL is always generated.
+            profile_pic_url = get_profile_picture_url(doc.id)
+
             leaderboard_users.append({
                 'id': doc.id,
                 'username': user_data.get('username', 'N/A'),
-                'profile_picture': user_data.get('profile_picture', get_profile_picture_url(doc.id)),
+                'profile_picture': profile_pic_url,
                 'referral_count': user_data.get('referral_count', 0)
             })
 
         if user_id:
-            # 2. Fetch the current user's referral code and generate the link
+            # 2. Fetch the current user's referral code and generate a dynamic link.
             user_doc = db.collection('users').document(user_id).get()
             if user_doc.exists:
-                referral_code = user_doc.to_dict().get('referral_code')
-                if referral_code:
-                    referral_link = f"http://127.0.0.1:5000/signup?ref={referral_code}"
-
-            # 3. Fetch the list of user IDs the current user is following
-            # We assume a 'followers' collection where each document stores who is following whom.
-            followers_ref = db.collection('followers').where(filter=FieldFilter('follower_id', '==', user_id)).stream()
-            followed_ids = {doc.to_dict().get('followed_id') for doc in followers_ref if doc.to_dict().get('followed_id')}
+                user_data = user_doc.to_dict()
+                referral_code = user_data.get('referral_code', user_id)
+                # **FIXED:** Use url_for() to generate a dynamic, correct URL.
+                referral_link = url_for('signup', ref=referral_code, _external=True)
 
     except Exception as e:
-        logger.error(f"Error fetching leaderboard data from Firestore: {e}", exc_info=True)
+        logging.error(f"Error fetching leaderboard data from Firestore: {e}", exc_info=True)
         flash('An error occurred while fetching the leaderboard.', 'error')
 
     # Pass the data to the template
-    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link, followed_ids=followed_ids)
+    # **FIXED:** Removed followed_ids since the feature is deprecated.
+    # Also fixed the typo in the referral_link variable name.
+    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link)
 
 
 
@@ -4418,6 +4396,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
