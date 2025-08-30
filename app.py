@@ -3276,26 +3276,31 @@ def change_phone():
 
 
 
-# Helper function to determine media type from file extension
+
+
 def get_media_type_from_extension(filename):
     """
-    Determines the media type (image, video, document) from a filename's extension.
+    Determines the media type (image or video) from a filename's extension.
+    It defaults to 'image' for any unrecognized file types.
     """
-    # Normalize the filename to lowercase for case-insensitive matching
+    if not isinstance(filename, str):
+        # Fallback for non-string filenames
+        return 'image'
+
     filename = filename.lower()
     
-    image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-    video_extensions = ['.mp4', '.mov', '.avi', '.mkv']
+    # List of common video file extensions
+    video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv']
 
     ext = os.path.splitext(filename)[1]
 
-    if ext in image_extensions:
-        return 'image'
-    elif ext in video_extensions:
+    if ext in video_extensions:
         return 'video'
     else:
-        # Fallback for any other file types
+        # Treats all other file types, including images, as 'image'.
         return 'image'
+
+
 
 # Your existing upload_file_to_firebase function
 def upload_file_to_firebase(file, folder):
@@ -4504,6 +4509,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
