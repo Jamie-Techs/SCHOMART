@@ -3813,9 +3813,6 @@ def save_materials(materials):
 # Load materials on app start
 study_materials = load_materials()
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 @app.before_request
 def before_request():
@@ -4157,13 +4154,6 @@ def get_study_materials():
         and (not school_filter or m['school'].lower() == school_filter)
     ]
     return jsonify(materials=filtered_materials)
-
-# Added to correctly serve the static files for download
-@app.route('/downloads/<filename>')
-def download_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
 
 
 
@@ -4653,6 +4643,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
