@@ -3756,12 +3756,6 @@ def settings():
     return render_template('settings.html')
 
 
-
-   
-    
-    
-
-
     
 @app.route('/disable-chats')
 def disable_chats():
@@ -3790,14 +3784,40 @@ def support():
 
 
 
+
+
+
+
+
+__app_id = "schomart-7a743" # Corrected: Added the missing app ID variable
+
+
+
+# --- Helper Functions (Updated) ---
+def get_state_name(state_id):
+    if not state_id:
+        return 'N/A'
+    
+    state_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('states').document(state_id)
+    state_doc = state_ref.get()
+
+    if state_doc.exists:
+        return state_doc.to_dict().get('name', 'Unknown State')
+    else:
+        return 'Unknown State'
+
+def get_school_name(school_id):
+    if not school_id:
+        return 'N/A'
+
+    school_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('schools').document(school_id)
+    school_doc = school_ref.get()
+
+    if school_doc.exists:
+        return school_doc.to_dict().get('name', 'Unknown School')
+    else:
+        return 'Unknown School'
         
-
-
-
-
-# --- Helper Functions (Corrected and Consolidated) ---
-# Removed the redundant `is_admin()` and `get_current_user_id()` as they are replaced by decorators.
-
 def get_study_material_by_id_from_db(material_id):
     if db is None:
         logger.error("Firestore database instance is not available.")
@@ -3813,15 +3833,15 @@ def get_study_material_by_id_from_db(material_id):
         material_data = material_doc.to_dict()
         material_data['id'] = material_doc.id
 
-        location_id = material_data.get('location_id')
-        if location_id:
-            location_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('locations').document(str(location_id))
-            location_doc = location_ref.get()
-            if location_doc.exists:
-                location_data = location_doc.to_dict()
-                material_data['university_name'] = location_data.get('name')
+        school_id = material_data.get('school_id')
+        if school_id:
+            school_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('schools').document(str(school_id))
+            school_doc = school_ref.get()
+            if school_doc.exists:
+                school_data = school_doc.to_dict()
+                material_data['school_name'] = school_data.get('name')
                 
-                state_id = location_data.get('state_id')
+                state_id = school_data.get('state_id')
                 if state_id:
                     state_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('states').document(str(state_id))
                     state_doc = state_ref.get()
@@ -3881,26 +3901,24 @@ def get_states_from_db():
     except Exception as e:
         logger.error(f"Failed to load states: {e}")
         return []
-def get_locations_for_state(state_id):
+def get_schools_for_state(state_id):
     try:
-        locations_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("locations").where("state_id", "==", state_id).stream()
-        return [{"id": doc.id, **doc.to_dict()} for doc in locations_ref]
+        schools_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("schools").where("state_id", "==", state_id).stream()
+        return [{"id": doc.id, **doc.to_dict()} for doc in schools_ref]
     except Exception as e:
-        logger.error(f"Failed to load locations for state {state_id}: {e}")
+        logger.error(f"Failed to load schools for state {state_id}: {e}")
         return []
 
-# --- Flask Routes ---
+# --- Flask Routes (Updated) ---
 @app.route('/study_hub')
 @login_required # Use the decorator to protect the route
 def study_hub():
-    """Renders the main study hub page with initial data for filters."""
-    # The user's role and ID are now available on the `g` object
     current_user_role = 'admin' if getattr(g.current_user, 'is_admin', False) else 'user'
     session['user_role'] = current_user_role
 
     states = []
     selected_state_id = request.args.get('state_id')
-    selected_location_id = request.args.get('location_id')
+    selected_school_id = request.args.get('school_id') # Changed from location_id
 
     try:
         states = get_states_from_db()
@@ -3913,25 +3931,20 @@ def study_hub():
         current_user_role=current_user_role,
         states=states,
         selected_state_id=selected_state_id,
-        selected_location_id=selected_location_id,
+        selected_school_id=selected_school_id, # Changed from location_id
     )
 
 @app.route('/admin/post_material')
 @login_required
-@admin_required # Use the decorator for permission checks
+@admin_required
 def post_material_page():
-    """Renders the admin page for posting study materials."""
-    # The decorators handle permission checks, so the manual `if not is_admin()` is no longer needed.
     states = get_states_from_db()
-    
     return render_template('post_material.html', states=states)
 
 @app.route('/api/post_material', methods=['POST'])
 @login_required
-@admin_required # Use the decorator for permission checks
+@admin_required
 def api_post_material():
-    """API endpoint to post a new study material."""
-    # The decorators handle permission checks, so the manual `if not is_admin()` is no longer needed.
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
     
@@ -3947,23 +3960,21 @@ def api_post_material():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        # Get form data
         title = request.form.get('title')
         content = request.form.get('content')
         category = request.form.get('category')
-        location_id = request.form.get('location_id')
+        school_id = request.form.get('school_id') # Changed from location_id
 
-        if not all([title, content, category, location_id]):
+        if not all([title, content, category, school_id]):
             return jsonify({"error": "Missing required form data"}), 400
 
-        # Create new Firestore document
         materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
         new_material_data = {
             'title': title,
             'content': content,
             'category': category,
-            'file_path': file_path, # Store the local path to the file
-            'location_id': location_id,
+            'file_path': file_path,
+            'school_id': school_id, # Changed from location_id
             'upload_date': firestore.SERVER_TIMESTAMP
         }
         materials_ref.add(new_material_data)
@@ -3974,25 +3985,23 @@ def api_post_material():
         logger.error(f"Error posting study material: {e}", exc_info=True)
         return jsonify({"error": f"Failed to post study material: {str(e)}"}), 500
 
-@app.route('/api/locations/<string:state_id>', methods=['GET'])
-def api_get_locations(state_id):
-    """API endpoint to get locations for a given state."""
+@app.route('/api/schools/<string:state_id>', methods=['GET'])
+def api_get_schools(state_id): # Changed route name
     try:
-        locations = get_locations_for_state(state_id)
-        return jsonify(locations)
+        schools = get_schools_for_state(state_id)
+        return jsonify(schools)
     except Exception as e:
-        logger.error(f"Failed to fetch locations for state {state_id}: {e}")
-        return jsonify({"error": "Failed to fetch locations."}), 500
+        logger.error(f"Failed to fetch schools for state {state_id}: {e}")
+        return jsonify({"error": "Failed to fetch schools."}), 500
 
 @app.route('/api/study_materials', methods=['GET'])
 def api_study_materials():
-    """API endpoint to fetch study materials with search, state, and location filters."""
     if db is None:
         return jsonify({"error": "Database not initialized"}), 500
     try:
         query_text = request.args.get('query', '').strip()
         state_id = request.args.get('state_id')
-        location_id = request.args.get('location_id')
+        school_id = request.args.get('school_id') # Changed from location_id
 
         materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
         materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING)
@@ -4001,15 +4010,15 @@ def api_study_materials():
             materials_query = materials_query.where("title", ">=", query_text).where("title", "<=", query_text + '\uf8ff')
             
         if state_id:
-            locations_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("locations").where("state_id", "==", state_id).stream()
-            location_ids = [doc.id for doc in locations_ref]
-            if location_ids:
-                materials_query = materials_query.where("location_id", "in", location_ids)
+            schools_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("schools").where("state_id", "==", state_id).stream()
+            school_ids = [doc.id for doc in schools_ref]
+            if school_ids:
+                materials_query = materials_query.where("school_id", "in", school_ids)
             else:
                 return jsonify({'materials': [], 'total_materials': 0, 'total_pages': 0})
         
-        if location_id:
-            materials_query = materials_query.where("location_id", "==", location_id)
+        if school_id:
+            materials_query = materials_query.where("school_id", "==", school_id)
 
         materials_docs = materials_query.stream()
         materials_data = []
@@ -4025,14 +4034,14 @@ def api_study_materials():
             material['media_type'] = get_media_type_from_extension(material.get('file_path'))
             
             state_name = "N/A"
-            university_name = "N/A"
-            location_id_doc = material.get('location_id')
-            if location_id_doc:
-                location_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('locations').document(str(location_id_doc)).get()
-                if location_doc.exists:
-                    location_data = location_doc.to_dict()
-                    university_name = location_data.get('name', 'N/A')
-                    state_id_doc = location_data.get('state_id')
+            school_name = "N/A" # Changed from university_name
+            school_id_doc = material.get('school_id')
+            if school_id_doc:
+                school_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('schools').document(str(school_id_doc)).get()
+                if school_doc.exists:
+                    school_data = school_doc.to_dict()
+                    school_name = school_data.get('name', 'N/A')
+                    state_id_doc = school_data.get('state_id')
                     if state_id_doc:
                         state_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('states').document(str(state_id_doc)).get()
                         if state_doc.exists:
@@ -4047,7 +4056,7 @@ def api_study_materials():
                 'file_path': material.get('file_path', ''),
                 'media_type': material['media_type'],
                 'state_name': state_name,
-                'university_name': university_name,
+                'school_name': school_name, # Changed from university_name
                 'view_url': url_for('api_study_material_detail', material_id=material['id']),
                 'can_request': True
             })
@@ -4101,6 +4110,23 @@ def download_file(filename):
         logger.error(f"Error serving file {filename}: {e}", exc_info=True)
         flash('An error occurred while trying to download the file.', 'error')
         return redirect(url_for('study_hub'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
 
 
@@ -4593,6 +4619,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
