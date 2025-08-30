@@ -3645,6 +3645,12 @@ def view_post(post_id):
 
 
 
+# FAQ page
+@app.route('/faq')
+def faq():
+    # Implement FAQ
+     return render_template('faq.html')
+
 
 
 
@@ -3691,101 +3697,6 @@ def leaderboard():
 
     # Pass the data to the template
     return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link, followed_ids=followed_ids)
-
-
-
-
-
-
-
-
-
-def get_unread_notifications_count(user_id):
-    """
-    Counts the number of unread notifications for a given user in Firestore.
-    
-    This function queries the 'notifications' collection, filtering for documents
-    where 'user_id' matches and 'is_read' is False. It then counts the number
-    of documents in the resulting stream.
-    
-    For a very large number of notifications, a denormalized counter in the
-    'users' document would be a more scalable approach to avoid reading all
-    notification documents just to get a count.
-    """
-    try:
-        # Create a query to find unread notifications for the user.
-        # Firestore's query syntax is naturally protected from injection.
-        # We use a filter instead of a raw SQL string.
-        unread_notifications_query = db.collection('notifications').where(
-            filter=FieldFilter('user_id', '==', str(user_id))
-        ).where(
-            filter=FieldFilter('is_read', '==', False)
-        )
-        
-        # We stream the documents and count them.
-        notifications_stream = unread_notifications_query.stream()
-        
-        # Count the documents in the generator. This is an efficient way to count
-        # if the number of documents is not extremely large.
-        count = sum(1 for _ in notifications_stream)
-        
-        return count
-    except Exception as e:
-        current_app.logger.error(f"Error getting unread notification count for user {user_id}: {e}", exc_info=True)
-        return 0  # Default to 0 on any error
-
-
-
-@app.route("/messages")
-def messages():
-    user_id = g.user.id
-    chat_users_data = fetch_chat_sidebar_data(user_id)
-    
-    # The logic below for redirecting to the first chat is preserved
-    if chat_users_data and request.args.get('redirect_to_first_chat', 'true').lower() == 'true':
-        first_chat = chat_users_data[0]
-        return redirect(url_for('message', receiver_id=first_chat['id'], advert_id=first_chat['advert_id']))
-
-    # The original route had two identical queries. This refactors it.
-    return render_template(
-        "messages.html", chat_users=chat_users_data, recipient=None, messages=[], advert_id=None
-
-    )
-        
-        
-
-@app.route('/settings')
-def settings():
-    return render_template('settings.html')
-
-
-    
-@app.route('/disable-chats')
-def disable_chats():
-    return render_template('disable_chats.html')
-
-@app.route('/disable-feedback')
-def disable_feedback():
-    return render_template('disable_feedback.html')
-
-
-
-# FAQ page
-@app.route('/faq')
-def faq():
-    # Implement FAQ
-     return render_template('faq.html')
-
-# Support page
-@app.route('/support')
-def support():
-    # Implement support
-     return render_template('support.html')
-
-
-    
-
-
 
 
 
@@ -3922,40 +3833,29 @@ def download_material(material_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Updated routes for CGPA Calculator
 @app.route('/cgpa_calculator')
+@login_required
 def cgpa_calculator_page():
-    """Renders the CGPA calculation page."""
-    return render_template('cgpa_calculator.html')
+    """Renders the CGPA calculation page and loads saved data from session."""
+    # Load courses and TCGPA from session, or default to empty
+    courses = session.get('courses', [])
+    tcgpa = session.get('tcgpa', None)
+    
+    # Pass the data to the template
+    return render_template('cgpa_calculator.html', courses=courses, tcgpa=tcgpa)
 
-# This function does not use a database, so no changes are needed.
 @app.route('/api/calculate_cgpa', methods=['POST'])
+
 def api_calculate_cgpa():
     data = request.get_json()
     courses = data.get('courses', [])
-
+    
     total_grade_points = 0
     total_credit_units = 0
 
+    # This grading scale is common in many Nigerian universities on a 5.0 scale.
+    # Note: Grading systems can vary, so this is a general example.
     grading_scale = {
         'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
     }
@@ -3969,14 +3869,50 @@ def api_calculate_cgpa():
             total_grade_points += (grade_point * credit_unit)
             total_credit_units += credit_unit
         else:
-            logger.warning(f"Invalid grade encountered: {grade}")
+            logging.warning(f"Invalid grade encountered: {grade}")
 
     if total_credit_units == 0:
         cgpa = 0.0
     else:
         cgpa = total_grade_points / total_credit_units
 
-    return jsonify({'success': True, 'cgpa': round(cgpa, 2)})
+    # Determine class of degree based on CGPA
+    cgpa_class = 'No Class'
+    if 4.50 <= cgpa <= 5.00:
+        cgpa_class = 'First Class'
+    elif 3.50 <= cgpa <= 4.49:
+        cgpa_class = 'Second Class Upper'
+    elif 2.40 <= cgpa <= 3.49:
+        cgpa_class = 'Second Class Lower'
+    elif 1.50 <= cgpa <= 2.39:
+        cgpa_class = 'Third Class'
+    else:
+        cgpa_class = 'Pass/Fail'
+
+    # Save the calculation results to the user's session
+    session['courses'] = courses
+    session['cgpa'] = round(cgpa, 2)
+    session['total_grade_points'] = round(total_grade_points, 2)
+    session['total_credit_units'] = total_credit_units
+    
+    # TCGPA is calculated and added to the session
+    session['tcgpa'] = data.get('tcgpa', None) 
+    
+    return jsonify({
+        'success': True,
+        'cgpa': round(cgpa, 2),
+        'total_grade_points': round(total_grade_points, 2),
+        'total_credit_units': total_credit_units,
+        'class_of_degree': cgpa_class
+    })
+
+
+
+
+
+
+
+
 
 
 
@@ -3987,6 +3923,98 @@ def api_calculate_cgpa():
    # current_user_id = get_current_user_id()
  #   current_user_role = get_user_role(current_user_id)
  #   return render_template('school_gist.html', current_user_id=current_user_id, current_user_role=current_user_role)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_unread_notifications_count(user_id):
+    """
+    Counts the number of unread notifications for a given user in Firestore.
+    
+    This function queries the 'notifications' collection, filtering for documents
+    where 'user_id' matches and 'is_read' is False. It then counts the number
+    of documents in the resulting stream.
+    
+    For a very large number of notifications, a denormalized counter in the
+    'users' document would be a more scalable approach to avoid reading all
+    notification documents just to get a count.
+    """
+    try:
+        # Create a query to find unread notifications for the user.
+        # Firestore's query syntax is naturally protected from injection.
+        # We use a filter instead of a raw SQL string.
+        unread_notifications_query = db.collection('notifications').where(
+            filter=FieldFilter('user_id', '==', str(user_id))
+        ).where(
+            filter=FieldFilter('is_read', '==', False)
+        )
+        
+        # We stream the documents and count them.
+        notifications_stream = unread_notifications_query.stream()
+        
+        # Count the documents in the generator. This is an efficient way to count
+        # if the number of documents is not extremely large.
+        count = sum(1 for _ in notifications_stream)
+        
+        return count
+    except Exception as e:
+        current_app.logger.error(f"Error getting unread notification count for user {user_id}: {e}", exc_info=True)
+        return 0  # Default to 0 on any error
+
+
+
+@app.route("/messages")
+def messages():
+    user_id = g.user.id
+    chat_users_data = fetch_chat_sidebar_data(user_id)
+    
+    # The logic below for redirecting to the first chat is preserved
+    if chat_users_data and request.args.get('redirect_to_first_chat', 'true').lower() == 'true':
+        first_chat = chat_users_data[0]
+        return redirect(url_for('message', receiver_id=first_chat['id'], advert_id=first_chat['advert_id']))
+
+    # The original route had two identical queries. This refactors it.
+    return render_template(
+        "messages.html", chat_users=chat_users_data, recipient=None, messages=[], advert_id=None
+
+    )
+        
+        
+
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
+
+    
+@app.route('/disable-chats')
+def disable_chats():
+    return render_template('disable_chats.html')
+
+@app.route('/disable-feedback')
+def disable_feedback():
+    return render_template('disable_feedback.html')
+
+
+
+# Support page
+@app.route('/support')
+def support():
+    # Implement support
+     return render_template('support.html')
+
+
 
 
 
@@ -4396,6 +4424,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
