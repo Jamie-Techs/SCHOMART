@@ -3385,7 +3385,7 @@ def delete_media_from_firebase(media_url):
         return False
 
 
-
+# In your app.py file, find the create_post function and replace the file handling loop:
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -3409,12 +3409,13 @@ def create_post():
 
         media_items_to_save = []
         try:
-            # FIX: The file is now correctly uploaded from the form's `media_files` field.
+            # ⭐ CRITICAL FIX: The file is now correctly handled to create the media_items list.
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
                     uploaded_url = upload_file_to_firebase(media_file, "posts")
                     if uploaded_url:
+                        # Correctly structure the dictionary to match the frontend template logic
                         media_items_to_save.append({
                             "media_type": get_media_type_from_extension(media_file.filename), 
                             "media_path_or_url": uploaded_url,
@@ -3455,6 +3456,12 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
+
+
+
+
+
+
 
 
 @app.route("/school_news")
@@ -4485,6 +4492,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
