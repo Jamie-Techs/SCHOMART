@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Study Hub</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Font Awesome CDN for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Adding Inter font as per best practices -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Common CSS variables and resets - Similar to other pages, but includes CGPA specific styles */
         :root {
-            --primary-color: #006B3C; /* Dark Green */
-            --secondary-color: #FDB813; /* Gold/Yellow */
-            --accent-color: #00391F; /* Even Darker Green */
+            --primary-color: #006B3C;
+            --secondary-color: #FDB813;
+            --accent-color: #00391F;
             --light-background: #f5f5f5;
             --card-background: #ffffff;
             --border-color: #e0e0e0;
@@ -25,21 +22,17 @@
             --border-radius: 8px;
             --transition-speed: 0.3s ease;
         }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
-            font-family: 'Inter', sans-serif; /* Changed to Inter */
+            font-family: 'Inter', sans-serif;
             background-color: var(--light-background);
             color: var(--text-color);
             line-height: 1.6;
         }
-
-        /* Header */
         .header {
             background-color: var(--primary-color);
             color: var(--white-text);
@@ -49,17 +42,15 @@
             position: relative;
             z-index: 10;
         }
-
         .header h1 {
             margin: 0;
             font-size: 2.8em;
             color: var(--white-text);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            display: inline-flex; /* For icon alignment */
+            display: inline-flex;
             align-items: center;
             gap: 10px;
         }
-
         .home-button {
             position: absolute;
             left: 20px;
@@ -73,24 +64,20 @@
             font-weight: 600;
             transition: background-color var(--transition-speed), transform var(--transition-speed);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: inline-flex; /* For icon alignment */
+            display: inline-flex;
             align-items: center;
             gap: 5px;
         }
-
         .home-button:hover {
             background-color: #FFD700;
             transform: translateY(-50%) scale(1.05);
         }
-
         .container-wrapper {
             width: 90%;
             max-width: 900px;
             margin: 20px auto;
             padding: 0 15px;
         }
-
-        /* Tab Navigation (top-level: School Gist, News, Material) */
         .tab-nav {
             display: flex;
             justify-content: center;
@@ -100,7 +87,6 @@
             box-shadow: var(--box-shadow);
             overflow: hidden;
         }
-
         .tab-nav a {
             flex: 1;
             text-align: center;
@@ -112,25 +98,21 @@
             transition: all var(--transition-speed);
             border-bottom: 3px solid transparent;
             white-space: nowrap;
-            display: flex; /* For icon alignment */
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-
         .tab-nav a:hover {
             background-color: var(--light-green-background);
             color: var(--accent-color);
         }
-
         .tab-nav a.active {
             background-color: var(--primary-color);
             color: var(--white-text);
             border-bottom-color: var(--secondary-color);
             cursor: default;
         }
-
-        /* Inner Tab Navigation (Study Material / CGP Calculator) */
         .tabs {
           display: flex;
           justify-content: center;
@@ -139,8 +121,7 @@
           border-radius: var(--border-radius);
           overflow: hidden;
           border: 1px solid var(--border-color);
-      }
-
+        }
         .tab-button {
             flex: 1;
             padding: 12px 15px;
@@ -152,48 +133,39 @@
             font-weight: 600;
             transition: all var(--transition-speed);
             border-bottom: 2px solid transparent;
-            display: flex; /* For icon alignment */
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-
         .tab-button:hover {
             background-color: var(--light-green-background);
         }
-
         .tab-button.active {
             background-color: var(--primary-color);
             color: var(--white-text);
             border-bottom-color: var(--secondary-color);
             cursor: default;
         }
-
         .tab-content {
             display: none;
             padding: 20px 0;
         }
-
         .tab-content.active {
             display: block;
         }
-
-        /* Flash Messages */
         #flash-messages div {
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 0.5rem;
             font-weight: 600;
-            display: flex; /* For icon alignment */
+            display: flex;
             align-items: center;
             gap: 8px;
         }
         .bg-red-100 { background-color: #fee2e2; } .text-red-700 { color: #b91c1c; }
         .bg-green-100 { background-color: #d1fae5; } .text-green-700 { color: #065f46; }
         .bg-blue-100 { background-color: #dbeafe; } .text-blue-700 { color: #1e40af; }
-
-
-        /* Search Container */
         .search-container {
             margin-bottom: 30px;
             display: flex;
@@ -201,7 +173,6 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-
         .search-container input[type="text"] {
             flex-grow: 1;
             padding: 12px 15px;
@@ -211,13 +182,11 @@
             max-width: 400px;
             transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
         }
-
         .search-container input[type="text"]:focus {
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2);
             outline: none;
         }
-
         .search-container button {
             padding: 12px 20px;
             background-color: var(--primary-color);
@@ -228,23 +197,19 @@
             font-size: 1em;
             font-weight: 600;
             transition: background-color var(--transition-speed), transform var(--transition-speed);
-            display: inline-flex; /* For icon alignment */
+            display: inline-flex;
             align-items: center;
             gap: 8px;
         }
-
         .search-container button:hover {
             background-color: var(--accent-color);
             transform: translateY(-2px);
         }
-
-        /* Study Materials Styling */
         #materialsContainer {
             display: grid;
             gap: 25px;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
-
         .material-post {
             background-color: var(--card-background);
             border: 1px solid var(--border-color);
@@ -252,38 +217,32 @@
             padding: 20px;
             box-shadow: var(--box-shadow);
             transition: transform var(--transition-speed), box-shadow var(--transition-speed);
-            display: flex; /* For overall layout */
+            display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
-
         .material-post:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
-
         .material-post h3 {
             margin-bottom: 10px;
             font-size: 1.5em;
             color: var(--primary-color);
         }
-
         .material-post h3 a {
             text-decoration: none;
             color: inherit;
             transition: color var(--transition-speed);
         }
-
         .material-post h3 a:hover {
             color: var(--secondary-color);
         }
-
         .material-post p {
             margin-bottom: 15px;
             color: #555;
             flex-grow: 1;
         }
-
         .meta-info {
             font-size: 0.85em;
             color: #666;
@@ -292,7 +251,6 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-
         .meta-info span {
             display: inline-flex;
             align-items: center;
@@ -301,7 +259,6 @@
         .meta-info i {
             color: var(--primary-color);
         }
-
         .material-post .media-preview {
             max-width: 100%;
             height: auto;
@@ -311,14 +268,12 @@
             object-fit: contain;
             max-height: 200px;
         }
-
         video.media-preview, audio.media-preview {
             width: 100%;
             max-height: 300px;
         }
-
         .download-link {
-            display: inline-flex; /* For icon alignment */
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             background-color: var(--secondary-color);
@@ -329,64 +284,18 @@
             font-weight: 600;
             margin-top: 10px;
             transition: background-color var(--transition-speed), transform var(--transition-speed);
-            gap: 8px; /* Space between icon and text */
+            gap: 8px;
         }
-
         .download-link:hover {
             background-color: #FFD700;
             transform: translateY(-2px);
         }
-
         .material-post small {
             display: block;
             margin-bottom: 15px;
             color: #777;
             font-size: 0.9em;
         }
-
-        /* Pagination Styling */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center; /* Align items vertically */
-            margin-top: 30px;
-            gap: 10px;
-        }
-
-        .pagination button {
-            padding: 10px 15px;
-            border: 1px solid var(--primary-color);
-            border-radius: var(--border-radius);
-            background-color: var(--card-background);
-            color: var(--primary-color);
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            font-weight: 600;
-            display: inline-flex; /* For icon alignment */
-            align-items: center;
-            gap: 8px;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-        }
-
-        .pagination button:disabled {
-            background-color: #e0e0e0;
-            color: #999;
-            cursor: not-allowed;
-            border-color: #ccc;
-        }
-
-        .pagination span {
-            padding: 10px 15px;
-            color: var(--text-color);
-            font-weight: 600;
-            font-size: 1.1em;
-        }
-
-        /* Filter Area - New Styles for icons */
         .filter-group {
             display: flex;
             align-items: center;
@@ -396,16 +305,14 @@
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
         }
-
         .filter-group label {
             font-weight: 600;
             color: var(--primary-color);
             white-space: nowrap;
             display: inline-flex;
             align-items: center;
-            gap: 5px; /* space for icon */
+            gap: 5px;
         }
-
         .filter-group select {
             padding: 8px;
             border: 1px solid var(--border-color);
@@ -415,21 +322,19 @@
             min-width: 120px;
             max-width: 180px;
         }
-
-        /* CGP Calculator specific styles */
         .btn-primary {
           background-color: var(--primary-color);
-          color: var(--white-text); /* White text for primary buttons */
+          color: var(--white-text);
           padding: 10px 20px;
           border-radius: var(--border-radius);
           transition: background-color var(--transition-speed);
           cursor: pointer;
-          display: inline-flex; /* For icon alignment */
+          display: inline-flex;
           align-items: center;
           gap: 8px;
       }
       .btn-primary i {
-          color: var(--white-text); /* White icon for primary buttons */
+          color: var(--white-text);
       }
       .btn-primary:hover {
           background-color: var(--accent-color);
@@ -437,44 +342,40 @@
       .btn-primary:hover i {
           color: var(--white-text);
       }
-
-
       .btn-accent {
           background-color: var(--secondary-color);
-          color: var(--primary-color); /* Green text for accent buttons */
+          color: var(--primary-color);
           padding: 10px 20px;
           border-radius: var(--border-radius);
           transition: background-color var(--transition-speed);
           cursor: pointer;
-          display: inline-flex; /* For icon alignment */
+          display: inline-flex;
           align-items: center;
           gap: 8px;
       }
       .btn-accent i {
-          color: var(--primary-color); /* Green icon for accent buttons */
+          color: var(--primary-color);
       }
       .btn-accent:hover {
           background-color: #FFD700;
-          color: var(--primary-color); /* Keep green text on hover */
+          color: var(--primary-color);
       }
       .btn-accent:hover i {
           color: var(--primary-color);
       }
-
-
       .btn-danger {
           background-color: #dc3545;
-          color: var(--white-text); /* White text for danger buttons */
+          color: var(--white-text);
           padding: 10px 20px;
           border-radius: var(--border-radius);
           transition: background-color var(--transition-speed);
           cursor: pointer;
-          display: inline-flex; /* For icon alignment */
+          display: inline-flex;
           align-items: center;
           gap: 8px;
       }
       .btn-danger i {
-          color: var(--white-text); /* White icon for danger buttons */
+          color: var(--white-text);
       }
       .btn-danger:hover {
           background-color: #c82333;
@@ -482,222 +383,198 @@
       .btn-danger:hover i {
           color: var(--white-text);
       }
-
-
       .table-header {
           background-color: var(--primary-color);
           color: var(--white-text);
       }
-
       .table-header th {
           color: var(--white-text);
-          display: flex; /* For icon alignment in table headers */
+          display: flex;
           align-items: center;
           gap: 5px;
       }
       .table-header th i {
           color: var(--white-text);
       }
-        /* Results section */
-        #results-section h2, #results-section h3 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        #result-summary p {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #result-summary p strong {
-             display: inline-flex;
-             align-items: center;
-             gap: 8px;
-        }
-        #result-summary p i {
-            color: var(--primary-color); /* Color for result icons */
-        }
-
-        .list-inside li {
-            display: flex;
+      #results-section h2, #results-section h3 {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+      }
+      #result-summary p {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+      #result-summary p strong {
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-        }
-        .list-inside li i {
-            color: #065f46; /* Green for checkmarks */
-        }
-        .list-inside li .fa-times {
-            color: #b91c1c; /* Red for fail */
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: var(--card-background);
-            margin: auto;
-            padding: 30px; /* Increased padding */
-            border-radius: 10px; /* More rounded */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .close-button {
-            color: #aaa;
-            position: absolute; /* Absolute positioning */
-            top: 15px; /* From top */
-            right: 20px; /* From right */
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
-
-        .close-button:hover,
-        .close-button:focus {
-            color: #000;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .tooltip-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip-text {
-            visibility: hidden;
-            width: 160px; /* Increased width for better readability */
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px 0;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%; /* Position above the element */
-            left: 50%;
-            margin-left: -80px; /* Center the tooltip */
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .tooltip-container:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2.2em;
-            }
-            .home-button {
-                left: 10px;
-                padding: 8px 12px;
-                font-size: 0.9em;
-            }
-            .tab-nav a {
-                font-size: 1em;
-                padding: 12px 15px;
-            }
-            .search-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            .search-container input[type="text"] {
-                max-width: 100%;
-            }
-            #materialsContainer {
-                gap: 15px;
-            }
-            .material-post {
-                padding: 15px;
-            }
-            .material-post h3 {
-                font-size: 1.3em;
-            }
-             .filter-area {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .filter-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .filter-group select {
-                width: 100%;
-                max-width: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container-wrapper {
-                width: 95%;
-            }
-            .header h1 {
-                font-size: 1.8em;
-                gap: 5px; /* Smaller gap on small screens */
-            }
-            .home-button {
-                position: static;
-                transform: none;
-                margin: 10px auto;
-                display: flex;
-                width: 100%;
-                justify-content: center;
-            }
-            .tab-nav {
-                flex-direction: column;
-                border-radius: var(--border-radius);
-            }
-            .tab-nav a {
-                border-bottom: 1px solid var(--border-color);
-                border-right: none;
-                padding: 10px 15px;
-                font-size: 0.9em;
-            }
-            .tab-nav a:last-child {
-                border-bottom: none;
-            }
-            .tab-button {
-                font-size: 0.9em;
-                padding: 10px 12px;
-            }
-            .material-post h3 {
-                font-size: 1.2em;
-            }
-            .pagination {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
+      }
+      #result-summary p i {
+          color: var(--primary-color);
+      }
+      .list-inside li {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+      .list-inside li i {
+          color: #065f46;
+      }
+      .list-inside li .fa-times {
+          color: #b91c1c;
+      }
+      .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0,0,0,0.6);
+          justify-content: center;
+          align-items: center;
+      }
+      .modal-content {
+          background-color: var(--card-background);
+          margin: auto;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+          width: 90%;
+          max-width: 500px;
+          position: relative;
+          animation: fadeIn 0.3s ease-out;
+      }
+      .close-button {
+          color: #aaa;
+          position: absolute;
+          top: 15px;
+          right: 20px;
+          font-size: 28px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: color 0.2s ease;
+      }
+      .close-button:hover,
+      .close-button:focus {
+          color: #000;
+      }
+      @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+      .tooltip-container {
+          position: relative;
+          display: inline-block;
+      }
+      .tooltip-text {
+          visibility: hidden;
+          width: 160px;
+          background-color: rgba(0, 0, 0, 0.8);
+          color: #fff;
+          text-align: center;
+          border-radius: 6px;
+          padding: 5px 0;
+          position: absolute;
+          z-index: 1;
+          bottom: 125%;
+          left: 50%;
+          margin-left: -80px;
+          opacity: 0;
+          transition: opacity 0.3s;
+      }
+      .tooltip-container:hover .tooltip-text {
+          visibility: visible;
+          opacity: 1;
+      }
+      @media (max-width: 768px) {
+          .header h1 {
+              font-size: 2.2em;
+          }
+          .home-button {
+              left: 10px;
+              padding: 8px 12px;
+              font-size: 0.9em;
+          }
+          .tab-nav a {
+              font-size: 1em;
+              padding: 12px 15px;
+          }
+          .search-container {
+              flex-direction: column;
+              align-items: center;
+          }
+          .search-container input[type="text"] {
+              max-width: 100%;
+          }
+          #materialsContainer {
+              gap: 15px;
+          }
+          .material-post {
+              padding: 15px;
+          }
+          .material-post h3 {
+              font-size: 1.3em;
+          }
+          .filter-area {
+              flex-direction: column;
+              align-items: stretch;
+          }
+          .filter-group {
+              flex-direction: column;
+              align-items: flex-start;
+          }
+          .filter-group select {
+              width: 100%;
+              max-width: none;
+          }
+      }
+      @media (max-width: 480px) {
+          .container-wrapper {
+              width: 95%;
+          }
+          .header h1 {
+              font-size: 1.8em;
+              gap: 5px;
+          }
+          .home-button {
+              position: static;
+              transform: none;
+              margin: 10px auto;
+              display: flex;
+              width: 100%;
+              justify-content: center;
+          }
+          .tab-nav {
+              flex-direction: column;
+              border-radius: var(--border-radius);
+          }
+          .tab-nav a {
+              border-bottom: 1px solid var(--border-color);
+              border-right: none;
+              padding: 10px 15px;
+              font-size: 0.9em;
+          }
+          .tab-nav a:last-child {
+              border-bottom: none;
+          }
+          .tab-button {
+              font-size: 0.9em;
+              padding: 10px 12px;
+          }
+          .material-post h3 {
+              font-size: 1.2em;
+          }
+      }
     </style>
 </head>
 <body class="p-4 md:p-8">
   <div class="header">
     <a href="/" class="home-button">Home</a>
-    
     <h1>Study Hub</h1>
   </div>
 
@@ -706,6 +583,9 @@
       <a href="/school_gist">School Gist</a>
       <a href="/school_news">School News</a>
       <a href="/study_hub" class="active">Study Material</a>
+      {% if current_user_role == 'admin' %}
+      <a href="/admin/post_material">Post Material</a>
+      {% endif %}
     </div>
 
     <div id="flash-messages" class="mb-4">
@@ -731,11 +611,6 @@
         <button id="searchButton">Search</button>
       </div>
       <div id="materialsContainer">
-      </div>
-      <div class="pagination">
-        <button id="prevPage" disabled>Previous</button>
-        <span id="currentPage">Page 1</span>
-        <button id="nextPage">Next</button>
       </div>
     </div>
 
@@ -773,7 +648,7 @@
               </tr>
             </thead>
             <tbody id="course-body" class="bg-white divide-y divide-gray-200">
-                          </tbody>
+            </tbody>
           </table>
         </div>
 
@@ -828,7 +703,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // --- General Tab Functionality ---
-      const mainTabNavLinks = document.querySelectorAll('.tab-nav a');
       const innerTabButtons = document.querySelectorAll('.tab-button');
       const innerTabContents = document.querySelectorAll('.tab-content');
 
@@ -842,12 +716,6 @@
 
         document.getElementById(tabId).classList.add('active');
         document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
-
-        // If switching to CGP calculator, ensure it's initialized
-        if (tabId === 'cgp-calculator' && !window.cgpCalculatorInitialized) {
-          initCGPCalculator();
-          window.cgpCalculatorInitialized = true;
-        }
       }
 
       innerTabButtons.forEach(button => {
@@ -857,46 +725,36 @@
         });
       });
 
-      // Set initial active inner tab (Study Material)
       showInnerTab('study-material');
 
       // --- Study Material Section Script ---
       const materialsContainer = document.getElementById('materialsContainer');
       const searchInput = document.getElementById('searchInput');
       const searchButton = document.getElementById('searchButton');
-      const prevPageBtnStudy = document.getElementById('prevPage');
-      const nextPageBtnStudy = document.getElementById('nextPage');
-      const currentPageSpanStudy = document.getElementById('currentPage');
+      const filterStateSelect = document.getElementById('state_filter');
+      const filterLocationSelect = document.getElementById('location_filter');
 
-      let currentPageStudy = 1;
-      let totalPagesStudy = 1;
-      const materialsPerPage = 10; // Must match backend's per_page for /api/study_materials
-
-
-      async function fetchAndRenderStudyMaterials(query = '', page = 1) {
+      async function fetchAndRenderStudyMaterials(query = '') {
         materialsContainer.innerHTML = '<p style="text-align: center;">Loading study materials...</p>';
-        
+
         const url = new URL('/api/study_materials', window.location.origin);
-        url.searchParams.append('page', page);
-        url.searchParams.append('per_page', materialsPerPage);
         if (query) {
-          url.searchParams.append('query', query);
+            url.searchParams.append('query', query);
         }
 
         try {
-          const res = await fetch(url);
-          if (!res.ok) {
-            const errorData = await res.json();
-            console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
-            materialsContainer.innerHTML = `<p style="text-align: center; color: red;">Failed to load study materials: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
-            return;
-          }
-          const data = await res.json();
-          renderStudyMaterials(data.materials);
-          updatePaginationStudy(data.total_pages, data.page);
+            const res = await fetch(url);
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
+                materialsContainer.innerHTML = `<p style="text-align: center; color: red;">Failed to load study materials: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
+                return;
+            }
+            const data = await res.json();
+            renderStudyMaterials(data.materials);
         } catch (error) {
-          console.error('Error fetching study materials:', error);
-          materialsContainer.innerHTML = '<p style="text-align: center; color: red;">An error occurred while loading study materials. Please check your network connection.</p>';
+            console.error('Error fetching study materials:', error);
+            materialsContainer.innerHTML = '<p style="text-align: center; color: red;">An error occurred while loading study materials. Please check your network connection.</p>';
         }
       }
 
@@ -911,85 +769,80 @@
           const div = document.createElement('div');
           div.className = 'material-post';
 
+          const fileUrl = `/downloads/${material.file_path.split('/').pop()}`;
           let mediaHTML = '';
-          const fileUrl = material.file_path; // The actual URL to the file
+          let iconClass = 'fa-solid fa-file'; // Default icon for unknown type
 
-          if (fileUrl) {
-            if (material.media_type === 'image') {
+          switch (material.media_type) {
+            case 'document':
+              iconClass = getDocumentIconClass(material.file_path);
+              mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="${iconClass}"></i></div>`;
+              break;
+            case 'image':
               mediaHTML = `<img src="${fileUrl}" alt="material media" class="media-preview">`;
-            } else if (material.media_type === 'video') {
-              mediaHTML = `
-                <video class="media-preview" controls>
-                  <source src="${fileUrl}" type="video/mp4">
-                  Your browser does not support the video tag.
-                </video>`;
-            } else if (material.media_type === 'audio') {
-              mediaHTML = `
-                <audio controls class="media-preview">
-                  <source src="${fileUrl}" type="audio/mpeg">
-                  Your browser does not support the audio element.
-                </audio>`;
-            } else if (material.media_type === 'document') {
-                const filename = fileUrl.split('/').pop();
-                mediaHTML = `<p class="mb-2 text-gray-700">File Type: Document</p>`;
-            }
+              break;
+            case 'video':
+              mediaHTML = `<video src="${fileUrl}" controls class="media-preview"></video>`;
+              break;
+            default:
+              mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="fa-solid fa-file"></i></div>`;
+              break;
           }
 
-          const materialContent = material.content ? material.content.substring(0, 150) + (material.content.length > 150 ? '...' : '') : '';
-          const uploadDate = new Date(material.upload_date).toLocaleString('en-US', {
-              year: 'numeric', month: 'long', day: 'numeric',
-              hour: '2-digit', minute: '2-digit'
-          });
-
-
           div.innerHTML = `
-            <h3><a href="/api/study_materials/${material.id}">${material.title || 'Untitled Material'}</a></h3>
-            <small>Category: ${material.category || 'N/A'} | Uploaded: ${uploadDate}</small>
-            <p>${materialContent}</p>
+            <h3>${material.title}</h3>
+            <div class="meta-info">
+              <span><i class="fas fa-university"></i> ${material.university_name || 'N/A'}</span>
+              <span><i class="fas fa-map-marker-alt"></i> ${material.state_name || 'N/A'}</span>
+              <span><i class="fas fa-tag"></i> ${material.category || 'N/A'}</span>
+            </div>
             ${mediaHTML}
-            <a href="${fileUrl}" class="download-link" download>Download File</a>
+            <p>${material.content}</p>
+            <div class="mt-auto">
+              <a href="${fileUrl}" download="${material.file_path.split('/').pop()}" class="download-link">
+                <i class="fas fa-download"></i> Download
+              </a>
+            </div>
           `;
           materialsContainer.appendChild(div);
         });
       }
-
-      // --- Pagination Logic for Study Materials ---
-      function updatePaginationStudy(totalPagesFromApi, currentPageFromApi) {
-          totalPagesStudy = totalPagesFromApi;
-          currentPageStudy = currentPageFromApi;
-          currentPageSpanStudy.textContent = `Page ${currentPageStudy} of ${totalPagesStudy}`;
-
-          prevPageBtnStudy.disabled = (currentPageStudy === 1);
-          nextPageBtnStudy.disabled = (currentPageStudy === totalPagesStudy || totalPagesStudy === 0);
+      
+      function getDocumentIconClass(file_path) {
+          const ext = file_path.split('.').pop().toLowerCase();
+          const iconMap = {
+              'pdf': 'fa-solid fa-file-pdf',
+              'doc': 'fa-solid fa-file-word',
+              'docx': 'fa-solid fa-file-word',
+              'xls': 'fa-solid fa-file-excel',
+              'xlsx': 'fa-solid fa-file-excel',
+              'ppt': 'fa-solid fa-file-powerpoint',
+              'pptx': 'fa-solid fa-file-powerpoint',
+              'txt': 'fa-solid fa-file-alt',
+              'rtf': 'fa-solid fa-file-alt'
+          };
+          return iconMap[ext] || 'fa-solid fa-file';
       }
 
-      prevPageBtnStudy.addEventListener('click', () => {
-          if (currentPageStudy > 1) {
-              fetchAndRenderStudyMaterials(searchInput.value.trim(), currentPageStudy - 1);
-          }
-      });
-
-      nextPageBtnStudy.addEventListener('click', () => {
-          if (currentPageStudy < totalPagesStudy) {
-              fetchAndRenderStudyMaterials(searchInput.value.trim(), currentPageStudy + 1);
-          }
-      });
-
-
       searchButton.addEventListener('click', () => {
-        currentPageStudy = 1;
-        const query = searchInput.value.trim();
-        fetchAndRenderStudyMaterials(query, currentPageStudy);
+          const query = searchInput.value;
+          fetchAndRenderStudyMaterials(query);
       });
 
       searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          searchButton.click();
-        }
+          if (e.key === 'Enter') {
+              const query = searchInput.value;
+              fetchAndRenderStudyMaterials(query);
+          }
       });
+      
+      // Initial fetch
+      fetchAndRenderStudyMaterials();
+    });
+  </script>
+    <script>
 
-      // Initial load of study materials
-      fetchAndRenderStudyMaterials(searchInput.value.trim(), currentPageStudy);
+
 
 
       // --- CGP Calculator Script ---
