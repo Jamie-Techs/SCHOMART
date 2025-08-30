@@ -3789,375 +3789,129 @@ def support():
 
 
 
+# Helper functions for Firebase interactions
+def upload_file_to_firebase(file, filename):
+    blob = bucket.blob(filename)
+    blob.upload_from_file(file, content_type=file.content_type)
+    blob.make_public()
+    return blob.public_url
 
-
-
-
-
-__app_id = "schomart-7a743" # Corrected: Added the missing app ID variable
-
-# In-memory database for study materials
-study_materials = []
-MATERIALS_DB_FILE = 'study_materials.json'
-
-def load_materials():
-    if os.path.exists(MATERIALS_DB_FILE):
-        with open(MATERIALS_DB_FILE, 'r') as f:
-            return json.load(f)
-    return []
-
-def save_materials(materials):
-    with open(MATERIALS_DB_FILE, 'w') as f:
-        json.dump(materials, f, indent=4)
-
-# Load materials on app start
-study_materials = load_materials()
-
-
-
-
-        
-def get_study_material_by_id_from_db(material_id):
-    if db is None:
-        logger.error("Firestore database instance is not available.")
-        return None
+def get_file_from_firebase(file_path):
     try:
-        material_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials").document(str(material_id))
-        material_doc = material_ref.get()
-
-        if not material_doc.exists:
-            logger.info(f"Study material with ID {material_id} not found.")
+        blob = bucket.blob(file_path)
+        if not blob.exists():
             return None
+        
+        # Create a temporary file to store the downloaded content
+        temp_dir = tempfile.gettempdir()
+        temp_file_path = os.path.join(temp_dir, os.path.basename(file_path))
+        blob.download_to_filename(temp_file_path)
+        
+        return temp_file_path
+    except Exception as e:
+        logging.error(f"Failed to get file from Firebase: {e}")
+        return None
 
+def get_all_materials(query=''):
+    materials_ref = db.collection('study_materials')
+    query_results = materials_ref.stream()
+    
+    materials_list = []
+    for doc in query_results:
+        material = doc.to_dict()
+        material['id'] = doc.id
+        # Simple server-side filtering for demonstration
+        if not query or any(query.lower() in str(val).lower() for val in material.values()):
+            materials_list.append(material)
+
+    return materials_list
+
+def get_material_by_id(material_id):
+    material_doc = db.collection('study_materials').document(material_id).get()
+    if material_doc.exists:
         material_data = material_doc.to_dict()
         material_data['id'] = material_doc.id
-
-        school_id = material_data.get('school_id')
-        if school_id:
-            school_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('schools').document(str(school_id))
-            school_doc = school_ref.get()
-            if school_doc.exists:
-                school_data = school_doc.to_dict()
-                material_data['school_name'] = school_data.get('name')
-                
-                state_id = school_data.get('state_id')
-                if state_id:
-                    state_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('states').document(str(state_id))
-                    state_doc = state_ref.get()
-                    if state_doc.exists:
-                        material_data['state_name'] = state_doc.to_dict().get('name')
-        
         return material_data
-    except Exception as e:
-        logger.error(f"Error fetching study material {material_id}: {e}", exc_info=True)
-        return None
-
-def get_media_type_from_extension(file_path):
-    if not file_path or not isinstance(file_path, str):
-        return 'unknown'
-        
-    ext = file_path.rsplit('.', 1)[-1].lower()
-    
-    document_extensions = ['doc', 'docx', 'txt', 'rtf', 'pdf', 'ppt', 'pptx', 'xls', 'xlsx']
-    image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg']
-    video_extensions = ['mp4', 'mov', 'avi', 'mkv', 'webm']
-    
-    if ext in document_extensions:
-        return 'document'
-    if ext in image_extensions:
-        return 'image'
-    if ext in video_extensions:
-        return 'video'
-        
-    return 'unknown'
-
-def get_study_materials_from_db(query=None):
-    if db is None:
-        logger.error("Firestore database instance is not available.")
-        return [], 0, "Database not initialized."
-    try:
-        collection_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
-        
-        if query:
-            query_ref = collection_ref.where("title", ">=", query).where("title", "<=", query + '\uf8ff')
-        else:
-            query_ref = collection_ref
-            
-        materials_stream = query_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).stream()
-        
-        materials = [doc.to_dict() for doc in materials_stream]
-        total_materials = len(materials)
-
-        return materials, total_materials, None
-    except Exception as e:
-        logger.error(f"Error fetching study materials: {e}", exc_info=True)
-        return [], 0, str(e)
+    return None
 
 
-@app.route('/study_hub')
-@login_required
-def study_hub():
-    current_user_role = 'admin' if getattr(g.current_user, 'is_admin', False) else 'user'
-    session['user_role'] = current_user_role
 
-    # Use the hardcoded list directly instead of a database function
-    states = NIGERIAN_STATES
-    selected_state = request.args.get('state')
-    selected_school = request.args.get('school')
 
-    return render_template(
-        'study_hub.html',
-        current_user_role=current_user_role,
-        states=states,
-        selected_state=selected_state,
-        selected_school=selected_school,
-    )
-
-@app.route('/admin/post_material')
-@login_required
+@app.route('/admin')
 @admin_required
-def post_material_page():
-    # Use the hardcoded list directly instead of a database function
-    states = NIGERIAN_STATES
-    return render_template('post_material.html', states=states)
+def admin():
+    return render_template('admin.html')
 
-
-
-
-
-@app.route('/api/post_material', methods=['POST'])
-@login_required
+@app.route('/admin/post_material', methods=['POST'])
 @admin_required
-def handle_post_material():
+def post_material():
+    title = request.form.get('title')
+    category = request.form.get('category')
+    content = request.form.get('content')
+    state = request.form.get('state')
+    school = request.form.get('school')
+    file = request.files.get('file')
+
+    if not all([title, category, content, state, school, file]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
     try:
-        title = request.form.get('title')
-        category = request.form.get('category')
-        content = request.form.get('content')
-        state = request.form.get('state')
-        school = request.form.get('school')
+        # Generate a unique filename to prevent overwrites
+        file_extension = os.path.splitext(file.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        file_path = f"study_materials/{unique_filename}"
         
-        if not title or not category or not content or not state or not school:
-            return jsonify({"error": "Missing required fields"}), 400
-
-        file = request.files.get('file')
-        if not file or not allowed_file(file.filename):
-            return jsonify({"error": "Invalid or missing file. Supported types are: pdf, doc, docx, txt, rtf, ppt, pptx, xls, xlsx"}), 400
-
-        media_type = 'document'
+        download_url = upload_file_to_firebase(file, file_path)
         
-        # Save the file
-        filename = secure_filename(file.filename)
-        file_extension = filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(file_path)
-
-        # Create new material entry
-        new_material = {
-            'id': str(uuid.uuid4()),
+        new_material_ref = db.collection('study_materials').document()
+        new_material_ref.set({
             'title': title,
             'category': category,
             'content': content,
             'state': state,
             'school': school,
+            'file_url': download_url,
             'file_path': file_path,
-            'media_type': media_type,
-            'posted_at': datetime.utcnow().isoformat()
-        }
-        
-        study_materials.append(new_material)
-        save_materials(study_materials)
-        
-        logger.info(f"New study material posted: {title}")
-        return jsonify({"message": "Study material posted successfully!"}), 201
-
-    except Exception as e:
-        logger.error(f"Error posting study material: {e}", exc_info=True)
-        return jsonify({"error": "An internal server error occurred."}), 500
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.route('/api/states')
-def get_states():
-    """Returns a list of all Nigerian states for autocomplete."""
-    return jsonify(states=NIGERIAN_STATES)
-
-@app.route('/api/schools/<state_name>')
-def get_schools(state_name):
-    """Returns a list of schools for a given state."""
-    state_name_clean = state_name.title() # Ensure proper capitalization
-    schools = NIGERIAN_SCHOOLS.get(state_name_clean, [])
-    return jsonify(schools=schools)
-
-
-
-
-
-
-
-@app.route('/api/study_materials', methods=['GET'])
-def api_study_materials():
-    if db is None:
-        return jsonify({"error": "Database not initialized"}), 500
-    try:
-        query_text = request.args.get('query', '').strip()
-        state_name = request.args.get('state') # Updated to use state name
-        school_name = request.args.get('school') # Updated to use school name
-
-        materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
-        materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING)
-        
-        if query_text:
-            materials_query = materials_query.where("title", ">=", query_text).where("title", "<=", query_text + '\uf8ff')
-            
-        if state_name:
-            materials_query = materials_query.where("state", "==", state_name)
-        
-        if school_name:
-            materials_query = materials_query.where("school", "==", school_name)
-
-        materials_docs = materials_query.stream()
-        materials_data = []
-        for material_doc in materials_docs:
-            material = material_doc.to_dict()
-            material['id'] = material_doc.id
-            
-            # Format the upload date
-            if isinstance(material.get('upload_date'), datetime):
-                material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                material['upload_date'] = str(material.get('upload_date', ''))
-            
-            # Since state and school names are now on the material document,
-            # you no longer need to perform extra database lookups.
-            # You can simply get them from the material dictionary.
-            state_name_doc = material.get('state', 'N/A')
-            school_name_doc = material.get('school', 'N/A')
-            
-            material['media_type'] = get_media_type_from_extension(material.get('file_path'))
-            
-            materials_data.append({
-                'id': material['id'],
-                'title': material.get('title', ''),
-                'content': material.get('content', ''),
-                'category': material.get('category', ''),
-                'upload_date': material['upload_date'],
-                'file_path': material.get('file_path', ''),
-                'media_type': material['media_type'],
-                'state_name': state_name_doc,
-                'school_name': school_name_doc,
-                'view_url': url_for('api_study_material_detail', material_id=material['id']),
-                'can_request': True
-            })
-
-        return jsonify({
-            'materials': materials_data,
-            'total_materials': len(materials_data),
-            'total_pages': 1
+            'created_at': firestore.SERVER_TIMESTAMP
         })
-
+        flash('Material posted successfully!', 'success')
+        return jsonify({'success': True, 'message': 'Material posted successfully!'})
     except Exception as e:
-        logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to load study materials: {str(e)}"}), 500
+        flash(f'An error occurred: {str(e)}', 'error')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/materials')
+def get_materials_page():
+    return render_template('get_materials.html')
 
+@app.route('/api/materials')
+def api_get_materials():
+    query = request.args.get('query', '')
+    materials = get_all_materials(query)
+    return jsonify(materials)
 
+@app.route('/download_material/<material_id>')
+@login_required
+def download_material(material_id):
+    material = get_material_by_id(material_id)
+    if not material:
+        return "Material not found.", 404
 
-
-
-@app.route('/api/study_materials/<string:material_id>', methods=['GET'])
-def api_study_material_detail(material_id):
-    try:
-        material = get_study_material_by_id_from_db(material_id)
-        if material:
-            if isinstance(material.get('upload_date'), datetime):
-                material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                material['upload_date'] = str(material.get('upload_date', ''))
-            
-            material['media_type'] = get_media_type_from_extension(material.get('file_path'))
-            
-            return jsonify(material)
-        return jsonify({"error": "Study material not found"}), 404
-    except Exception as e:
-        logger.error(f"API Error in /api/study_materials/{material_id}: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to retrieve study material: {str(e)}"}), 500
-
-@app.route('/downloads/<path:filename>')
-def download_file(filename):
-    if 'UPLOAD_FOLDER' not in app.config:
-        logger.error('UPLOAD_FOLDER is not configured in the application.')
-        flash('Server configuration error: Upload folder not defined.', 'error')
-        return redirect(url_for('study_hub'))
+    file_path = material.get('file_path')
+    if not file_path:
+        return "File path not found.", 404
 
     try:
-        safe_filename = secure_filename(filename)
-        full_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
+        temp_file_path = get_file_from_firebase(file_path)
+        if temp_file_path is None:
+            return "File not found.", 404
+        
+        filename = os.path.basename(file_path)
+        return send_file(temp_file_path, as_attachment=True, download_name=filename)
 
-        if not os.path.exists(full_path) or not os.path.isfile(full_path):
-            logger.warning(f"Attempted to download non-existent file: {full_path}")
-            flash('The requested file was not found.', 'error')
-            return redirect(url_for('study_hub'))
-
-        return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename, as_attachment=True)
     except Exception as e:
-        logger.error(f"Error serving file {filename}: {e}", exc_info=True)
-        flash('An error occurred while trying to download the file.', 'error')
-        return redirect(url_for('study_hub'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# API endpoint to handle material posting
-
-@app.route('/api/get_study_materials')
-def get_study_materials():
-    query = request.args.get('query', '').lower()
-    state_filter = request.args.get('state', '').lower()
-    school_filter = request.args.get('school', '').lower()
-
-    filtered_materials = [
-        m for m in study_materials
-        if (not query or query in m['title'].lower() or query in m['content'].lower() or query in m['category'].lower())
-        and (not state_filter or m['state'].lower() == state_filter)
-        and (not school_filter or m['school'].lower() == school_filter)
-    ]
-    return jsonify(materials=filtered_materials)
-
-
-
-
-
-
-
-
-
-
-
-
+        return f"An error occurred: {str(e)}", 500
 
 
 
@@ -4635,6 +4389,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
