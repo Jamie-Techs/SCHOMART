@@ -6,7 +6,7 @@
     <title>CGPA Calculator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        /* Basic styling for the calculator */
+        /* Your existing styles */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -27,7 +27,7 @@
         }
         .course-input {
             display: grid;
-            grid-template-columns: 1fr 120px 100px 50px; /* Course, Grade, Unit, Remove */
+            grid-template-columns: 1fr 120px 100px 50px;
             gap: 15px;
             margin-bottom: 15px;
             align-items: center;
@@ -41,12 +41,13 @@
             color: #555;
         }
         .course-input input[type="text"],
-        .course-input select {
+        .course-input select,
+        .course-input input[type="number"] {
             width: 100%;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            box-sizing: border-box;
         }
         .add-course-btn, .calculate-btn {
             background-color: #007bff;
@@ -86,10 +87,11 @@
             color: #007bff;
             margin-bottom: 15px;
         }
-        .results p {
-            font-size: 2em;
+        .results p, .results h3 {
+            font-size: 1.5em;
             font-weight: bold;
             color: #333;
+            margin-bottom: 10px;
         }
         .message {
             margin-top: 15px;
@@ -102,11 +104,47 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+        .grading-info {
+            margin-top: 30px;
+            font-size: 0.9em;
+            text-align: left;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
+            color: #555;
+        }
+        .grading-info h3 {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .class-of-degree {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #0056b3;
+            margin-top: 15px;
+        }
+        .tcgpa-input {
+            margin-bottom: 20px;
+        }
+        .tcgpa-input label {
+            font-weight: bold;
+        }
+        .tcgpa-input input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 150px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>University CGPA Calculator</h1>
+
+        <div class="tcgpa-input">
+            <label for="tcgpa">Total CGPA from Previous Semesters:</label>
+            <input type="number" id="tcgpa" step="0.01" min="0" max="5.0" placeholder="e.g., 3.5" value="{{ tcgpa if tcgpa is not none else '' }}">
+        </div>
 
         <div id="courseInputs">
             </div>
@@ -115,24 +153,45 @@
         <button type="button" class="calculate-btn" onclick="calculateCGPA()">Calculate CGPA</button>
 
         <div id="results" class="results" style="display: none;">
-            <h2>Your Calculated CGPA:</h2>
-            <p id="cgpaValue">0.00</p>
+            <h2>Your Calculated Results:</h2>
+            <p><strong>Total Grade Points:</strong> <span id="totalGradePoints">0.00</span></p>
+            <p><strong>CGPA for this Semester:</strong> <span id="cgpaValue">0.00</span></p>
+            <h3 id="classOfDegree"></h3>
         </div>
 
         <div id="message" class="message" style="display: none;"></div>
+
+        <div class="grading-info">
+            <h3>Grading and Classifications</h3>
+            <p><strong>The following grading scale is based on a common Nigerian university system:</strong></p>
+            <ul>
+                <li><strong>70 - 100:</strong> Grade A (5.00 Grade Point)</li>
+                <li><strong>60 - 69:</strong> Grade B (4.00 Grade Point)</li>
+                <li><strong>50 - 59:</strong> Grade C (3.00 Grade Point)</li>
+                <li><strong>45 - 49:</strong> Grade D (2.00 Grade Point)</li>
+                <li><strong>40 - 44:</strong> Grade E (1.00 Grade Point)</li>
+                <li><strong>0 - 39:</strong> Grade F (0.00 Grade Point)</li>
+            </ul>
+            <p><strong>Classes of Degree:</strong></p>
+            <ul>
+                <li><strong>4.50 - 5.00:</strong> First Class Honours</li>
+                <li><strong>3.50 - 4.49:</strong> Second Class Honours (Upper Division)</li>
+                <li><strong>2.40 - 3.49:</strong> Second Class Honours (Lower Division)</li>
+                <li><strong>1.50 - 2.39:</strong> Third Class Honours</li>
+                <li><strong>Below 1.50:</strong> Pass/Fail</li>
+            </ul>
+        </div>
     </div>
 
     <script>
         const courseInputsDiv = document.getElementById('courseInputs');
         const resultsDiv = document.getElementById('results');
         const cgpaValueSpan = document.getElementById('cgpaValue');
+        const totalGradePointsSpan = document.getElementById('totalGradePoints');
         const messageDiv = document.getElementById('message');
+        const classOfDegreeH3 = document.getElementById('classOfDegree');
+        const tcgpaInput = document.getElementById('tcgpa');
         let courseCount = 0;
-
-        // Grading Scale for client-side display (matches backend)
-        const gradingScale = {
-            'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
-        };
 
         // Function to display messages
         function showMessage(msg, type = 'error') {
@@ -145,91 +204,81 @@
         function hideMessage() {
             messageDiv.style.display = 'none';
         }
-
+        
         // Function to add a new course input row
-        function addCourseInput() {
+        function addCourseInput(courseData = {}) {
             courseCount++;
             const courseDiv = document.createElement('div');
             courseDiv.className = 'course-input';
-            courseDiv.dataset.id = courseCount; // Unique ID for each course row
+            courseDiv.dataset.id = courseCount;
 
             courseDiv.innerHTML = `
                 <div>
                     <label for="courseName${courseCount}">Course Name:</label>
-                    <input type="text" id="courseName${courseCount}" placeholder="e.g., CSC 101" required>
+                    <input type="text" id="courseName${courseCount}" placeholder="e.g., CSC 101" value="${courseData.course_name || ''}" required>
                 </div>
                 <div>
                     <label for="grade${courseCount}">Grade:</label>
                     <select id="grade${courseCount}" required>
                         <option value="">--Select Grade--</option>
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
+                        <option value="A" ${courseData.grade === 'A' ? 'selected' : ''}>A</option>
+                        <option value="B" ${courseData.grade === 'B' ? 'selected' : ''}>B</option>
+                        <option value="C" ${courseData.grade === 'C' ? 'selected' : ''}>C</option>
+                        <option value="D" ${courseData.grade === 'D' ? 'selected' : ''}>D</option>
+                        <option value="E" ${courseData.grade === 'E' ? 'selected' : ''}>E</option>
+                        <option value="F" ${courseData.grade === 'F' ? 'selected' : ''}>F</option>
                     </select>
                 </div>
                 <div>
                     <label for="creditUnit${courseCount}">Credit Units:</label>
-                    <input type="number" id="creditUnit${courseCount}" min="1" max="10" value="3" required>
+                    <input type="number" id="creditUnit${courseCount}" min="1" max="10" value="${courseData.credit_unit || 3}" required>
                 </div>
                 <button type="button" class="remove-course-btn" onclick="removeCourseInput(${courseCount})">X</button>
             `;
             courseInputsDiv.appendChild(courseDiv);
-            hideMessage(); // Hide any previous messages when adding a new course
+            hideMessage();
         }
-
-        // Function to remove a course input row
-        function removeCourseInput(id) {
-            const courseToRemove = document.querySelector(`.course-input[data-id="${id}"]`);
-            if (courseToRemove) {
-                courseInputsDiv.removeChild(courseToRemove);
-                hideMessage(); // Hide any previous messages when removing a course
+        
+        // Function to load data from the session (passed from Flask)
+        function loadSessionData() {
+            const courses = {{ courses | tojson }};
+            const tcgpa = '{{ tcgpa }}';
+            
+            if (courses.length > 0) {
+                // Remove the default empty course row
+                removeCourseInput(1);
+                courses.forEach(course => addCourseInput(course));
             }
         }
-
+        
         // Function to get all course data from inputs
         function getCourseData() {
             const courses = [];
             const courseRows = document.querySelectorAll('.course-input');
             let isValid = true;
-
+        
             courseRows.forEach(row => {
                 const gradeSelect = row.querySelector('select[id^="grade"]');
                 const creditUnitInput = row.querySelector('input[id^="creditUnit"]');
                 const courseNameInput = row.querySelector('input[id^="courseName"]');
-
+        
                 const grade = gradeSelect.value;
-                const creditUnit = parseInt(creditUnitInput.value, 10);
-                const courseName = courseNameInput.value.trim(); // Get course name
-
-                if (!courseName) {
-                    showMessage('Please enter a name for all courses.', 'error');
-                    courseNameInput.focus();
-                    isValid = false;
-                    return; // Stop processing this loop iteration
-                }
-                if (!grade) {
-                    showMessage(`Please select a grade for "${courseName}".`, 'error');
-                    gradeSelect.focus();
+                const creditUnit = parseFloat(creditUnitInput.value);
+                const courseName = courseNameInput.value.trim();
+        
+                if (!courseName || !grade || isNaN(creditUnit) || creditUnit <= 0) {
+                    showMessage('Please fill in all fields correctly.', 'error');
                     isValid = false;
                     return;
                 }
-                if (isNaN(creditUnit) || creditUnit <= 0) {
-                    showMessage(`Please enter a valid credit unit for "${courseName}".`, 'error');
-                    creditUnitInput.focus();
-                    isValid = false;
-                    return;
-                }
-
+        
                 courses.push({
-                    course_name: courseName, // Include course name
+                    course_name: courseName,
                     grade: grade,
                     credit_unit: creditUnit
                 });
             });
-
+        
             return isValid ? courses : null;
         }
 
@@ -237,6 +286,7 @@
         async function calculateCGPA() {
             hideMessage();
             const courses = getCourseData();
+            const tcgpa = tcgpaInput.value.trim();
 
             if (!courses || courses.length === 0) {
                 showMessage('Please add at least one course to calculate CGPA.', 'error');
@@ -250,13 +300,18 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ courses: courses })
+                    body: JSON.stringify({ 
+                        courses: courses,
+                        tcgpa: tcgpa ? parseFloat(tcgpa) : null
+                    })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    cgpaValueSpan.textContent = data.cgpa.toFixed(2); // Display with 2 decimal places
+                    totalGradePointsSpan.textContent = data.total_grade_points.toFixed(2);
+                    cgpaValueSpan.textContent = data.cgpa.toFixed(2);
+                    classOfDegreeH3.textContent = `Class of Degree: ${data.class_of_degree}`;
                     resultsDiv.style.display = 'block';
                 } else {
                     showMessage(data.message || 'Error calculating CGPA.', 'error');
@@ -269,9 +324,13 @@
             }
         }
 
-        // Add an initial course input row when the page loads
-        document.addEventListener('DOMContentLoaded', addCourseInput);
-
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSessionData();
+            if (courseInputsDiv.children.length === 0) {
+                addCourseInput();
+            }
+        });
     </script>
 </body>
 </html>
