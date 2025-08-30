@@ -3800,14 +3800,14 @@ def support():
 
 def get_study_material_by_id_from_db(material_id):
     if db is None:
-        app_logger.error("Firestore database instance is not available.")
+        logger.error("Firestore database instance is not available.")
         return None
     try:
         material_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials").document(str(material_id))
         material_doc = material_ref.get()
 
         if not material_doc.exists:
-            app_logger.info(f"Study material with ID {material_id} not found.")
+            logger.info(f"Study material with ID {material_id} not found.")
             return None
 
         material_data = material_doc.to_dict()
@@ -3830,7 +3830,7 @@ def get_study_material_by_id_from_db(material_id):
         
         return material_data
     except Exception as e:
-        app_logger.error(f"Error fetching study material {material_id}: {e}", exc_info=True)
+        logger.error(f"Error fetching study material {material_id}: {e}", exc_info=True)
         return None
 
 def get_media_type_from_extension(file_path):
@@ -3854,7 +3854,7 @@ def get_media_type_from_extension(file_path):
 
 def get_study_materials_from_db(query=None):
     if db is None:
-        app_logger.error("Firestore database instance is not available.")
+        logger.error("Firestore database instance is not available.")
         return [], 0, "Database not initialized."
     try:
         collection_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
@@ -3871,7 +3871,7 @@ def get_study_materials_from_db(query=None):
 
         return materials, total_materials, None
     except Exception as e:
-        app_logger.error(f"Error fetching study materials: {e}", exc_info=True)
+        logger.error(f"Error fetching study materials: {e}", exc_info=True)
         return [], 0, str(e)
 
 def get_states_from_db():
@@ -3879,14 +3879,14 @@ def get_states_from_db():
         states_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("states").stream()
         return [{"id": doc.id, **doc.to_dict()} for doc in states_ref]
     except Exception as e:
-        app_logger.error(f"Failed to load states: {e}")
+        logger.error(f"Failed to load states: {e}")
         return []
 def get_locations_for_state(state_id):
     try:
         locations_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("locations").where("state_id", "==", state_id).stream()
         return [{"id": doc.id, **doc.to_dict()} for doc in locations_ref]
     except Exception as e:
-        app_logger.error(f"Failed to load locations for state {state_id}: {e}")
+        logger.error(f"Failed to load locations for state {state_id}: {e}")
         return []
 
 # --- Flask Routes ---
@@ -3906,7 +3906,7 @@ def study_hub():
         states = get_states_from_db()
     except Exception as e:
         flash(f"Error loading states: {str(e)}", "error")
-        app_logger.error(f"Failed to load states for study_hub page: {e}", exc_info=True)
+        logger.error(f"Failed to load states for study_hub page: {e}", exc_info=True)
 
     return render_template(
         'study_hub.html',
@@ -3971,7 +3971,7 @@ def api_post_material():
         return jsonify({"message": "Study material posted successfully!"}), 201
 
     except Exception as e:
-        app_logger.error(f"Error posting study material: {e}", exc_info=True)
+        logger.error(f"Error posting study material: {e}", exc_info=True)
         return jsonify({"error": f"Failed to post study material: {str(e)}"}), 500
 
 @app.route('/api/locations/<string:state_id>', methods=['GET'])
@@ -3981,7 +3981,7 @@ def api_get_locations(state_id):
         locations = get_locations_for_state(state_id)
         return jsonify(locations)
     except Exception as e:
-        app_logger.error(f"Failed to fetch locations for state {state_id}: {e}")
+        logger.error(f"Failed to fetch locations for state {state_id}: {e}")
         return jsonify({"error": "Failed to fetch locations."}), 500
 
 @app.route('/api/study_materials', methods=['GET'])
@@ -4059,7 +4059,7 @@ def api_study_materials():
         })
 
     except Exception as e:
-        app_logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
+        logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
         return jsonify({"error": f"Failed to load study materials: {str(e)}"}), 500
 
 @app.route('/api/study_materials/<string:material_id>', methods=['GET'])
@@ -4077,13 +4077,13 @@ def api_study_material_detail(material_id):
             return jsonify(material)
         return jsonify({"error": "Study material not found"}), 404
     except Exception as e:
-        app_logger.error(f"API Error in /api/study_materials/{material_id}: {e}", exc_info=True)
+        logger.error(f"API Error in /api/study_materials/{material_id}: {e}", exc_info=True)
         return jsonify({"error": f"Failed to retrieve study material: {str(e)}"}), 500
 
 @app.route('/downloads/<path:filename>')
 def download_file(filename):
     if 'UPLOAD_FOLDER' not in app.config:
-        app_logger.error('UPLOAD_FOLDER is not configured in the application.')
+        logger.error('UPLOAD_FOLDER is not configured in the application.')
         flash('Server configuration error: Upload folder not defined.', 'error')
         return redirect(url_for('study_hub'))
 
@@ -4092,13 +4092,13 @@ def download_file(filename):
         full_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
 
         if not os.path.exists(full_path) or not os.path.isfile(full_path):
-            app_logger.warning(f"Attempted to download non-existent file: {full_path}")
+            logger.warning(f"Attempted to download non-existent file: {full_path}")
             flash('The requested file was not found.', 'error')
             return redirect(url_for('study_hub'))
 
         return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename, as_attachment=True)
     except Exception as e:
-        app_logger.error(f"Error serving file {filename}: {e}", exc_info=True)
+        logger.error(f"Error serving file {filename}: {e}", exc_info=True)
         flash('An error occurred while trying to download the file.', 'error')
         return redirect(url_for('study_hub'))
 
@@ -4593,6 +4593,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
