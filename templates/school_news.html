@@ -153,15 +153,30 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
+
     <div class="header">
-        <div class="header-buttons">
+    <div class="header-buttons">
+        <a href="{{ url_for('get_materials_page') }}" class="header-link">
+            <span>Materials</span>
+        </a>
+        <a href="{{ url_for('cgpa_calculator') }}" class="header-link">
+            <span>CGPA Calculator</span>
+        </a>
+
+        {% if user and user.is_admin %}
             <a href="{{ url_for('create_post') }}" class="header-button">
                 <i class="fas fa-plus"></i>
                 <span>New Post</span>
             </a>
-        </div>
-        <h1>School News</h1>
+            <a href="{{ url_for('admin_post_material') }}" class="header-button">
+                <i class="fas fa-plus"></i>
+                <span>Post Material</span>
+            </a>
+        {% endif %}
     </div>
+    <h1>School News</h1>
+</div>
+    
 
     <div class="container-wrapper">
         <div id="flash-messages" class="mb-4">
