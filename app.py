@@ -3877,39 +3877,33 @@ def get_study_materials_from_db(query=None):
         return [], 0, str(e)
 
 
-
-
-# --- Flask Routes (Updated) ---
 @app.route('/study_hub')
-@login_required # Use the decorator to protect the route
+@login_required
 def study_hub():
     current_user_role = 'admin' if getattr(g.current_user, 'is_admin', False) else 'user'
     session['user_role'] = current_user_role
 
-    states = []
-    selected_state_id = request.args.get('state_id')
-    selected_school_id = request.args.get('school_id') # Changed from location_id
-
-    try:
-        states = get_states_from_db()
-    except Exception as e:
-        flash(f"Error loading states: {str(e)}", "error")
-        logger.error(f"Failed to load states for study_hub page: {e}", exc_info=True)
+    # Use the hardcoded list directly instead of a database function
+    states = NIGERIAN_STATES
+    selected_state = request.args.get('state')
+    selected_school = request.args.get('school')
 
     return render_template(
         'study_hub.html',
         current_user_role=current_user_role,
         states=states,
-        selected_state_id=selected_state_id,
-        selected_school_id=selected_school_id, # Changed from location_id
+        selected_state=selected_state,
+        selected_school=selected_school,
     )
 
 @app.route('/admin/post_material')
 @login_required
 @admin_required
 def post_material_page():
-    states = get_states_from_db()
+    # Use the hardcoded list directly instead of a database function
+    states = NIGERIAN_STATES
     return render_template('post_material.html', states=states)
+
 
 
 
@@ -4603,6 +4597,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
