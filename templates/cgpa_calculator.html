@@ -5,12 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CGPA Calculator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        /* ... (Your existing styles) ... */
+        /* ... (Your existing CSS styles) ... */
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
             background-color: #f4f4f4;
+        }
+        .header {
+            background-color: #1a237e;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .header-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+        .header-links a:hover {
+            color: #bbdefb;
+        }
+        .header-links a i {
+            margin-right: 0.5rem;
         }
         .container {
             max-width: 800px;
@@ -138,6 +165,26 @@
     </style>
 </head>
 <body>
+    <header class="header">
+        <div class="header-title">Study Hub</div>
+        <div class="header-links">
+            <a href="/">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="/materials">
+                <i class="fas fa-book"></i> Materials
+            </a>
+            <a href="/profile">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+            {% if user and user.is_admin %}
+            <a href="/admin">
+                <i class="fas fa-user-shield"></i> Admin
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
     <div class="container">
         <h1>University CGPA Calculator</h1>
 
@@ -191,21 +238,18 @@
         const messageDiv = document.getElementById('message');
         const classOfDegreeH3 = document.getElementById('classOfDegree');
         const tcgpaInput = document.getElementById('tcgpa');
-        let courseCounter = 0; // Use a counter to create unique IDs
+        let courseCounter = 0;
 
-        // Function to display messages
         function showMessage(msg, type = 'error') {
             messageDiv.textContent = msg;
             messageDiv.className = `message ${type}`;
             messageDiv.style.display = 'block';
         }
 
-        // Function to hide messages
         function hideMessage() {
             messageDiv.style.display = 'none';
         }
-        
-        // Function to add a new course input row
+
         function addCourseInput(courseData = {}) {
             courseCounter++;
             const courseDiv = document.createElement('div');
@@ -239,7 +283,6 @@
             hideMessage();
         }
         
-        // Function to get all course data from inputs
         function getCourseData() {
             const courses = [];
             const courseRows = document.querySelectorAll('.course-input');
@@ -269,7 +312,6 @@
             return isValid ? courses : null;
         }
 
-        // Function to save the current session data to localStorage
         function saveSession() {
             const courses = getCourseData();
             const tcgpa = tcgpaInput.value.trim();
@@ -282,7 +324,6 @@
             }
         }
 
-        // Function to load saved session data from localStorage
         function loadSession() {
             const savedCourses = localStorage.getItem('cgpa_courses');
             const savedTcgpa = localStorage.getItem('cgpa_tcgpa');
@@ -290,12 +331,10 @@
             if (savedCourses) {
                 const courses = JSON.parse(savedCourses);
                 if (courses.length > 0) {
-                    // Clear existing rows and add saved ones
                     courseInputsDiv.innerHTML = '';
                     courses.forEach(course => addCourseInput(course));
                 }
             } else {
-                // If no saved data, add one empty row
                 addCourseInput();
             }
 
@@ -304,10 +343,8 @@
             }
         }
         
-        // Event listener for the "Add Course" button
         document.querySelector('.add-course-btn').addEventListener('click', addCourseInput);
 
-        // Event listener for the "Calculate CGPA" button
         document.querySelector('.calculate-btn').addEventListener('click', () => {
             const courses = getCourseData();
             if (!courses) {
@@ -316,18 +353,16 @@
             }
 
             calculateCGPA(courses);
-            saveSession(); // Save session after a successful calculation
+            saveSession();
         });
 
-        // Event delegation for the remove button
         courseInputsDiv.addEventListener('click', (event) => {
             if (event.target.classList.contains('remove-course-btn')) {
                 event.target.closest('.course-input').remove();
-                saveSession(); // Save session after removing a course
+                saveSession();
             }
         });
 
-        // Function to send data to backend and calculate CGPA
         async function calculateCGPA(courses) {
             hideMessage();
             try {
@@ -355,7 +390,6 @@
             }
         }
 
-        // Load saved data when the page loads
         document.addEventListener('DOMContentLoaded', loadSession);
     </script>
 </body>
