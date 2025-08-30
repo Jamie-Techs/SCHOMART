@@ -3399,6 +3399,13 @@ def delete_media_from_firebase(media_url):
 
 
 
+
+
+
+
+
+
+# The fully updated route
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -3422,13 +3429,14 @@ def create_post():
 
         media_items_to_save = []
         try:
-            # The file handling loop is corrected to use the helper function.
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
                     uploaded_url = upload_file_to_firebase(media_file, "posts")
                     if uploaded_url:
-                        media_type = get_media_type_from_extension(media_file.filename)
+                        # Ensures the filename is a string, preventing errors if it's malformed.
+                        filename_to_classify = str(media_file.filename or '')
+                        media_type = get_media_type_from_extension(filename_to_classify)
                         media_items_to_save.append({
                             "media_type": media_type, 
                             "media_path_or_url": uploaded_url,
@@ -3469,6 +3477,8 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
+
+
 
 
 
@@ -4509,6 +4519,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
