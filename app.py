@@ -3276,25 +3276,28 @@ def change_phone():
 
 
 
-
-
-
+# Helper function to determine media type from file extension
 def get_media_type_from_extension(filename):
-    """Determines media type based on file extension."""
-    if not filename:
-        return "text"
-    ext = filename.rsplit('.', 1)[1].lower()
-    if ext in ['png', 'jpg', 'jpeg', 'gif']:
-        return "image"
-    if ext in ['mp4', 'mov', 'avi', 'mkv']:
-        return "video"
-    if ext in ['mp3', 'wav', 'aac']:
-        return "audio"
-    if ext in ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt']:
-        return "document"
-    return "unknown"
+    """
+    Determines the media type (image, video, document) from a filename's extension.
+    """
+    # Normalize the filename to lowercase for case-insensitive matching
+    filename = filename.lower()
+    
+    image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    video_extensions = ['.mp4', '.mov', '.avi', '.mkv']
 
+    ext = os.path.splitext(filename)[1]
 
+    if ext in image_extensions:
+        return 'image'
+    elif ext in video_extensions:
+        return 'video'
+    else:
+        # Fallback for any other file types
+        return 'document'
+
+# Your existing upload_file_to_firebase function
 def upload_file_to_firebase(file, folder):
     """
     Uploads a file to Firebase Storage.
@@ -3316,6 +3319,11 @@ def upload_file_to_firebase(file, folder):
     except Exception as e:
         logging.error(f"Failed to upload file to Firebase Storage: {e}")
         return None
+
+
+
+
+
 
 
 def fetch_posts_for_display(category, search_query):
@@ -3385,7 +3393,7 @@ def delete_media_from_firebase(media_url):
         return False
 
 
-# In your app.py file, find the create_post function and replace the file handling loop:
+
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -3409,15 +3417,15 @@ def create_post():
 
         media_items_to_save = []
         try:
-            # ⭐ CRITICAL FIX: The file is now correctly handled to create the media_items list.
+            # The file handling loop is corrected to use the helper function.
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
                 if media_file and media_file.filename != '':
                     uploaded_url = upload_file_to_firebase(media_file, "posts")
                     if uploaded_url:
-                        # Correctly structure the dictionary to match the frontend template logic
+                        media_type = get_media_type_from_extension(media_file.filename)
                         media_items_to_save.append({
-                            "media_type": get_media_type_from_extension(media_file.filename), 
+                            "media_type": media_type, 
                             "media_path_or_url": uploaded_url,
                         })
         except Exception as e:
@@ -3456,6 +3464,10 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
+
+
+
+
 
 
 
@@ -4492,6 +4504,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
