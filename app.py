@@ -3295,7 +3295,7 @@ def get_media_type_from_extension(filename):
         return 'video'
     else:
         # Fallback for any other file types
-        return 'document'
+        return 'image'
 
 # Your existing upload_file_to_firebase function
 def upload_file_to_firebase(file, folder):
@@ -4504,6 +4504,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
