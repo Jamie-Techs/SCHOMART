@@ -3808,118 +3808,102 @@ def support():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def get_study_material_by_id_from_db(material_id):
     """
-    Fetches a single study material by its ID from Firestore.
-    This also fetches the associated state and university names.
+    Fetches a single study material by its ID from Firestore, including related
+    state and university names.
     """
     if db is None:
+        app_logger.error("Firestore database instance is not available.")
         return None
     try:
-        material_ref = db.collection("study_materials").document(str(material_id))
+        material_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials").document(str(material_id))
         material_doc = material_ref.get()
-        if material_doc.exists:
-            material_data = material_doc.to_dict()
-            material_data['id'] = material_doc.id
 
-            # Since Firestore doesn't support JOINs, we need to fetch related data separately.
-            location_id = material_data.get('location_id')
-            if location_id:
-                location_ref = db.collection('locations').document(str(location_id))
-                location_doc = location_ref.get()
-                if location_doc.exists:
-                    location_data = location_doc.to_dict()
-                    material_data['university_name'] = location_data.get('name')
-                    state_id = location_data.get('state_id')
-                    if state_id:
-                        state_ref = db.collection('states').document(str(state_id))
-                        state_doc = state_ref.get()
-                        if state_doc.exists:
-                            material_data['state_name'] = state_doc.to_dict().get('name')
-            return material_data
+        if not material_doc.exists:
+            app_logger.info(f"Study material with ID {material_id} not found.")
+            return None
+
+        material_data = material_doc.to_dict()
+        material_data['id'] = material_doc.id
+
+        location_id = material_data.get('location_id')
+        if location_id:
+            location_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('locations').document(str(location_id))
+            location_doc = location_ref.get()
+            if location_doc.exists:
+                location_data = location_doc.to_dict()
+                material_data['university_name'] = location_data.get('name')
+                
+                state_id = location_data.get('state_id')
+                if state_id:
+                    state_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('states').document(str(state_id))
+                    state_doc = state_ref.get()
+                    if state_doc.exists:
+                        material_data['state_name'] = state_doc.to_dict().get('name')
+        
+        return material_data
     except Exception as e:
-        app.logger.error(f"Error fetching study material {material_id}: {e}", exc_info=True)
-    return None
+        app_logger.error(f"Error fetching study material {material_id}: {e}", exc_info=True)
+        return None
 
 def get_media_type_from_extension(file_path):
-    # This is a placeholder function, you would have your own logic here
-    if not file_path:
+    """
+    Determines the media type based on a file extension.
+    Updated to explicitly support documents.
+    """
+    if not file_path or not isinstance(file_path, str):
         return 'unknown'
-    if file_path.endswith('.pdf'):
-        return 'pdf'
-    if file_path.endswith('.mp4'):
-        return 'video'
-    return 'document'
-
- 
-
-
-
-
-def get_study_materials_from_db(query=None, page=1, per_page=10):
-    """
-    Fetches study materials from Firestore with optional search and pagination.
-    
-    NOTE: Firestore pagination and advanced querying (like OR clauses) require
-    special handling. This implementation performs a simple text search and
-    manual pagination.
-    """
-    try:
-        collection_ref = db.collection("study_materials")
         
-        # Build the base query
+    ext = file_path.rsplit('.', 1)[-1].lower()
+    
+    document_extensions = ['doc', 'docx', 'txt', 'rtf', 'pdf', 'ppt', 'pptx', 'xls', 'xlsx']
+    image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg']
+    video_extensions = ['mp4', 'mov', 'avi', 'mkv', 'webm']
+    
+    if ext in document_extensions:
+        return 'document'
+    if ext in image_extensions:
+        return 'image'
+    if ext in video_extensions:
+        return 'video'
+        
+    return 'unknown'
+
+def get_study_materials_from_db(query=None):
+    """
+    Fetches all study materials from Firestore without pagination.
+    """
+    if db is None:
+        app_logger.error("Firestore database instance is not available.")
+        return [], 0, "Database not initialized."
+    try:
+        collection_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
+        
         if query:
-            # We can't use LIKE in Firestore, so we'll use a simple starts_with for now.
-            # A full-text search solution would require a dedicated service like Algolia or a
-            # more complex setup.
             query_ref = collection_ref.where("title", ">=", query).where("title", "<=", query + '\uf8ff')
         else:
             query_ref = collection_ref
             
-        # Get total materials count (separate query needed)
-        total_materials = len(list(query_ref.stream()))
+        materials_stream = query_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).stream()
         
-        # Apply ordering and pagination
-        offset = (page - 1) * per_page
-        if offset > 0:
-            # Firestore doesn't have a direct `offset` method for queries
-            # For robust pagination, you should use start_at or start_after with a cursor
-            # For this simple example, we'll fetch all and slice
-            all_materials = list(query_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).stream())
-            materials = all_materials[offset:offset+per_page]
-        else:
-            materials = query_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).limit(per_page).stream()
-            
-        return [doc.to_dict() for doc in materials], total_materials, None
+        materials = [doc.to_dict() for doc in materials_stream]
+        total_materials = len(materials)
+
+        return materials, total_materials, None
     except Exception as e:
-        app.logger.error(f"Error fetching study materials: {e}")
+        app_logger.error(f"Error fetching study materials: {e}", exc_info=True)
         return [], 0, str(e)
 
 
 
-
-
-
-
+# --- Flask Routes ---
 @app.route('/study_hub')
 def study_hub():
     """Renders the main study hub page with initial data for filters."""
     current_user_id = get_current_user_id()
     current_user_role = get_user_role(current_user_id)
+    session['user_role'] = current_user_role
 
     states = []
     selected_state_id = request.args.get('state_id')
@@ -3929,7 +3913,7 @@ def study_hub():
         states = get_states_from_db()
     except Exception as e:
         flash(f"Error loading states: {str(e)}", "error")
-        app.logger.error(f"Failed to load states for study_hub page: {e}", exc_info=True)
+        app_logger.error(f"Failed to load states for study_hub page: {e}", exc_info=True)
 
     return render_template(
         'study_hub.html',
@@ -3939,6 +3923,75 @@ def study_hub():
         selected_location_id=selected_location_id,
     )
 
+@app.route('/admin/post_material')
+def post_material_page():
+    """Renders the admin page for posting study materials."""
+    if not is_admin():
+        flash("You do not have permission to access this page.", "error")
+        return redirect(url_for('study_hub'))
+    
+    states = get_states_from_db()
+    
+    return render_template('post_material.html', states=states)
+
+@app.route('/api/post_material', methods=['POST'])
+def api_post_material():
+    """API endpoint to post a new study material."""
+    if not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+    
+    try:
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        # Get form data
+        title = request.form.get('title')
+        content = request.form.get('content')
+        category = request.form.get('category')
+        location_id = request.form.get('location_id')
+
+        if not all([title, content, category, location_id]):
+            return jsonify({"error": "Missing required form data"}), 400
+
+        # Create new Firestore document
+        materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
+        new_material_data = {
+            'title': title,
+            'content': content,
+            'category': category,
+            'file_path': file_path, # Store the local path to the file
+            'location_id': location_id,
+            'upload_date': firestore.SERVER_TIMESTAMP
+        }
+        materials_ref.add(new_material_data)
+
+        return jsonify({"message": "Study material posted successfully!"}), 201
+
+    except Exception as e:
+        app_logger.error(f"Error posting study material: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to post study material: {str(e)}"}), 500
+
+@app.route('/api/locations/<string:state_id>', methods=['GET'])
+def api_get_locations(state_id):
+    """API endpoint to get locations for a given state."""
+    try:
+        locations = get_locations_for_state(state_id)
+        return jsonify(locations)
+    except Exception as e:
+        app_logger.error(f"Failed to fetch locations for state {state_id}: {e}")
+        return jsonify({"error": "Failed to fetch locations."}), 500
+
 @app.route('/api/study_materials', methods=['GET'])
 def api_study_materials():
     """API endpoint to fetch study materials with search, state, and location filters."""
@@ -3946,121 +3999,78 @@ def api_study_materials():
         return jsonify({"error": "Database not initialized"}), 500
     try:
         query_text = request.args.get('query', '').strip()
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
         state_id = request.args.get('state_id')
         location_id = request.args.get('location_id')
 
-        # Create a query reference to the 'study_materials' collection
-        materials_ref = db.collection("study_materials")
+        materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
         materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING)
-
-        # Apply filters as `where` clauses.
-        # Note: Firestore does not support 'LIKE' for substring matching. This implementation
-        # uses equality checks for `category` or `title` as a basic filter. For a more
-        # robust search, you would need to use a dedicated search service like Algolia or Elasticsearch.
-        # Here we'll just check for exact matches on title/category for demonstration.
+        
         if query_text:
-            materials_query = materials_query.where("title", "==", query_text) # or use a different field for search
-            # Alternatively, if you want to search a specific category:
-            # materials_query = materials_query.where("category", "==", query_text)
-
+            materials_query = materials_query.where("title", ">=", query_text).where("title", "<=", query_text + '\uf8ff')
+            
         if state_id:
-            # First, find locations for the given state
-            locations_ref = db.collection("locations").where("state_id", "==", state_id).stream()
+            locations_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("locations").where("state_id", "==", state_id).stream()
             location_ids = [doc.id for doc in locations_ref]
             if location_ids:
                 materials_query = materials_query.where("location_id", "in", location_ids)
             else:
-                # No locations found, so no materials can match
-                return jsonify({'materials': [], 'total_materials': 0, 'page': page, 'per_page': per_page, 'total_pages': 0})
-
+                return jsonify({'materials': [], 'total_materials': 0, 'total_pages': 0})
+        
         if location_id:
             materials_query = materials_query.where("location_id", "==", location_id)
 
-
-        # To get the total count, we must perform a separate query.
-        # Note: This is an extra read operation and can be inefficient for large datasets.
-        # For a scalable solution, you might maintain a separate counter in a dedicated document.
-        count_docs = materials_query.stream()
-        total_materials = len(list(count_docs))
-
-        # Handle pagination
-        offset = (page - 1) * per_page
-        if offset > 0:
-            # To handle offset, we fetch the documents and then slice them in Python.
-            # A more performant approach for large offsets is to use a cursor (start_after).
-            # This implementation fetches all documents and then paginates. For a small
-            # to medium-sized dataset, this is acceptable.
-            # We'll use start_after for a better implementation.
-            materials_query = materials_query.limit(per_page)
-            if page > 1:
-                last_doc_ref = list(materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).limit(offset).stream())
-                if last_doc_ref:
-                    materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).start_after(last_doc_ref[-1]).limit(per_page)
-            else:
-                materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING).limit(per_page)
-            
-            materials_docs = materials_query.stream()
-            materials = []
-            for doc in materials_docs:
-                materials.append(doc)
-            
-        else:
-            materials_docs = materials_query.limit(per_page).stream()
-            materials = []
-            for doc in materials_docs:
-                materials.append(doc)
-
+        materials_docs = materials_query.stream()
         materials_data = []
-        for material_doc in materials:
+        for material_doc in materials_docs:
             material = material_doc.to_dict()
             material['id'] = material_doc.id
-
-            upload_date_str = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S') if isinstance(material.get('upload_date'), firestore.SERVER_TIMESTAMP) else str(material.get('upload_date', ''))
-            inferred_media_type = get_media_type_from_extension(material.get('file_path'))
-
+            
+            # Format upload date
+            if isinstance(material.get('upload_date'), datetime):
+                material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                material['upload_date'] = str(material.get('upload_date', ''))
+            
+            # Use helper to get media type
+            material['media_type'] = get_media_type_from_extension(material.get('file_path'))
+            
             # Fetch related data (state and university name)
             state_name = "N/A"
             university_name = "N/A"
             location_id_doc = material.get('location_id')
             if location_id_doc:
-                location_doc = db.collection('locations').document(str(location_id_doc)).get()
+                location_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('locations').document(str(location_id_doc)).get()
                 if location_doc.exists:
                     location_data = location_doc.to_dict()
                     university_name = location_data.get('name', 'N/A')
                     state_id_doc = location_data.get('state_id')
                     if state_id_doc:
-                        state_doc = db.collection('states').document(str(state_id_doc)).get()
+                        state_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('states').document(str(state_id_doc)).get()
                         if state_doc.exists:
                             state_name = state_doc.to_dict().get('name', 'N/A')
-
+            
             materials_data.append({
                 'id': material['id'],
                 'title': material.get('title', ''),
                 'content': material.get('content', ''),
                 'category': material.get('category', ''),
-                'upload_date': upload_date_str,
+                'upload_date': material['upload_date'],
                 'file_path': material.get('file_path', ''),
-                'media_type': inferred_media_type,
+                'media_type': material['media_type'],
                 'state_name': state_name,
                 'university_name': university_name,
                 'view_url': url_for('api_study_material_detail', material_id=material['id']),
                 'can_request': True
             })
 
-        total_pages = (total_materials + per_page - 1) // per_page if total_materials > 0 else 0
-
         return jsonify({
             'materials': materials_data,
-            'total_materials': total_materials,
-            'page': page,
-            'per_page': per_page,
-            'total_pages': total_pages
+            'total_materials': len(materials_data),
+            'total_pages': 1
         })
 
     except Exception as e:
-        app.logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
+        app_logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
         return jsonify({"error": f"Failed to load study materials: {str(e)}"}), 500
 
 @app.route('/api/study_materials/<string:material_id>', methods=['GET'])
@@ -4069,24 +4079,24 @@ def api_study_material_detail(material_id):
     try:
         material = get_study_material_by_id_from_db(material_id)
         if material:
-            # Handle timestamps
-            if isinstance(material.get('upload_date'), firestore.SERVER_TIMESTAMP):
-                 material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
+            if isinstance(material.get('upload_date'), datetime):
+                material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
             else:
-                 material['upload_date'] = str(material.get('upload_date', ''))
-
+                material['upload_date'] = str(material.get('upload_date', ''))
+            
             material['media_type'] = get_media_type_from_extension(material.get('file_path'))
-            # Ensure location names are passed if available
+            
             return jsonify(material)
         return jsonify({"error": "Study material not found"}), 404
     except Exception as e:
-        app.logger.error(f"API Error in /api/study_materials/{material_id}: {e}", exc_info=True)
+        app_logger.error(f"API Error in /api/study_materials/{material_id}: {e}", exc_info=True)
         return jsonify({"error": f"Failed to retrieve study material: {str(e)}"}), 500
 
 @app.route('/downloads/<path:filename>')
 def download_file(filename):
+    """Handles the download of files from the server's local storage."""
     if 'UPLOAD_FOLDER' not in app.config:
-        app.logger.error('UPLOAD_FOLDER is not configured in the application.')
+        app_logger.error('UPLOAD_FOLDER is not configured in the application.')
         flash('Server configuration error: Upload folder not defined.', 'error')
         return redirect(url_for('study_hub'))
 
@@ -4095,15 +4105,31 @@ def download_file(filename):
         full_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
 
         if not os.path.exists(full_path) or not os.path.isfile(full_path):
-            app.logger.warning(f"Attempted to download non-existent file: {full_path}")
+            app_logger.warning(f"Attempted to download non-existent file: {full_path}")
             flash('The requested file was not found.', 'error')
             return redirect(url_for('study_hub'))
 
         return send_from_directory(app.config['UPLOAD_FOLDER'], safe_filename, as_attachment=True)
     except Exception as e:
-        app.logger.error(f"Error serving file {filename}: {e}")
+        app_logger.error(f"Error serving file {filename}: {e}", exc_info=True)
         flash('An error occurred while trying to download the file.', 'error')
         return redirect(url_for('study_hub'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4570,6 +4596,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
