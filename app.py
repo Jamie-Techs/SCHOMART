@@ -3796,7 +3796,35 @@ def support():
 
 __app_id = "schomart-7a743" # Corrected: Added the missing app ID variable
 
+# In-memory database for study materials
+study_materials = []
+MATERIALS_DB_FILE = 'study_materials.json'
 
+def load_materials():
+    if os.path.exists(MATERIALS_DB_FILE):
+        with open(MATERIALS_DB_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_materials(materials):
+    with open(MATERIALS_DB_FILE, 'w') as f:
+        json.dump(materials, f, indent=4)
+
+# Load materials on app start
+study_materials = load_materials()
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+@app.before_request
+def before_request():
+    g.current_user = None
+    if 'email' in session:
+        user_info = users.get(session['email'])
+        if user_info:
+            g.current_user = User(session['email'], user_info['is_admin'])
+        
 
 
         
@@ -3911,60 +3939,52 @@ def post_material_page():
 @app.route('/api/post_material', methods=['POST'])
 @login_required
 @admin_required
-def api_post_material():
-    # Retrieve data from the form
-    title = request.form.get('title')
-    content = request.form.get('content')
-    category = request.form.get('category')
-    state = request.form.get('state')
-    school = request.form.get('school')
-    
-    # Check for file and other required data
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
-
-    if not all([title, content, category, state, school]):
-        return jsonify({"error": "Missing required form data"}), 400
-
-    # Validate that the state is from the predefined list
-    if state not in NIGERIAN_STATES:
-        return jsonify({'error': f'Invalid state: {state}. Please choose from the suggested list.'}), 400
-
-    # Validate that the school is from the predefined list for the selected state
-    if state not in NIGERIAN_SCHOOLS or school not in NIGERIAN_SCHOOLS[state]:
-        return jsonify({'error': f'Invalid school for state {state}. Please choose from the suggested list.'}), 400
-    
-    # Secure file handling
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    
+def handle_post_material():
     try:
+        title = request.form.get('title')
+        category = request.form.get('category')
+        content = request.form.get('content')
+        state = request.form.get('state')
+        school = request.form.get('school')
+        
+        if not title or not category or not content or not state or not school:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        file = request.files.get('file')
+        if not file or not allowed_file(file.filename):
+            return jsonify({"error": "Invalid or missing file. Supported types are: pdf, doc, docx, txt, rtf, ppt, pptx, xls, xlsx"}), 400
+
+        media_type = 'document'
+        
+        # Save the file
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file_extension = filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
         file.save(file_path)
 
-        # Prepare data for Firestore
-        materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
-        new_material_data = {
+        # Create new material entry
+        new_material = {
+            'id': str(uuid.uuid4()),
             'title': title,
-            'content': content,
             'category': category,
+            'content': content,
             'state': state,
             'school': school,
             'file_path': file_path,
-            'upload_date': firestore.SERVER_TIMESTAMP
+            'media_type': media_type,
+            'posted_at': datetime.utcnow().isoformat()
         }
-        materials_ref.add(new_material_data)
-
+        
+        study_materials.append(new_material)
+        save_materials(study_materials)
+        
+        logger.info(f"New study material posted: {title}")
         return jsonify({"message": "Study material posted successfully!"}), 201
 
     except Exception as e:
-        # A more robust error handling can be implemented here
-        return jsonify({"error": f"Failed to post study material: {str(e)}"}), 500
+        logger.error(f"Error posting study material: {e}", exc_info=True)
+        return jsonify({"error": "An internal server error occurred."}), 500
 
 
 
@@ -3973,10 +3993,28 @@ def api_post_material():
 
 
 
-@app.route('/api/states', methods=['GET'])
+
+
+
+
+
+
+@app.route('/api/states')
 def get_states():
-    """Endpoint to return a list of all Nigerian states."""
-    return jsonify({'states': NIGERIAN_STATES})
+    """Returns a list of all Nigerian states for autocomplete."""
+    return jsonify(states=NIGERIAN_STATES)
+
+@app.route('/api/schools/<state_name>')
+def get_schools(state_name):
+    """Returns a list of schools for a given state."""
+    state_name_clean = state_name.title() # Ensure proper capitalization
+    schools = NIGERIAN_SCHOOLS.get(state_name_clean, [])
+    return jsonify(schools=schools)
+
+
+
+
+
 
 
 @app.route('/api/study_materials', methods=['GET'])
@@ -4104,8 +4142,26 @@ def download_file(filename):
 
 
 
-        
+# API endpoint to handle material posting
 
+@app.route('/api/get_study_materials')
+def get_study_materials():
+    query = request.args.get('query', '').lower()
+    state_filter = request.args.get('state', '').lower()
+    school_filter = request.args.get('school', '').lower()
+
+    filtered_materials = [
+        m for m in study_materials
+        if (not query or query in m['title'].lower() or query in m['content'].lower() or query in m['category'].lower())
+        and (not state_filter or m['state'].lower() == state_filter)
+        and (not school_filter or m['school'].lower() == school_filter)
+    ]
+    return jsonify(materials=filtered_materials)
+
+# Added to correctly serve the static files for download
+@app.route('/downloads/<filename>')
+def download_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 
@@ -4597,6 +4653,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
