@@ -3814,14 +3814,6 @@ def save_materials(materials):
 study_materials = load_materials()
 
 
-@app.before_request
-def before_request():
-    g.current_user = None
-    if 'email' in session:
-        user_info = users.get(session['email'])
-        if user_info:
-            g.current_user = User(session['email'], user_info['is_admin'])
-        
 
 
         
@@ -4643,6 +4635,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
