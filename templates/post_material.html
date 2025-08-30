@@ -8,7 +8,128 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* (The CSS remains the same as your previous version) */
+        :root {
+            --primary-color: #006B3C;
+            --secondary-color: #FDB813;
+            --accent-color: #00391F;
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 1.5rem 0;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .form-group input[type="text"],
+        .form-group textarea,
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: #fcfcfc;
+            transition: border-color var(--transition-speed);
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(0, 107, 60, 0.2);
+        }
+        
+        .autocomplete-container {
+            position: relative;
+        }
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #f1f1f1;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .autocomplete-items div:hover {
+            background-color: var(--light-background);
+        }
+        .autocomplete-active {
+            background-color: var(--primary-color) !important;
+            color: var(--white-text);
+        }
+
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-submit:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+        .btn-submit:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -18,7 +139,7 @@
 
     <div class="container">
         <h2 class="text-2xl font-bold mb-6 text-center" style="color: var(--primary-color);">Upload a New Document</h2>
-        <form id="postMaterialForm" action="/api/post_material" method="post" enctype="multipart/form-data">
+        <form id="postMaterialForm">
             <div class="form-group">
                 <label for="title">Material Title</label>
                 <input type="text" id="title" name="title" required>
@@ -56,30 +177,34 @@
     </div>
 
     <script>
-        // The autocomplete function is now dynamic, fetching data from the backend
         function autocomplete(inp, dataUrl) {
             let currentFocus;
             let data = [];
-
-            // Fetch initial data
-            fetch(dataUrl)
-                .then(response => response.json())
-                .then(result => {
+            
+            async function fetchData() {
+                try {
+                    const response = await fetch(dataUrl);
+                    const result = await response.json();
                     data = result.states || result.schools || [];
-                })
-                .catch(error => console.error('Failed to load autocomplete data:', error));
+                } catch (error) {
+                    console.error('Failed to load autocomplete data:', error);
+                    data = [];
+                }
+            }
+
+            fetchData();
 
             inp.addEventListener("input", function(e) {
                 let a, b, i, val = this.value;
                 closeAllLists();
                 if (!val) { return false; }
                 currentFocus = -1;
-
+                
                 a = document.createElement("div");
                 a.setAttribute("id", this.id + "autocomplete-list");
                 a.setAttribute("class", "autocomplete-items");
                 this.parentNode.appendChild(a);
-
+                
                 data.forEach(item => {
                     if (item.toLowerCase().includes(val.toLowerCase())) {
                         b = document.createElement("div");
@@ -89,7 +214,6 @@
                         b.addEventListener("click", function(e) {
                             inp.value = this.getElementsByTagName("input")[0].value;
                             closeAllLists();
-                            // If state is selected, fetch schools for that state
                             if (inp.id === 'state') {
                                 updateSchoolAutocomplete(inp.value);
                             }
@@ -99,17 +223,16 @@
                 });
             });
 
-            // Keyboard navigation
             inp.addEventListener("keydown", function(e) {
                 let x = document.getElementById(this.id + "autocomplete-list");
                 if (x) x = x.getElementsByTagName("div");
-                if (e.keyCode == 40) {
+                if (e.keyCode === 40) {
                     currentFocus++;
                     addActive(x);
-                } else if (e.keyCode == 38) {
+                } else if (e.keyCode === 38) {
                     currentFocus--;
                     addActive(x);
-                } else if (e.keyCode == 13) {
+                } else if (e.keyCode === 13) {
                     e.preventDefault();
                     if (currentFocus > -1) {
                         if (x) x[currentFocus].click();
@@ -139,15 +262,16 @@
                     }
                 }
             }
+            
             document.addEventListener("click", function (e) {
                 closeAllLists(e.target);
             });
         }
         
-        // This function fetches schools for a given state and updates the school autocomplete
         function updateSchoolAutocomplete(stateName) {
             const schoolInput = document.getElementById('school');
             schoolInput.value = '';
+            closeAllLists(schoolInput);
             
             if (stateName) {
                 const schoolsUrl = `/api/schools/${stateName}`;
@@ -158,7 +282,6 @@
             }
         }
 
-        // Initialize autocomplete for state
         document.addEventListener('DOMContentLoaded', () => {
             const stateInput = document.getElementById('state');
             autocomplete(stateInput, '/api/states');
@@ -173,16 +296,20 @@
                 const formData = new FormData(postForm);
 
                 try {
-                    const response = await fetch('/admin/post_material', {
+                    const response = await fetch('/api/post_material', {
                         method: 'POST',
                         body: formData,
                     });
 
                     const result = await response.json();
-
+                    
                     if (response.ok) {
                         alert(result.message);
                         postForm.reset();
+                        // Reset autocomplete fields
+                        document.getElementById('state').value = '';
+                        document.getElementById('school').value = '';
+                        updateSchoolAutocomplete('');
                     } else {
                         alert(`Error: ${result.error}`);
                     }
