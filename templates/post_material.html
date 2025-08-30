@@ -129,9 +129,9 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="location_select">University / Location</label>
-                <select id="location_select" name="location_id" required disabled>
-                    <option value="">Select a University</option>
+                <label for="school_select">School</label>
+                <select id="school_select" name="school_id" required disabled>
+                    <option value="">Select a School</option>
                 </select>
             </div>
             <div class="form-group">
@@ -150,33 +150,34 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const stateSelect = document.getElementById('state_select');
-            const locationSelect = document.getElementById('location_select');
+            const schoolSelect = document.getElementById('school_select'); // Corrected: Replaced locationSelect
             const form = document.getElementById('postMaterialForm');
 
             stateSelect.addEventListener('change', async () => {
                 const stateId = stateSelect.value;
-                locationSelect.innerHTML = '<option value="">Loading...</option>';
-                locationSelect.disabled = true;
+                schoolSelect.innerHTML = '<option value="">Loading...</option>';
+                schoolSelect.disabled = true;
 
                 if (stateId) {
                     try {
-                        const response = await fetch(`/api/locations/${stateId}`);
-                        const locations = await response.json();
+                        // Corrected: Updated API endpoint to /api/schools
+                        const response = await fetch(`/api/schools/${stateId}`);
+                        const schools = await response.json();
                         
-                        locationSelect.innerHTML = '<option value="">Select a University</option>';
-                        locations.forEach(loc => {
+                        schoolSelect.innerHTML = '<option value="">Select a School</option>';
+                        schools.forEach(school => {
                             const option = document.createElement('option');
-                            option.value = loc.id;
-                            option.textContent = loc.name;
-                            locationSelect.appendChild(option);
+                            option.value = school.id;
+                            option.textContent = school.name;
+                            schoolSelect.appendChild(option);
                         });
-                        locationSelect.disabled = false;
+                        schoolSelect.disabled = false;
                     } catch (error) {
-                        console.error('Failed to fetch locations:', error);
-                        locationSelect.innerHTML = '<option value="">Failed to load locations</option>';
+                        console.error('Failed to fetch schools:', error);
+                        schoolSelect.innerHTML = '<option value="">Failed to load schools</option>';
                     }
                 } else {
-                    locationSelect.innerHTML = '<option value="">Select a University</option>';
+                    schoolSelect.innerHTML = '<option value="">Select a School</option>';
                 }
             });
 
@@ -198,8 +199,8 @@
                     if (response.ok) {
                         alert(result.message);
                         form.reset();
-                        locationSelect.disabled = true;
-                        locationSelect.innerHTML = '<option value="">Select a University</option>';
+                        schoolSelect.disabled = true;
+                        schoolSelect.innerHTML = '<option value="">Select a School</option>';
                     } else {
                         alert(`Error: ${result.error}`);
                     }
