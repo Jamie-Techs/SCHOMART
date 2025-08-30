@@ -201,6 +201,36 @@
                             {% endif %}
                         </div>
                     {% endif %}
+
+
+                    
+                    <div class="post-content">
+    <p class="post-text">{{ post.content }}</p>
+
+    {% if post.media_items %}
+        {% for media in post.media_items %}
+            {% if media.media_type == 'image' %}
+                <img src="{{ media.media_path_or_url }}" alt="Post Image" class="post-media-item">
+            {% elif media.media_type == 'video' %}
+                <video controls class="post-media-item">
+                    <source src="{{ media.media_path_or_url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% if post.external_link_url %}
+        <div class="external-link-container">
+            <a href="{{ post.external_link_url }}" target="_blank" class="external-link-btn">
+                Visit Link <i class="fas fa-external-link-alt"></i>
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="post-actions">
+        </div>
+</div>
                     
                     <div class="post-content">
                         <h2 class="post-title">{{ post.title }}</h2>
