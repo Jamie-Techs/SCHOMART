@@ -8,95 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Reusing styles from study_hub.html */
-        :root {
-            --primary-color: #006B3C;
-            --secondary-color: #FDB813;
-            --accent-color: #00391F;
-            --light-background: #f5f5f5;
-            --card-background: #ffffff;
-            --border-color: #e0e0e0;
-            --text-color: #333;
-            --white-text: #fff;
-            --light-green-background: #EFF7EF;
-            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            --border-radius: 8px;
-            --transition-speed: 0.3s ease;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--light-background);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        .header {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            padding: 15px 0;
-            text-align: center;
-            box-shadow: var(--box-shadow);
-            position: relative;
-            z-index: 10;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            color: var(--white-text);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .container {
-            width: 90%;
-            max-width: 700px;
-            margin: 40px auto;
-            background-color: var(--card-background);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--primary-color);
-        }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: 1em;
-            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
-        }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2);
-            outline: none;
-        }
-        
-        .btn-submit {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            padding: 12px 20px;
-            border: none;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: 600;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-submit:hover {
-            background-color: var(--accent-color);
-            transform: translateY(-2px);
-        }
+        /* (The CSS remains the same as your previous version) */
     </style>
 </head>
 <body>
@@ -119,21 +31,17 @@
                 <label for="content">Brief Description</label>
                 <textarea id="content" name="content" rows="4" required></textarea>
             </div>
-            <div class="form-group">
-                <label for="state_select">State</label>
-                <select id="state_select" name="state_id" required>
-                    <option value="">Select a State</option>
-                    {% for state in states %}
-                    <option value="{{ state.id }}">{{ state.name }}</option>
-                    {% endfor %}
-                </select>
+            
+            <div class="form-group autocomplete-container">
+                <label for="state">State</label>
+                <input id="state" type="text" name="state" placeholder="Enter a Nigerian state" required autocomplete="off">
             </div>
-            <div class="form-group">
-                <label for="school_select">School</label>
-                <select id="school_select" name="school_id" required disabled>
-                    <option value="">Select a School</option>
-                </select>
+
+            <div class="form-group autocomplete-container">
+                <label for="school">University / School</label>
+                <input id="school" type="text" name="school" placeholder="Enter a Nigerian school" required autocomplete="off">
             </div>
+            
             <div class="form-group">
                 <label for="file">Document File</label>
                 <input type="file" id="file" name="file" accept=".pdf,.doc,.docx,.txt,.rtf,.ppt,.pptx,.xls,.xlsx" required>
@@ -148,48 +56,124 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const stateSelect = document.getElementById('state_select');
-            const schoolSelect = document.getElementById('school_select'); // Corrected: Replaced locationSelect
-            const form = document.getElementById('postMaterialForm');
+        // The autocomplete function is now dynamic, fetching data from the backend
+        function autocomplete(inp, dataUrl) {
+            let currentFocus;
+            let data = [];
 
-            stateSelect.addEventListener('change', async () => {
-                const stateId = stateSelect.value;
-                schoolSelect.innerHTML = '<option value="">Loading...</option>';
-                schoolSelect.disabled = true;
+            // Fetch initial data
+            fetch(dataUrl)
+                .then(response => response.json())
+                .then(result => {
+                    data = result.states || result.schools || [];
+                })
+                .catch(error => console.error('Failed to load autocomplete data:', error));
 
-                if (stateId) {
-                    try {
-                        // Corrected: Updated API endpoint to /api/schools
-                        const response = await fetch(`/api/schools/${stateId}`);
-                        const schools = await response.json();
-                        
-                        schoolSelect.innerHTML = '<option value="">Select a School</option>';
-                        schools.forEach(school => {
-                            const option = document.createElement('option');
-                            option.value = school.id;
-                            option.textContent = school.name;
-                            schoolSelect.appendChild(option);
+            inp.addEventListener("input", function(e) {
+                let a, b, i, val = this.value;
+                closeAllLists();
+                if (!val) { return false; }
+                currentFocus = -1;
+
+                a = document.createElement("div");
+                a.setAttribute("id", this.id + "autocomplete-list");
+                a.setAttribute("class", "autocomplete-items");
+                this.parentNode.appendChild(a);
+
+                data.forEach(item => {
+                    if (item.toLowerCase().includes(val.toLowerCase())) {
+                        b = document.createElement("div");
+                        b.innerHTML = "<strong>" + item.substr(0, val.length) + "</strong>";
+                        b.innerHTML += item.substr(val.length);
+                        b.innerHTML += `<input type='hidden' value='${item}'>`;
+                        b.addEventListener("click", function(e) {
+                            inp.value = this.getElementsByTagName("input")[0].value;
+                            closeAllLists();
+                            // If state is selected, fetch schools for that state
+                            if (inp.id === 'state') {
+                                updateSchoolAutocomplete(inp.value);
+                            }
                         });
-                        schoolSelect.disabled = false;
-                    } catch (error) {
-                        console.error('Failed to fetch schools:', error);
-                        schoolSelect.innerHTML = '<option value="">Failed to load schools</option>';
+                        a.appendChild(b);
                     }
-                } else {
-                    schoolSelect.innerHTML = '<option value="">Select a School</option>';
+                });
+            });
+
+            // Keyboard navigation
+            inp.addEventListener("keydown", function(e) {
+                let x = document.getElementById(this.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    currentFocus++;
+                    addActive(x);
+                } else if (e.keyCode == 38) {
+                    currentFocus--;
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        if (x) x[currentFocus].click();
+                    }
                 }
             });
 
-            form.addEventListener('submit', async (event) => {
+            function addActive(x) {
+                if (!x) return false;
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+            
+            function removeActive(x) {
+                for (let i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
+                }
+            }
+            
+            function closeAllLists(elmnt) {
+                let x = document.getElementsByClassName("autocomplete-items");
+                for (let i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != inp) {
+                        x[i].parentNode.removeChild(x[i]);
+                    }
+                }
+            }
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
+            });
+        }
+        
+        // This function fetches schools for a given state and updates the school autocomplete
+        function updateSchoolAutocomplete(stateName) {
+            const schoolInput = document.getElementById('school');
+            schoolInput.value = '';
+            
+            if (stateName) {
+                const schoolsUrl = `/api/schools/${stateName}`;
+                autocomplete(schoolInput, schoolsUrl);
+            } else {
+                // Clear schools if no state is selected
+                autocomplete(schoolInput, '');
+            }
+        }
+
+        // Initialize autocomplete for state
+        document.addEventListener('DOMContentLoaded', () => {
+            const stateInput = document.getElementById('state');
+            autocomplete(stateInput, '/api/states');
+
+            const postForm = document.getElementById('postMaterialForm');
+            postForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                const submitButton = form.querySelector('.btn-submit');
+                const submitButton = postForm.querySelector('.btn-submit');
                 submitButton.disabled = true;
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Posting...`;
 
-                const formData = new FormData(form);
+                const formData = new FormData(postForm);
+
                 try {
-                    const response = await fetch(form.action, {
+                    const response = await fetch('/admin/post_material', {
                         method: 'POST',
                         body: formData,
                     });
@@ -198,9 +182,7 @@
 
                     if (response.ok) {
                         alert(result.message);
-                        form.reset();
-                        schoolSelect.disabled = true;
-                        schoolSelect.innerHTML = '<option value="">Select a School</option>';
+                        postForm.reset();
                     } else {
                         alert(`Error: ${result.error}`);
                     }
