@@ -3789,34 +3789,16 @@ def support():
 
 
 
+
+
+
+
+
 __app_id = "schomart-7a743" # Corrected: Added the missing app ID variable
 
 
 
-# --- Helper Functions (Updated) ---
-def get_state_name(state_id):
-    if not state_id:
-        return 'N/A'
-    
-    state_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('states').document(state_id)
-    state_doc = state_ref.get()
 
-    if state_doc.exists:
-        return state_doc.to_dict().get('name', 'Unknown State')
-    else:
-        return 'Unknown State'
-
-def get_school_name(school_id):
-    if not school_id:
-        return 'N/A'
-
-    school_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection('schools').document(school_id)
-    school_doc = school_ref.get()
-
-    if school_doc.exists:
-        return school_doc.to_dict().get('name', 'Unknown School')
-    else:
-        return 'Unknown School'
         
 def get_study_material_by_id_from_db(material_id):
     if db is None:
@@ -3941,10 +3923,21 @@ def post_material_page():
     states = get_states_from_db()
     return render_template('post_material.html', states=states)
 
+
+
+
 @app.route('/api/post_material', methods=['POST'])
 @login_required
 @admin_required
 def api_post_material():
+    # Retrieve data from the form
+    title = request.form.get('title')
+    content = request.form.get('content')
+    category = request.form.get('category')
+    state = request.form.get('state')
+    school = request.form.get('school')
+    
+    # Check for file and other required data
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
     
@@ -3952,6 +3945,18 @@ def api_post_material():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    if not all([title, content, category, state, school]):
+        return jsonify({"error": "Missing required form data"}), 400
+
+    # Validate that the state is from the predefined list
+    if state not in NIGERIAN_STATES:
+        return jsonify({'error': f'Invalid state: {state}. Please choose from the suggested list.'}), 400
+
+    # Validate that the school is from the predefined list for the selected state
+    if state not in NIGERIAN_SCHOOLS or school not in NIGERIAN_SCHOOLS[state]:
+        return jsonify({'error': f'Invalid school for state {state}. Please choose from the suggested list.'}), 400
+    
+    # Secure file handling
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     
@@ -3960,21 +3965,15 @@ def api_post_material():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        title = request.form.get('title')
-        content = request.form.get('content')
-        category = request.form.get('category')
-        school_id = request.form.get('school_id') # Changed from location_id
-
-        if not all([title, content, category, school_id]):
-            return jsonify({"error": "Missing required form data"}), 400
-
+        # Prepare data for Firestore
         materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
         new_material_data = {
             'title': title,
             'content': content,
             'category': category,
+            'state': state,
+            'school': school,
             'file_path': file_path,
-            'school_id': school_id, # Changed from location_id
             'upload_date': firestore.SERVER_TIMESTAMP
         }
         materials_ref.add(new_material_data)
@@ -3982,17 +3981,32 @@ def api_post_material():
         return jsonify({"message": "Study material posted successfully!"}), 201
 
     except Exception as e:
-        logger.error(f"Error posting study material: {e}", exc_info=True)
+        # A more robust error handling can be implemented here
         return jsonify({"error": f"Failed to post study material: {str(e)}"}), 500
 
-@app.route('/api/schools/<string:state_id>', methods=['GET'])
-def api_get_schools(state_id): # Changed route name
-    try:
-        schools = get_schools_for_state(state_id)
-        return jsonify(schools)
-    except Exception as e:
-        logger.error(f"Failed to fetch schools for state {state_id}: {e}")
-        return jsonify({"error": "Failed to fetch schools."}), 500
+
+
+
+
+
+
+
+@app.route('/api/states', methods=['GET'])
+def get_states():
+    """Endpoint to return a list of all Nigerian states."""
+    return jsonify({'states': NIGERIAN_STATES})
+
+@app.route('/api/schools/<string:state_name>', methods=['GET'])
+def get_schools_by_state(state_name):
+    """Endpoint to return a list of schools for a specific state."""
+    schools = NIGERIAN_SCHOOLS.get(state_name)
+    if schools:
+        return jsonify({'schools': schools})
+    return jsonify({'schools': []}), 404
+
+
+
+
 
 @app.route('/api/study_materials', methods=['GET'])
 def api_study_materials():
@@ -4619,6 +4633,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
