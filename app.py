@@ -3839,11 +3839,13 @@ def get_material_by_id(material_id):
 
 @app.route('/admin')
 @admin_required
+@login_required
 def admin():
     return render_template('admin.html')
 
 @app.route('/admin/post_material', methods=['POST'])
 @admin_required
+@login_required
 def post_material():
     title = request.form.get('title')
     category = request.form.get('category')
@@ -4389,6 +4391,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
