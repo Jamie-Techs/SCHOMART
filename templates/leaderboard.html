@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Referral Goals & Rewards - Futo Jiji</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome CDN for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* General Styles & Reset */
@@ -638,7 +637,7 @@
             {% for user in leaderboard %}
             <div class="user-card">
                 <div class="serial-number">{{ loop.index }}</div>
-                <a href="{{ url_for('profile_by_username', username=user.username) }}" class="profile-link">
+                <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
                     <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='default_avatar.png') }}';">
                     <span class="username">{{ user.username }}</span>
                 </a>
