@@ -3833,20 +3833,20 @@ def download_material(material_id):
 
 
 
-# Updated routes for CGPA Calculator
+
+
+
+
+
+
+# Updated CGPA Calculator Routes
 @app.route('/cgpa_calculator')
-@login_required
 def cgpa_calculator_page():
-    """Renders the CGPA calculation page and loads saved data from session."""
-    # Load courses and TCGPA from session, or default to empty
-    courses = session.get('courses', [])
-    tcgpa = session.get('tcgpa', None)
-    
-    # Pass the data to the template
-    return render_template('cgpa_calculator.html', courses=courses, tcgpa=tcgpa)
+    """Renders the CGPA calculation page."""
+    # The session data will now be handled by JavaScript on the frontend
+    return render_template('cgpa_calculator.html')
 
 @app.route('/api/calculate_cgpa', methods=['POST'])
-
 def api_calculate_cgpa():
     data = request.get_json()
     courses = data.get('courses', [])
@@ -3854,8 +3854,6 @@ def api_calculate_cgpa():
     total_grade_points = 0
     total_credit_units = 0
 
-    # This grading scale is common in many Nigerian universities on a 5.0 scale.
-    # Note: Grading systems can vary, so this is a general example.
     grading_scale = {
         'A': 5.0, 'B': 4.0, 'C': 3.0, 'D': 2.0, 'E': 1.0, 'F': 0.0
     }
@@ -3876,7 +3874,6 @@ def api_calculate_cgpa():
     else:
         cgpa = total_grade_points / total_credit_units
 
-    # Determine class of degree based on CGPA
     cgpa_class = 'No Class'
     if 4.50 <= cgpa <= 5.00:
         cgpa_class = 'First Class'
@@ -3888,16 +3885,8 @@ def api_calculate_cgpa():
         cgpa_class = 'Third Class'
     else:
         cgpa_class = 'Pass/Fail'
-
-    # Save the calculation results to the user's session
-    session['courses'] = courses
-    session['cgpa'] = round(cgpa, 2)
-    session['total_grade_points'] = round(total_grade_points, 2)
-    session['total_credit_units'] = total_credit_units
     
-    # TCGPA is calculated and added to the session
-    session['tcgpa'] = data.get('tcgpa', None) 
-    
+    # Return the results to the frontend
     return jsonify({
         'success': True,
         'cgpa': round(cgpa, 2),
@@ -3905,6 +3894,11 @@ def api_calculate_cgpa():
         'total_credit_units': total_credit_units,
         'class_of_degree': cgpa_class
     })
+
+# The rest of your main.py file remains unchanged.
+
+
+
 
 
 
@@ -4424,6 +4418,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
