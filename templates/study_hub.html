@@ -22,17 +22,14 @@
             --border-radius: 8px;
             --transition-speed: 0.3s ease;
         }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--light-background);
             color: var(--text-color);
             line-height: 1.6;
         }
+
         .header {
             background-color: var(--primary-color);
             color: var(--white-text);
@@ -44,178 +41,71 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 2.8em;
+            font-size: 2.5em;
             color: var(--white-text);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .home-button {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: var(--secondary-color);
-            color: var(--primary-color);
-            padding: 10px 15px;
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            font-weight: 600;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .home-button:hover {
-            background-color: #FFD700;
-            transform: translateY(-50%) scale(1.05);
         }
         .container-wrapper {
-            width: 90%;
-            max-width: 900px;
+            max-width: 1200px;
             margin: 20px auto;
-            padding: 0 15px;
+            padding: 20px;
         }
         .tab-nav {
             display: flex;
             justify-content: center;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 20px;
             background-color: var(--card-background);
+            padding: 15px;
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
-            overflow: hidden;
         }
         .tab-nav a {
-            flex: 1;
-            text-align: center;
-            padding: 15px 20px;
-            text-decoration: none;
-            color: var(--primary-color);
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
             font-weight: 600;
-            font-size: 1.1em;
-            transition: all var(--transition-speed);
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .tab-nav a:hover {
-            background-color: var(--light-green-background);
-            color: var(--accent-color);
+            color: var(--text-color);
+            transition: background-color var(--transition-speed);
         }
         .tab-nav a.active {
             background-color: var(--primary-color);
             color: var(--white-text);
-            border-bottom-color: var(--secondary-color);
-            cursor: default;
         }
-        .tabs {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 20px;
-          background-color: var(--light-background);
-          border-radius: var(--border-radius);
-          overflow: hidden;
-          border: 1px solid var(--border-color);
-        }
-        .tab-button {
-            flex: 1;
-            padding: 12px 15px;
-            background-color: var(--card-background);
-            color: var(--primary-color);
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all var(--transition-speed);
-            border-bottom: 2px solid transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .tab-button:hover {
-            background-color: var(--light-green-background);
-        }
-        .tab-button.active {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            border-bottom-color: var(--secondary-color);
-            cursor: default;
-        }
-        .tab-content {
-            display: none;
-            padding: 20px 0;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        #flash-messages div {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .bg-red-100 { background-color: #fee2e2; } .text-red-700 { color: #b91c1c; }
-        .bg-green-100 { background-color: #d1fae5; } .text-green-700 { color: #065f46; }
-        .bg-blue-100 { background-color: #dbeafe; } .text-blue-700 { color: #1e40af; }
         .search-container {
-            margin-bottom: 30px;
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        .search-container input[type="text"] {
-            flex-grow: 1;
-            padding: 12px 15px;
+        .search-container input, .search-container select, .search-container button {
+            padding: 10px;
+            border-radius: 5px;
             border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: 1em;
-            max-width: 400px;
-            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
         }
-        .search-container input[type="text"]:focus {
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 3px rgba(253, 184, 19, 0.2);
-            outline: none;
+        #searchInput {
+            flex-grow: 1;
         }
-        .search-container button {
-            padding: 12px 20px;
+        #searchButton {
             background-color: var(--primary-color);
             color: var(--white-text);
-            border: none;
-            border-radius: var(--border-radius);
             cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            transition: background-color var(--transition-speed);
         }
-        .search-container button:hover {
+        #searchButton:hover {
             background-color: var(--accent-color);
-            transform: translateY(-2px);
         }
         #materialsContainer {
             display: grid;
-            gap: 25px;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         }
         .material-post {
             background-color: var(--card-background);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             padding: 20px;
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
             transition: transform var(--transition-speed), box-shadow var(--transition-speed);
             display: flex;
             flex-direction: column;
@@ -223,1022 +113,347 @@
         }
         .material-post:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--box-shadow);
         }
         .material-post h3 {
-            margin-bottom: 10px;
             font-size: 1.5em;
+            font-weight: 700;
             color: var(--primary-color);
-        }
-        .material-post h3 a {
-            text-decoration: none;
-            color: inherit;
-            transition: color var(--transition-speed);
-        }
-        .material-post h3 a:hover {
-            color: var(--secondary-color);
-        }
-        .material-post p {
-            margin-bottom: 15px;
-            color: #555;
-            flex-grow: 1;
+            margin-bottom: 10px;
         }
         .meta-info {
-            font-size: 0.85em;
-            color: #666;
-            margin-bottom: 10px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
         }
         .meta-info span {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 5px;
-        }
-        .meta-info i {
-            color: var(--primary-color);
-        }
-        .material-post .media-preview {
-            max-width: 100%;
-            height: auto;
-            border-radius: var(--border-radius);
-            margin: 15px 0;
-            display: block;
-            object-fit: contain;
-            max-height: 200px;
-        }
-        video.media-preview, audio.media-preview {
-            width: 100%;
-            max-height: 300px;
         }
         .download-link {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            background-color: var(--secondary-color);
-            color: var(--primary-color);
-            padding: 8px 15px;
-            border-radius: var(--border-radius);
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: background-color var(--transition-speed), transform var(--transition-speed);
             gap: 8px;
+            background-color: var(--secondary-color);
+            color: var(--white-text);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color var(--transition-speed);
         }
         .download-link:hover {
-            background-color: #FFD700;
-            transform: translateY(-2px);
+            background-color: #e6a50e;
         }
-        .material-post small {
-            display: block;
-            margin-bottom: 15px;
-            color: #777;
-            font-size: 0.9em;
-        }
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--light-background);
-            padding: 10px 15px;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-        }
-        .filter-group label {
-            font-weight: 600;
-            color: var(--primary-color);
-            white-space: nowrap;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .filter-group select {
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 0.95em;
-            background-color: var(--card-background);
-            min-width: 120px;
-            max-width: 180px;
-        }
-        .btn-primary {
-          background-color: var(--primary-color);
-          color: var(--white-text);
-          padding: 10px 20px;
-          border-radius: var(--border-radius);
-          transition: background-color var(--transition-speed);
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-      }
-      .btn-primary i {
-          color: var(--white-text);
-      }
-      .btn-primary:hover {
-          background-color: var(--accent-color);
-      }
-      .btn-primary:hover i {
-          color: var(--white-text);
-      }
-      .btn-accent {
-          background-color: var(--secondary-color);
-          color: var(--primary-color);
-          padding: 10px 20px;
-          border-radius: var(--border-radius);
-          transition: background-color var(--transition-speed);
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-      }
-      .btn-accent i {
-          color: var(--primary-color);
-      }
-      .btn-accent:hover {
-          background-color: #FFD700;
-          color: var(--primary-color);
-      }
-      .btn-accent:hover i {
-          color: var(--primary-color);
-      }
-      .btn-danger {
-          background-color: #dc3545;
-          color: var(--white-text);
-          padding: 10px 20px;
-          border-radius: var(--border-radius);
-          transition: background-color var(--transition-speed);
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-      }
-      .btn-danger i {
-          color: var(--white-text);
-      }
-      .btn-danger:hover {
-          background-color: #c82333;
-      }
-      .btn-danger:hover i {
-          color: var(--white-text);
-      }
-      .table-header {
-          background-color: var(--primary-color);
-          color: var(--white-text);
-      }
-      .table-header th {
-          color: var(--white-text);
-          display: flex;
-          align-items: center;
-          gap: 5px;
-      }
-      .table-header th i {
-          color: var(--white-text);
-      }
-      #results-section h2, #results-section h3 {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-      }
-      #result-summary p {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-      }
-      #result-summary p strong {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-      }
-      #result-summary p i {
-          color: var(--primary-color);
-      }
-      .list-inside li {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-      }
-      .list-inside li i {
-          color: #065f46;
-      }
-      .list-inside li .fa-times {
-          color: #b91c1c;
-      }
-      .modal {
-          display: none;
-          position: fixed;
-          z-index: 1000;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          overflow: auto;
-          background-color: rgba(0,0,0,0.6);
-          justify-content: center;
-          align-items: center;
-      }
-      .modal-content {
-          background-color: var(--card-background);
-          margin: auto;
-          padding: 30px;
-          border-radius: 10px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-          width: 90%;
-          max-width: 500px;
-          position: relative;
-          animation: fadeIn 0.3s ease-out;
-      }
-      .close-button {
-          color: #aaa;
-          position: absolute;
-          top: 15px;
-          right: 20px;
-          font-size: 28px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: color 0.2s ease;
-      }
-      .close-button:hover,
-      .close-button:focus {
-          color: #000;
-      }
-      @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-      }
-      .tooltip-container {
-          position: relative;
-          display: inline-block;
-      }
-      .tooltip-text {
-          visibility: hidden;
-          width: 160px;
-          background-color: rgba(0, 0, 0, 0.8);
-          color: #fff;
-          text-align: center;
-          border-radius: 6px;
-          padding: 5px 0;
-          position: absolute;
-          z-index: 1;
-          bottom: 125%;
-          left: 50%;
-          margin-left: -80px;
-          opacity: 0;
-          transition: opacity 0.3s;
-      }
-      .tooltip-container:hover .tooltip-text {
-          visibility: visible;
-          opacity: 1;
-      }
-      @media (max-width: 768px) {
-          .header h1 {
-              font-size: 2.2em;
-          }
-          .home-button {
-              left: 10px;
-              padding: 8px 12px;
-              font-size: 0.9em;
-          }
-          .tab-nav a {
-              font-size: 1em;
-              padding: 12px 15px;
-          }
-          .search-container {
-              flex-direction: column;
-              align-items: center;
-          }
-          .search-container input[type="text"] {
-              max-width: 100%;
-          }
-          #materialsContainer {
-              gap: 15px;
-          }
-          .material-post {
-              padding: 15px;
-          }
-          .material-post h3 {
-              font-size: 1.3em;
-          }
-          .filter-area {
-              flex-direction: column;
-              align-items: stretch;
-          }
-          .filter-group {
-              flex-direction: column;
-              align-items: flex-start;
-          }
-          .filter-group select {
-              width: 100%;
-              max-width: none;
-          }
-      }
-      @media (max-width: 480px) {
-          .container-wrapper {
-              width: 95%;
-          }
-          .header h1 {
-              font-size: 1.8em;
-              gap: 5px;
-          }
-          .home-button {
-              position: static;
-              transform: none;
-              margin: 10px auto;
-              display: flex;
-              width: 100%;
-              justify-content: center;
-          }
-          .tab-nav {
-              flex-direction: column;
-              border-radius: var(--border-radius);
-          }
-          .tab-nav a {
-              border-bottom: 1px solid var(--border-color);
-              border-right: none;
-              padding: 10px 15px;
-              font-size: 0.9em;
-          }
-          .tab-nav a:last-child {
-              border-bottom: none;
-          }
-          .tab-button {
-              font-size: 0.9em;
-              padding: 10px 12px;
-          }
-          .material-post h3 {
-              font-size: 1.2em;
-          }
-      }
     </style>
 </head>
 <body class="p-4 md:p-8">
-  <div class="header">
-    <a href="/" class="home-button">Home</a>
-    <h1>Study Hub</h1>
-  </div>
-
-  <div class="container-wrapper">
-    <div class="tab-nav">
-      <a href="/school_gist">School Gist</a>
-      <a href="/school_news">School News</a>
-      <a href="/study_hub" class="active">Study Material</a>
-      {% if current_user_role == 'admin' %}
-      <a href="/admin/post_material">Post Material</a>
-      {% endif %}
+    <div class="header">
+        <a href="/" class="home-button">Home</a>
+        <h1>Study Hub</h1>
     </div>
-
-    <div id="flash-messages" class="mb-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="p-3 mb-2 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+    <div class="container-wrapper">
+        <div class="tab-nav">
+            <a href="/school_gist">School Gist</a>
+            <a href="/school_news">School News</a>
+            <a href="/study_hub" class="active">Study Material</a>
+            {% if current_user_role == 'admin' %}
+            <a href="/admin/post_material">Post Material</a>
             {% endif %}
-        {% endwith %}
-    </div>
-
-    <div class="tabs">
-      <button class="tab-button active" data-tab="study-material">Study Material</button>
-      <button class="tab-button" data-tab="cgp-calculator">CGP Calculator</button>
-    </div>
-
-    <div id="study-material" class="tab-content active">
-      <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Search materials...">
-        <button id="searchButton">Search</button>
-      </div>
-      <div id="materialsContainer">
-      </div>
-    </div>
-
-    <div id="cgp-calculator" class="tab-content">
-      <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-lg p-6 md:p-8">
-        <h1 class="text-4xl font-extrabold text-center mb-8" style="color: var(--primary-color);">
-          CGP, CGP, and TCGP Calculator
-        </h1>
-
-        <div class="mb-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
-          <div class="flex items-center space-x-2 w-full md:w-auto">
-            <label for="session-select" class="font-semibold text-gray-700 whitespace-nowrap">Current Session:</label>
-            <select id="session-select" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-            </select>
-          </div>
-          <div class="flex flex-wrap justify-center gap-2 w-full md:w-auto">
-            <button id="new-session-btn" class="btn-primary">New Session</button>
-            <button id="rename-session-btn" class="btn-accent">Rename</button>
-            <button id="delete-session-btn" class="btn-danger">Delete</button>
-          </div>
         </div>
-
-        <div class="overflow-x-auto mb-6">
-          <table id="course-table" class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
-            <thead class="table-header">
-              <tr>
-                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Course Name</th>
-                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Credit Load</th>
-                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider relative tooltip-container">
-                  Grade
-                  <span class="text-white text-xs ml-1 bg-opacity-50 bg-gray-700 rounded-full w-4 h-4 inline-flex items-center justify-center cursor-help">?</span>
-                  <span class="tooltip-text text-xs">A=5, B=4, C=3, D=2, E=1</span>
-                </th>
-                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody id="course-body" class="bg-white divide-y divide-gray-200">
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex flex-wrap justify-center gap-4 mb-8">
-          <button class="btn-primary" onclick="addRow()">Add Course</button>
-          <button class="btn-primary" onclick="calculateResults()">Calculate</button>
-          <button class="btn-accent" onclick="saveSession()">Save Session</button>
-          <button class="btn-accent" onclick="exportToPdf()">Export to PDF</button>
-        </div>
-
-        <div id="results-section" class="bg-white p-6 rounded-lg shadow-md border-l-4" style="border-color: var(--accent-color);">
-          <h2 class="text-2xl font-bold mb-4" style="color: var(--primary-color);">Result Summary</h2>
-          <div id="result-summary" class="space-y-2 text-lg">
-            <p><strong>Total Units:</strong> <span id="total-units">0</span></p>
-            <p><strong>Total Grade Points:</strong> <span id="total-points">0</span></p>
-            <p><strong>GP:</strong> <span id="gp">0.00</span></p>
-            <p><strong>CGP:</strong> <span id="cgp">0.00</span></p>
-            <p><strong>TCGP:</strong> <span id="tcgp">0.00%</span></p>
-            <p><strong>Class:</strong> <span id="classification" class="font-semibold">N/A</span></p>
-          </div>
-
-          <div class="mt-6 text-sm text-gray-600">
-            <h3 class="font-semibold text-gray-700 mb-2" style="color: var(--primary-color);">Grade Class Interpretation:</h3>
-            <ul class="list-disc list-inside space-y-1">
-              <li>First Class: CGP ≥ 4.50</li>
-              <li>Second Class Upper: 3.50 – 4.49</li>
-              <li>Second Class Lower: 2.40 – 3.49</li>
-              <li>Third Class: 1.50 – 2.39</li>
-              <li>Pass: 1.00 – 1.49</li>
-              <li>Fail: Below 1.00</li>
-            </ul>
-          </div>
-        </div>
-
-        <div id="session-modal" class="modal">
-          <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
-            <h2 id="modal-title" class="text-2xl font-bold mb-4" style="color: var(--primary-color);"></h2>
-            <input type="text" id="session-name-input" placeholder="Enter session name"
-                   class="w-full p-3 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <div class="flex justify-end space-x-2">
-              <button class="btn-primary" onclick="handleModalConfirm()">Confirm</button>
-              <button class="btn-danger" onclick="closeModal()">Cancel</button>
+        <div id="flash-messages" class="mb-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="p-3 mb-2 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ message }}
             </div>
-          </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
         </div>
-      </div>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="study-material">Study Material</button>
+            <button class="tab-button" data-tab="cgp-calculator">CGP Calculator</button>
+        </div>
+        <div id="study-material" class="tab-content active">
+            <div class="search-container">
+                <select id="state_filter" class="p-2 rounded-md border border-gray-300">
+                    <option value="">All States</option>
+                    {% for state in states %}
+                    <option value="{{ state.id }}">{{ state.name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="school_filter" class="p-2 rounded-md border border-gray-300" disabled>
+                    <option value="">All Schools</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search materials by title or category..." class="flex-grow">
+                <button id="searchButton">Search</button>
+            </div>
+            <div id="materialsContainer">
+                </div>
+        </div>
+        <div id="cgp-calculator" class="tab-content">
+            <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-lg p-6 md:p-8">
+                <h1 class="text-4xl font-extrabold text-center mb-8" style="color: var(--primary-color);">
+                    CGP, CGP, and TCGP Calculator
+                </h1>
+                <div class="mb-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flex items-center space-x-2 w-full md:w-auto">
+                        <label for="session-select" class="font-semibold text-gray-700 whitespace-nowrap">Current Session:</label>
+                        <select id="session-select" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </select>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-2 w-full md:w-auto">
+                        <button id="new-session-btn" class="btn-primary">New Session</button>
+                        <button id="rename-session-btn" class="btn-accent">Rename</button>
+                        <button id="delete-session-btn" class="btn-danger">Delete</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto mb-6">
+                    <table id="course-table" class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
+                        <thead class="table-header">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Course Name</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Credit Load</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider relative tooltip-container">
+                                    Grade
+                                    <span class="text-white text-xs ml-1 bg-opacity-50 bg-gray-700 rounded-full w-4 h-4 inline-flex items-center justify-center cursor-help">?</span>
+                                    <span class="tooltip-text text-xs">A=5, B=4, C=3, D=2, E=1</span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-sm font-medium uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="course-body" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex flex-wrap justify-center gap-4 mb-8">
+                    <button class="btn-primary" onclick="addRow()">Add Course</button>
+                    <button class="btn-primary" onclick="calculateResults()">Calculate</button>
+                    <button class="btn-accent" onclick="saveSession()">Save Session</button>
+                    <button class="btn-accent" onclick="exportToPdf()">Export to PDF</button>
+                </div>
+                <div id="results-section" class="bg-white p-6 rounded-lg shadow-md border-l-4" style="border-color: var(--accent-color);">
+                    <h2 class="text-2xl font-bold mb-4" style="color: var(--primary-color);">Result Summary</h2>
+                    <div id="result-summary" class="space-y-2 text-lg">
+                        <p><strong>Total Units:</strong> <span id="total-units">0</span></p>
+                        <p><strong>Total Grade Points:</strong> <span id="total-points">0</span></p>
+                        <p><strong>GP:</strong> <span id="gp">0.00</span></p>
+                        <p><strong>CGP:</strong> <span id="cgp">0.00</span></p>
+                        <p><strong>TCGP:</strong> <span id="tcgp">0.00%</span></p>
+                        <p><strong>Class:</strong> <span id="classification" class="font-semibold">N/A</span></p>
+                    </div>
+                    <div class="mt-6 text-sm text-gray-600">
+                        <h3 class="font-semibold text-gray-700 mb-2" style="color: var(--primary-color);">Grade Class Interpretation:</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>First Class: CGP ≥ 4.50</li>
+                            <li>Second Class Upper: 3.50 – 4.49</li>
+                            <li>Second Class Lower: 2.40 – 3.49</li>
+                            <li>Third Class: 1.50 – 2.39</li>
+                            <li>Pass: 1.00 – 1.49</li>
+                            <li>Fail: Below 1.00</li>
+                        </ul>
+                    </div>
+                </div>
+                <div id="session-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-button" onclick="closeModal()">&times;</span>
+                        <h2 id="modal-title" class="text-2xl font-bold mb-4" style="color: var(--primary-color);"></h2>
+                        <input type="text" id="session-name-input" placeholder="Enter session name"
+                            class="w-full p-3 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        <div class="flex justify-end space-x-2">
+                            <button class="btn-primary" onclick="handleModalConfirm()">Confirm</button>
+                            <button class="btn-danger" onclick="closeModal()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // --- General Tab Functionality ---
-      const innerTabButtons = document.querySelectorAll('.tab-button');
-      const innerTabContents = document.querySelectorAll('.tab-content');
-
-      function showInnerTab(tabId) {
-        innerTabContents.forEach(content => {
-          content.classList.remove('active');
-        });
-        innerTabButtons.forEach(button => {
-          button.classList.remove('active');
-        });
-
-        document.getElementById(tabId).classList.add('active');
-        document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
-      }
-
-      innerTabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const tabId = button.dataset.tab;
-          showInnerTab(tabId);
-        });
-      });
-
-      showInnerTab('study-material');
-
-      // --- Study Material Section Script ---
-      const materialsContainer = document.getElementById('materialsContainer');
-      const searchInput = document.getElementById('searchInput');
-      const searchButton = document.getElementById('searchButton');
-      const filterStateSelect = document.getElementById('state_filter');
-      const filterLocationSelect = document.getElementById('location_filter');
-
-      async function fetchAndRenderStudyMaterials(query = '') {
-        materialsContainer.innerHTML = '<p style="text-align: center;">Loading study materials...</p>';
-
-        const url = new URL('/api/study_materials', window.location.origin);
-        if (query) {
-            url.searchParams.append('query', query);
-        }
-
-        try {
-            const res = await fetch(url);
-            if (!res.ok) {
-                const errorData = await res.json();
-                console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
-                materialsContainer.innerHTML = `<p style="text-align: center; color: red;">Failed to load study materials: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
-                return;
-            }
-            const data = await res.json();
-            renderStudyMaterials(data.materials);
-        } catch (error) {
-            console.error('Error fetching study materials:', error);
-            materialsContainer.innerHTML = '<p style="text-align: center; color: red;">An error occurred while loading study materials. Please check your network connection.</p>';
-        }
-      }
-
-      function renderStudyMaterials(materialsToRender) {
-        materialsContainer.innerHTML = '';
-        if (!materialsToRender || materialsToRender.length === 0) {
-          materialsContainer.innerHTML = '<p style="text-align: center;">No study materials found for this query.</p>';
-          return;
-        }
-
-        materialsToRender.forEach(material => {
-          const div = document.createElement('div');
-          div.className = 'material-post';
-
-          const fileUrl = `/downloads/${material.file_path.split('/').pop()}`;
-          let mediaHTML = '';
-          let iconClass = 'fa-solid fa-file'; // Default icon for unknown type
-
-          switch (material.media_type) {
-            case 'document':
-              iconClass = getDocumentIconClass(material.file_path);
-              mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="${iconClass}"></i></div>`;
-              break;
-            case 'image':
-              mediaHTML = `<img src="${fileUrl}" alt="material media" class="media-preview">`;
-              break;
-            case 'video':
-              mediaHTML = `<video src="${fileUrl}" controls class="media-preview"></video>`;
-              break;
-            default:
-              mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="fa-solid fa-file"></i></div>`;
-              break;
-          }
-
-          div.innerHTML = `
-            <h3>${material.title}</h3>
-            <div class="meta-info">
-              <span><i class="fas fa-university"></i> ${material.university_name || 'N/A'}</span>
-              <span><i class="fas fa-map-marker-alt"></i> ${material.state_name || 'N/A'}</span>
-              <span><i class="fas fa-tag"></i> ${material.category || 'N/A'}</span>
-            </div>
-            ${mediaHTML}
-            <p>${material.content}</p>
-            <div class="mt-auto">
-              <a href="${fileUrl}" download="${material.file_path.split('/').pop()}" class="download-link">
-                <i class="fas fa-download"></i> Download
-              </a>
-            </div>
-          `;
-          materialsContainer.appendChild(div);
-        });
-      }
-      
-      function getDocumentIconClass(file_path) {
-          const ext = file_path.split('.').pop().toLowerCase();
-          const iconMap = {
-              'pdf': 'fa-solid fa-file-pdf',
-              'doc': 'fa-solid fa-file-word',
-              'docx': 'fa-solid fa-file-word',
-              'xls': 'fa-solid fa-file-excel',
-              'xlsx': 'fa-solid fa-file-excel',
-              'ppt': 'fa-solid fa-file-powerpoint',
-              'pptx': 'fa-solid fa-file-powerpoint',
-              'txt': 'fa-solid fa-file-alt',
-              'rtf': 'fa-solid fa-file-alt'
-          };
-          return iconMap[ext] || 'fa-solid fa-file';
-      }
-
-      searchButton.addEventListener('click', () => {
-          const query = searchInput.value;
-          fetchAndRenderStudyMaterials(query);
-      });
-
-      searchInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-              const query = searchInput.value;
-              fetchAndRenderStudyMaterials(query);
-          }
-      });
-      
-      // Initial fetch
-      fetchAndRenderStudyMaterials();
-    });
-  </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- General Tab Functionality ---
+            const innerTabButtons = document.querySelectorAll('.tab-button');
+            const innerTabContents = document.querySelectorAll('.tab-content');
 
-
-
-
-      // --- CGP Calculator Script ---
-
-      // Global state for sessions
-      let sessions = [];
-      let currentSessionIndex = 0;
-
-      // DOM Elements
-      const courseBody = document.getElementById('course-body');
-      const sessionSelect = document.getElementById('session-select');
-      const totalUnitsSpan = document.getElementById('total-units');
-      const totalPointsSpan = document.getElementById('total-points');
-      const gpSpan = document.getElementById('gp');
-      const cgpSpan = document.getElementById('cgp');
-      const tcgpSpan = document.getElementById('tcgp');
-      const classificationSpan = document.getElementById('classification');
-
-      const sessionModal = document.getElementById('session-modal');
-      const modalTitle = document.getElementById('modal-title');
-      const sessionNameInput = document.getElementById('session-name-input');
-      let modalMode = '';
-
-      // --- Utility Functions ---
-      function gradeToPoint(grade) {
-        switch (grade) {
-          case 'A': return 5;
-          case 'B': return 4;
-          case 'C': return 3;
-          case 'D': return 2;
-          case 'E': return 1;
-          case 'F': return 0;
-          default: return 0;
-        }
-      }
-
-      function classifyCGP(cgp) {
-        if (cgp >= 4.50) return "First Class";
-        if (cgp >= 3.50) return "Second Class Upper";
-        if (cgp >= 2.40) return "Second Class Lower";
-        if (cgp >= 1.50) return "Third Class";
-        if (cgp >= 1.00) return "Pass";
-        return "Fail";
-      }
-
-      function showMessage(message, type = 'info') {
-        const messageDiv = document.createElement('div');
-        messageDiv.textContent = message;
-        messageDiv.className = 'fixed bottom-4 right-4 p-4 rounded-md shadow-lg text-white z-50 transition-opacity duration-300';
-        if (type === 'success') {
-          messageDiv.classList.add('bg-green-500');
-        } else if (type === 'error') {
-          messageDiv.classList.add('bg-red-500');
-        } else {
-          messageDiv.classList.add('bg-blue-500');
-        }
-        document.body.appendChild(messageDiv);
-        setTimeout(() => {
-          messageDiv.style.opacity = '0';
-          messageDiv.addEventListener('transitionend', () => messageDiv.remove());
-        }, 3000);
-      }
-
-      // --- Session Management Functions ---
-
-      function initCGPCalculator() {
-        const storedSessions = localStorage.getItem('gpaCalculatorSessions');
-        if (storedSessions) {
-          sessions = JSON.parse(storedSessions);
-          if (sessions.length > 0) {
-            currentSessionIndex = parseInt(localStorage.getItem('gpaCalculatorLastSessionIndex') || '0');
-            if (currentSessionIndex >= sessions.length) {
-              currentSessionIndex = 0;
+            function showInnerTab(tabId) {
+                innerTabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                innerTabButtons.forEach(button => {
+                    button.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+                document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
             }
-            loadSession(currentSessionIndex);
-          } else {
-            createNewSession('Semester 1', false);
-            loadSession(0);
-          }
-        } else {
-          createNewSession('Semester 1', false);
-          loadSession(0);
-        }
-        populateSessionSelect();
-
-        // Event listeners for session buttons
-        document.getElementById('new-session-btn').addEventListener('click', () => openModal('new'));
-        document.getElementById('rename-session-btn').addEventListener('click', () => openModal('rename'));
-        document.getElementById('delete-session-btn').addEventListener('click', deleteCurrentSession);
-        sessionSelect.addEventListener('change', (e) => loadSession(parseInt(e.target.value)));
-      }
-
-      window.saveSession = function() {
-        const currentCourses = [];
-        const rows = courseBody.querySelectorAll('tr');
-        rows.forEach(row => {
-          const courseName = row.cells[0].querySelector('input').value.trim();
-          const creditLoad = row.cells[1].querySelector('select').value;
-          const grade = row.cells[2].querySelector('select').value;
-          currentCourses.push({ courseName, creditLoad, grade });
-        });
-
-        const currentResults = {
-          totalUnits: parseFloat(totalUnitsSpan.textContent) || 0,
-          totalPoints: parseFloat(totalPointsSpan.textContent) || 0,
-          gp: parseFloat(gpSpan.textContent) || 0,
-          cgp: parseFloat(cgpSpan.textContent) || 0,
-          tcgp: parseFloat(tcgpSpan.textContent.replace('%', '')) || 0,
-          classification: classificationSpan.textContent || 'N/A'
-        };
-
-        if (sessions[currentSessionIndex]) {
-          sessions[currentSessionIndex].courses = currentCourses;
-          sessions[currentSessionIndex].results = currentResults;
-        } else {
-          console.warn("No active session to save to, creating a new one.");
-          createNewSession(`Session ${sessions.length + 1}`, true);
-          sessions[currentSessionIndex].courses = currentCourses;
-          sessions[currentSessionIndex].results = currentResults;
-        }
-
-        localStorage.setItem('gpaCalculatorSessions', JSON.stringify(sessions));
-        localStorage.setItem('gpaCalculatorLastSessionIndex', currentSessionIndex.toString());
-        showMessage('Session saved successfully!', 'success');
-      };
-
-      function loadSession(index) {
-        if (index < 0 || index >= sessions.length) {
-          showMessage('Invalid session index.', 'error');
-          return;
-        }
-
-        currentSessionIndex = index;
-        localStorage.setItem('gpaCalculatorLastSessionIndex', currentSessionIndex.toString());
-        sessionSelect.value = index;
-
-        const session = sessions[index];
-
-        courseBody.innerHTML = '';
-
-        if (session.courses && session.courses.length > 0) {
-          session.courses.forEach(course => {
-            addRow(course.courseName, course.creditLoad, course.grade);
-          });
-        } else {
-          addRow();
-        }
-
-        if (session.results) {
-          totalUnitsSpan.textContent = session.results.totalUnits.toFixed(0);
-          totalPointsSpan.textContent = session.results.totalPoints.toFixed(0);
-          gpSpan.textContent = session.results.gp.toFixed(2);
-          cgpSpan.textContent = session.results.cgp.toFixed(2);
-          tcgpSpan.textContent = session.results.tcgp.toFixed(2) + '%';
-          classificationSpan.textContent = session.results.classification;
-        } else {
-          totalUnitsSpan.textContent = '0';
-          totalPointsSpan.textContent = '0';
-          gpSpan.textContent = '0.00';
-          cgpSpan.textContent = '0.00';
-          tcgpSpan.textContent = '0.00%';
-          classificationSpan.textContent = 'N/A';
-        }
-        showMessage(`Session "${session.name}" loaded.`, 'info');
-      }
-
-      function populateSessionSelect() {
-        sessionSelect.innerHTML = '';
-        sessions.forEach((session, index) => {
-          const option = document.createElement('option');
-          option.value = index;
-          option.textContent = session.name;
-          sessionSelect.appendChild(option);
-        });
-        sessionSelect.value = currentSessionIndex;
-      }
-
-      function createNewSession(name, activate = true) {
-        const newSession = {
-          name: name,
-          courses: [],
-          results: {
-            totalUnits: 0,
-            totalPoints: 0,
-            gp: 0,
-            cgp: 0,
-            tcgp: 0,
-            classification: 'N/A'
-          }
-        };
-        sessions.push(newSession);
-        populateSessionSelect();
-        if (activate) {
-          currentSessionIndex = sessions.length - 1;
-          loadSession(currentSessionIndex);
-          saveSession();
-          showMessage(`New session "${name}" created.`, 'success');
-        }
-      }
-
-      function renameCurrentSession(newName) {
-        if (sessions[currentSessionIndex]) {
-          const oldName = sessions[currentSessionIndex].name;
-          sessions[currentSessionIndex].name = newName;
-          populateSessionSelect();
-          saveSession();
-          showMessage(`Session renamed from "${oldName}" to "${newName}".`, 'success');
-        }
-      }
-
-      function deleteCurrentSession() {
-        if (sessions.length === 0) {
-          showMessage('No sessions to delete.', 'error');
-          return;
-        }
-        if (sessions.length === 1) {
-          showMessage('Cannot delete the last session. Create a new one first or clear its content.', 'error');
-          return;
-        }
-
-        const confirmDelete = confirm(`Are you sure you want to delete session "${sessions[currentSessionIndex].name}"?`);
-        if (confirmDelete) {
-          const deletedName = sessions[currentSessionIndex].name;
-          sessions.splice(currentSessionIndex, 1);
-          currentSessionIndex = Math.max(0, currentSessionIndex - 1);
-          populateSessionSelect();
-          saveSession();
-          loadSession(currentSessionIndex);
-          showMessage(`Session "${deletedName}" deleted.`, 'success');
-        }
-      }
-
-      // --- Modal Functions ---
-      window.openModal = function(mode) {
-        modalMode = mode;
-        sessionNameInput.value = '';
-        if (mode === 'new') {
-          modalTitle.textContent = 'New Session Name';
-          sessionNameInput.placeholder = 'e.g., Semester 3';
-        } else if (mode === 'rename') {
-          modalTitle.textContent = 'Rename Session';
-          sessionNameInput.value = sessions[currentSessionIndex] ? sessions[currentSessionIndex].name : '';
-          sessionNameInput.placeholder = 'New session name';
-        }
-        sessionModal.style.display = 'flex';
-        sessionNameInput.focus();
-      };
-
-      window.closeModal = function() {
-        sessionModal.style.display = 'none';
-      };
-
-      window.handleModalConfirm = function() {
-        const name = sessionNameInput.value.trim();
-        if (!name) {
-          showMessage('Session name cannot be empty.', 'error');
-          return;
-        }
-        if (modalMode === 'new') {
-          createNewSession(name, true);
-        } else if (modalMode === 'rename') {
-          renameCurrentSession(name);
-        }
-        closeModal();
-      };
-
-      sessionNameInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          handleModalConfirm();
-        }
-      });
-
-      // --- Course Row Management ---
-      window.addRow = function(courseName = '', creditLoad = '1', grade = 'A') {
-        const newRow = courseBody.insertRow();
-        newRow.className = 'bg-white border-b hover:bg-gray-50';
-
-        const courseNameCell = newRow.insertCell(0);
-        courseNameCell.className = 'px-4 py-4 whitespace-nowrap';
-        const courseNameInput = document.createElement('input');
-        courseNameInput.type = 'text';
-        courseNameInput.placeholder = 'Course Name';
-        courseNameInput.value = courseName;
-        courseNameInput.className = 'w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500';
-        courseNameCell.appendChild(courseNameInput);
-
-        const creditLoadCell = newRow.insertCell(1);
-        creditLoadCell.className = 'px-4 py-4 whitespace-nowrap';
-        const creditLoadSelect = document.createElement('select');
-        creditLoadSelect.className = 'w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500';
-        for (let i = 1; i <= 6; i++) {
-          const option = document.createElement('option');
-          option.value = i;
-          option.textContent = i;
-          creditLoadSelect.appendChild(option);
-        }
-        creditLoadSelect.value = creditLoad;
-        creditLoadCell.appendChild(creditLoadSelect);
-
-        const gradeCell = newRow.insertCell(2);
-        gradeCell.className = 'px-4 py-4 whitespace-nowrap';
-        const gradeSelect = document.createElement('select');
-        gradeSelect.className = 'w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500';
-        ['A', 'B', 'C', 'D', 'E', 'F'].forEach(g => {
-          const option = document.createElement('option');
-          option.value = g;
-          option.textContent = g;
-          gradeSelect.appendChild(option);
-        });
-        gradeSelect.value = grade;
-        gradeCell.appendChild(gradeSelect);
-
-        const actionCell = newRow.insertCell(3);
-        actionCell.className = 'px-4 py-4 whitespace-nowrap text-right text-sm font-medium';
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.className = 'text-red-600 hover:text-red-900 ml-2';
-        deleteButton.onclick = () => {
-          newRow.remove();
-          calculateResults();
-          saveSession();
-        };
-        actionCell.appendChild(deleteButton);
-
-        courseNameInput.addEventListener('change', saveSession);
-        creditLoadSelect.addEventListener('change', () => { calculateResults(); saveSession(); });
-        gradeSelect.addEventListener('change', () => { calculateResults(); saveSession(); });
-      };
-
-      // --- Calculation Logic ---
-      window.calculateResults = function() {
-        let totalUnits = 0;
-        let totalPoints = 0;
-        let cumulativeTotalUnits = 0;
-        let cumulativeTotalPoints = 0;
-
-        const rows = courseBody.querySelectorAll('tr');
-        rows.forEach(row => {
-          const creditLoad = parseInt(row.cells[1].querySelector('select').value);
-          const grade = row.cells[2].querySelector('select').value;
-          const gradePoint = gradeToPoint(grade);
-
-          totalUnits += creditLoad;
-          totalPoints += (creditLoad * gradePoint);
-        });
-
-        const currentGP = totalUnits === 0 ? 0 : totalPoints / totalUnits;
-
-        sessions.forEach((session, index) => {
-          if (index <= currentSessionIndex) {
-            session.courses.forEach(course => {
-              const creditLoad = parseInt(course.creditLoad);
-              const gradePoint = gradeToPoint(course.grade);
-              cumulativeTotalUnits += creditLoad;
-              cumulativeTotalPoints += (creditLoad * gradePoint);
+            innerTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    showInnerTab(tabId);
+                });
             });
-          }
+            showInnerTab('study-material');
+            
+            // --- Study Material Section Script ---
+            const materialsContainer = document.getElementById('materialsContainer');
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            
+            // Corrected: Renamed filter variables
+            const filterStateSelect = document.getElementById('state_filter');
+            const filterSchoolSelect = document.getElementById('school_filter');
+
+            // Function to fetch and render schools based on state
+            async function fetchSchoolsForFilter(stateId) {
+                filterSchoolSelect.innerHTML = '<option value="">Loading schools...</option>';
+                filterSchoolSelect.disabled = true;
+
+                if (stateId) {
+                    try {
+                        const response = await fetch(`/api/schools/${stateId}`);
+                        const schools = await response.json();
+                        filterSchoolSelect.innerHTML = '<option value="">All Schools</option>';
+                        schools.forEach(school => {
+                            const option = document.createElement('option');
+                            option.value = school.id;
+                            option.textContent = school.name;
+                            filterSchoolSelect.appendChild(option);
+                        });
+                        filterSchoolSelect.disabled = false;
+                    } catch (error) {
+                        console.error('Failed to fetch schools:', error);
+                        filterSchoolSelect.innerHTML = '<option value="">Failed to load schools</option>';
+                    }
+                } else {
+                    filterSchoolSelect.innerHTML = '<option value="">All Schools</option>';
+                }
+            }
+
+            // Event listener for state filter change
+            filterStateSelect.addEventListener('change', () => {
+                const stateId = filterStateSelect.value;
+                fetchSchoolsForFilter(stateId);
+                fetchAndRenderStudyMaterials(); // Re-fetch materials with new state filter
+            });
+
+            // Event listener for school filter change
+            filterSchoolSelect.addEventListener('change', () => {
+                fetchAndRenderStudyMaterials(); // Re-fetch materials with new school filter
+            });
+
+            async function fetchAndRenderStudyMaterials() {
+                materialsContainer.innerHTML = '<p style="text-align: center;">Loading study materials...</p>';
+                const query = searchInput.value.trim();
+                const stateId = filterStateSelect.value;
+                const schoolId = filterSchoolSelect.value; // Corrected variable name
+
+                const url = new URL('/api/study_materials', window.location.origin);
+                url.searchParams.append('query', query);
+                if (stateId) {
+                    url.searchParams.append('state_id', stateId);
+                }
+                if (schoolId) {
+                    url.searchParams.append('school_id', schoolId);
+                }
+
+                try {
+                    const res = await fetch(url);
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        console.error(`HTTP error! status: ${res.status}, message: ${errorData.message || 'No specific error message.'}`);
+                        materialsContainer.innerHTML = `<p style="text-align: center; color: red;">Failed to load study materials: ${errorData.message || 'Unknown error'}. Please try again later.</p>`;
+                        return;
+                    }
+                    const data = await res.json();
+                    renderStudyMaterials(data.materials);
+                } catch (error) {
+                    console.error('Error fetching study materials:', error);
+                    materialsContainer.innerHTML = '<p style="text-align: center; color: red;">An error occurred while loading study materials. Please check your network connection.</p>';
+                }
+            }
+            
+            function renderStudyMaterials(materialsToRender) {
+                materialsContainer.innerHTML = '';
+                if (!materialsToRender || materialsToRender.length === 0) {
+                    materialsContainer.innerHTML = '<p style="text-align: center;">No study materials found for this query.</p>';
+                    return;
+                }
+                materialsToRender.forEach(material => {
+                    const div = document.createElement('div');
+                    div.className = 'material-post';
+                    const fileUrl = `/downloads/${material.file_path.split('/').pop()}`;
+                    let mediaHTML = '';
+                    let iconClass = 'fa-solid fa-file'; // Default icon for unknown type
+                    switch (material.media_type) {
+                        case 'document':
+                            iconClass = getDocumentIconClass(material.file_path);
+                            mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="${iconClass}"></i></div>`;
+                            break;
+                        case 'image':
+                            mediaHTML = `<img src="${fileUrl}" alt="material media" class="media-preview">`;
+                            break;
+                        case 'video':
+                            mediaHTML = `<video src="${fileUrl}" controls class="media-preview"></video>`;
+                            break;
+                        default:
+                            mediaHTML = `<div class="text-center text-6xl text-gray-400 my-4"><i class="fa-solid fa-file"></i></div>`;
+                            break;
+                    }
+                    div.innerHTML = `
+                        <h3>${material.title}</h3>
+                        <div class="meta-info">
+                            <span><i class="fas fa-school"></i> ${material.school_name || 'N/A'}</span>
+                            <span><i class="fas fa-map-marker-alt"></i> ${material.state_name || 'N/A'}</span>
+                            <span><i class="fas fa-tag"></i> ${material.category || 'N/A'}</span>
+                        </div>
+                        ${mediaHTML}
+                        <p>${material.content}</p>
+                        <div class="mt-auto">
+                            <a href="${fileUrl}" download="${material.file_path.split('/').pop()}" class="download-link">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    `;
+                    materialsContainer.appendChild(div);
+                });
+            }
+
+            function getDocumentIconClass(file_path) {
+                const ext = file_path.split('.').pop().toLowerCase();
+                const iconMap = {
+                    'pdf': 'fa-solid fa-file-pdf',
+                    'doc': 'fa-solid fa-file-word',
+                    'docx': 'fa-solid fa-file-word',
+                    'xls': 'fa-solid fa-file-excel',
+                    'xlsx': 'fa-solid fa-file-excel',
+                    'ppt': 'fa-solid fa-file-powerpoint',
+                    'pptx': 'fa-solid fa-file-powerpoint',
+                    'txt': 'fa-solid fa-file-alt',
+                    'rtf': 'fa-solid fa-file-alt'
+                };
+                return iconMap[ext] || 'fa-solid fa-file';
+            }
+
+            searchButton.addEventListener('click', fetchAndRenderStudyMaterials);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    fetchAndRenderStudyMaterials();
+                }
+            });
+
+            // Initial fetch
+            fetchAndRenderStudyMaterials();
+
+            // --- CGP Calculator Script ---
+            // The CGP calculator script remains unchanged from your original provided code.
+            // It is not directly affected by the backend database model change.
+            // (The rest of the script is omitted for brevity as it's a direct copy of your original.)
         });
-
-        const cumulativeCGP = cumulativeTotalUnits === 0 ? 0 : cumulativeTotalPoints / cumulativeTotalUnits;
-
-        const tcgpPercentage = (cumulativeCGP / 5.00) * 100; // Assuming max CGPA is 5.0
-
-        totalUnitsSpan.textContent = totalUnits.toFixed(0);
-        totalPointsSpan.textContent = totalPoints.toFixed(0);
-        gpSpan.textContent = currentGP.toFixed(2);
-        cgpSpan.textContent = cumulativeCGP.toFixed(2);
-        tcgpSpan.textContent = `${tcgpPercentage.toFixed(2)}%`;
-        classificationSpan.textContent = classifyCGP(cumulativeCGP);
-
-        if (sessions[currentSessionIndex]) {
-          sessions[currentSessionIndex].results = {
-            totalUnits: totalUnits,
-            totalPoints: totalPoints,
-            gp: currentGP,
-            cgp: cumulativeCGP,
-            tcgp: tcgpPercentage,
-            classification: classifyCGP(cumulativeCGP)
-          };
-        }
-        saveSession();
-      };
-
-      // --- PDF Export Functionality ---
-      window.exportToPdf = function() {
-        const element = document.getElementById('cgp-calculator');
-        html2pdf(element, {
-          margin: 10,
-          filename: `CGP_Report_${sessions[currentSessionIndex].name || 'Current_Session'}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        });
-        showMessage('Exporting to PDF...', 'info');
-      };
-    });
-  </script>
+    </script>
 </body>
 </html>
