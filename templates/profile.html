@@ -211,18 +211,22 @@
                     <span class="text-sm font-semibold">Review Adverts</span>
                 </a>
                 <a href="{{ url_for('admin_reported_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-    <i class="fas fa-flag text-4xl text-green-700 mb-2"></i>
-    <span class="text-sm font-semibold">Reported Adverts</span>
+                    <i class="fas fa-flag text-4xl text-green-700 mb-2"></i>
+                    <span class="text-sm font-semibold">Reported Adverts</span>
                 </a>
-                
-                
-                
+
+                <a href="{{ url_for('admin_post_material') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                    <i class="fas fa-folder-plus text-4xl text-green-700 mb-2"></i>
+                    <span class="text-sm font-semibold">Post Material</span>
+                </a>
+
                 <a href="{{ url_for('create_post') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
                     <i class="fas fa-newspaper text-4xl text-green-700 mb-2"></i>
                     <span class="text-sm font-semibold">Create School News</span>
                 </a>
-                
-            {% endif %}
+             {% endif %}
+
+            
 
             <a href="{{ url_for('logout') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-sign-out-alt text-4xl text-red-500 mb-2"></i>
