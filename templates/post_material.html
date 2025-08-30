@@ -177,23 +177,9 @@
     </div>
 
     <script>
-        function autocomplete(inp, dataUrl) {
+        function autocomplete(inp, data) {
             let currentFocus;
-            let data = [];
             
-            async function fetchData() {
-                try {
-                    const response = await fetch(dataUrl);
-                    const result = await response.json();
-                    data = result.states || result.schools || [];
-                } catch (error) {
-                    console.error('Failed to load autocomplete data:', error);
-                    data = [];
-                }
-            }
-
-            fetchData();
-
             inp.addEventListener("input", function(e) {
                 let a, b, i, val = this.value;
                 closeAllLists();
@@ -268,23 +254,34 @@
             });
         }
         
-        function updateSchoolAutocomplete(stateName) {
+        async function updateSchoolAutocomplete(stateName) {
             const schoolInput = document.getElementById('school');
             schoolInput.value = '';
             closeAllLists(schoolInput);
             
             if (stateName) {
-                const schoolsUrl = `/api/schools/${stateName}`;
-                autocomplete(schoolInput, schoolsUrl);
+                try {
+                    const response = await fetch(`/api/schools/${encodeURIComponent(stateName)}`);
+                    const result = await response.json();
+                    autocomplete(schoolInput, result.schools);
+                } catch (error) {
+                    console.error('Failed to fetch schools:', error);
+                    autocomplete(schoolInput, []);
+                }
             } else {
-                // Clear schools if no state is selected
-                autocomplete(schoolInput, '');
+                autocomplete(schoolInput, []);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const stateInput = document.getElementById('state');
-            autocomplete(stateInput, '/api/states');
+            try {
+                const response = await fetch('/api/states');
+                const result = await response.json();
+                autocomplete(stateInput, result.states);
+            } catch (error) {
+                console.error('Failed to fetch states:', error);
+            }
 
             const postForm = document.getElementById('postMaterialForm');
             postForm.addEventListener('submit', async (event) => {
@@ -296,7 +293,7 @@
                 const formData = new FormData(postForm);
 
                 try {
-                    const response = await fetch('/api/post_material', {
+                    const response = await fetch('/admin/post_material', {
                         method: 'POST',
                         body: formData,
                     });
@@ -306,7 +303,6 @@
                     if (response.ok) {
                         alert(result.message);
                         postForm.reset();
-                        // Reset autocomplete fields
                         document.getElementById('state').value = '';
                         document.getElementById('school').value = '';
                         updateSchoolAutocomplete('');
