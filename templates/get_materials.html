@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #006B3C;
+            --secondary-color: #FDB813;
+            --accent-color: #00391F;
+            --light-background: #f5f5f5;
+            --card-background: #ffffff;
+            --border-color: #e0e0e0;
+            --text-color: #333;
+            --white-text: #fff;
+            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --transition-speed: 0.3s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-background);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-links a {
+            color: var(--white-text);
+            margin-left: 1.5rem;
+            font-weight: 500;
+            transition: color var(--transition-speed);
+        }
+
+        .header-links a:hover {
+            color: var(--secondary-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+
+        .search-bar button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: var(--white-text);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: background-color var(--transition-speed);
+        }
+
+        .search-bar button:hover {
+            background-color: var(--accent-color);
+        }
+
+        #materials-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .material-card {
+            background-color: var(--card-background);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .material-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .material-card p {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .material-card .meta {
+            font-size: 0.875rem;
+            color: #888;
+            margin-top: 1rem;
+        }
+
+        .material-card a {
+            padding: 0.5rem 1rem;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border-radius: 50px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 1rem;
+            transition: background-color var(--transition-speed);
+        }
+
+        .material-card a:hover {
+            background-color: #e0a612;
+        }
+
+        #message-container {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 1.25rem;
+            color: #888;
+        }
+
+        .flash-messages {
+            margin-top: 1rem;
+        }
+        .flash-messages .alert {
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .flash-messages .success { background-color: #d4edda; color: #155724; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; }
+        .flash-messages .warning { background-color: #fff3cd; color: #856404; }
+        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-title">StudySphere</div>
+        <div class="header-links">
+            <a href="/">Home</a>
+            {% if session.user %}
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary-color">Available Study Materials</h1>
+
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search by title, category, school...">
+            <button id="search-btn"><i class="fas fa-search"></i> Search</button>
+        </div>
+
+        <div id="materials-container">
+            <p id="loading-message" class="text-center text-gray-500">Loading materials...</p>
+        </div>
+    </div>
+
+    <script>
+        const materialsContainer = document.getElementById('materials-container');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+
+        async function fetchMaterials(query = '') {
+            materialsContainer.innerHTML = '<p id="loading-message" class="text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading materials...</p>';
+            try {
+                const response = await fetch(`/api/materials?query=${encodeURIComponent(query)}`);
+                const materials = await response.json();
+                
+                if (materials.length > 0) {
+                    materialsContainer.innerHTML = ''; // Clear loading message
+                    materials.forEach(material => {
+                        const card = document.createElement('div');
+                        card.className = 'material-card';
+                        card.innerHTML = `
+                            <div>
+                                <h3>${material.title}</h3>
+                                <p><strong>Category:</strong> ${material.category}</p>
+                                <p><strong>School:</strong> ${material.school}</p>
+                                <p><strong>State:</strong> ${material.state}</p>
+                                <p>${material.content}</p>
+                            </div>
+                            <a href="/download_material/${material.id}">Download <i class="fas fa-download"></i></a>
+                        `;
+                        materialsContainer.appendChild(card);
+                    });
+                } else {
+                    materialsContainer.innerHTML = '<p class="text-center text-gray-500">No materials found matching your search.</p>';
+                }
+            } catch (error) {
+                console.error('Failed to fetch materials:', error);
+                materialsContainer.innerHTML = '<p class="text-center text-red-500">Failed to load materials. Please try again later.</p>';
+            }
+        }
+
+        searchBtn.addEventListener('click', () => {
+            fetchMaterials(searchInput.value);
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchMaterials(searchInput.value);
+            }
+        });
+
+        // Initial load
+        window.onload = () => fetchMaterials();
+    </script>
+</body>
+</html>
