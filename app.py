@@ -3876,20 +3876,8 @@ def get_study_materials_from_db(query=None):
         logger.error(f"Error fetching study materials: {e}", exc_info=True)
         return [], 0, str(e)
 
-def get_states_from_db():
-    try:
-        states_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("states").stream()
-        return [{"id": doc.id, **doc.to_dict()} for doc in states_ref]
-    except Exception as e:
-        logger.error(f"Failed to load states: {e}")
-        return []
-def get_schools_for_state(state_id):
-    try:
-        schools_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("schools").where("state_id", "==", state_id).stream()
-        return [{"id": doc.id, **doc.to_dict()} for doc in schools_ref]
-    except Exception as e:
-        logger.error(f"Failed to load schools for state {state_id}: {e}")
-        return []
+
+
 
 # --- Flask Routes (Updated) ---
 @app.route('/study_hub')
@@ -3996,17 +3984,6 @@ def get_states():
     """Endpoint to return a list of all Nigerian states."""
     return jsonify({'states': NIGERIAN_STATES})
 
-@app.route('/api/schools/<string:state_name>', methods=['GET'])
-def get_schools_by_state(state_name):
-    """Endpoint to return a list of schools for a specific state."""
-    schools = NIGERIAN_SCHOOLS.get(state_name)
-    if schools:
-        return jsonify({'schools': schools})
-    return jsonify({'schools': []}), 404
-
-
-
-
 
 @app.route('/api/study_materials', methods=['GET'])
 def api_study_materials():
@@ -4014,8 +3991,8 @@ def api_study_materials():
         return jsonify({"error": "Database not initialized"}), 500
     try:
         query_text = request.args.get('query', '').strip()
-        state_id = request.args.get('state_id')
-        school_id = request.args.get('school_id') # Changed from location_id
+        state_name = request.args.get('state') # Updated to use state name
+        school_name = request.args.get('school') # Updated to use school name
 
         materials_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("study_materials")
         materials_query = materials_ref.order_by("upload_date", direction=firestore.Query.DESCENDING)
@@ -4023,16 +4000,11 @@ def api_study_materials():
         if query_text:
             materials_query = materials_query.where("title", ">=", query_text).where("title", "<=", query_text + '\uf8ff')
             
-        if state_id:
-            schools_ref = db.collection("artifacts").document(__app_id).collection("public").document("data").collection("schools").where("state_id", "==", state_id).stream()
-            school_ids = [doc.id for doc in schools_ref]
-            if school_ids:
-                materials_query = materials_query.where("school_id", "in", school_ids)
-            else:
-                return jsonify({'materials': [], 'total_materials': 0, 'total_pages': 0})
+        if state_name:
+            materials_query = materials_query.where("state", "==", state_name)
         
-        if school_id:
-            materials_query = materials_query.where("school_id", "==", school_id)
+        if school_name:
+            materials_query = materials_query.where("school", "==", school_name)
 
         materials_docs = materials_query.stream()
         materials_data = []
@@ -4040,26 +4012,19 @@ def api_study_materials():
             material = material_doc.to_dict()
             material['id'] = material_doc.id
             
+            # Format the upload date
             if isinstance(material.get('upload_date'), datetime):
                 material['upload_date'] = material['upload_date'].strftime('%Y-%m-%d %H:%M:%S')
             else:
                 material['upload_date'] = str(material.get('upload_date', ''))
             
-            material['media_type'] = get_media_type_from_extension(material.get('file_path'))
+            # Since state and school names are now on the material document,
+            # you no longer need to perform extra database lookups.
+            # You can simply get them from the material dictionary.
+            state_name_doc = material.get('state', 'N/A')
+            school_name_doc = material.get('school', 'N/A')
             
-            state_name = "N/A"
-            school_name = "N/A" # Changed from university_name
-            school_id_doc = material.get('school_id')
-            if school_id_doc:
-                school_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('schools').document(str(school_id_doc)).get()
-                if school_doc.exists:
-                    school_data = school_doc.to_dict()
-                    school_name = school_data.get('name', 'N/A')
-                    state_id_doc = school_data.get('state_id')
-                    if state_id_doc:
-                        state_doc = db.collection('artifacts').document(__app_id).collection('public').document('data').collection('states').document(str(state_id_doc)).get()
-                        if state_doc.exists:
-                            state_name = state_doc.to_dict().get('name', 'N/A')
+            material['media_type'] = get_media_type_from_extension(material.get('file_path'))
             
             materials_data.append({
                 'id': material['id'],
@@ -4069,8 +4034,8 @@ def api_study_materials():
                 'upload_date': material['upload_date'],
                 'file_path': material.get('file_path', ''),
                 'media_type': material['media_type'],
-                'state_name': state_name,
-                'school_name': school_name, # Changed from university_name
+                'state_name': state_name_doc,
+                'school_name': school_name_doc,
                 'view_url': url_for('api_study_material_detail', material_id=material['id']),
                 'can_request': True
             })
@@ -4084,6 +4049,11 @@ def api_study_materials():
     except Exception as e:
         logger.error(f"API Error in /api/study_materials: {e}", exc_info=True)
         return jsonify({"error": f"Failed to load study materials: {str(e)}"}), 500
+
+
+
+
+
 
 @app.route('/api/study_materials/<string:material_id>', methods=['GET'])
 def api_study_material_detail(material_id):
@@ -4633,6 +4603,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
