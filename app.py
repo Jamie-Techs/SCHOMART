@@ -3402,8 +3402,53 @@ def delete_media_from_firebase(media_url):
 
 
 
+# Helper function to strictly determine media type as image or video
+def get_media_type_from_extension(filename):
+    """
+    Strictly determines the media type (image or video) from a filename's extension.
+    Returns None if the file is not an allowed image or video type.
+    """
+    if not isinstance(filename, str):
+        return None
 
+    filename = filename.lower()
+    
+    # List of allowed image and video file extensions
+    allowed_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    allowed_video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv']
 
+    ext = os.path.splitext(filename)[1]
+
+    if ext in allowed_image_extensions:
+        return 'image'
+    elif ext in allowed_video_extensions:
+        return 'video'
+    else:
+        # Returns None for any file type that is not an image or video
+        return None
+
+# Your existing upload_file_to_firebase function
+def upload_file_to_firebase(file, folder):
+    """
+    Uploads a file to Firebase Storage.
+    Returns the public URL of the uploaded file on success, None otherwise.
+    """
+    if not file or not file.filename:
+        return None
+
+    filename = secure_filename(file.filename)
+    extension = os.path.splitext(filename)[1]
+    unique_filename = f"{uuid.uuid4()}{extension}"
+    destination_path = f"{folder}/{unique_filename}"
+
+    try:
+        blob = bucket.blob(destination_path)
+        blob.upload_from_file(file, content_type=file.content_type)
+        blob.make_public()
+        return blob.public_url
+    except Exception as e:
+        logging.error(f"Failed to upload file to Firebase Storage: {e}")
+        return None
 
 # The fully updated route
 @app.route("/admin/create_post", methods=["GET", "POST"])
@@ -3431,16 +3476,21 @@ def create_post():
         try:
             media_files = request.files.getlist("media_files")
             for media_file in media_files:
+                # The file handling now strictly checks for allowed types
                 if media_file and media_file.filename != '':
-                    uploaded_url = upload_file_to_firebase(media_file, "posts")
-                    if uploaded_url:
-                        # Ensures the filename is a string, preventing errors if it's malformed.
-                        filename_to_classify = str(media_file.filename or '')
-                        media_type = get_media_type_from_extension(filename_to_classify)
-                        media_items_to_save.append({
-                            "media_type": media_type, 
-                            "media_path_or_url": uploaded_url,
-                        })
+                    filename_to_classify = str(media_file.filename or '')
+                    media_type = get_media_type_from_extension(filename_to_classify)
+                    
+                    if media_type:
+                        uploaded_url = upload_file_to_firebase(media_file, "posts")
+                        if uploaded_url:
+                            media_items_to_save.append({
+                                "media_type": media_type, 
+                                "media_path_or_url": uploaded_url,
+                            })
+                    else:
+                        flash(f"File '{media_file.filename}' is not an allowed image or video format and was skipped.", "warning")
+                        
         except Exception as e:
             flash(f"An error occurred during file upload: {e}", "error")
             logging.error(f"File upload error: {e}", exc_info=True)
@@ -3477,6 +3527,7 @@ def create_post():
             return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin), 500
 
     return render_template("create_post.html", post_data=post_data, user_is_admin=user_is_admin)
+
 
 
 
@@ -4519,6 +4570,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
