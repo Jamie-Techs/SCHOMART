@@ -223,8 +223,8 @@
                                 </button>
                             </form>
                         {% endif %}
-                        <button class="share-btn" onclick="copyPostLink('{{ url_for('view_post', post_id=post.id, _external=True) }}')">
-                            <i class="fas fa-share-alt"></i> Share
+                        <button class="share-btn" onclick="sharePost('{{ post.title }}', '{{ post.content | truncate(150, True) }}', '{{ url_for('view_post', post_id=post.id, _external=True) }}')">
+                         <i class="fas fa-share-alt"></i> Share
                         </button>
                     </div>
                 </div>
@@ -235,15 +235,32 @@
             </div>
         {% endif %}
     </div>
+
     <script>
-        function copyPostLink(link) {
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Link copied to clipboard!");
+    // This is the new, modern way to handle sharing.
+    function sharePost(title, text, url) {
+        if (navigator.share) {
+            navigator.share({
+                title: title,
+                text: text,
+                url: url
+            }).then(() => {
+                console.log('Successfully shared!');
+            }).catch((error) => {
+                console.error('Error sharing:', error);
+                alert("Sharing failed. You can copy the link manually.");
+            });
+        } else {
+            // Fallback for browsers that don't support the Web Share API
+            navigator.clipboard.writeText(url).then(() => {
+                alert("Sharing is not supported on this browser. The link has been copied to your clipboard!");
             }).catch(err => {
                 console.error("Failed to copy link: ", err);
                 alert("Failed to copy link. Please try again or copy manually.");
             });
         }
-    </script>
+    }
+</script>
+    
 </body>
 </html>
