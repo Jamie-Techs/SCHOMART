@@ -2907,10 +2907,6 @@ def advert_detail(advert_id):
 
 
 
-
-
-
-
 @app.route('/seller_profile/<seller_id>')
 def seller_profile_view(seller_id):
     current_user_id = session.get('user_id')
@@ -2928,11 +2924,26 @@ def seller_profile_view(seller_id):
         
         seller_info = seller_doc.to_dict()
 
-        profile_picture_filename = seller_info.get('profile_picture')
-        seller_info['profile_picture_url'] = get_profile_picture_url(profile_picture_filename)
+        # Step 1: Use the unified helper function for profile picture
+        seller_info['profile_picture_url'] = get_profile_picture_url(seller_id)
         
-        cover_photo_filename = seller_info.get('cover_photo')
-        seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
+        # Step 2: Implement robust rating calculation
+        reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
+        total_rating = 0
+        review_count = 0
+        for review_doc in reviews_query:
+            review_data = review_doc.to_dict()
+            total_rating += review_data.get('rating', 0)
+            review_count += 1
+        
+        # Assign the calculated rating and review count to the seller_info dict
+        seller_info['rating'] = total_rating / review_count if review_count > 0 else 0.0
+        seller_info['review_count'] = review_count
+
+        # Step 3: Use a similar approach for the cover photo, assuming a helper function exists
+        # NOTE: This assumes you have a get_cover_photo_url function that takes a user_id
+        # as its argument, similar to get_profile_picture_url.
+        seller_info['cover_photo_url'] = get_cover_photo_url(seller_id)
         
         seller_phone = seller_info.get('phone_number')
         if seller_phone:
@@ -2952,8 +2963,6 @@ def seller_profile_view(seller_id):
             advert = advert_doc.to_dict()
             advert['id'] = advert_doc.id
             
-            # CRITICAL FIX: The main_image field already contains the URL.
-            # No need to generate a signed URL again.
             main_image_url = advert.get('main_image')
             if main_image_url:
                 advert['display_image'] = main_image_url
@@ -2980,9 +2989,11 @@ def seller_profile_view(seller_id):
                                is_following=is_following,
                                current_user_id=current_user_id)
     except Exception as e:
-        logger.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
+        logging.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
+
+
 
 
 
@@ -4403,6 +4414,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
