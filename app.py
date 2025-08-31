@@ -2818,11 +2818,15 @@ def referral_benefit():
 
 
 
+
+
+
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page.
+    Handles displaying a single advert detail page and increments view count
+    for unique, non-owner users.
     """
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
@@ -2836,25 +2840,50 @@ def advert_detail(advert_id):
         
         advert = advert_doc.to_dict()
         advert['id'] = advert_doc.id
+        advert_owner_id = advert.get('user_id')
 
-        is_owner = current_user_id == advert.get('user_id')
+        is_owner = current_user_id == advert_owner_id
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
+        # --- NEW LOGIC FOR VIEW COUNTING ---
+        # Only increment view count for unique, non-owner users.
+        if current_user_id and not is_owner:
+            # Check if this user has already viewed this advert.
+            view_query = db.collection('advert_views').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
+            
+            # If the user has NOT viewed this advert before, record the view and update the count.
+            if not any(view_query):
+                # Use a Firestore transaction for a safe, atomic update.
+                @firestore.transactional
+                def update_view_count(transaction, doc_ref):
+                    snapshot = doc_ref.get(transaction=transaction)
+                    new_view_count = snapshot.to_dict().get('view_count', 0) + 1
+                    transaction.update(doc_ref, {'view_count': new_view_count})
+                
+                # Run the transaction to increment the view count.
+                transaction = db.transaction()
+                update_view_count(transaction, advert_ref)
+
+                # Add a record to the `advert_views` collection to prevent double-counting.
+                db.collection('advert_views').add({
+                    'user_id': current_user_id,
+                    'advert_id': advert_id,
+                    'viewed_at': firestore.SERVER_TIMESTAMP
+                })
+        # --- END OF NEW LOGIC ---
+
         # Step 2: Fetch seller info and attach the profile picture URL.
-        seller_id = advert.get('user_id')
-        seller_doc = db.collection('users').document(seller_id).get()
+        seller_doc = db.collection('users').document(advert_owner_id).get()
 
         if not seller_doc.exists:
-            # Use the merged get_profile_picture_url with a placeholder for consistency
-            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': get_profile_picture_url(seller_id)}
+            seller = {'id': advert_owner_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': get_profile_picture_url(advert_owner_id)}
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
-            # Use the new, unified helper function to get the seller's profile picture
-            seller['profile_picture'] = get_profile_picture_url(seller_id)
+            seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
 
-            reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
+            reviews_query = db.collection('reviews').where('reviewee_id', '==', advert_owner_id).stream()
             total_rating = 0
             review_count = 0
             for review_doc in reviews_query:
@@ -2885,7 +2914,6 @@ def advert_detail(advert_id):
             if reviewer_info.exists:
                 reviewer_data = reviewer_info.to_dict()
                 review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
-                # Use the unified helper function to get the reviewer's profile picture
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
             reviews.append(review_data)
 
@@ -2904,6 +2932,12 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
+
+
 
 
 
@@ -4480,6 +4514,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
