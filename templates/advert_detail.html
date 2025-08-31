@@ -710,18 +710,7 @@
 </div>
 
 
-    <div class="seller-info">
-        
-        
-        <div style="display: flex; align-items: center; margin-top: 10px;">
-            <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-                <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='https://placehold.co/140x140/e0e0e0/777777?text=U';"/>
-                <div class="seller-details">
-                    <h3>{{ seller.username }}</h3>
-                    <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
-                    <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
-                </div>
-            </a>
+    
         
           <!-- {% if g.current_user and g.current_user.id != seller.id %}
                 <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
@@ -1019,6 +1008,7 @@
 </script>
 </body>
 </html>
+
 
 
 
