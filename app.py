@@ -3750,15 +3750,19 @@ def get_materials_page():
     return render_template('get_materials.html')
 
 
-
+# Updated to pass admin status using the `g` object
 @app.route('/api/materials')
 def api_get_materials():
     query = request.args.get('query', '')
     materials = get_all_materials(query)
-    # Pass the admin status to the frontend
+    
+    # Check if 'current_user' is in g and if they are an admin.
+    # This correctly uses your existing decorators' logic.
+    is_admin_status = getattr(g.current_user, 'is_admin', False) if 'current_user' in g else False
+    
     return jsonify({
         'materials': materials,
-        'is_admin': is_admin()
+        'is_admin': is_admin_status
     })
 
 
@@ -3789,16 +3793,13 @@ def download_material(material_id):
 
 
 
-
+# The new route for deleting materials
+# We now use the admin_required decorator for this route. Your existing decorator handles the logic.
 @app.route('/delete_material/<material_id>', methods=['POST'])
+@login_required
+@admin_required
 def delete_material(material_id):
-    # CRITICAL: Check if the current user is an admin.
-    if not is_admin():
-        flash("You do not have permission to delete materials.", "error")
-        return redirect(url_for('get_materials_page')) # Redirect back to the materials page
-
     try:
-        # Get a reference to the material document
         material_ref = db.collection('study_materials').document(material_id)
         material_doc = material_ref.get()
 
@@ -3809,7 +3810,6 @@ def delete_material(material_id):
         material_data = material_doc.to_dict()
         file_path = material_data.get('file_path')
 
-        # Delete the file from Firebase Storage if it exists
         if file_path:
             try:
                 blob = bucket.blob(file_path)
@@ -3817,11 +3817,9 @@ def delete_material(material_id):
                 logging.info(f"Successfully deleted file from storage: {file_path}")
             except Exception as e:
                 logging.error(f"Failed to delete file from storage: {e}")
-                # Log the error but continue to delete the database document
-
-        # Delete the document from Firestore
+        
         material_ref.delete()
-
+        
         flash("Material has been successfully deleted.", "success")
 
     except Exception as e:
@@ -3829,6 +3827,10 @@ def delete_material(material_id):
         flash("An error occurred while deleting the material. Please try again.", "error")
 
     return redirect(url_for('get_materials_page'))
+
+# ... (Your existing @app.route('/admin') and @app.route('/admin/post_material') routes here) ...
+
+
 
 
 
@@ -4462,6 +4464,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
