@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Progress Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; }
+        .btn-period { padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; transition: background-color 0.2s; }
+        .btn-period.active { background-color: #006B3C; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">My Progress Dashboard</h1>
+            <a href="{{ url_for('profile') }}" class="text-green-600 hover:text-green-800 font-medium">
+                <i class="fas fa-arrow-left"></i> Back to Profile
+            </a>
+        </div>
+
+        <div class="flex justify-center space-x-4 mb-8">
+            <button class="btn-period bg-gray-200 text-gray-800 hover:bg-gray-300" data-period="hourly">Hourly</button>
+            <button class="btn-period bg-gray-200 text-gray-800 hover:bg-gray-300 active" data-period="daily">Daily</button>
+            <button class="btn-period bg-gray-200 text-gray-800 hover:bg-gray-300" data-period="monthly">Monthly</button>
+            <button class="btn-period bg-gray-200 text-gray-800 hover:bg-gray-300" data-period="yearly">Yearly</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Views over time</h2>
+                <canvas id="viewsChart"></canvas>
+            </div>
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Saved Adverts over time</h2>
+                <canvas id="savesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card mt-8">
+            <h2 class="text-xl font-bold mb-4">Advert Performance Overview</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saves</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adverts-table-body" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+        const savesCtx = document.getElementById('savesChart').getContext('2d');
+        const advertsTableBody = document.getElementById('adverts-table-body');
+        const periodButtons = document.querySelectorAll('.btn-period');
+
+        let viewsChart, savesChart;
+
+        async function fetchAndRenderCharts(period) {
+            try {
+                const response = await fetch(`/api/user_progress?period=${period}`);
+                const data = await response.json();
+                
+                const viewsData = data.views;
+                const savesData = data.saves;
+                const advertsInfo = data.adverts_info;
+
+                const labels = [...new Set([...viewsData.map(d => d[0]), ...savesData.map(d => d[0])])].sort();
+                
+                const viewsValues = labels.map(label => {
+                    const found = viewsData.find(d => d[0] === label);
+                    return found ? found[1] : 0;
+                });
+                
+                const savesValues = labels.map(label => {
+                    const found = savesData.find(d => d[0] === label);
+                    return found ? found[1] : 0;
+                });
+
+                // Destroy existing charts if they exist
+                if (viewsChart) viewsChart.destroy();
+                if (savesChart) savesChart.destroy();
+
+                viewsChart = new Chart(viewsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total Views',
+                            data: viewsValues,
+                            backgroundColor: 'rgba(0, 107, 60, 0.7)',
+                            borderColor: 'rgba(0, 107, 60, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+
+                savesChart = new Chart(savesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Advert Saves',
+                            data: savesValues,
+                            backgroundColor: 'rgba(253, 184, 19, 0.7)',
+                            borderColor: 'rgba(253, 184, 19, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+                
+                // Update the advert performance table
+                advertsTableBody.innerHTML = '';
+                advertsInfo.forEach(advert => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${advert.title}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${advert.view_count || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">N/A</td> `;
+                    advertsTableBody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Error fetching user progress data:', error);
+                // Handle error gracefully on the UI
+            }
+        }
+
+        // Add event listeners to period buttons
+        periodButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                periodButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                fetchAndRenderCharts(button.dataset.period);
+            });
+        });
+
+        // Initial render with 'daily' period
+        window.onload = () => fetchAndRenderCharts('daily');
+    </script>
+</body>
+</html>
