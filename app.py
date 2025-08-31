@@ -2903,10 +2903,6 @@ def advert_detail(advert_id):
 
 
 
-
-
-
-
 @app.route('/seller_profile/<seller_id>')
 def seller_profile_view(seller_id):
     current_user_id = session.get('user_id')
@@ -2924,10 +2920,14 @@ def seller_profile_view(seller_id):
         
         seller_info = seller_doc.to_dict()
 
-        # Step 1: Use the unified helper function for profile picture
+        # Consistent Profile Picture logic: Uses the unified helper function
         seller_info['profile_picture_url'] = get_profile_picture_url(seller_id)
         
-        # Step 2: Implement robust rating calculation
+        # Original Cover Photo logic: Fetches the filename and attaches the URL
+        cover_photo_filename = seller_info.get('cover_photo')
+        seller_info['cover_photo_url'] = get_cover_photo_url(cover_photo_filename)
+        
+        # Robust Rating Calculation
         reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
         total_rating = 0
         review_count = 0
@@ -2936,15 +2936,9 @@ def seller_profile_view(seller_id):
             total_rating += review_data.get('rating', 0)
             review_count += 1
         
-        # Assign the calculated rating and review count to the seller_info dict
         seller_info['rating'] = total_rating / review_count if review_count > 0 else 0.0
         seller_info['review_count'] = review_count
 
-        # Step 3: Use a similar approach for the cover photo, assuming a helper function exists
-        # NOTE: This assumes you have a get_cover_photo_url function that takes a user_id
-        # as its argument, similar to get_profile_picture_url.
-        seller_info['cover_photo_url'] = get_cover_photo_url(seller_id)
-        
         seller_phone = seller_info.get('phone_number')
         if seller_phone:
             seller_info['whatsapp_link'] = f"https://wa.me/{seller_phone}"
@@ -2992,6 +2986,8 @@ def seller_profile_view(seller_id):
         logging.error(f"Unexpected error in seller_profile_view for user {seller_id}: {e}", exc_info=True)
         flash("An unexpected error occurred while loading the seller's profile. Please try again later.", "error")
         return redirect(url_for('home'))
+
+
 
 
 
@@ -4414,6 +4410,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
