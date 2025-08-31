@@ -3631,52 +3631,6 @@ def faq():
      return render_template('faq.html')
 
 
-@app.route('/leaderboard')
-def leaderboard():
-    """
-    Fetches user data from Firestore to display a leaderboard.
-    """
-    user_id = session.get('user_id')  # Or session.get('user') based on your auth helper
-    leaderboard_users = []
-    referral_link = "#"
-
-    try:
-        # 1. Fetch leaderboard data from Firestore, ordered by referral count.
-        users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).stream()
-        
-        for doc in users_ref:
-            user_data = doc.to_dict()
-            
-            # **FIXED:** Explicitly call the function to get the profile picture URL.
-            # This ensures a valid, signed URL is always generated.
-            profile_pic_url = get_profile_picture_url(doc.id)
-
-            leaderboard_users.append({
-                'id': doc.id,
-                'username': user_data.get('username', 'N/A'),
-                'profile_picture': profile_pic_url,
-                'referral_count': user_data.get('referral_count', 0)
-            })
-
-        if user_id:
-            # 2. Fetch the current user's referral code and generate a dynamic link.
-            user_doc = db.collection('users').document(user_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                referral_code = user_data.get('referral_code', user_id)
-                # **FIXED:** Use url_for() to generate a dynamic, correct URL.
-                referral_link = url_for('signup', ref=referral_code, _external=True)
-
-    except Exception as e:
-        logging.error(f"Error fetching leaderboard data from Firestore: {e}", exc_info=True)
-        flash('An error occurred while fetching the leaderboard.', 'error')
-
-    # Pass the data to the template
-    # **FIXED:** Removed followed_ids since the feature is deprecated.
-    # Also fixed the typo in the referral_link variable name.
-    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link)
-
-
 
 
 
@@ -3874,6 +3828,79 @@ def api_calculate_cgpa():
     })
 
 # The rest of your main.py file remains unchanged.
+
+
+
+
+def get_profile_picture_url(user_id):
+    """Generates a signed URL for a user's profile picture or returns a default URL."""
+    try:
+        profile_blob = bucket.blob(f"users/{user_id}/profile.jpg")
+        if profile_blob.exists:
+            return profile_blob.generate_signed_url(timedelta(minutes=15), method='GET')
+        else:
+            # Fallback to a default image if no custom profile picture exists
+            return url_for('static', filename='images/default_profile.png')
+    except Exception as e:
+        logging.error(f"Failed to generate profile pic URL for user {user_id}: {e}")
+        return url_for('static', filename='images/default_profile.png')
+
+
+
+@app.route('/leaderboard')
+def leaderboard():
+    """
+    Fetches user data from Firestore to display a leaderboard,
+    including dynamic profile pictures and the current user's referral link.
+    """
+    user_id = session.get('user')
+    leaderboard_users = []
+    referral_link = "#"
+
+    try:
+        # Fetch the top 50 users from Firestore, ordered by referral count.
+        users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).limit(50).stream()
+
+        for doc in users_ref:
+            user_data = doc.to_dict()
+            profile_pic_url = get_profile_picture_url(doc.id)
+
+            leaderboard_users.append({
+                'id': doc.id,
+                'username': user_data.get('username', 'N/A'),
+                'profile_picture': profile_pic_url,
+                'referral_count': user_data.get('referral_count', 0)
+            })
+
+        # Fetch the current user's data to get their referral link
+        if user_id:
+            user_doc = db.collection('users').document(user_id).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                # Fetch the referral link directly from the database
+                referral_link = user_data.get('referral_link', "#")
+                
+                # As a fallback, if the field is missing, generate it
+                if referral_link == "#":
+                     referral_code = user_data.get('referral_code', user_id)
+                     referral_link = url_for('signup', ref=referral_code, _external=True)
+
+    except Exception as e:
+        logging.error(f"Error fetching leaderboard data: {e}", exc_info=True)
+        flash('An error occurred while fetching the leaderboard.', 'error')
+
+    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4396,6 +4423,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
