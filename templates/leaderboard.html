@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Referral Goals & Rewards - Futo Jiji</title>
+    <title>Leaderboard & Referral Rewards - Futo Jiji</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -30,61 +30,60 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif; /* Modern font */
-            margin: 0; /* Remove default body margin */
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
             background-color: var(--background-color);
             color: var(--text-dark);
             line-height: 1.6;
-            padding: 20px; /* Global padding for the page content */
+            padding: 20px;
         }
 
         .container {
-            max-width: 900px; /* Slightly wider container */
-            margin: 20px auto; /* Centered with top/bottom margin */
-            padding: 30px; /* Increased internal padding */
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 30px;
             background-color: var(--card-background);
-            border-radius: 12px; /* More rounded corners */
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15); /* Pronounced shadow */
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
-            gap: 30px; /* Space between major sections */
+            gap: 30px;
         }
 
-        /* Page Header Section (includes title and nav buttons) */
+        /* Page Header Section */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            gap: 15px; /* Space between title and buttons */
-            margin-bottom: 25px; /* Space below header section */
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
             padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-color); /* Subtle separator */
+            border-bottom: 1px solid var(--border-color);
         }
 
         .page-header h1 {
-            margin: 0; /* Reset default h1 margin */
-            font-size: 2.2em; /* Slightly smaller to fit with buttons */
+            margin: 0;
+            font-size: 2.2em;
             color: var(--primary-color);
-            font-weight: 800; /* Extra bold */
+            font-weight: 800;
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* Align title to the left */
-            gap: 12px; /* Space between icon and text */
-            flex-grow: 1; /* Allow title to take available space */
+            justify-content: flex-start;
+            gap: 12px;
+            flex-grow: 1;
         }
         .page-header h1 i {
-            color: var(--secondary-color); /* Gold icon */
-            /* Removed background and padding for icon to integrate better with title */
-            font-size: 1.1em; /* Adjust icon size relative to text */
+            color: var(--secondary-color);
+            font-size: 1.1em;
         }
 
         .header-nav-buttons {
             display: flex;
-            gap: 10px; /* Space between nav buttons */
-            flex-wrap: wrap; /* Allow buttons to wrap */
-            justify-content: flex-end; /* Align buttons to the right */
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .header-nav-button {
@@ -101,7 +100,7 @@
             font-size: 0.9em;
             font-weight: 600;
             transition: all 0.3s ease;
-            white-space: nowrap; /* Prevent button text from wrapping */
+            white-space: nowrap;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .header-nav-button i {
@@ -120,55 +119,55 @@
             justify-content: center;
             margin-bottom: 30px;
             background-color: var(--card-background);
-            border-radius: 12px; /* Rounded corners for the tab container */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Softer shadow */
-            padding: 8px; /* Internal padding */
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 8px;
         }
 
         .tab-btn {
-            flex: 1; /* Distribute space evenly */
-            padding: 12px 25px; /* More padding */
+            flex: 1;
+            padding: 12px 25px;
             font-weight: 600;
-            color: var(--text-medium); /* Softer default color */
+            color: var(--text-medium);
             cursor: pointer;
             border: none;
             background: none;
             font-size: 1.05em;
-            transition: all 0.3s ease; /* Smoother transitions */
-            border-radius: 9px; /* Rounded buttons */
+            transition: all 0.3s ease;
+            border-radius: 9px;
             text-align: center;
-            display: flex; /* Enable flexbox for icon alignment */
+            display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px; /* Space between icon and text */
+            gap: 10px;
         }
         .tab-btn i {
-            color: var(--text-medium); /* Default icon color to match text */
+            color: var(--text-medium);
         }
 
         .tab-btn.active {
-            background-color: var(--secondary-color); /* Highlight active tab */
-            color: var(--primary-color); /* Dark green text for active tab */
-            box-shadow: 0 2px 8px rgba(253, 184, 19, 0.4); /* Shadow for active tab */
-            transform: translateY(-1px); /* Slight lift */
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(253, 184, 19, 0.4);
+            transform: translateY(-1px);
         }
         .tab-btn.active i {
-            color: var(--primary-color); /* Dark green icon for active tab */
+            color: var(--primary-color);
         }
 
         .tab-btn:hover:not(.active) {
-            color: var(--primary-color); /* Green on hover for inactive tabs */
+            color: var(--primary-color);
             background-color: var(--hover-light);
         }
         .tab-btn:hover:not(.active) i {
-            color: var(--primary-color); /* Green icon on hover for inactive tabs */
+            color: var(--primary-color);
         }
 
         /* Tab Content */
         .tab-content {
             display: none;
             background-color: var(--card-background);
-            padding: 30px; /* More internal padding */
+            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         }
@@ -181,34 +180,34 @@
         .leaderboard {
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Tighter gap */
+            gap: 15px;
         }
 
         .user-card {
             display: flex;
             align-items: center;
-            padding: 15px 20px; /* More horizontal padding */
+            padding: 15px 20px;
             background-color: var(--card-background);
             border-radius: 10px;
-            border: 1px solid var(--border-color); /* Subtle border */
+            border: 1px solid var(--border-color);
             transition: all 0.2s ease;
             box-shadow: 0 1px 5px rgba(0,0,0,0.03);
         }
         .user-card:hover {
             box-shadow: 0 6px 20px rgba(0,0,0,0.1);
             transform: translateY(-3px);
-            border-color: var(--secondary-color); /* Highlight border on hover */
+            border-color: var(--secondary-color);
         }
 
         .serial-number {
-            width: 45px; /* Wider for better alignment */
+            width: 45px;
             font-weight: 800;
-            font-size: 1.6em; /* Larger numbers */
-            color: var(--primary-color); /* Green color for rank */
+            font-size: 1.6em;
+            color: var(--primary-color);
             text-align: center;
-            margin-right: 20px; /* More space */
+            margin-right: 20px;
             text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
         }
 
         .profile-link {
@@ -220,14 +219,14 @@
         }
 
         .profile-picture {
-            width: 55px; /* Slightly larger for cleaner look */
+            width: 55px;
             height: 55px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid var(--secondary-color); /* Accent border */
+            border: 3px solid var(--secondary-color);
             margin-right: 15px;
             transition: border-color 0.3s;
-            box-shadow: 0 0 0 2px rgba(0,0,0,0.05); /* Inner shadow for depth */
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
         }
 
         .profile-picture:hover {
@@ -241,165 +240,91 @@
             transition: color 0.3s;
         }
         .username:hover {
-            color: var(--secondary-color); /* Yellow on hover */
+            color: var(--secondary-color);
         }
 
         .referral-count {
-            min-width: 140px; /* More space for the text */
+            min-width: 140px;
             text-align: right;
             font-size: 1.2em;
             font-weight: 700;
             color: var(--text-dark);
             margin-left: 20px;
-            background-color: #eaf8f0; /* Light green background for count */
+            background-color: #eaf8f0;
             padding: 8px 15px;
-            border-radius: 25px; /* Pill shape */
-            display: flex; /* Enable flexbox for icon */
+            border-radius: 25px;
+            display: flex;
             align-items: center;
-            justify-content: flex-end; /* Align count and icon to the right */
-            gap: 8px; /* Space between count and icon */
-            flex-shrink: 0; /* Prevent shrinking */
+            justify-content: flex-end;
+            gap: 8px;
+            flex-shrink: 0;
         }
         .referral-count i {
-            color: var(--card-background); /* White icon for referral count */
-            background-color: var(--primary-color); /* Green background for icon */
-            border-radius: 50%;
-            padding: 6px; /* Slightly larger padding for icon */
-            font-size: 0.9em;
-        }
-
-        /* Benefits Tab */
-        .benefits-text {
-            margin-bottom: 25px; /* More space */
-            background: #eaf8f0; /* Softer green background */
-            padding: 20px;
-            border-left: 6px solid var(--primary-color); /* Thicker border */
-            border-radius: 8px;
-            font-size: 1em;
-            color: var(--text-dark);
-            line-height: 1.7;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex; /* Flex for icon and text */
-            align-items: flex-start;
-            gap: 15px;
-        }
-        .benefits-text i {
-            font-size: 1.8em; /* Larger icon */
-            color: var(--card-background); /* White info icon */
-            background-color: var(--primary-color); /* Green background */
-            border-radius: 50%;
-            padding: 10px; /* Larger padding for icon */
-            flex-shrink: 0; /* Prevent icon from shrinking */
-        }
-
-        .referral-link-box {
-            display: flex;
-            flex-wrap: wrap; /* Allow wrapping on small screens */
-            align-items: center;
-            justify-content: space-between;
-            background: #f7fcf8; /* Very light green */
-            padding: 18px 25px; /* More padding */
-            border: 1px solid #d4edda;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .referral-link-box div:first-child {
-            flex: 1; /* Take available space */
-            min-width: 0; /* Allow shrinking */
-            margin-right: 15px; /* Space between text and icon */
-        }
-
-        .referral-link-box strong {
-            display: flex; /* Make "Your Referral Link" on its own line with icon */
-            align-items: center;
-            margin-bottom: 8px; /* More space below label */
-            color: var(--primary-color);
-            font-weight: 700;
-            font-size: 1.1em;
-            gap: 10px; /* Space between icon and text */
-        }
-        .referral-link-box strong i {
-            color: var(--card-background); /* White link icon */
-            background-color: var(--primary-color); /* Green background */
+            color: var(--card-background);
+            background-color: var(--primary-color);
             border-radius: 50%;
             padding: 6px;
             font-size: 0.9em;
         }
 
-        .referral-link-box code {
-            color: var(--primary-color); /* Darker green for code */
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font */
-            background-color: #e9ecef; /* Light gray background for code */
-            padding: 6px 10px;
-            border-radius: 6px;
-            word-break: break-all; /* Ensure long links break */
-            display: inline-block; /* To apply padding/border correctly */
-            font-size: 0.9em;
-            font-weight: 500;
+        /* Benefits Tab */
+        .benefits-text {
+            margin-bottom: 25px;
+            background: #eaf8f0;
+            padding: 20px;
+            border-left: 6px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 1em;
+            color: var(--text-dark);
+            line-height: 1.7;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
         }
-
-        .share-btn { /* Changed class from share-icon to share-btn for clarity */
-            margin-left: auto; /* Push to the right */
-            cursor: pointer;
-            color: var(--card-background); /* Default text/icon color for the button */
-            font-size: 1.5em; /* Larger icon */
-            transition: color 0.3s, transform 0.2s, background-color 0.2s;
-            padding: 10px; /* Make clickable area larger */
-            border-radius: 50%; /* Circular clickable area */
-            background-color: var(--secondary-color); /* Set background color for the button */
-            border: none; /* Remove button border */
-            display: flex; /* For centering icon */
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .share-btn i {
-            color: var(--primary-color); /* Ensure the icon itself is green within the button */
-        }
-
-        .share-btn:hover {
-            background-color: #e6a711; /* Darker yellow on hover */
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .benefits-text i {
+            font-size: 1.8em;
+            color: var(--card-background);
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            padding: 10px;
+            flex-shrink: 0;
         }
 
         h3 {
             color: var(--primary-color);
             margin-bottom: 15px;
             font-weight: 700;
-            font-size: 1.8em; /* Larger heading for rewards */
-            display: flex; /* Flex for icon and text */
+            font-size: 1.8em;
+            display: flex;
             align-items: center;
-            gap: 12px; /* Space between icon and text */
+            gap: 12px;
         }
         h3 i {
-            color: var(--card-background); /* White star icon */
-            background-color: var(--primary-color); /* Green background */
+            color: var(--card-background);
+            background-color: var(--primary-color);
             border-radius: 50%;
             padding: 8px;
             font-size: 0.9em;
         }
 
         .benefits-list {
-            list-style: none; /* Remove default list bullets */
-            padding: 0; /* Remove default padding */
+            list-style: none;
+            padding: 0;
         }
 
         .benefits-list li {
-            background-color: #fefefe; /* White background for list items */
-            padding: 15px 25px; /* More padding */
+            background-color: #fefefe;
+            padding: 15px 25px;
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            margin-bottom: 10px; /* Space between items */
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             font-size: 1.05em;
             color: var(--text-medium);
             box-shadow: 0 1px 8px rgba(0,0,0,0.05);
-            gap: 15px; /* Space between icon and text */
+            gap: 15px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .benefits-list li:hover {
@@ -407,12 +332,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .benefits-list li i {
-            color: var(--card-background); /* White checkmark icon */
-            background-color: var(--primary-color); /* Green background */
+            color: var(--card-background);
+            background-color: var(--primary-color);
             border-radius: 50%;
             padding: 8px;
             font-size: 0.9em;
-            flex-shrink: 0; /* Prevent icon from shrinking */
+            flex-shrink: 0;
         }
         .benefits-list li strong {
             color: var(--primary-color);
@@ -429,7 +354,7 @@
             font-weight: bold;
             z-index: 1000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateX(120%); /* Start off-screen */
+            transform: translateX(120%);
             opacity: 0;
             transition: transform 0.5s ease-out, opacity 0.5s ease-out;
             display: flex;
@@ -438,7 +363,7 @@
         }
 
         .custom-notification.show {
-            transform: translateX(0); /* Slide in */
+            transform: translateX(0);
             opacity: 1;
         }
 
@@ -467,7 +392,7 @@
         }
 
         .notification-icon i {
-            font-size: 1.5em; /* Larger icon in notification */
+            font-size: 1.5em;
         }
 
         /* Responsive adjustments */
@@ -484,19 +409,19 @@
             }
             .page-header h1 {
                 font-size: 2em;
-                justify-content: center; /* Center icon and text */
+                justify-content: center;
                 margin-bottom: 15px;
             }
             .header-nav-buttons {
-                justify-content: center; /* Center buttons */
-                width: 100%; /* Take full width */
+                justify-content: center;
+                width: 100%;
             }
             .header-nav-button {
-                flex-grow: 1; /* Make buttons take equal space */
+                flex-grow: 1;
                 justify-content: center;
             }
             .tabs {
-                flex-direction: column; /* Stack tabs vertically */
+                flex-direction: column;
                 padding: 0;
                 box-shadow: none;
                 background-color: transparent;
@@ -504,7 +429,7 @@
             .tab-btn {
                 margin: 5px 0;
                 border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Add shadow to individual tab buttons */
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
                 background-color: var(--card-background);
             }
             .tab-btn.active {
@@ -514,37 +439,24 @@
                 padding: 20px;
             }
             .user-card {
-                flex-wrap: wrap; /* Allow wrapping */
+                flex-wrap: wrap;
                 justify-content: space-between;
             }
             .profile-link {
                 flex-grow: 1;
-                margin-bottom: 10px; /* Space out on wrap */
-                width: 100%; /* Take full width on wrap */
+                margin-bottom: 10px;
+                width: 100%;
             }
             .serial-number, .profile-picture {
                 margin-right: 10px;
             }
             .referral-count {
-                min-width: unset; /* Remove min-width */
-                width: auto; /* Auto width */
-                margin-left: 0; /* Remove left margin */
-                text-align: left; /* Align to left */
-                flex-basis: 100%; /* Take full width when wrapped */
-                justify-content: flex-start; /* Align icon and text to start on wrapped line */
-            }
-            .referral-link-box {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .referral-link-box div:first-child {
-                margin-right: 0;
-                margin-bottom: 15px; /* Space below link */
-            }
-            .share-btn {
+                min-width: unset;
+                width: auto;
                 margin-left: 0;
-                width: 100%; /* Full width for share button if wrapped */
-                justify-content: center;
+                text-align: left;
+                flex-basis: 100%;
+                justify-content: flex-start;
             }
             .benefits-text, .benefits-list li {
                 font-size: 0.95em;
@@ -552,6 +464,9 @@
             }
             h3 {
                 font-size: 1.6em;
+            }
+            .benefits-list li {
+                padding: 12px 20px;
             }
         }
 
@@ -591,24 +506,11 @@
                 border-radius: 20px;
             }
             .benefits-text i, h3 i, .benefits-list li i {
-                font-size: 1.5em; /* Slightly smaller for mobile */
+                font-size: 1.5em;
                 padding: 6px;
             }
             h3 {
                 font-size: 1.4em;
-            }
-            .referral-link-box {
-                padding: 12px 18px;
-            }
-            .referral-link-box strong {
-                font-size: 1em;
-            }
-            .referral-link-box code {
-                font-size: 0.85em;
-            }
-            .share-btn {
-                font-size: 1.3em;
-                padding: 8px;
             }
             .benefits-list li {
                 padding: 12px 20px;
@@ -627,6 +529,10 @@
         </div>
     </div>
 
+    <div class="tabs">
+        <button class="tab-btn active" data-target="leaderboard-tab"><i class="fas fa-medal"></i> Leaderboard</button>
+        <button class="tab-btn" data-target="benefits-tab"><i class="fas fa-gift"></i> Referral Benefits</button>
+    </div>
     
     <div id="leaderboard-tab" class="tab-content">
         <div class="leaderboard">
@@ -647,26 +553,19 @@
         <div class="benefits-text">
             <i class="fas fa-info-circle"></i>
             <div>
-                The more you refer, the more exciting your rewards! Grow your network and earn **free advert plans**. Share your unique link below!
+                The more you refer, the more exciting your rewards! Grow your network and earn **free advert plans** on our platform.
             </div>
         </div>
-        <div class="referral-link-box">
-            <div>
-                
-                <strong><i class="fas fa-link"></i> Your Referral Link:</strong>
-                <code id="referralLink">{{ referral_link }}</code>
-            </div>
-            <button class="share-btn" onclick="shareLink()" title="Click to copy link"><i class="fas fa-copy"></i></button>
-        </div>
+        
         <h3><i class="fas fa-star"></i> Unlock These Amazing Rewards!</h3>
         <ul class="benefits-list">
-            <li><i class="fas fa-check-circle"></i> <strong>5 referrals</strong>: Get the **Starter** plan (7-day advert duration, ₦500 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>10 referrals</strong>: Get the **Basic** plan (14-day advert duration, ₦1,000 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>15 referrals</strong>: Get the **Premium** plan (30-day advert duration, ₦1,500 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>30 referrals</strong>: Get the **Small Business** plan (30-day advert duration, ₦3,000 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>40 referrals</strong>: Get the **Medium Business** plan (60-day advert duration, ₦5,000 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>50 referrals</strong>: Get the **Large Business** plan (90-day advert duration, ₦8,000 value)</li>
-            <li><i class="fas fa-check-circle"></i> <strong>60 referrals</strong>: Get the **Enterprise** plan (180-day advert duration, ₦10,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **5 referrals**: Get the **Starter** plan (7-day advert duration, ₦500 value)</li>
+            <li><i class="fas fa-check-circle"></i> **10 referrals**: Get the **Basic** plan (14-day advert duration, ₦1,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **15 referrals**: Get the **Premium** plan (30-day advert duration, ₦1,500 value)</li>
+            <li><i class="fas fa-check-circle"></i> **30 referrals**: Get the **Small Business** plan (30-day advert duration, ₦3,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **40 referrals**: Get the **Medium Business** plan (60-day advert duration, ₦5,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **50 referrals**: Get the **Large Business** plan (90-day advert duration, ₦8,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **60 referrals**: Get the **Enterprise** plan (180-day advert duration, ₦10,000 value)</li>
         </ul>
     </div>
 </div>
@@ -689,7 +588,7 @@
         });
     });
 
-    // Share referral link - Corrected to use the same logic as your profile page
+    // Share referral link (Removed from the HTML but keeping the function in case it's used elsewhere)
     function shareLink() {
         const referralLinkInput = document.getElementById('referralLink');
         // Create a temporary input element to hold the text
@@ -740,6 +639,3 @@
 
 </body>
 </html>
-
-
-
