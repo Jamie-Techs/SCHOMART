@@ -58,7 +58,6 @@ from google.cloud.firestore_v1 import Increment
 from google.cloud.firestore_v1.transaction import Transaction
 from google.oauth2 import service_account
 from google.cloud import storage as gcp_storage
-from google.cloud.firestore import FieldPath
 
 from firebase_functions import https_fn
 
@@ -3292,8 +3291,11 @@ def subscribe():
 
 
 
+# No longer need this import if you're not using FieldPath
+# from google.cloud.firestore import FieldPath
 
-# Create a new API endpoint for fetching adverts
+# ... other imports ...
+
 @app.route('/api/adverts', methods=['GET'])
 def get_adverts_api():
     try:
@@ -3306,17 +3308,17 @@ def get_adverts_api():
         price_max_str = request.args.get('price_max', '').strip()
         selected_condition = request.args.get('condition', '').strip()
         selected_negotiation = request.args.get('negotiation', '').strip()
-        
+
         # Pagination
         page = int(request.args.get('page', 1))
         per_page = 20
         start_at = (page - 1) * per_page
-        
-        # Build the Firestore query
-        adverts_query = db.collection('adverts').where('status', '==', 'published')
+
+        # Build the Firestore query using firebase_admin.firestore
+        adverts_query = firestore.collection('adverts').where('status', '==', 'published')
         now = datetime.now()
         adverts_query = adverts_query.where('valid_until', '>', now)
-        
+
         # Add filters for equality
         if selected_state:
             adverts_query = adverts_query.where('state', '==', selected_state)
@@ -3341,12 +3343,12 @@ def get_adverts_api():
 
         # Fetch adverts
         fetched_adverts = []
-        if price_min or price_max or selected_state or selected_school or selected_category or selected_condition or selected_negotiation:
+        if any([search_query, selected_state, selected_school, selected_category, price_min, price_max, selected_condition, selected_negotiation]):
             # If any filter is applied, perform the query directly
             fetched_adverts = [doc.to_dict() for doc in adverts_query.stream()]
         else:
             # No filters, fetch all published adverts
-            fetched_adverts = [doc.to_dict() for doc in db.collection('adverts').where('status', '==', 'published').stream()]
+            fetched_adverts = [doc.to_dict() for doc in firestore.collection('adverts').where('status', '==', 'published').stream()]
             
         # Apply in-memory text search filtering
         if search_query:
@@ -3383,8 +3385,7 @@ def get_adverts_api():
             
             # Add visibility score
             visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            score += (10000 - visibility_rank * 100) # Give higher scores for higher visibility
-
+            score += (10000 - visibility_rank * 100)
             return score
 
         # Sort the results
@@ -3394,13 +3395,19 @@ def get_adverts_api():
         paginated_adverts = sorted_adverts[start_at:start_at + per_page]
 
         # Get user info and image URLs for the paginated results
-        user_ids = {a.get('user_id') for a in paginated_adverts if a.get('user_id')}
-        users_info = {doc.id: doc.to_dict() for doc in db.collection('users').where(firestore.FieldPath.document_id(), 'in', list(user_ids)).stream()} if user_ids else {}
-
         for advert in paginated_adverts:
-            user_data = users_info.get(advert.get('user_id', ''))
-            if user_data:
-                advert['poster_username'] = user_data.get('username', 'N/A')
+            user_id = advert.get('user_id')
+            if user_id:
+                try:
+                    user_doc = firestore.collection('users').document(user_id).get()
+                    if user_doc.exists:
+                        user_data = user_doc.to_dict()
+                        advert['poster_username'] = user_data.get('username', 'N/A')
+                    else:
+                        advert['poster_username'] = 'N/A'
+                except Exception as user_fetch_error:
+                    logging.error(f"Error fetching user data for {user_id}: {user_fetch_error}")
+                    advert['poster_username'] = 'N/A'
             else:
                 advert['poster_username'] = 'N/A'
             
@@ -3413,8 +3420,13 @@ def get_adverts_api():
         return json.dumps(paginated_adverts), 200, {'Content-Type': 'application/json'}
 
     except Exception as e:
-        logger.error(f"API search error: {e}", exc_info=True)
+        logging.error(f"API search error: {e}", exc_info=True)
         return json.dumps({"error": "An unexpected error occurred."}), 500, {'Content-Type': 'application/json'}
+
+
+
+
+
 
 
 @app.route('/search')
@@ -4666,6 +4678,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
