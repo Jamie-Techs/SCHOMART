@@ -3746,12 +3746,14 @@ def post_material():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/materials')
+@login_required
 def get_materials_page():
     return render_template('get_materials.html')
 
 
 # Updated to pass admin status using the `g` object
 @app.route('/api/materials')
+@login_required
 def api_get_materials():
     query = request.args.get('query', '')
     materials = get_all_materials(query)
@@ -3836,12 +3838,14 @@ def delete_material(material_id):
 
 # Updated CGPA Calculator Routes
 @app.route('/cgpa_calculator')
+@login_required
 def cgpa_calculator_page():
     """Renders the CGPA calculation page."""
     # The session data will now be handled by JavaScript on the frontend
     return render_template('cgpa_calculator.html')
 
 @app.route('/api/calculate_cgpa', methods=['POST'])
+@login_required
 def api_calculate_cgpa():
     data = request.get_json()
     courses = data.get('courses', [])
@@ -4464,6 +4468,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
