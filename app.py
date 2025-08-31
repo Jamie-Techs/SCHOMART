@@ -31,7 +31,7 @@ from flask import (
     current_app,
     send_file,
 )
-import geoflask
+
 from collections import defaultdict
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
@@ -1193,7 +1193,26 @@ def add_category():
 
 
 
-# Updated and Corrected Route
+
+def get_geo_info(ip_address):
+    """Fetches geolocation data from a web-based API like ip-api.com."""
+    try:
+        response = requests.get(f'http://ip-api.com/json/{ip_address}')
+        response.raise_for_status() # Raises an HTTPError for bad responses
+        data = response.json()
+        if data['status'] == 'success':
+            return {
+                'city': data.get('city'),
+                'state': data.get('regionName'),
+                'country': data.get('country')
+            }
+        # Fallback for unsuccessful lookups
+        return {'city': None, 'state': None, 'country': None}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching geo-IP data for IP {ip_address}: {e}")
+        return {'city': None, 'state': None, 'country': None}
+
+
 @app.route('/')
 def home():
     """
@@ -1201,12 +1220,12 @@ def home():
     location-aware, user-preference-driven, and visibility-prioritized system.
     """
     try:
-        # Get user IP for location data
+        # Get user IP and fetch location data using the new API method
         user_ip = request.environ.get('REMOTE_ADDR', '127.0.0.1')
-        user_geo_info = geoip.get_geo_info(user_ip)
+        user_geo_info = get_geo_info(user_ip)
         user_city = user_geo_info.get('city')
-        user_ip_state = user_geo_info.get('region') # Using 'region' as a common key for state/province
-
+        user_ip_state = user_geo_info.get('state')
+        
         locations_data = {
             'NIGERIAN_STATES': NIGERIAN_STATES,
             'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
@@ -1336,6 +1355,7 @@ def home():
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', adverts=[], categories=[], locations=[])
+
 
 
 
@@ -4631,6 +4651,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
