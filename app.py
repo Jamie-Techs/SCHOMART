@@ -3832,6 +3832,7 @@ def api_calculate_cgpa():
 
 
 
+
 def get_profile_picture_url(user_id):
     """Generates a signed URL for a user's profile picture or returns a default URL."""
     try:
@@ -3846,16 +3847,13 @@ def get_profile_picture_url(user_id):
         return url_for('static', filename='images/default_profile.png')
 
 
-
 @app.route('/leaderboard')
 def leaderboard():
     """
     Fetches user data from Firestore to display a leaderboard,
-    including dynamic profile pictures and the current user's referral link.
+    including dynamic profile pictures.
     """
-    user_id = session.get('user')
     leaderboard_users = []
-    referral_link = "#"
 
     try:
         # Fetch the top 50 users from Firestore, ordered by referral count.
@@ -3872,24 +3870,17 @@ def leaderboard():
                 'referral_count': user_data.get('referral_count', 0)
             })
 
-        # Fetch the current user's data to get their referral link
-        if user_id:
-            user_doc = db.collection('users').document(user_id).get()
-            if user_doc.exists:
-                user_data = user_doc.to_dict()
-                # Fetch the referral link directly from the database
-                referral_link = user_data.get('referral_link', "#")
-                
-                # As a fallback, if the field is missing, generate it
-                if referral_link == "#":
-                     referral_code = user_data.get('referral_code', user_id)
-                     referral_link = url_for('signup', ref=referral_code, _external=True)
-
     except Exception as e:
         logging.error(f"Error fetching leaderboard data: {e}", exc_info=True)
         flash('An error occurred while fetching the leaderboard.', 'error')
 
-    return render_template('leaderboard.html', leaderboard=leaderboard_users, referral_link=referral_link)
+    return render_template('leaderboard.html', leaderboard=leaderboard_users)
+
+
+
+
+
+
 
 
 
@@ -4423,6 +4414,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
