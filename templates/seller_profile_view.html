@@ -533,7 +533,6 @@
             }
         </style>
 </head>
-
 <body>
     <div class="container">
         {# Flash Messages #}
@@ -554,6 +553,7 @@
             {% endwith %}
         </ul>
         <a href="javascript:history.back()" class="back-button"><i class="fas fa-arrow-left"></i> Back</a>
+        
         {# Profile Banner and Header #}
         <div class="profile-banner">
             {% if seller.cover_photo_url %}
@@ -584,16 +584,19 @@
                 <p>
                     <i class="fas fa-star-half-alt"></i> <strong>Average Rating:</strong>
                     <span class="rating-stars">
-                        {% set rating_value = seller.get('rating', 0) %}
-                        {% for i in range(rating_value|round(0, 'floor')|int) %}
-                            <i class="fas fa-star"></i>
-                        {% endfor %}
-                        {% for i in range(5 - (rating_value|round(0, 'floor')|int)) %}
-                            <i class="far fa-star"></i> {# Outline star for unrated #}
-                        {% endfor %}
+                        {# Use a cleaner Jinja2 loop for star ratings #}
+                        {{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}
                     </span>
                     ({{ seller.get('review_count', 0) }} Reviews)
                 </p>
+            </div>
+        </div>
+    </div>
+    
+
+
+
+
            <!--     {# --- IMPORTANT: Ensure seller.id is available to JavaScript --- #}
                 {# Add a hidden input or a data attribute to the profile-header itself #}
                 <div class="followers-count" data-seller-id="{{ seller.id }}"> {# Added data-seller-id here #}
