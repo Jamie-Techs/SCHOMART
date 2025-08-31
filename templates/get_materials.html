@@ -157,6 +157,25 @@
         .flash-messages .error { background-color: #f8d7da; color: #721c24; }
         .flash-messages .warning { background-color: #fff3cd; color: #856404; }
         .flash-messages .info { background-color: #d1ecf1; color: #0c5460; }
+        
+        .btn-delete-material {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            background-color: #dc3545; /* Red color for delete action */
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px; /* Space below the material content */
+        }
+        .btn-delete-material:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -214,14 +233,30 @@
         async function fetchMaterials(query = '') {
             materialsContainer.innerHTML = '<p id="loading-message" class="text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading materials...</p>';
             try {
+                // The API now returns an object with `materials` and `is_admin` keys
                 const response = await fetch(`/api/materials?query=${encodeURIComponent(query)}`);
-                const materials = await response.json();
-                
+                const data = await response.json();
+                const materials = data.materials;
+                const isAdmin = data.is_admin;
+
                 if (materials.length > 0) {
                     materialsContainer.innerHTML = ''; // Clear loading message
                     materials.forEach(material => {
                         const card = document.createElement('div');
                         card.className = 'material-card';
+
+                        let deleteButtonHTML = '';
+                        // Conditionally add the delete button if the user is an admin
+                        if (isAdmin) {
+                            deleteButtonHTML = `
+                                <form action="/delete_material/${material.id}" method="post" onsubmit="return confirm('Are you sure you want to delete this material? This action cannot be undone.');">
+                                    <button type="submit" class="btn-delete-material">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            `;
+                        }
+
                         card.innerHTML = `
                             <div>
                                 <h3>${material.title}</h3>
@@ -231,7 +266,7 @@
                                 <p>${material.content}</p>
                             </div>
                             <a href="/download_material/${material.id}">Download <i class="fas fa-download"></i></a>
-                        `;
+                            ${deleteButtonHTML} `;
                         materialsContainer.appendChild(card);
                     });
                 } else {
