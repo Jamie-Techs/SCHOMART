@@ -7,7 +7,7 @@ Flask-Bcrypt==1.0.1
 Flask-APScheduler==1.13.1
 Flask-SocketIO==5.5.1
 Flask-Cors==6.0.1
-geoflask
+
 # --- WSGI Server ---
 gunicorn
 
@@ -90,6 +90,7 @@ rsa==4.9.1
 six==1.17.0
 watchdog==6.0.0
 wsproto==1.2.0
+
 
 
 
