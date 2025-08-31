@@ -1395,11 +1395,16 @@ FREE_ADVERT_PLAN = {
     "plan_name": "free", "cost_naira": None, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"
 }
 
+
+
 # Referral plans
 REFERRAL_PLANS = {
-    {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
-    {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
+    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
 }
+
+
+
 
 
 
@@ -3776,48 +3781,6 @@ def download_material(material_id):
 
 
 
-@app.route('/delete_material/<material_id>', methods=['POST'])
-def delete_material(material_id):
-    # CRITICAL: Check if the current user is an admin.
-    if not is_admin():
-        flash("You do not have permission to delete materials.", "error")
-        return redirect(url_for('materials_list')) # Redirect to the materials list page
-
-    try:
-        # Get a reference to the material document
-        material_ref = db.collection('materials').document(material_id)
-        material_doc = material_ref.get()
-
-        # Check if the document exists
-        if not material_doc.exists:
-            flash("Material not found.", "error")
-            return redirect(url_for('materials_list'))
-
-        material_data = material_doc.to_dict()
-        file_path = material_data.get('file_path')
-
-        # Delete the file from Firebase Storage if it exists
-        if file_path:
-            try:
-                blob = bucket.blob(file_path)
-                blob.delete()
-                logging.info(f"Successfully deleted file from storage: {file_path}")
-            except Exception as e:
-                logging.error(f"Failed to delete file from storage: {e}")
-                # Log the error but continue to delete the database document
-        
-        # Delete the document from Firestore
-        material_ref.delete()
-        
-        flash("Material has been successfully deleted.", "success")
-
-    except Exception as e:
-        logging.error(f"Error deleting material {material_id}: {e}", exc_info=True)
-        flash("An error occurred while deleting the material. Please try again.", "error")
-
-    return redirect(url_for('materials_list'))
-
-
 
 
 # Updated CGPA Calculator Routes
@@ -4450,6 +4413,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
