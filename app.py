@@ -3291,22 +3291,26 @@ def subscribe():
 
 
 
-@app.route('/search', methods=['GET'])
-def search():
-    adverts = []
-    
-    # Get search parameters from the request
-    search_query = request.args.get('search_query', '').strip()
-    selected_state = request.args.get('state', '').strip()
-    selected_school = request.args.get('school', '').strip()
-    selected_category = request.args.get('category', '').strip()
-    price_min_str = request.args.get('price_min', '').strip()
-    price_max_str = request.args.get('price_max', '').strip()
-    selected_condition = request.args.get('condition', '').strip()
-    selected_negotiation = request.args.get('negotiation', '').strip()
-    
-    # Build the Firestore query
+# Create a new API endpoint for fetching adverts
+@app.route('/api/adverts', methods=['GET'])
+def get_adverts_api():
     try:
+        # Get search parameters from the request
+        search_query = request.args.get('search_query', '').strip()
+        selected_state = request.args.get('state', '').strip()
+        selected_school = request.args.get('school', '').strip()
+        selected_category = request.args.get('category', '').strip()
+        price_min_str = request.args.get('price_min', '').strip()
+        price_max_str = request.args.get('price_max', '').strip()
+        selected_condition = request.args.get('condition', '').strip()
+        selected_negotiation = request.args.get('negotiation', '').strip()
+        
+        # Pagination
+        page = int(request.args.get('page', 1))
+        per_page = 20
+        start_at = (page - 1) * per_page
+        
+        # Build the Firestore query
         adverts_query = db.collection('adverts').where('status', '==', 'published')
         now = datetime.now()
         adverts_query = adverts_query.where('valid_until', '>', now)
@@ -3325,102 +3329,111 @@ def search():
             adverts_query = adverts_query.where('negotiable', '==', is_negotiable)
 
         # Price filtering
-        price_min = None
-        price_max = None
-        if price_min_str:
-            try:
-                price_min = float(price_min_str)
-                adverts_query = adverts_query.where('price', '>=', price_min)
-            except ValueError:
-                flash("Invalid minimum price entered. Please enter a number.", "warning")
-        if price_max_str:
-            try:
-                price_max = float(price_max_str)
-                adverts_query = adverts_query.where('price', '<=', price_max)
-            except ValueError:
-                flash("Invalid maximum price entered. Please enter a number.", "warning")
+        price_min = float(price_min_str) if price_min_str else None
+        price_max = float(price_max_str) if price_max_str else None
+        
+        if price_min:
+            adverts_query = adverts_query.where('price', '>=', price_min)
+        if price_max:
+            adverts_query = adverts_query.where('price', '<=', price_max)
 
-        # Fetch initial results from Firestore
-        adverts_stream = adverts_query.stream()
+        # Fetch adverts
         fetched_adverts = []
-        for doc in adverts_stream:
-            advert_data = doc.to_dict()
-            advert_data['id'] = doc.id
-            fetched_adverts.append(advert_data)
-        
-        adverts = fetched_adverts
-        
+        if price_min or price_max or selected_state or selected_school or selected_category or selected_condition or selected_negotiation:
+            # If any filter is applied, perform the query directly
+            fetched_adverts = [doc.to_dict() for doc in adverts_query.stream()]
+        else:
+            # No filters, fetch all published adverts
+            fetched_adverts = [doc.to_dict() for doc in db.collection('adverts').where('status', '==', 'published').stream()]
+            
         # Apply in-memory text search filtering
         if search_query:
             search_term = search_query.lower()
-            adverts = [
-                a for a in adverts if 
-                search_term in a.get('title', '').lower() or 
+            fetched_adverts = [
+                a for a in fetched_adverts if
+                search_term in a.get('title', '').lower() or
                 search_term in a.get('description', '').lower()
             ]
 
-        # Get user info for all fetched adverts in one batch
-        user_ids = {a.get('user_id') for a in adverts if a.get('user_id')}
-        users_info = {}
-        if user_ids:
-            for user_id_chunk in [list(user_ids)[i:i + 10] for i in range(0, len(user_ids), 10)]:
-                users_docs = db.collection('users').where(firestore.FieldPath.document_id(), 'in', user_id_chunk).stream()
-                for user_doc in users_docs:
-                    users_info[user_doc.id] = user_doc.to_dict()
+        # Apply custom sorting logic
+        visibility_order = {
+            'Admin': 0,
+            'Featured': 1,
+            'Premium': 2,
+            'Standard': 3,
+        }
+        
+        def sort_adverts(ad):
+            score = 0
+            
+            # Prioritize by exact title match
+            if search_query and ad.get('title', '').lower() == search_query.lower():
+                score += 1000
+            
+            # Prioritize by start of title match
+            elif search_query and ad.get('title', '').lower().startswith(search_query.lower()):
+                score += 500
 
-        for advert in adverts:
+            # Add time decay (newer posts get a higher score)
+            published_at = ad.get('published_at', datetime.min).astimezone(timezone.utc)
+            time_decay_factor = (datetime.now(timezone.utc) - published_at).total_seconds() / 3600
+            score -= time_decay_factor
+            
+            # Add visibility score
+            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
+            score += (10000 - visibility_rank * 100) # Give higher scores for higher visibility
+
+            return score
+
+        # Sort the results
+        sorted_adverts = sorted(fetched_adverts, key=sort_adverts, reverse=True)
+        
+        # Paginate the results after sorting
+        paginated_adverts = sorted_adverts[start_at:start_at + per_page]
+
+        # Get user info and image URLs for the paginated results
+        user_ids = {a.get('user_id') for a in paginated_adverts if a.get('user_id')}
+        users_info = {doc.id: doc.to_dict() for doc in db.collection('users').where(firestore.FieldPath.document_id(), 'in', list(user_ids)).stream()} if user_ids else {}
+
+        for advert in paginated_adverts:
             user_data = users_info.get(advert.get('user_id', ''))
             if user_data:
                 advert['poster_username'] = user_data.get('username', 'N/A')
             else:
                 advert['poster_username'] = 'N/A'
             
-            # Use the school and state from the advert data
-            advert['state'] = advert.get('state', 'N/A')
-            advert['school'] = advert.get('school', 'N/A')
-
-        # Apply custom sorting logic in Python
-        visibility_order = {
-            'Premium': 1, 'Featured': 2, 'Standard': 3
-        }
+            main_image_url = advert.get('main_image')
+            if main_image_url:
+                advert['display_image'] = main_image_url
+            else:
+                advert['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
         
-        adverts.sort(key=lambda a: (
-            # Exact title match priority
-            0 if search_query and a.get('title', '').lower() == search_query.lower() else
-            1 if search_query and a.get('title', '').lower().startswith(search_query.lower()) else
-            2 if search_query and search_query.lower() in a.get('title', '').lower() else
-            3,
-            # Visibility level
-            visibility_order.get(a.get('visibility_level', 'Standard'), 99),
-            # Created_at (descending)
-            a.get('created_at', datetime.min),
-        ), reverse=False)
+        return json.dumps(paginated_adverts), 200, {'Content-Type': 'application/json'}
 
     except Exception as e:
-        flash(f"An unexpected error occurred during your search: {e}", "danger")
-        adverts = []
-        logging.error(f"Search route error: {e}", exc_info=True)
-            
+        logger.error(f"API search error: {e}", exc_info=True)
+        return json.dumps({"error": "An unexpected error occurred."}), 500, {'Content-Type': 'application/json'}
+
+
+@app.route('/search')
+def search():
+    """Renders the search page with filters but no initial adverts."""
+    locations_data = {
+        'NIGERIAN_STATES': NIGERIAN_STATES,
+        'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
+    }
+    
+    categories_ref = db.collection('categories').stream()
+    categories_data = {}
+    for doc in categories_ref:
+        categories_data[doc.id] = doc.to_dict()
+        
     return render_template('search.html',
-                           search_query=search_query,
-                           adverts=adverts,
-                           states=NIGERIAN_STATES,
-                           categories=CATEGORIES,
-                           selected_state=selected_state,
-                           selected_school=selected_school,
-                           selected_category=selected_category,
-                           selected_price_min=price_min_str,
-                           selected_price_max=price_max_str,
-                           selected_condition=selected_condition,
-                           selected_negotiation=selected_negotiation)
+                           locations=locations_data,
+                           categories=categories_data,
+                           states=NIGERIAN_STATES
+                          )
 
-# --- API Endpoints for dynamic dropdowns ---
-
-@app.route('/api/schools_by_state/<string:state_name>')
-def get_schools_by_state(state_name):
-    """API endpoint to get schools for a specific state."""
-    schools = NIGERIAN_SCHOOLS.get(state_name, [])
-    return jsonify(schools)
 
 
 
@@ -4651,6 +4664,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
