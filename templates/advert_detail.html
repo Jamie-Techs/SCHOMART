@@ -615,16 +615,6 @@
     
     
 
-        /* Add or modify these styles for the button's appearance */
-        .unsaved {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .saved {
-            background-color: #004d26; /* A darker green for the 'saved' state */
-            color: white;
-        }
 
         .alert-modal-overlay {
             display: none;
@@ -662,146 +652,134 @@
             border-radius: 5px;
             cursor: pointer;
         }
+    
+    
+        .saved {
+            background-color: #28a745; /* Green for 'saved' */
+            color: white;
+        }
+        .unsaved {
+            background-color: #007bff; /* Blue for 'unsaved' */
+            color: white;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
 
-<div class="container">
-    {# Flash Messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    {% endwith %}
-    {# End Flash Messages #}
-    
-    <div class="top-navigation">
-        <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
-            <i class="fas fa-arrow-left"></i> Back
-        </button>
-        <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
-            <i class="fas fa-home"></i> Home
-        </a>
-        <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
-            <i class="fas fa-user"></i> Profile
-        </a>
-         <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
-            <i class="fas fa-bookmark"></i> Saved Adverts
-        </a> 
-        
-        {# CORRECTION: This button was previously separate and now it's merged with the contact-actions section below. It's better practice to have one single "Save/Unsave" button for consistency. #}
-    </div>
-    
-        <div class="seller-info">
-    <div style="display: flex; align-items: center; margin-top: 10px;">
-        <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
-            <div class="seller-details">
-                <h3>{{ seller.username }}</h3>
-                <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
-                <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
-            </div>
-        </a>
-    </div>
-</div>
-
-
-    
-        
-          <!-- {% if g.current_user and g.current_user.id != seller.id %}
-                <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
-                    <button class="follow-btn" type="submit" id="followButton">
-                        {% if is_following %}
-                            <i class="fas fa-user-minus"></i> Unfollow
-                        {% else %}
-                            <i class="fas fa-user-plus"></i> Follow
-                        {% endif %}
-                    </button>
-                </form>
-            {% endif %} -->
-        </div>
-    </div> 
-    
-    <div class="media-gallery">
-        <div class="image-slider">
-            <span class="arrow left" onclick="prevSlide()">‹</span>
-            <span class="arrow right" onclick="nextSlide()">›</span>
-            
-            {% if advert.main_image %}
-                <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image">
-            {% endif %}
-            {% for image in advert.additional_images %}
-                <img class="slide" src="{{ image }}" alt="Additional Advert Image">
-            {% endfor %}
-            {% if advert.video %}
-                <video class="slide" controls>
-                    <source src="{{ advert.video }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            {% endif %}
-        </div>
-        <div class="thumbnail-gallery">
-            {% if advert.main_image %}
-                <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
-            {% endif %}
-            {% for image in advert.additional_images %}
-                <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
-            {% endfor %}
-            {% if advert.video %}
-                <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.length }}">
-            {% endif %}
-        </div>
-    </div>
-    <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
-    <p><strong>Category:</strong> {{ advert.category_name }}</p>
-    
-    <h2>{{ advert.title }}</h2>
-    <p><strong>Price:</strong> ₦{{ "{:,}".format(advert.price) }}</p>
-    <p><strong>Location:</strong> {{ advert.school }}, {{ advert.state_name }}</p>
-    <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
-    <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
-    <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
-    <div class="product-description">
-        <h3>Description</h3>
-        <p>{{ advert.description }}</p>
-    </div>
-
-    <div class="contact-actions">
-    {% if seller.phone_number %}
-        <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
-            <i class="fas fa-phone"></i> Call Seller
-        </a>
-    {% endif %}
-    <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
-        Message Seller
-    </a>
-
-   {# CORRECTED: The button is now always displayed because the route is protected #}
-    <button id="save-toggle-btn"
-            class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
-            data-advert-id="{{ advert.id }}"
-            onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
-        {% if is_saved %}
-            <i class="fas fa-bookmark"></i> Unsave
-        {% else %}
-            <i class="far fa-bookmark"></i> Save
+        {# Flash Messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
         {% endif %}
-    </button> 
+        {% endwith %}
+        {# End Flash Messages #}
+        
+        <div class="top-navigation">
+            <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <a href="{{ url_for('home') }}" class="nav-button" title="Go to the Home Page">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
+                <i class="fas fa-user"></i> Profile
+            </a>
+             <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+                <i class="fas fa-bookmark"></i> Saved Adverts
+            </a> 
+        </div>
+
+        <div class="seller-info">
+            <div style="display: flex; align-items: center; margin-top: 10px;">
+                <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+                    <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
+                    <div class="seller-details">
+                        <h3>{{ seller.username }}</h3>
+                        <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
+                        <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="media-gallery">
+            <div class="image-slider">
+                <span class="arrow left" onclick="prevSlide()">‹</span>
+                <span class="arrow right" onclick="nextSlide()">›</span>
+                
+                {% if advert.main_image %}
+                    <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image">
+                {% endif %}
+                {% for image in advert.additional_images %}
+                    <img class="slide" src="{{ image }}" alt="Additional Advert Image">
+                {% endfor %}
+                {% if advert.video %}
+                    <video class="slide" controls>
+                        <source src="{{ advert.video }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% endif %}
+            </div>
+            <div class="thumbnail-gallery">
+                {% if advert.main_image %}
+                    <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
+                {% endif %}
+                {% for image in advert.additional_images %}
+                    <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
+                {% endfor %}
+                {% if advert.video %}
+                    <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.length }}">
+                {% endif %}
+            </div>
+        </div>
+        <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
+        <p><strong>Category:</strong> {{ advert.category_name }}</p>
+        
+        <h2>{{ advert.title }}</h2>
+        <p><strong>Price:</strong> ₦{{ "{:,}".format(advert.price) }}</p>
+        <p><strong>Location:</strong> {{ advert.school }}, {{ advert.state_name }}</p>
+        <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
+        <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
+        <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
+        <div class="product-description">
+            <h3>Description</h3>
+            <p>{{ advert.description }}</p>
+        </div>
+        <div class="contact-actions">
+            {% if seller.phone_number %}
+                <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
+                    <i class="fas fa-phone"></i> Call Seller
+                </a>
+            {% endif %}
+            <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
+                Message Seller
+            </a>
+        
+            <button id="save-toggle-btn"
+                class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
+                data-advert-id="{{ advert.id }}"
+                onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
+                {% if is_saved %}
+                    <i class="fas fa-bookmark"></i> Unsave
+                {% else %}
+                    <i class="far fa-bookmark"></i> Save
+                {% endif %}
+            </button> 
+            
+            <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
+                <i class="fas fa-flag"></i> Report Advert
+            </button>
+            <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+        </div>
+    </div>
     
-    <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
-        <i class="fas fa-flag"></i> Report Advert
-    </button>
-    <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
-        <i class="fas fa-share-alt"></i> Share
-    </button>
-    </div>
-
-
-    </div>
     <div class="safety-tips">
         <h3>Safety Tips</h3>
         <ul>
@@ -811,32 +789,29 @@
             <li>Keep communication on the platform.</li>
         </ul>
     </div>
-
-
     <div class="reviews-section">
-    <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
-    {% if reviews %}
-        {% for review in reviews %}
-            <div class="review-box">
-                <div class="reviewer-info">
-                    <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
-                    <span class="reviewer-name">{{ review.reviewer_username }}</span>
-                </div>
-                <div class="review-content">
-                    <div class="review-stars">
-                        {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
+        <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
+        {% if reviews %}
+            {% for review in reviews %}
+                <div class="review-box">
+                    <div class="reviewer-info">
+                        <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                        <span class="reviewer-name">{{ review.reviewer_username }}</span>
                     </div>
-                    <p class="review-comment">{{ review.comment }}</p>
-                    <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <div class="review-content">
+                        <div class="review-stars">
+                            {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
+                        </div>
+                        <p class="review-comment">{{ review.comment }}</p>
+                        <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No reviews yet for this advert. Be the first to leave a review!</p>
-    {% endif %}
+            {% endfor %}
+        {% else %}
+            <p>No reviews yet for this advert. Be the first to leave a review!</p>
+        {% endif %}
     </div>
-      
-    
+        
     <div class="review-form">
         <h3>Submit Your Review</h3>
         <form action="{{ url_for('submit_review') }}" method="POST">
@@ -857,7 +832,6 @@
         </form>
     </div>
     
-    
     <h3>Similar Adverts</h3>
     <div class="similar-adverts">
         {% if similar_adverts %}
@@ -872,146 +846,143 @@
             <p>No similar adverts found.</p>
         {% endif %}
     </div>
-
-</div>
-
-{# Modals #}
-{# Report Advert Modal #}
-<div id="reportModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="document.getElementById('reportModal').style.display='none'">&times;</span>
-        <h3>Report Advert</h3>
-        <form action="{{ url_for('report_advert', advert_id=advert.id) }}" method="POST">
-            <label for="reportReason">Reason for reporting:</label>
-            <textarea id="reportReason" name="reason" rows="5" required placeholder="Please describe why you are reporting this advert..."></textarea>
-            <button type="submit" class="submit-report-btn">Submit Report</button>
-        </form>
     </div>
-</div>
-
-{# Alert Modal for success/error messages #}
-<div id="alertModal" class="alert-modal-overlay">
-    <div class="alert-modal-content">
-        <h3 id="alertModalTitle"><i class="fas fa-info-circle"></i> Message</h3>
-        <p id="alertModalMessage"></p>
-        <button class="close-btn" onclick="closeAlertModal()">OK</button>
+    {# Modals #}
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('reportModal').style.display='none'">&times;</span>
+            <h3>Report Advert</h3>
+            <form action="{{ url_for('report_advert', advert_id=advert.id) }}" method="POST">
+                <label for="reportReason">Reason for reporting:</label>
+                <textarea id="reportReason" name="reason" rows="5" required placeholder="Please describe why you are reporting this advert..."></textarea>
+                <button type="submit" class="submit-report-btn">Submit Report</button>
+            </form>
+        </div>
     </div>
-</div>
+    <div id="alertModal" class="alert-modal-overlay">
+        <div class="alert-modal-content">
+            <h3 id="alertModalTitle"><i class="fas fa-info-circle"></i> Message</h3>
+            <p id="alertModalMessage"></p>
+            <button class="close-btn" onclick="closeAlertModal()">OK</button>
+        </div>
+    </div>
 
-<script>
-    let slideIndex = 0;
-    const slides = document.querySelectorAll('.image-slider .slide');
-    const thumbnails = document.querySelectorAll('.thumbnail-item');
-    const alertModal = document.getElementById('alertModal');
-    const alertModalTitle = document.getElementById('alertModalTitle');
-    const alertModalMessage = document.getElementById('alertModalMessage');
-    const saveButton = document.getElementById('save-toggle-btn');
-
-    function showSlide(n) {
-        if (slides.length === 0) return;
-        if (n >= slides.length) {
-            slideIndex = 0;
-        } else if (n < 0) {
-            slideIndex = slides.length - 1;
-        } else {
-            slideIndex = n;
-        }
-        slides.forEach(slide => {
-            slide.style.display = 'none';
-            if (slide.tagName === 'VIDEO') {
-                slide.pause();
-            }
-        });
-        thumbnails.forEach(thumb => thumb.classList.remove('active-thumb'));
-        slides[slideIndex].style.display = 'block';
-        if (slides[slideIndex].tagName === 'VIDEO') {
-            slides[slideIndex].play();
-        }
-        thumbnails[slideIndex].classList.add('active-thumb');
-    }
-
-    function nextSlide() { showSlide(slideIndex + 1); }
-    function prevSlide() { showSlide(slideIndex - 1); }
-
-    thumbnails.forEach(thumb => {
-        thumb.addEventListener('click', function() {
-            showSlide(parseInt(this.dataset.index));
-        });
-    });
-
-    // Initial display
-    showSlide(0);
-
-    function showAlertModal(title, message, isSuccess) {
-        alertModalTitle.innerHTML = `<i class="fas fa-info-circle"></i> ${title}`;
-        alertModalTitle.style.color = isSuccess ? 'green' : 'red';
-        alertModalMessage.textContent = message;
-        alertModal.style.display = 'flex';
-    }
-
-    function closeAlertModal() {
-        alertModal.style.display = 'none';
-    }
+    <script>
+        // Start: Image Slider
+        let slideIndex = 0;
+        const slides = document.querySelectorAll('.image-slider .slide');
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
+        const alertModal = document.getElementById('alertModal');
+        const alertModalTitle = document.getElementById('alertModalTitle');
+        const alertModalMessage = document.getElementById('alertModalMessage');
+        const saveButton = document.getElementById('save-toggle-btn');
     
-    // CORRECTION: The main issue was in this function
-    async function toggleSaveAdvert(button, advertId) {
-        const isCurrentlySaved = button.classList.contains('saved');
-        const endpoint = isCurrentlySaved ? '/api/unsave_advert' : '/api/save_advert';
-        
-        try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ advert_id: advertId })
-            });
-            
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                // CORRECTION: Correctly toggle classes and content
-                if (isCurrentlySaved) {
-                    button.classList.remove('saved');
-                    button.classList.add('unsaved');
-                    button.innerHTML = '<i class="far fa-bookmark"></i> Save';
-                    showAlertModal('Success!', data.message, true);
-                } else {
-                    button.classList.remove('unsaved');
-                    button.classList.add('saved');
-                    button.innerHTML = '<i class="fas fa-bookmark"></i> Unsave';
-                    showAlertModal('Success!', data.message, true);
-                }
+        function showSlide(n) {
+            if (slides.length === 0) return;
+            if (n >= slides.length) {
+                slideIndex = 0;
+            } else if (n < 0) {
+                slideIndex = slides.length - 1;
             } else {
-                showAlertModal('Error!', data.message || 'Failed to update advert status.', false);
+                slideIndex = n;
             }
-        } catch (error) {
-            console.error('Fetch error:', error);
-            showAlertModal('Error!', 'An unexpected error occurred. Please try again.', false);
+            slides.forEach(slide => {
+                slide.style.display = 'none';
+                if (slide.tagName === 'VIDEO') {
+                    slide.pause();
+                }
+            });
+            thumbnails.forEach(thumb => thumb.classList.remove('active-thumb'));
+            slides[slideIndex].style.display = 'block';
+            if (slides[slideIndex].tagName === 'VIDEO') {
+                slides[slideIndex].play();
+            }
+            thumbnails[slideIndex].classList.add('active-thumb');
         }
-    }
     
-    function shareAdvert() {
-        if (navigator.share) {
-            navigator.share({
-                title: '{{ advert.title }}',
-                text: 'Check out this advert on our platform!',
-                url: window.location.href,
-            })
-            .then(() => console.log('Successful share'))
-            .catch((error) => console.log('Error sharing', error));
-        } else {
-            const shareText = `Check out this advert: {{ advert.title }} - ₦{{ "{:,}".format(advert.price) }} - {{ advert.description | truncate(100) }}... ${window.location.href}`;
-            prompt("Copy this link to share:", shareText);
-        }
-    }
+        function nextSlide() { showSlide(slideIndex + 1); }
+        function prevSlide() { showSlide(slideIndex - 1); }
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', function() {
+                showSlide(parseInt(this.dataset.index));
+            });
+        });
+        showSlide(0);
+        // End: Image Slider
 
-    // You can remove the old `flashMessage` function and related code since the new `showAlertModal` handles it better.
-</script>
+        // Start: Flash Messages and Save/Unsave Button Logic
+        function showAlertModal(title, message, isSuccess) {
+            alertModalTitle.innerHTML = `<i class="fas fa-info-circle"></i> ${title}`;
+            alertModalTitle.style.color = isSuccess ? 'green' : 'red';
+            alertModalMessage.textContent = message;
+            alertModal.style.display = 'flex';
+        }
+    
+        function closeAlertModal() {
+            alertModal.style.display = 'none';
+        }
+    
+        // New function to clear flash messages
+        function clearFlashMessages() {
+            const flashContainer = document.querySelector('.flashes');
+            if (flashContainer) {
+                flashContainer.innerHTML = '';
+            }
+        }
+    
+        // Add event listener to clear flash messages on any click
+        document.addEventListener('click', clearFlashMessages);
+        
+        // CORRECTION: The main issue was in this function
+        async function toggleSaveAdvert(button, advertId) {
+            const isCurrentlySaved = button.classList.contains('saved');
+            const endpoint = isCurrentlySaved ? '/api/unsave_advert' : '/api/save_advert';
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ advert_id: advertId })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    if (isCurrentlySaved) {
+                        button.classList.remove('saved');
+                        button.classList.add('unsaved');
+                        button.innerHTML = '<i class="far fa-bookmark"></i> Save';
+                        showAlertModal('Success!', 'Advert unsaved successfully.', true);
+                    } else {
+                        button.classList.remove('unsaved');
+                        button.classList.add('saved');
+                        button.innerHTML = '<i class="fas fa-bookmark"></i> Unsave';
+                        showAlertModal('Success!', 'Advert saved successfully.', true);
+                    }
+                } else {
+                    showAlertModal('Error!', data.message || 'Failed to update advert status.', false);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showAlertModal('Error!', 'An unexpected error occurred. Please try again.', false);
+            }
+        }
+    
+        function shareAdvert() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '{{ advert.title }}',
+                    text: 'Check out this advert on our platform!',
+                    url: window.location.href,
+                })
+                .then(() => console.log('Successful share'))
+                .catch((error) => console.log('Error sharing', error));
+            } else {
+                const shareText = `Check out this advert: {{ advert.title }} - ₦{{ "{:,}".format(advert.price) }} - {{ advert.description | truncate(100) }}... ${window.location.href}`;
+                prompt("Copy this link to share:", shareText);
+            }
+        }
+    
+        // End: Flash Messages and Save/Unsave Button Logic
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
