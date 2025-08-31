@@ -491,26 +491,29 @@ def get_unique_id():
 
 
 
-
-# Assuming 'admin_storage' and 'db' are initialized globally
-
-def get_profile_picture_url(profile_picture_filename):
+def get_profile_picture_url(user_id):
     """
-    Generates a signed URL for a profile picture from a Cloud Storage filename.
+    Generates a signed URL for a user's profile picture from their user ID.
+    It returns a default image URL if the picture does not exist or an error occurs.
     """
-    if not profile_picture_filename:
-        # Return a default image if no filename is provided
-        return url_for('static', filename='images/default_profile.png')
-
     try:
-        # Use the correct variable name 'admin_storage'
+        # Construct the expected filename from the user ID
+        profile_picture_filename = f"users/{user_id}/profile.jpg"
+        
+        # Get the blob object for the profile picture
         blob = bucket.blob(profile_picture_filename)
+        
+        # Check if the file actually exists in Firebase Storage
         if blob.exists():
+            # If it exists, generate a signed URL
             return blob.generate_signed_url(timedelta(minutes=15), method='GET')
         else:
+            # If the file does not exist, return the default image URL
             return url_for('static', filename='images/default_profile.png')
+            
     except Exception as e:
-        logger.error(f"Error generating profile pic URL for {profile_picture_filename}: {e}")
+        # Log any errors and return the default image URL as a failsafe
+        logging.error(f"Error generating profile pic URL for user {user_id}: {e}")
         return url_for('static', filename='images/default_profile.png')
 
 
@@ -4401,6 +4404,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
