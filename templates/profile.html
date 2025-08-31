@@ -7,18 +7,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Define a custom font for a consistent look */
         body {
             font-family: 'Inter', sans-serif;
         }
 
-        /* Fade-in animation for the toast message */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Specific modal animation for a smooth appearance */
         @keyframes animatemodal {
             from { transform: scale(0.7); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
@@ -29,14 +26,13 @@
             animation-duration: 0.4s;
         }
 
-        /* Enforce a consistent button size for the option boxes */
         .option-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            min-height: 120px; /* Adjust as needed for desired height */
+            min-height: 120px;
             transition: transform 0.2s ease-in-out;
         }
 
@@ -56,8 +52,8 @@
 <body class="bg-gray-100 text-gray-800 antialiased">
 
     <div id="toast-message"
-     class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0"
-     style="animation: fadeIn 0.3s forwards;">
+       class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0"
+       style="animation: fadeIn 0.3s forwards;">
     </div>
 
     <div class="profile-wrapper max-w-4xl mx-auto my-5 bg-white rounded-xl shadow-lg overflow-hidden">
@@ -122,7 +118,6 @@
                 <p class="mb-2 text-sm"><strong class="font-bold">Phone:</strong> {{ user.phone_number or 'None' }}</p>
                 <p class="mb-2 text-sm"><a href="{{ url_for('change_phone') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-phone-alt mr-2"></i> Change Phone Number</a></p>
                 <p class="mb-2 text-sm"><a href="{{ url_for('account_settings') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-key mr-2"></i> Change Password</a></p>
-                 
             </div>
 
             <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
@@ -170,41 +165,24 @@
                 <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-briefcase mr-2"></i> Edit Business & Social</a></p>
             </div>
         </main>
-        
+
         <section class="sections-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-100">
             <a href="{{ url_for('list_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-bullhorn text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">My Adverts</span>
             </a>
             <a href="{{ url_for('progress_chart_page') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-    <i class="fas fa-chart-line text-4xl text-green-700 mb-2"></i>
-    <span class="text-sm font-semibold">My Progress</span>
+                <i class="fas fa-chart-line text-4xl text-green-700 mb-2"></i>
+                <span class="text-sm font-semibold">My Progress</span>
             </a>
             <a href="{{ url_for('sell') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200" title="Sell an item or service">
                 <i class="fas fa-tag text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">Sell</span>
             </a>
-           <!-- <a href="{{ url_for('user_notifications') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-bell text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Notifications</span>
-            </a>
-            <a href="{{ url_for('followers') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-users text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Followers</span>
-            </a>-->
-           <!-- <a href="{{ url_for('settings') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-cog text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Settings</span>
-            </a> -->
             <a href="{{ url_for('faq') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-question-circle text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">FAQs</span>
             </a>
-         <!--   <a href="{{ url_for('create_post') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-pencil-alt text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Create School Gist</span>
-            </a> -->
-
             {% if user and user.is_admin %}
                 <a href="{{ url_for('admin_post_airtime') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
                     <i class="fas fa-mobile-alt text-4xl text-green-700 mb-2"></i>
@@ -229,8 +207,6 @@
                     <span class="text-sm font-semibold">Create School News</span>
                 </a>
              {% endif %}
-
-            
 
             <a href="{{ url_for('logout') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-sign-out-alt text-4xl text-red-500 mb-2"></i>
@@ -265,18 +241,16 @@
     </div>
 </div>
 
-    
-
-
     <script>
         // Function to show the image viewer modal
         function showImageModal(imageUrl) {
             const modal = document.getElementById('imageViewerModal');
             const fullSizeImage = document.getElementById('fullSizeImage');
             fullSizeImage.src = imageUrl;
+            // Removed the setTimeout here
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            setTimeout(() => modal.style.opacity = '1', 10);
+            modal.style.opacity = '1';
         }
 
         // Function to close the image viewer modal
@@ -284,10 +258,12 @@
             const modal = document.getElementById('imageViewerModal');
             modal.style.opacity = '0';
             document.body.style.overflow = '';
-            setTimeout(() => {
+            // Added a listener to set display:none after the transition
+            modal.addEventListener('transitionend', function handler() {
                 modal.style.display = 'none';
                 document.getElementById('fullSizeImage').src = '';
-            }, 300);
+                modal.removeEventListener('transitionend', handler);
+            });
         }
 
         // Close modal on outside click
@@ -303,7 +279,6 @@
             const toast = document.getElementById('toast-message');
             toast.textContent = message;
             
-            // Set toast color based on type
             let bgColor = '';
             let textColor = '';
             if (type === 'success') {
@@ -312,12 +287,11 @@
             } else if (type === 'error') {
                 bgColor = 'bg-red-600';
                 textColor = 'text-white';
-            } else { // default to info
+            } else {
                 bgColor = 'bg-amber-400';
                 textColor = 'text-gray-800';
             }
 
-            // Apply Tailwind classes
             toast.className = `fixed bottom-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-100 ${bgColor} ${textColor}`;
             
             // Hide the toast after 3 seconds
