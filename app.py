@@ -3033,6 +3033,44 @@ def saved_adverts_page():
     return render_template('saved_adverts.html', saved_adverts=saved_adverts_list)
 
 
+
+
+
+# Updated unsave_advert route to correctly find and delete the document
+@app.route('/api/unsave_advert', methods=['POST'])
+@login_required
+def unsave_advert():
+    """Removes an advert from the user's saved list."""
+    data = request.get_json()
+    advert_id = data.get('advert_id')
+    user_id = g.current_user.id
+
+    if not advert_id:
+        return jsonify({'success': False, 'message': 'Advert ID is required.'}), 400
+
+    try:
+        # Step 1: Find the document in the 'saved_adverts' collection
+        # that matches both the user ID and the advert ID.
+        query = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).stream()
+        
+        # Convert the query results to a list to check if a document was found.
+        docs_to_delete = list(query)
+        
+        if docs_to_delete:
+            # Step 2: If a document is found, delete it using its actual ID.
+            doc_to_delete = docs_to_delete[0]
+            doc_to_delete.reference.delete()
+            return jsonify({'success': True, 'message': 'Advert successfully removed from saved list.'}), 200
+        else:
+            # The document was not found, which is not an error, but indicates it's already unsaved.
+            return jsonify({'success': False, 'message': 'Advert not found in saved list.'}), 404
+            
+    except Exception as e:
+        logger.error(f"Error unsaving advert for user {user_id} and advert {advert_id}: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
+
+
+# Minor change for better clarity in the save_advert route.
 @app.route('/api/save_advert', methods=['POST'])
 @login_required
 def save_advert():
@@ -3048,7 +3086,7 @@ def save_advert():
         # Check if the advert is already saved to prevent duplicates
         saved_advert_query = db.collection('saved_adverts').where('user_id', '==', user_id).where('advert_id', '==', advert_id).limit(1).stream()
         
-        if list(saved_advert_query):
+        if any(saved_advert_query): # Use any() with a generator for efficiency
             return jsonify({"success": True, "message": "Advert is already saved."}), 200
 
         db.collection('saved_adverts').add({
@@ -3065,32 +3103,6 @@ def save_advert():
 
 
 
-
-@app.route('/api/unsave_advert', methods=['POST'])
-@login_required
-def unsave_advert():
-    data = request.get_json()
-    advert_id = data.get('advert_id')
-    user_id = g.current_user.id
-
-    if not advert_id:
-        return jsonify({'success': False, 'message': 'Advert ID required.'}), 400
-
-    try:
-        # Construct the document ID using the user and advert IDs
-        doc_id = f"{user_id}_{advert_id}"
-        doc_ref = db.collection('saved_adverts').document(doc_id)
-        
-        # Check if the document exists before trying to delete it
-        if doc_ref.get().exists:
-            doc_ref.delete()
-            return jsonify({'success': True, 'message': 'Advert successfully unsaved.'})
-        else:
-            return jsonify({'success': False, 'message': 'Advert not found in saved list.'}), 404
-            
-    except Exception as e:
-        logger.error(f"Error unsaving advert: {e}")
-        return jsonify({'success': False, 'message': 'An internal server error occurred.'}), 500
 
 
 
@@ -4468,6 +4480,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
