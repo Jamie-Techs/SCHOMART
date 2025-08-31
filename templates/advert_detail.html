@@ -695,7 +695,21 @@
         
         {# CORRECTION: This button was previously separate and now it's merged with the contact-actions section below. It's better practice to have one single "Save/Unsave" button for consistency. #}
     </div>
-        
+    
+        <div class="seller-info">
+    <div style="display: flex; align-items: center; margin-top: 10px;">
+        <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
+            <div class="seller-details">
+                <h3>{{ seller.username }}</h3>
+                <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
+                <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+
     <div class="seller-info">
         <a href="{{ url_for('seller_profile_view',seller_id=seller.id) }}" class="button view-profile-button">
             
@@ -818,7 +832,7 @@
         {% for review in reviews %}
             <div class="review-box">
                 <div class="reviewer-info">
-                    <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile">
+                    <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
                     <span class="reviewer-name">{{ review.reviewer_username }}</span>
                 </div>
                 <div class="review-content">
@@ -833,6 +847,9 @@
     {% else %}
         <p>No reviews yet for this advert. Be the first to leave a review!</p>
     {% endif %}
+    </div>
+      
+    
     <div class="review-form">
         <h3>Submit Your Review</h3>
         <form action="{{ url_for('submit_review') }}" method="POST">
@@ -852,7 +869,7 @@
             <button type="submit" class="review-submit-btn">Submit Review</button>
         </form>
     </div>
-    </div>
+    
     
     <h3>Similar Adverts</h3>
     <div class="similar-adverts">
@@ -1004,6 +1021,7 @@
 </script>
 </body>
 </html>
+
 
 
 
