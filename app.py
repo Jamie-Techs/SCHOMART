@@ -29,10 +29,10 @@ from flask import (
     abort,
     g,
     current_app,
-    send_file
-
-
+    send_file,
 )
+
+from collections import defaultdict
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
 from flask_login import (
@@ -2936,7 +2936,102 @@ def advert_detail(advert_id):
 
 
 
+# ... (Your existing app, db, and other initializations) ...
 
+def get_user_adverts_ids(user_id):
+    """Helper function to get all advert IDs for a given user."""
+    adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
+    return [doc.id for doc in adverts_ref]
+
+def get_advert_performance_data(user_id):
+    """Fetches all performance data for a user's adverts."""
+    advert_ids = get_user_adverts_ids(user_id)
+    if not advert_ids:
+        return {'views': [], 'saves': [], 'adverts': []}
+        
+    views_ref = db.collection('advert_views').where('advert_id', 'in', advert_ids).stream()
+    views_data = [doc.to_dict() for doc in views_ref]
+
+    saves_ref = db.collection('saved_adverts').where('advert_id', 'in', advert_ids).stream()
+    saves_data = [doc.to_dict() for doc in saves_ref]
+    
+    adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
+    adverts_data = {doc.id: doc.to_dict() for doc in adverts_ref}
+
+    return {
+        'views': views_data,
+        'saves': saves_data,
+        'adverts': adverts_data
+    }
+
+def aggregate_data_by_period(data_list, period):
+    """Aggregates data based on the specified time period."""
+    if not data_list:
+        return []
+
+    data_map = defaultdict(int)
+    now = datetime.now()
+
+    for item in data_list:
+        # Use the correct timestamp field for aggregation
+        timestamp = item.get('viewed_at') or item.get('saved_at')
+        if not timestamp:
+            continue
+
+        dt_object = timestamp.cast(datetime)
+
+        if period == 'hourly':
+            # Aggregate by hour for the last 24 hours
+            if dt_object > now - timedelta(hours=24):
+                key = dt_object.strftime('%H:00')
+                data_map[key] += 1
+        elif period == 'daily':
+            # Aggregate by day for the last 30 days
+            if dt_object > now - timedelta(days=30):
+                key = dt_object.strftime('%Y-%m-%d')
+                data_map[key] += 1
+        elif period == 'monthly':
+            # Aggregate by month for the last 12 months
+            if dt_object > now - timedelta(days=365):
+                key = dt_object.strftime('%Y-%m')
+                data_map[key] += 1
+        elif period == 'yearly':
+            # Aggregate by year
+            key = dt_object.strftime('%Y')
+            data_map[key] += 1
+    
+    # Sort data chronologically
+    sorted_data = sorted(data_map.items())
+    return sorted_data
+
+@app.route('/progress_chart')
+@login_required
+def progress_chart_page():
+    """Renders the progress chart page."""
+    return render_template('progress_chart.html')
+
+@app.route('/api/user_progress')
+@login_required
+def api_user_progress():
+    """
+    API endpoint to serve the user's progress data.
+    Accepts a 'period' query parameter (e.g., 'hourly', 'daily').
+    """
+    user_id = g.current_user.id
+    period = request.args.get('period', 'daily') # Default to daily
+
+    # Get all performance data for the user
+    performance_data = get_advert_performance_data(user_id)
+    
+    # Aggregate data based on the requested period
+    views_data = aggregate_data_by_period(performance_data['views'], period)
+    saves_data = aggregate_data_by_period(performance_data['saves'], period)
+    
+    return jsonify({
+        'views': views_data,
+        'saves': saves_data,
+        'adverts_info': list(performance_data['adverts'].values())
+    })
 
 
 
@@ -4514,6 +4609,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
