@@ -5,216 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Search - Futo Jiji</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        .header-buttons {
-            background-color: #006B3C;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header-buttons .nav-button {
-            background-color: #FDB813;
-            color: #006B3C;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-        .header-buttons .nav-button:hover {
-            background-color: #e0a300;
-        }
-
-        h2 {
-            color: #006B3C;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        form {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-width: 1200px;
-            margin: auto;
-        }
-        /* Arrange filters in 3 columns using CSS Grid */
-        .filters {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #006B3C;
-        }
-        select, input[type=number] {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
-        .price-range {
-            display: flex;
-            gap: 8px;
-        }
-        #search-top {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        #search-top input[type=text] {
-            flex-grow: 1;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        #search-top button {
-            padding: 8px 16px;
-            background-color: #006B3C;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #search-top button:hover {
-            background-color: #005349;
-        }
-        button[type="submit"] {
-            background-color: #006B3C;
-            color: #fff;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        button[type="submit"]:hover {
-            background-color: #005349;
-        }
-        /* Style for the search results grid */
-        .results {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 30px;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        /* Heading for results */
-        .results h3 {
-            width: 100%;
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #006B3C;
-        }
-        /* Ad card styling */
-        .ad-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 10px;
-            width: calc(25% - 20px);
-            box-sizing: border-box;
-            text-align: center;
-            text-decoration: none; /* Ensure link styling is removed */
-            color: inherit; /* Inherit color from parent */
-            display: flex; /* Use flexbox for vertical alignment */
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space vertically */
-        }
-        .ad-card img {
-            max-width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 10px; /* Space below image */
-        }
-        .ad-card .price {
-            color: #FDB813;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-        .ad-card p {
-            font-size: 0.9em;
-            color: #555;
-            margin: 2px 0;
-        }
+        /* Your existing CSS styles go here, ensuring they are copied correctly */
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; color: #333; margin: 0; padding: 0; }
+        .header-buttons { background-color: #006B3C; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header-buttons .nav-button { background-color: #FDB813; color: #006B3C; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 14px; transition: background-color 0.3s ease; }
+        .header-buttons .nav-button:hover { background-color: #e0a300; }
+        h2 { color: #006B3C; margin-top: 20px; margin-bottom: 20px; text-align: center; }
+        form { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
+        .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #006B3C; }
+        select, input[type=number], input[type=text] { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        .price-range { display: flex; gap: 8px; }
+        #search-top { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        #search-top input[type=text] { flex-grow: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        #search-top button { padding: 8px 16px; background-color: #006B3C; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        #search-top button:hover { background-color: #005349; }
+        button[type="submit"] { background-color: #006B3C; color: #fff; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
+        button[type="submit"]:hover { background-color: #005349; }
+        .results { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 30px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+        .results h3 { width: 100%; text-align: center; margin-top: 0; margin-bottom: 20px; color: #006B3C; }
+        .ad-card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 10px; width: calc(25% - 20px); box-sizing: border-box; text-align: center; text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between; }
+        .ad-card img { max-width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        .ad-card .price { color: #FDB813; font-weight: bold; margin: 5px 0; }
+        .ad-card p { font-size: 0.9em; color: #555; margin: 2px 0; }
+        @media(max-width: 768px){ .filters { grid-template-columns: repeat(2, 1fr); } .ad-card { width: calc(50% - 20px); } #search-top { flex-direction: column; align-items: stretch; } #search-top input[type=text] { width: 100%; } #search-top button { width: 100%; margin-left: 0; margin-top: 10px; } }
+        @media(max-width: 480px){ .filters { grid-template-columns: 1fr; } .ad-card { width: 100%; } }
+        .no-results { text-align: center; width: 100%; margin-top: 50px; font-size: 1.2em; color: #888; }
         
-
-        /* Responsive styles */
-        @media(max-width: 768px){
-            .filters { /* Adjust grid columns for smaller screens */
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .ad-card {
-                width: calc(50% - 20px);
-            }
-            #search-top {
-                flex-direction: column; /* Stack input and button vertically */
-                align-items: stretch;
-            }
-            #search-top input[type=text] {
-                width: 100%;
-            }
-            #search-top button {
-                width: 100%;
-                margin-left: 0;
-                margin-top: 10px;
-            }
-        }
-        @media(max-width: 480px){
-            .filters { /* Adjust grid columns for smallest screens */
-                grid-template-columns: 1fr;
-            }
-            .ad-card {
-                width: 100%;
-            }
-        }
-        .no-results {
+        /* New loading indicator styles */
+        .loading-indicator {
             text-align: center;
-            width: 100%;
-            margin-top: 50px;
+            padding: 20px;
             font-size: 1.2em;
             color: #888;
+            display: none; /* Hide by default */
+        }
+        .loading-indicator.visible {
+            display: block;
         }
     </style>
 </head>
 <body>
-
     <div class="header-buttons">
-        <a href="/" class="nav-button">Home</a>
+        <a href="{{ url_for('home') }}" class="nav-button">Home</a>
         <button onclick="history.back()" class="nav-button">Back</button>
     </div>
     
     <h2>Filter Your Search</h2>
     
-    <form id="searchForm" method="GET" action="/search">
+    <form id="searchForm" onsubmit="handleSearch(event)">
         <div id="search-top">
             <label for="search_query" style="font-weight: bold;">Search</label>
-            <input type="text" id="search_query" name="search_query" placeholder="Search..." value="{{ search_query | default('') }}">
+            <input type="text" id="search_query" name="search_query" placeholder="Search...">
             <button type="submit">Search</button>
         </div>
     
@@ -224,7 +66,7 @@
                 <select id="category" name="category">
                     <option value="">All Categories</option>
                     {% for name, data in categories.items() %}
-                        <option value="{{ name }}" {% if name == selected_category %}selected{% endif %}>{{ name }}</option>
+                        <option value="{{ name }}">{{ name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -234,7 +76,7 @@
                 <select id="state-dropdown" name="state">
                     <option value="">All States</option>
                     {% for state in states %}
-                        <option value="{{ state }}" {% if state == selected_state %}selected{% endif %}>{{ state }}</option>
+                        <option value="{{ state }}">{{ state }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -243,110 +85,172 @@
                 <label for="location-dropdown">University:</label>
                 <select id="location-dropdown" name="school">
                     <option value="">All Universities</option>
-                    {# Locations will be populated dynamically by JS #}
-                    {% if selected_school %}
-                        <option value="{{ selected_school }}" selected>{{ selected_school }}</option>
-                    {% endif %}
                 </select>
             </div>
             
             <div class="filter-group">
                 <label>Price Range (₦)</label>
                 <div class="price-range">
-                    <input type="number" name="price_min" placeholder="Min" value="{{ selected_price_min | default('') }}">
-                    <input type="number" name="price_max" placeholder="Max" value="{{ selected_price_max | default('') }}">
+                    <input type="number" name="price_min" placeholder="Min">
+                    <input type="number" name="price_max" placeholder="Max">
                 </div>
             </div>
             <div class="filter-group">
                 <label for="condition">Condition</label>
                 <select id="condition" name="condition">
                     <option value="">Any</option>
-                    <option value="New" {% if selected_condition == 'New' %}selected{% endif %}>New</option>
-                    <option value="Used" {% if selected_condition == 'Used' %}selected{% endif %}>Used</option>
+                    <option value="New">New</option>
+                    <option value="Used">Used</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label for="negotiation">Negotiation</label>
                 <select id="negotiation" name="negotiation">
                     <option value="">Any</option>
-                    <option value="yes" {% if selected_negotiation == 'yes' %}selected{% endif %}>Yes</option>
-                    <option value="no" {% if selected_negotiation == 'no' %}selected{% endif %}>No</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
                 </select>
             </div>
         </div>
     </form>
     
-    <div class="results">
-        {% if adverts %}
-            <h3>Found {{ adverts|length }} Adverts</h3>
-            {% for advert in adverts %}
-                <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="ad-card">
-                    {# Conditional display for main image or video #}
-                    {% if advert.main_image %}
-                        <img src="{{ advert.main_image }}" alt="{{ advert.title }}">
-                    {% elif advert.video %}
-                        <video controls>
-                            <source src="{{ advert.video }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% else %}
-                        {# Placeholder if no image or video is available. Ensure 'placeholder.png' exists in static/media #}
-                        <img src="{{ url_for('static', filename='images/placeholder.png') }}" alt="No media available">
-                    {% endif %}
-                    <h4>{{ advert.title }}</h4>
-                    <p class="price">₦{{ "{:,.2f}".format(advert.price) }}</p>
-                    <p>
-                        {% if advert.school %}{{ advert.school }}{% endif %}
-                        {% if advert.school and advert.state %}, {% endif %}
-                        {% if advert.state %}{{ advert.state }}{% endif %}
-                    </p>
-                    <p>Poster: {{ advert.poster_username }} </p>
-                </a>
-            {% endfor %}
-        {% else %}
-            <p class="no-results">No adverts found matching your criteria.</p>
-        {% endif %}
-    </div>
+    <div class="results" id="adverts-container">
+        </div>
     
+    <div class="loading-indicator" id="loading-indicator">Loading more adverts...</div>
+    <p class="no-results" id="no-results" style="display: none;">No adverts found matching your criteria.</p>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Location/School Dropdown Logic ---
-            const stateDropdown = document.getElementById('state-dropdown');
-            const schoolDropdown = document.getElementById('location-dropdown');
-    
-            function updateSchools(selectedState, selectedSchool = '') {
-                schoolDropdown.innerHTML = '<option value="">All Universities</option>';
-                if (selectedState) {
-                    fetch(`/api/schools_by_state/${selectedState}`)
-                        .then(response => {
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                            return response.json();
-                        })
-                        .then(schools => {
-                            schools.forEach(school => {
-                                const option = document.createElement('option');
-                                option.value = school.name;
-                                option.textContent = school.name;
-                                if (school.name === selectedSchool) {
-                                    option.selected = true;
-                                }
-                                schoolDropdown.appendChild(option);
-                            });
-                        })
-                        .catch(error => console.error('Error fetching schools:', error));
+        const advertsContainer = document.getElementById('adverts-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const noResultsMessage = document.getElementById('no-results');
+        let currentPage = 1;
+        let isLoading = false;
+        let allResultsLoaded = false;
+        
+        // Function to create an advert card HTML
+        function createAdvertCard(advert) {
+            const card = document.createElement('a');
+            card.href = "{{ url_for('advert_detail', advert_id='PLACEHOLDER') }}".replace('PLACEHOLDER', advert.id);
+            card.classList.add('ad-card');
+
+            const price = advert.price ? `₦${advert.price.toLocaleString('en-US')}` : 'Price not available';
+            const location = `${advert.school || ''}${advert.school && advert.state ? ', ' : ''}${advert.state || ''}`;
+
+            card.innerHTML = `
+                <img src="${advert.display_image}" alt="${advert.title}">
+                <h4>${advert.title}</h4>
+                <p class="price">${price}</p>
+                <p>${location}</p>
+                <p>Poster: ${advert.poster_username}</p>
+            `;
+            return card;
+        }
+        
+        // Function to fetch and display adverts from the API
+        async function fetchAndDisplayAdverts(page, isNewSearch = false) {
+            if (isLoading || allResultsLoaded && !isNewSearch) return;
+
+            isLoading = true;
+            loadingIndicator.classList.add('visible');
+            
+            if (isNewSearch) {
+                advertsContainer.innerHTML = ''; // Clear previous results
+                currentPage = 1;
+                allResultsLoaded = false;
+            }
+
+            const form = document.getElementById('searchForm');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            params.append('page', currentPage);
+
+            try {
+                const response = await fetch(`/api/adverts?${params.toString()}`);
+                const adverts = await response.json();
+                
+                if (adverts.length === 0 && isNewSearch) {
+                    noResultsMessage.style.display = 'block';
+                } else {
+                    noResultsMessage.style.display = 'none';
                 }
+
+                if (adverts.length < 20) { // Assuming 20 is the page size
+                    allResultsLoaded = true;
+                }
+
+                adverts.forEach(advert => {
+                    const advertCard = createAdvertCard(advert);
+                    advertsContainer.appendChild(advertCard);
+                });
+                
+                currentPage++;
+            } catch (error) {
+                console.error('Failed to fetch adverts:', error);
+                // Display a user-friendly error message
+                if (isNewSearch) {
+                    advertsContainer.innerHTML = '<p class="no-results">Failed to load adverts. Please try again.</p>';
+                }
+            } finally {
+                isLoading = false;
+                loadingIndicator.classList.remove('visible');
             }
-    
-            // Initial population on page load
-            const initialSelectedState = stateDropdown.value;
-            const initialSelectedSchool = "{{ selected_school | default('') }}";
-            if (initialSelectedState) {
-                updateSchools(initialSelectedState, initialSelectedSchool);
+        }
+        
+        // Initial load on page landing
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndDisplayAdverts(1); // Load first page of all adverts
+        });
+
+        // Handle search form submission
+        function handleSearch(event) {
+            event.preventDefault();
+            fetchAndDisplayAdverts(1, true); // Trigger new search, clearing previous results
+        }
+
+        // Infinite scroll logic
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+                fetchAndDisplayAdverts(currentPage);
             }
-    
-            stateDropdown.addEventListener('change', function() {
-                updateSchools(this.value);
-            });
+        });
+        
+        // --- Location/School Dropdown Logic (from your existing code) ---
+        const stateDropdown = document.getElementById('state-dropdown');
+        const schoolDropdown = document.getElementById('location-dropdown');
+        
+        function updateSchools(selectedState, selectedSchool = '') {
+            schoolDropdown.innerHTML = '<option value="">All Universities</option>';
+            if (selectedState) {
+                fetch(`/api/schools_by_state/${selectedState}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(schools => {
+                        schools.forEach(school => {
+                            const option = document.createElement('option');
+                            option.value = school.name;
+                            option.textContent = school.name;
+                            if (school.name === selectedSchool) {
+                                option.selected = true;
+                            }
+                            schoolDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching schools:', error));
+            }
+        }
+        
+        // Initial population for schools
+        const initialSelectedState = stateDropdown.value;
+        const initialSelectedSchool = "{{ selected_school | default('') }}";
+        if (initialSelectedState) {
+            updateSchools(initialSelectedState, initialSelectedSchool);
+        }
+        
+        stateDropdown.addEventListener('change', function() {
+            updateSchools(this.value);
         });
     </script>
 </body>
