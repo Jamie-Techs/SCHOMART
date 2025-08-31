@@ -2797,12 +2797,6 @@ def clean_expired_posts():
 
 
 
-
-
-
-
-
-
     
 #@app.route('/admin_users_management')
 #@login_required
@@ -2815,8 +2809,6 @@ def clean_expired_posts():
 @app.route('/referral-benefit')
 def referral_benefit():
     return render_template('referral_benefit.html')
-
-
 
 
 
@@ -2849,12 +2841,13 @@ def advert_detail(advert_id):
         seller_doc = db.collection('users').document(seller_id).get()
 
         if not seller_doc.exists:
-            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': url_for('static', filename='images/default_profile.png')}
+            # Use the merged get_profile_picture_url with a placeholder for consistency
+            seller = {'id': seller_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': get_profile_picture_url(seller_id)}
         else:
             seller = seller_doc.to_dict()
             seller['id'] = seller_doc.id
-            profile_picture_filename = seller.get('profile_picture')
-            seller['profile_picture'] = get_profile_picture_url(profile_picture_filename)
+            # Use the new, unified helper function to get the seller's profile picture
+            seller['profile_picture'] = get_profile_picture_url(seller_id)
 
             reviews_query = db.collection('reviews').where('reviewee_id', '==', seller_id).stream()
             total_rating = 0
@@ -2887,8 +2880,8 @@ def advert_detail(advert_id):
             if reviewer_info.exists:
                 reviewer_data = reviewer_info.to_dict()
                 review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
-                reviewer_profile_filename = reviewer_data.get('profile_picture')
-                review_data['reviewer_profile_picture'] = get_profile_picture_url(reviewer_profile_filename)
+                # Use the unified helper function to get the reviewer's profile picture
+                review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
             reviews.append(review_data)
 
         # Step 6: Render the template with all the necessary data
@@ -2904,8 +2897,14 @@ def advert_detail(advert_id):
         )
 
     except Exception as e:
-        logger.error(f"Error fetching advert detail: {e}", exc_info=True)
+        logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
+
+
+
 
 
 
@@ -4404,6 +4403,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
