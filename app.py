@@ -31,7 +31,7 @@ from flask import (
     current_app,
     send_file,
 )
-
+import geoflask
 from collections import defaultdict
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail, Message
@@ -438,17 +438,10 @@ def account_settings():
 
 
 
-
-
+# Your provided get_user_info function
 def get_user_info(user_id):
     """
     Fetches user information and calculates their rating, review count, and advert count.
-    
-    Args:
-        user_id (str): The ID of the user to retrieve.
-        
-    Returns:
-        dict: A dictionary containing user data, or None if the user does not exist.
     """
     if not user_id:
         return None
@@ -461,7 +454,6 @@ def get_user_info(user_id):
     user_data = user_doc.to_dict()
     user_data['id'] = user_doc.id
 
-    # 1. Calculate and attach the user's average rating and total review count
     reviews_query = db.collection('reviews').where('reviewee_id', '==', user_id).stream()
     total_rating = 0
     review_count = 0
@@ -473,12 +465,15 @@ def get_user_info(user_id):
     user_data['rating'] = total_rating / review_count if review_count > 0 else 0.0
     user_data['review_count'] = review_count
 
-    # 2. Add advert count
     adverts_count_query = db.collection('adverts').where('user_id', '==', user_id).stream()
     adverts_count = sum(1 for _ in adverts_count_query)
     user_data['adverts_count'] = adverts_count
 
     return user_data
+
+
+
+
 
 
 
@@ -1196,58 +1191,63 @@ def add_category():
 
 
 
+
+
+# Updated and Corrected Route
 @app.route('/')
 def home():
     """
-    Renders the homepage, fetches data, generates signed URLs for images,
-    and sorts adverts based on new priority rules.
+    Renders the homepage, fetching and sorting adverts based on a new
+    location-aware, user-preference-driven, and visibility-prioritized system.
     """
     try:
-        # Pass the global NIGERIAN_STATES and NIGERIAN_SCHOOLS to the template
+        # Get user IP for location data
+        user_ip = request.environ.get('REMOTE_ADDR', '127.0.0.1')
+        user_geo_info = geoip.get_geo_info(user_ip)
+        user_city = user_geo_info.get('city')
+        user_ip_state = user_geo_info.get('region') # Using 'region' as a common key for state/province
+
         locations_data = {
             'NIGERIAN_STATES': NIGERIAN_STATES,
             'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
         }
 
+        # Fetch Categories
         categories_ref = db.collection('categories').stream()
         categories_data = []
         for doc in categories_ref:
             category = doc.to_dict()
             category['id'] = doc.id
-            
-            # Fetch the filename from Firestore, which was saved during upload
             image_filename = category.get('image_filename')
             image_url = 'https://placehold.co/100x100/e0e0e0/777777?text=No+Image'
             
             if image_filename:
-                # Construct the blob path using the saved filename
                 blob_path = f"static/category/{image_filename}"
                 blob = bucket.blob(blob_path)
-                
                 if blob.exists():
                     image_url = blob.generate_signed_url(timedelta(minutes=15), method='GET')
             
             category['image_url'] = image_url
             categories_data.append(category)
 
-        # --- Adverts Logic ---
-        user_id = session.get('user_id')
-        view_following_priority = False
-        followed_user_ids = []
-
+        # Adverts Logic
+        user_id = session.get('user')
+        user_preferences = {'preferred_categories': [], 'state': None, 'school': None}
         if user_id:
-            user_settings = get_user_info(user_id)
-            if user_settings and user_settings.get('view_following_users_advert_first'):
-                view_following_priority = True
-                followed_user_ids = get_followers_of_user(user_id)
-
-        # Get the visibility order from SUBSCRIPTION_PLANS
-        # The visibility_order dictionary needs to include all plans, so it should be built from ADVERT_PLANS
+            user_doc = get_user_info(user_id)
+            if user_doc:
+                user_preferences['state'] = user_doc.get('state')
+                user_preferences['school'] = user_doc.get('school')
+                user_preferences['preferred_categories'] = user_doc.get('preferred_categories', [])
+                
+        # Define visibility hierarchy with a numerical ranking
         visibility_order = {
-            plan['visibility_level']: i
-            for i, plan in enumerate(SUBSCRIPTION_PLANS.values())
+            'Admin': 0,
+            'Featured': 1,
+            'Premium': 2,
+            'Standard': 3,
         }
-
+        
         adverts_ref = db.collection('adverts').where('status', '==', 'published').stream()
         all_published_adverts = []
         now = datetime.now(timezone.utc)
@@ -1259,8 +1259,6 @@ def home():
             published_at = advert_data.get('published_at')
             duration_days = advert_data.get('advert_duration_days', 0)
             
-            # CRITICAL FIX: Check for advert expiration using published_at and duration
-            # Ensure published_at is a timezone-aware datetime object
             if published_at:
                 if not isinstance(published_at, datetime):
                     published_at = published_at.to_datetime().astimezone(timezone.utc)
@@ -1268,18 +1266,16 @@ def home():
                 expiration_date = published_at + timedelta(days=duration_days)
                 
                 if expiration_date > now:
-                    # Fetch poster user data
                     poster_user_ref = db.collection('users').document(advert_data['user_id'])
                     poster_user_doc = poster_user_ref.get()
                     if poster_user_doc.exists:
                         poster_user_data = poster_user_doc.to_dict()
                         advert_data['poster_username'] = poster_user_data.get('username')
-                        advert_data['poster_role'] = poster_user_data.get('role')
+                        advert_data['poster_role'] = poster_user_data.get('role', 'standard')
                     else:
                         advert_data['poster_username'] = 'Unknown'
                         advert_data['poster_role'] = 'standard'
                     
-                    # Correctly fetch the image URL from the 'main_image' key
                     main_image_url = advert_data.get('main_image')
                     if main_image_url:
                         advert_data['display_image'] = main_image_url
@@ -1290,25 +1286,44 @@ def home():
 
         # Separate admin/featured ads and general ads
         admin_ads_for_display = sorted([
-            ad for ad in all_published_adverts if ad.get('featured') or ad.get('poster_role') == 'admin'
+            ad for ad in all_published_adverts if ad.get('poster_role') == 'admin' or ad.get('featured')
         ], key=lambda ad: visibility_order.get(ad.get('visibility_level', 'Standard'), 99))
         
-        # Sort remaining adverts based on visibility and followed users
         regular_adverts = [
-            ad for ad in all_published_adverts if not ad.get('featured') and ad.get('poster_role') != 'admin'
+            ad for ad in all_published_adverts if not (ad.get('poster_role') == 'admin' or ad.get('featured'))
         ]
 
-        def sort_trending_ads(ad):
-            is_followed = 0 if view_following_priority and ad.get('user_id') in followed_user_ids else 1
-            visibility_rank = visibility_order.get(ad.get('visibility_level', 'Standard'), 99)
-            created_at_ts = ad.get('created_at', datetime.min).timestamp()
-            return (is_followed, visibility_rank, -created_at_ts)
+        def sort_relevance_score(ad):
+            score = 0
+            # Prioritize by user's IP location
+            advert_location = ad.get('location', '').lower()
+            if user_city and user_city.lower() in advert_location:
+                score += 500
+            
+            # Prioritize by user's saved state/school from their profile
+            if user_preferences['state'] and user_preferences['state'].lower() == ad.get('state', '').lower():
+                score += 300
+            if user_preferences['school'] and user_preferences['school'].lower() == ad.get('school', '').lower():
+                score += 200
 
-        adverts = sorted(regular_adverts, key=sort_trending_ads)
+            # Prioritize by user's preferred categories
+            if ad.get('category') in user_preferences['preferred_categories']:
+                score += 100
+            
+            # Add time decay (newer posts get a higher score)
+            published_at = ad.get('published_at', datetime.min)
+            time_decay_factor = (now - published_at).total_seconds() / 3600 # Score reduces by 1 for each hour
+            score -= time_decay_factor
+            
+            return score
+
+        # Sort all regular adverts by relevance score
+        sorted_by_relevance = sorted(regular_adverts, key=sort_relevance_score, reverse=True)
         
-        # Merge the lists, giving admin ads top priority
-        final_adverts_list = admin_ads_for_display + adverts
-        
+        # Merge the lists, giving admin/featured ads top priority and using visibility level for the final sort
+        final_adverts_list = sorted(admin_ads_for_display + sorted_by_relevance, 
+                                    key=lambda ad: visibility_order.get(ad.get('visibility_level', 'Standard'), 99))
+
         return render_template('home.html',
                                locations=locations_data,
                                categories=categories_data,
@@ -1321,6 +1336,13 @@ def home():
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', adverts=[], categories=[], locations=[])
+
+
+
+
+
+
+
 
 
 
@@ -4609,6 +4631,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
