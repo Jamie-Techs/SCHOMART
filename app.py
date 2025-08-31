@@ -1397,8 +1397,8 @@ FREE_ADVERT_PLAN = {
 
 # Referral plans
 REFERRAL_PLANS = {
-    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
-    10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
+    {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
 }
 
 
@@ -4450,6 +4450,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
