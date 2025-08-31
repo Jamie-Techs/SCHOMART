@@ -3833,19 +3833,6 @@ def api_calculate_cgpa():
 
 
 
-def get_profile_picture_url(user_id):
-    """Generates a signed URL for a user's profile picture or returns a default URL."""
-    try:
-        profile_blob = bucket.blob(f"users/{user_id}/profile.jpg")
-        if profile_blob.exists:
-            return profile_blob.generate_signed_url(timedelta(minutes=15), method='GET')
-        else:
-            # Fallback to a default image if no custom profile picture exists
-            return url_for('static', filename='images/default_profile.png')
-    except Exception as e:
-        logging.error(f"Failed to generate profile pic URL for user {user_id}: {e}")
-        return url_for('static', filename='images/default_profile.png')
-
 
 @app.route('/leaderboard')
 def leaderboard():
@@ -4414,6 +4401,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
