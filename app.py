@@ -1823,9 +1823,7 @@ def get_user_advert_options(user_id):
 
 
 
-
-
-# Updated sell function with new validation logic
+# Updated sell function with corrected referral benefit logic
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1859,25 +1857,24 @@ def sell(advert_id=None):
         form_data = request.form.to_dict()
         files = request.files
         
-        # New validation logic for state and school
         errors = []
         
-        # Check if state is in the official list
+        submitted_category = form_data.get('category')
+        all_categories = get_all_categories()
+        category_names = [cat.get('name') for cat in all_categories]
+        if submitted_category and submitted_category not in category_names:
+            errors.append("Please choose a valid Category from the suggested list.")
+        
         submitted_state = form_data.get('state')
         if submitted_state and submitted_state not in NIGERIAN_STATES:
             errors.append("Please choose a valid State from the suggested list.")
 
-        # Check if school is in the official list for the selected state
         submitted_school = form_data.get('school')
         if submitted_state and submitted_school:
             schools_in_state = [school['name'] for school in NIGERIAN_SCHOOLS.get(submitted_state, [])]
             if submitted_school not in schools_in_state:
                 errors.append("Please choose a valid School from the suggested list.")
-        
-        # Existing call to your validation function (assuming it exists)
-        # Note: If validate_sell_form already handles these, you can merge this logic.
-        # Otherwise, this is where you'd add them.
-        
+                
         selected_option_key = form_data.get("posting_option")
         selected_option = None
 
@@ -1889,11 +1886,17 @@ def sell(advert_id=None):
             try:
                 cost = int(selected_option_key.split('_')[1])
                 selected_option = REFERRAL_PLANS.get(cost)
+                
+                # Check eligibility for referral benefit here
+                user_referral_count = get_user_referral_count(user_id)
+                if user_referral_count < cost or user_data.get(f"used_referral_{cost}_benefit", False):
+                    # If user is not eligible or has already used this benefit, set selected_option to None
+                    selected_option = None
             except (ValueError, IndexError):
                 pass
         
         if not selected_option:
-            errors.append("Invalid advert plan selected. Please choose a valid plan.")
+            errors.append("Invalid advert plan selected or you are not eligible for this plan.")
 
         if errors:
             for error_msg in errors:
@@ -1983,6 +1986,10 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+                
+
+
+
 
 
 
@@ -4566,6 +4573,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
