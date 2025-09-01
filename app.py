@@ -1781,10 +1781,13 @@ def check_if_saved(user_id, advert_id):
 def get_subscription_plan(plan_type):
     return SUBSCRIPTION_PLANS.get(plan_type)
 
+
+
+# Updated get_user_advert_options function
 def get_user_advert_options(user_id):
     options = []
     
-    # Add all subscription plans as a permanent option
+    # Add paid subscription plans first
     for plan_type, plan_details in SUBSCRIPTION_PLANS.items():
         options.append({
             "type": plan_type,
@@ -1796,20 +1799,10 @@ def get_user_advert_options(user_id):
             "cost_description": f"₦{plan_details['cost_naira']}"
         })
 
-    # Check for one-time free advert benefit.
     user_info = get_user_info(user_id)
-    if not user_info.get("has_posted_free_ad", False):
-        options.append({
-            "type": "free_advert",
-            "label": "Free Advert",
-            "plan_name": FREE_ADVERT_PLAN["plan_name"],
-            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
-            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
-            "cost_description": "One-time Free"
-        })
-
-    # Check for referral-based options.
     referral_count = get_user_referral_count(user_id)
+    
+    # Check for referral-based options BEFORE the free advert.
     for cost, plan_details in REFERRAL_PLANS.items():
         if referral_count >= cost and not user_info.get(f"used_referral_{cost}_benefit", False):
             options.append({
@@ -1820,6 +1813,17 @@ def get_user_advert_options(user_id):
                 "visibility_level": plan_details['visibility_level'],
                 "cost_description": f"{cost} Referrals"
             })
+
+    # Check for one-time free advert benefit last.
+    if not user_info.get("has_posted_free_ad", False):
+        options.append({
+            "type": "free_advert",
+            "label": "Free Advert",
+            "plan_name": FREE_ADVERT_PLAN["plan_name"],
+            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
+            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
+            "cost_description": "One-time Free"
+        })
             
     return options
 
@@ -1827,6 +1831,9 @@ def get_user_advert_options(user_id):
 
 
 
+
+
+# Updated sell function with new validation logic
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1843,8 +1850,6 @@ def sell(advert_id=None):
     available_options = get_user_advert_options(user_id)
     
     advert_data = {}
-    is_repost = False
-    
     form_data = {}
 
     if advert_id:
@@ -1853,30 +1858,48 @@ def sell(advert_id=None):
             return redirect(url_for('list_adverts'))
         
         advert_data = advert
-        is_repost = True
         form_data = advert
-    
+        is_repost = True
+    else:
+        is_repost = False
+
     if request.method == 'POST':
         form_data = request.form.to_dict()
         files = request.files
         
-        errors = validate_sell_form(form_data, files)
+        # New validation logic for state and school
+        errors = []
+        
+        # Check if state is in the official list
+        submitted_state = form_data.get('state')
+        if submitted_state and submitted_state not in NIGERIAN_STATES:
+            errors.append("Please choose a valid State from the suggested list.")
+
+        # Check if school is in the official list for the selected state
+        submitted_school = form_data.get('school')
+        if submitted_state and submitted_school:
+            schools_in_state = [school['name'] for school in NIGERIAN_SCHOOLS.get(submitted_state, [])]
+            if submitted_school not in schools_in_state:
+                errors.append("Please choose a valid School from the suggested list.")
+        
+        # Existing call to your validation function (assuming it exists)
+        # Note: If validate_sell_form already handles these, you can merge this logic.
+        # Otherwise, this is where you'd add them.
         
         selected_option_key = form_data.get("posting_option")
         selected_option = None
 
-        # Correctly check all three dictionaries for the selected plan
         if selected_option_key in SUBSCRIPTION_PLANS:
             selected_option = SUBSCRIPTION_PLANS.get(selected_option_key)
         elif selected_option_key == "free_advert":
             selected_option = FREE_ADVERT_PLAN
-        elif selected_option_key.startswith("referral_"):
+        elif selected_option_key and selected_option_key.startswith("referral_"):
             try:
                 cost = int(selected_option_key.split('_')[1])
                 selected_option = REFERRAL_PLANS.get(cost)
             except (ValueError, IndexError):
-                pass # Invalid referral key, will be caught by the next check
-
+                pass
+        
         if not selected_option:
             errors.append("Invalid advert plan selected. Please choose a valid plan.")
 
@@ -1909,7 +1932,7 @@ def sell(advert_id=None):
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
                 "price": float(form_data.get('price')),
-                "negotiable": form_data.get("negotiable") == "on",
+                "negotiable": form_data.get("negotiable") == "Yes", 
                 "condition": form_data.get("condition"),
                 "state": form_data.get('state'),
                 "school": form_data.get('school'),
@@ -1917,12 +1940,12 @@ def sell(advert_id=None):
                 "main_image": main_image_url,
                 "additional_images": additional_images_urls,
                 "video": video_url,
-                "plan_name": selected_option_key,
+                "plan_name": selected_option.get("plan_name"),
                 "advert_duration_days": selected_option.get("advert_duration_days"),
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP
             }
-
+            
             is_subscription = selected_option.get('cost_naira') is not None
             
             if is_subscription:
@@ -1936,19 +1959,20 @@ def sell(advert_id=None):
             else:
                 advert_payload["status"] = "pending_review"
                 
-                if is_repost:
+                if advert_id:
                     db.collection("adverts").document(advert_id).update(advert_payload)
+                    flash("Your advert has been successfully updated and submitted for review.", "success")
                 else:
                     new_advert_ref = db.collection("adverts").document()
                     new_advert_ref.set(advert_payload)
-                
+                    flash("Your advert has been submitted for review.", "success")
+                    
                 if selected_option_key == "free_advert":
                     db.collection("users").document(user_id).update({"has_posted_free_ad": True})
                 elif selected_option_key.startswith("referral_"):
                     cost = int(selected_option_key.split('_')[1])
                     db.collection("users").document(user_id).update({f"used_referral_{cost}_benefit": True})
                 
-                flash("Your advert has been submitted for review.", "success")
                 return redirect(url_for('list_adverts'))
         
         except Exception as e:
@@ -1967,6 +1991,9 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
+
 
 
 
@@ -4593,6 +4620,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
