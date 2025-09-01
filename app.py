@@ -2322,8 +2322,6 @@ def admin_advert_approve():
 
 
 
-
-
 @app.route('/admin/adverts/reject', methods=['POST'])
 @login_required
 @admin_required
@@ -2357,15 +2355,15 @@ def admin_advert_reject():
             'is_published': False
         })
         
-        # Subtraction for the advertiser's referral count
+        # Increment for the advertiser's referral count, effectively returning their point
         if user_id:
             user_ref = db.collection("users").document(user_id)
-            user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
+            user_ref.update({'referral_count': firestore.firestore.Increment(1)})
 
-        # Increment for the referrer's referral count
+        # Subtraction for the referrer's referral count, removing the point they earned
         if referred_by_id:
             referrer_ref = db.collection("users").document(referred_by_id)
-            referrer_ref.update({'referral_count': firestore.firestore.Increment(1)})
+            referrer_ref.update({'referral_count': firestore.firestore.Increment(-1)})
 
     return redirect(url_for('admin_advert_review'))
 
@@ -2386,6 +2384,16 @@ def delete_image_from_storage(image_url):
         print(f"Image deleted successfully: {file_path}")
     except Exception as e:
         print(f"Error deleting image: {e}")
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4617,6 +4625,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
