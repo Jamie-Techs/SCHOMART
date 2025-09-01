@@ -2345,28 +2345,31 @@ def admin_advert_review():
     return render_template('admin_review.html', adverts=pending_adverts)
 
 
-
-
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
 def admin_advert_approve():
     """
     Handles the approval of an advert.
-    Decrements the user's referral count if they have enough to post the advert.
+    Decrements the user's referral count only if the advert plan is 'referral_benefits'.
     """
     advert_id = request.form.get('advert_id')
     if not advert_id:
+        flash("Advert ID not found.", 'error')
         return redirect(url_for('admin_advert_review'))
 
     advert_ref = db.collection("adverts").document(advert_id)
     advert_doc = advert_ref.get()
 
     if not advert_doc.exists:
+        flash("Advert not found.", 'error')
         return redirect(url_for('admin_advert_review'))
 
     advert_data = advert_doc.to_dict()
     user_id = advert_data.get('user_id')
+    
+    # Get the plan_name from the advert data
+    plan_name = advert_data.get('plan_name')
 
     if not user_id:
         flash("User ID not found for this advert.", 'error')
@@ -2376,27 +2379,35 @@ def admin_advert_approve():
     user_doc = user_ref.get()
 
     if user_doc.exists:
-        user_data = user_doc.to_dict()
-        current_referral_count = user_data.get('referral_count', 0)
+        # Update the advert's status and publication date regardless of the plan
+        advert_ref.update({
+            'status': 'published',
+            'published_at': firestore.SERVER_TIMESTAMP,
+            'is_published': True
+        })
 
-        # Check if the user has a positive referral count
-        if current_referral_count > 0:
-            # Atomically decrement the referral count
-            user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
+        # Check if the advert was submitted using referral benefits
+        if plan_name == 'referral_benefits':
+            user_data = user_doc.to_dict()
+            current_referral_count = user_data.get('referral_count', 0)
 
-            # Update the advert's status and publication date
-            advert_ref.update({
-                'status': 'published',
-                'published_at': firestore.SERVER_TIMESTAMP,
-                'is_published': True
-            })
-            flash("Advert approved and published successfully.", 'success')
+            # Check if the user has a positive referral count
+            if current_referral_count > 0:
+                # Atomically decrement the referral count
+                user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
+                flash("Advert approved and published successfully. Referral count decremented.", 'success')
+            else:
+                # This case should ideally not happen if client-side validation is correct, but it's a good fallback
+                flash("User does not have enough referral points. Advert published but referral count not decremented.", 'warning')
         else:
-            flash("User does not have enough referral points to publish this advert.", 'error')
+            # For paid or one-time free plans, just publish without decrementing the referral count
+            flash("Advert approved and published successfully.", 'success')
+
     else:
         flash("User not found.", 'error')
 
     return redirect(url_for('admin_advert_review'))
+
 
 
 
@@ -4678,6 +4689,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
