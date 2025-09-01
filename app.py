@@ -1653,10 +1653,11 @@ def upload_file_to_firebase(file, folder):
 
 
 
-                      
+
+
 def handle_file_uploads(files, user_id, advert_data):
     """
-    Handles file uploads for a new or existing advert.
+    Handles file uploads for a new or existing advert with a focus on stability.
 
     Args:
         files: The Werkzeug FileStorage dictionary from request.files.
@@ -1666,45 +1667,55 @@ def handle_file_uploads(files, user_id, advert_data):
     Returns:
         A tuple containing (main_image_url, additional_images_urls, video_url)
     """
-    main_image_url = None
-    additional_images_urls = []
-    video_url = None
+    main_image_url = advert_data.get('main_image') # Default to existing image
+    additional_images_urls = advert_data.get('additional_images', []) # Default to existing
+    video_url = advert_data.get('video') # Default to existing
 
     # Handle Main Image Upload
     main_image_file = files.get('main_image')
-    if main_image_file and main_image_file.filename != '':
-        main_image_url = upload_file_to_firebase(main_image_file, f"adverts/{user_id}/images")
-        if not main_image_url:
+    if isinstance(main_image_file, FileStorage) and main_image_file.filename:
+        try:
+            url = upload_file_to_firebase(main_image_file, f"adverts/{user_id}/images")
+            if url:
+                main_image_url = url
+            else:
+                raise Exception("Main image upload failed.")
+        except Exception as e:
+            logging.error(f"Error uploading main image: {e}")
             raise Exception("Main image upload failed.")
-    elif 'main_image' in advert_data:
-        # If no new main image is uploaded, keep the existing one from advert_data
-        main_image_url = advert_data.get('main_image')
 
     # Handle Additional Images Uploads
+    new_additional_images = []
     additional_images_files = files.getlist('additional_images')
     if additional_images_files:
         for file in additional_images_files:
-            if file and file.filename != '':
-                url = upload_file_to_firebase(file, f"adverts/{user_id}/images")
-                if url:
-                    additional_images_urls.append(url)
-    # If editing, you might want to merge with existing additional images
-    # For a simple approach, we'll just use the newly uploaded ones.
-    # To keep existing images, you'd need a more complex form that sends their URLs back.
-
+            if isinstance(file, FileStorage) and file.filename:
+                try:
+                    url = upload_file_to_firebase(file, f"adverts/{user_id}/images")
+                    if url:
+                        new_additional_images.append(url)
+                except Exception as e:
+                    logging.error(f"Error uploading additional image: {e}")
+    
+    # Merge new and existing images
+    if new_additional_images:
+        additional_images_urls = new_additional_images
+        
     # Handle Video Upload
     video_file = files.get('video')
-    if video_file and video_file.filename != '':
-        video_url = upload_file_to_firebase(video_file, f"adverts/{user_id}/videos")
-        if not video_url:
+    if isinstance(video_file, FileStorage) and video_file.filename:
+        try:
+            url = upload_file_to_firebase(video_file, f"adverts/{user_id}/videos")
+            if url:
+                video_url = url
+            else:
+                raise Exception("Video upload failed.")
+        except Exception as e:
+            logging.error(f"Error uploading video: {e}")
             raise Exception("Video upload failed.")
-    elif 'video' in advert_data:
-        # If no new video, keep the existing one
-        video_url = advert_data.get('video')
-
+    
     return main_image_url, additional_images_urls, video_url
-
-
+                      
 
 
 
@@ -4670,6 +4681,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
