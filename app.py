@@ -3668,28 +3668,6 @@ def get_media_type_from_extension(filename):
         # Returns None for any file type that is not an image or video
         return None
 
-# Your existing upload_file_to_firebase function
-def upload_file_to_firebase(file, folder):
-    """
-    Uploads a file to Firebase Storage.
-    Returns the public URL of the uploaded file on success, None otherwise.
-    """
-    if not file or not file.filename:
-        return None
-
-    filename = secure_filename(file.filename)
-    extension = os.path.splitext(filename)[1]
-    unique_filename = f"{uuid.uuid4()}{extension}"
-    destination_path = f"{folder}/{unique_filename}"
-
-    try:
-        blob = bucket.blob(destination_path)
-        blob.upload_from_file(file, content_type=file.content_type)
-        blob.make_public()
-        return blob.public_url
-    except Exception as e:
-        logging.error(f"Failed to upload file to Firebase Storage: {e}")
-        return None
 
 # The fully updated route
 @app.route("/admin/create_post", methods=["GET", "POST"])
@@ -4692,6 +4670,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
