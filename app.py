@@ -2299,6 +2299,128 @@ def admin_advert_review():
 def admin_advert_approve():
     """
     Handles the approval of an advert.
+    Decrements the user's referral count if they have enough to post the advert.
+    """
+    advert_id = request.form.get('advert_id')
+    if not advert_id:
+        return redirect(url_for('admin_advert_review'))
+
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists:
+        return redirect(url_for('admin_advert_review'))
+
+    advert_data = advert_doc.to_dict()
+    user_id = advert_data.get('user_id')
+
+    if not user_id:
+        flash("User ID not found for this advert.", 'error')
+        return redirect(url_for('admin_advert_review'))
+
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        current_referral_count = user_data.get('referral_count', 0)
+
+        # Check if the user has a positive referral count
+        if current_referral_count > 0:
+            # Atomically decrement the referral count
+            user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
+
+            # Update the advert's status and publication date
+            advert_ref.update({
+                'status': 'published',
+                'published_at': firestore.SERVER_TIMESTAMP,
+                'is_published': True
+            })
+            flash("Advert approved and published successfully.", 'success')
+        else:
+            flash("User does not have enough referral points to publish this advert.", 'error')
+    else:
+        flash("User not found.", 'error')
+
+    return redirect(url_for('admin_advert_review'))
+
+
+
+
+
+
+@app.route('/admin/adverts/reject', methods=['POST'])
+@login_required
+@admin_required
+def admin_advert_reject():
+    """
+    Handles the rejection of an advert, deletes its associated files (main image, videos,
+    and additional images), and updates the advert's status.
+    """
+    advert_id = request.form.get('advert_id')
+    rejection_reason = request.form.get('rejection_reason', 'No reason provided.')
+
+    if not advert_id:
+        return redirect(url_for('admin_advert_review'))
+
+    advert_ref = db.collection("adverts").document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if advert_doc.exists:
+        advert_data = advert_doc.to_dict()
+        main_image_url = advert_data.get('image_url')
+        video_url = advert_data.get('video_url')
+        additional_images = advert_data.get('additional_images', [])
+
+        # Delete the main image
+        if main_image_url:
+            delete_file_from_storage(main_image_url)
+
+        # Delete the video
+        if video_url:
+            delete_file_from_storage(video_url)
+        
+        # Delete any additional images in the list
+        for img_url in additional_images:
+            delete_file_from_storage(img_url)
+
+        # Update the advert's status in Firestore
+        advert_ref.update({
+            'status': 'rejected',
+            'rejection_reason': rejection_reason,
+            'is_published': False
+        })
+        
+    return redirect(url_for('admin_advert_review'))
+
+def delete_file_from_storage(file_url):
+    """
+    Deletes a file from Firebase Storage using its download URL.
+    This function is reusable for images, videos, and any other file types.
+    """
+    try:
+        # Extract the file path from the full download URL
+        image_path = file_url.split('/o/')[1].split('?')[0]
+        
+        # Unquote the URL-encoded path to get the actual file path
+        file_path = urllib.parse.unquote(image_path)
+        
+        # Get the blob and delete it
+        blob = bucket.blob(file_path)
+        blob.delete()
+        print(f"File deleted successfully: {file_path}")
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+
+
+
+
+@app.route('/admin/adverts/approve', methods=['POST'])
+@login_required
+@admin_required
+def admin_advert_approve():
+    """
+    Handles the approval of an advert.
 
     Updates the advert's status to 'published' and sets the
     publication date.
@@ -4625,6 +4747,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
