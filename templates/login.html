@@ -22,6 +22,45 @@
         }
         .btn-primary:hover { background-color: #025730; }
         .input-group input { padding-left: 2.5rem; }
+        
+        /* Styles to ensure input visibility and use Font Awesome */
+        input[type="email"],
+        input[type="password"] {
+            border-color: #006B3C;
+            border-width: 2px;
+            background-color: #f9fffb;
+            color: #000;
+            font-weight: 500;
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #888;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.4);
+        }
+        
+        .fa-solid {
+            color: #006B3C;
+        }
+
+        #login-form .input-group .relative {
+            position: relative;
+        }
+
+        #login-form .input-group .absolute {
+            position: absolute;
+            left: 0.75rem; /* Adjust padding for icon */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #login-form .input-group input {
+            padding-left: 3rem; /* Increase padding for icon */
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
