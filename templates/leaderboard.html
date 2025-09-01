@@ -48,8 +48,10 @@
             display: flex;
             flex-direction: column;
             gap: 30px;
+            /* Add padding to the bottom to prevent content from being hidden behind the floating card */
+            padding-bottom: 120px; 
         }
-
+        
         /* Page Header Section */
         .page-header {
             display: flex;
@@ -197,6 +199,25 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.1);
             transform: translateY(-3px);
             border-color: var(--secondary-color);
+        }
+        
+        /* New styles for the floating user card */
+        .user-card.floating {
+            position: fixed; /* Make the element float */
+            bottom: 20px; /* Position it at the bottom */
+            left: 50%; /* Center it horizontally */
+            transform: translateX(-50%); /* Adjust for perfect centering */
+            z-index: 100; /* Ensure it's on top of other content */
+            width: calc(100% - 40px); /* Fill the width, minus the padding */
+            max-width: 860px; /* Match the container's max-width minus its padding */
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1); /* Add a subtle shadow to separate it from the content */
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            background-color: var(--card-background);
+            border: 2px solid var(--secondary-color); /* Highlight the floating card */
+            border-bottom: none; /* Remove bottom border */
         }
 
         .serial-number {
@@ -468,6 +489,9 @@
             .benefits-list li {
                 padding: 12px 20px;
             }
+            .user-card.floating {
+                width: calc(100% - 30px); /* Adjust width for mobile padding */
+            }
         }
 
         @media (max-width: 480px) {
@@ -515,6 +539,9 @@
             .benefits-list li {
                 padding: 12px 20px;
             }
+            .user-card.floating {
+                width: calc(100% - 20px); /* Adjust width for smaller mobile padding */
+            }
         }
     </style>
 </head>
@@ -537,14 +564,16 @@
     <div id="leaderboard-tab" class="tab-content">
         <div class="leaderboard">
             {% for user in leaderboard %}
-            <div class="user-card">
-                <div class="serial-number">{{ loop.index }}</div>
-                <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
-                    <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
-                    <span class="username">{{ user.username }}</span>
-                </a>
-                <div class="referral-count">{{ user.referral_count }} Referrals <i class="fas fa-users"></i></div>
-            </div>
+                {% if user.id != current_user.id %}
+                    <div class="user-card">
+                        <div class="serial-number">{{ loop.index }}</div>
+                        <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
+                            <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                            <span class="username">{{ user.username }}</span>
+                        </a>
+                        <div class="referral-count">{{ user.referral_count }} Referrals <i class="fas fa-users"></i></div>
+                    </div>
+                {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -570,6 +599,8 @@
     </div>
 </div>
 
+<div id="floating-user-card-container"></div>
+
 <div id="notificationContainer"></div>
 
 <script>
@@ -591,7 +622,6 @@
     // Share referral link (Removed from the HTML but keeping the function in case it's used elsewhere)
     function shareLink() {
         const referralLinkInput = document.getElementById('referralLink');
-        // Create a temporary input element to hold the text
         const tempInput = document.createElement('textarea');
         tempInput.value = referralLinkInput.textContent;
         document.body.appendChild(tempInput);
@@ -609,7 +639,7 @@
         }
     }
 
-    // --- Custom Notification/Flash Message Display (replacing alert) ---
+    // Custom Notification/Flash Message Display (replacing alert)
     function showNotification(message, type, iconClass) {
         const container = document.getElementById('notificationContainer');
         if (!container) {
@@ -635,8 +665,76 @@
             notification.addEventListener('transitionend', () => notification.remove());
         }, 3000);
     }
+
+    // --- New JavaScript for the floating user card ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const floatingContainer = document.getElementById('floating-user-card-container');
+        const leaderboardList = document.querySelector('.leaderboard');
+        
+        // This is a placeholder for your logged-in user's data.
+        // In a real application, this data would be passed from your backend (e.g., Flask)
+        // alongside the leaderboard data. We'll simulate it here.
+        const loggedInUser = {
+            id: 1, // This is a placeholder ID. You should use a real user ID.
+            username: "Your Username",
+            profile_picture: "https://via.placeholder.com/55", // Placeholder image
+            referral_count: 7, // Placeholder referral count
+            rank: 12 // Placeholder rank. In a real app, this would be calculated on the server.
+        };
+
+        // You'll need to pass this data from your Flask route to the template.
+        // For example, in your Flask route:
+        // `return render_template('leaderboard.html', leaderboard=leaderboard_data, current_user=current_user)`
+        
+        // Find the logged-in user's card in the existing list
+        let userCardElement = null;
+        const allCards = Array.from(document.querySelectorAll('.user-card'));
+        // Find the user's card based on some unique identifier. 
+        // We'll use a data attribute for this.
+        // You'll need to modify the server-side code to add `data-user-id` to the user-card div.
+        // Example: `<div class="user-card" data-user-id="{{ user.id }}">`
+        // We'll simulate finding the card here.
+        
+        // Simulate finding the card
+        const userInList = allCards.find(card => card.dataset.userId === String(loggedInUser.id));
+
+        if (userInList) {
+            userCardElement = userInList;
+        }
+
+        // Check if the user is in the top 3 (or any number you choose)
+        const isUserInTop = loggedInUser.rank <= 3; // Change '3' to your desired threshold
+
+        if (userCardElement && !isUserInTop) {
+            // Remove the user's card from the main list if they are not in the top
+            // This prevents duplication and makes the floating card the single representation
+            userCardElement.remove();
+
+            // Create a new card to float at the bottom
+            const floatingCard = document.createElement('div');
+            floatingCard.className = 'user-card floating';
+            
+            // Re-render the user's details inside the new floating card
+            floatingCard.innerHTML = `
+                <div class="serial-number">${loggedInUser.rank}</div>
+                <a href="{{ url_for('seller_profile_view', seller_id=current_user.id) }}" class="profile-link">
+                    <img src="${loggedInUser.profile_picture}" alt="${loggedInUser.username}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                    <span class="username">${loggedInUser.username}</span>
+                </a>
+                <div class="referral-count">${loggedInUser.referral_count} Referrals <i class="fas fa-users"></i></div>
+            `;
+            
+            // Append the floating card to its container
+            floatingContainer.appendChild(floatingCard);
+
+        } else if (userCardElement && isUserInTop) {
+            // If the user is in the top, highlight their card in the main list
+            userCardElement.style.border = '2px solid var(--primary-color)';
+            userCardElement.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+        }
+    });
+
 </script>
 
 </body>
 </html>
-
