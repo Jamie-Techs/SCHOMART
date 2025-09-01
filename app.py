@@ -1775,11 +1775,11 @@ def get_subscription_plan(plan_type):
 
 
 
-# Updated get_user_advert_options function
+# Updated get_user_advert_options function to check user's referral count
 def get_user_advert_options(user_id):
     options = []
     
-    # Add paid subscription plans first
+    # Add paid subscription plans
     for plan_type, plan_details in SUBSCRIPTION_PLANS.items():
         options.append({
             "type": plan_type,
@@ -1792,11 +1792,11 @@ def get_user_advert_options(user_id):
         })
 
     user_info = get_user_info(user_id)
-    referral_count = get_user_referral_count(user_id)
+    user_referral_count = user_info.get("referral_count", 0) # Assumes a new 'referral_count' field in user document
     
-    # Check for referral-based options BEFORE the free advert.
+    # Check for referral-based options and add them if user is eligible
     for cost, plan_details in REFERRAL_PLANS.items():
-        if referral_count >= cost and not user_info.get(f"used_referral_{cost}_benefit", False):
+        if user_referral_count >= cost:
             options.append({
                 "type": f"referral_{cost}",
                 "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
@@ -1806,7 +1806,7 @@ def get_user_advert_options(user_id):
                 "cost_description": f"{cost} Referrals"
             })
 
-    # Check for one-time free advert benefit last.
+    # Add one-time free advert option last, if not yet used
     if not user_info.get("has_posted_free_ad", False):
         options.append({
             "type": "free_advert",
@@ -1823,7 +1823,9 @@ def get_user_advert_options(user_id):
 
 
 
-# Updated sell function with corrected referral benefit logic
+
+
+# Updated sell function with new validation and referral logic
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -1877,6 +1879,7 @@ def sell(advert_id=None):
                 
         selected_option_key = form_data.get("posting_option")
         selected_option = None
+        referral_cost_to_deduct = None
 
         if selected_option_key in SUBSCRIPTION_PLANS:
             selected_option = SUBSCRIPTION_PLANS.get(selected_option_key)
@@ -1884,14 +1887,8 @@ def sell(advert_id=None):
             selected_option = FREE_ADVERT_PLAN
         elif selected_option_key and selected_option_key.startswith("referral_"):
             try:
-                cost = int(selected_option_key.split('_')[1])
-                selected_option = REFERRAL_PLANS.get(cost)
-                
-                # Check eligibility for referral benefit here
-                user_referral_count = get_user_referral_count(user_id)
-                if user_referral_count < cost or user_data.get(f"used_referral_{cost}_benefit", False):
-                    # If user is not eligible or has already used this benefit, set selected_option to None
-                    selected_option = None
+                referral_cost_to_deduct = int(selected_option_key.split('_')[1])
+                selected_option = REFERRAL_PLANS.get(referral_cost_to_deduct)
             except (ValueError, IndexError):
                 pass
         
@@ -1938,7 +1935,8 @@ def sell(advert_id=None):
                 "plan_name": selected_option.get("plan_name"),
                 "advert_duration_days": selected_option.get("advert_duration_days"),
                 "visibility_level": selected_option.get("visibility_level"),
-                "created_at": firestore.SERVER_TIMESTAMP
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "referral_cost": referral_cost_to_deduct,  # Save the cost to the advert doc
             }
             
             is_subscription = selected_option.get('cost_naira') is not None
@@ -1962,11 +1960,17 @@ def sell(advert_id=None):
                     new_advert_ref.set(advert_payload)
                     flash("Your advert has been submitted for review.", "success")
                     
-                if selected_option_key == "free_advert":
-                    db.collection("users").document(user_id).update({"has_posted_free_ad": True})
-                elif selected_option_key.startswith("referral_"):
+                # New Logic: Deduct points for referral-based posts
+                if selected_option_key.startswith("referral_"):
                     cost = int(selected_option_key.split('_')[1])
-                    db.collection("users").document(user_id).update({f"used_referral_{cost}_benefit": True})
+                    user_ref = db.collection("users").document(user_id)
+                    user_ref.update({
+                        "referral_count": firestore.Increment(-cost)
+                    })
+                # Old Logic: Flag one-time free advert as used
+                elif selected_option_key == "free_advert":
+                    db.collection("users").document(user_id).update({"has_posted_free_ad": True})
+
                 
                 return redirect(url_for('list_adverts'))
         
@@ -1986,7 +1990,8 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
-                
+
+
 
 
 
@@ -2316,15 +2321,15 @@ def admin_advert_approve():
     return redirect(url_for('admin_advert_review'))
 
 
+
+
+
 @app.route('/admin/adverts/reject', methods=['POST'])
 @login_required
 @admin_required
 def admin_advert_reject():
     """
-    Handles the rejection of an advert.
-
-    Updates the advert's status to 'rejected' and stores the reason
-    provided by the admin for the user to see.
+    Handles the rejection of an advert, deletes its image, and updates referral counts.
     """
     advert_id = request.form.get('advert_id')
     rejection_reason = request.form.get('rejection_reason', 'No reason provided.')
@@ -2336,13 +2341,52 @@ def admin_advert_reject():
     advert_doc = advert_ref.get()
 
     if advert_doc.exists:
+        advert_data = advert_doc.to_dict()
+        user_id = advert_data.get('user_id')
+        referred_by_id = advert_data.get('referred_by')
+        image_url = advert_data.get('image_url')
+
+        # Delete the image from Firebase Storage if a URL exists
+        if image_url:
+            delete_image_from_storage(image_url)
+
+        # Update the advert's status in Firestore
         advert_ref.update({
             'status': 'rejected',
             'rejection_reason': rejection_reason,
             'is_published': False
         })
+        
+        # Subtraction for the advertiser's referral count
+        if user_id:
+            user_ref = db.collection("users").document(user_id)
+            user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
+
+        # Increment for the referrer's referral count
+        if referred_by_id:
+            referrer_ref = db.collection("users").document(referred_by_id)
+            referrer_ref.update({'referral_count': firestore.firestore.Increment(1)})
 
     return redirect(url_for('admin_advert_review'))
+
+def delete_image_from_storage(image_url):
+    """
+    Deletes an image from Firebase Storage using its download URL.
+    """
+    try:
+        # Extract the image path from the full download URL
+        image_path = image_url.split('/o/')[1].split('?')[0]
+        
+        # Unquote the URL-encoded path to get the actual file path
+        file_path = urllib.parse.unquote(image_path)
+        
+        # Get the blob and delete it
+        blob = bucket.blob(file_path)
+        blob.delete()
+        print(f"Image deleted successfully: {file_path}")
+    except Exception as e:
+        print(f"Error deleting image: {e}")
+
 
 
 
@@ -4573,6 +4617,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
