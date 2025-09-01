@@ -4,18 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Post Ad - Schomart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        /* Modernized and consistent styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f4f7f9;
-            margin: 0;
-            padding: 20px;
-            color: #333;
+            background-color: #f0fdf4;
         }
+        .bg-primary { background-color: #006B3C; }
+        .text-primary { color: #006B3C; }
+        .btn-primary {
+            background-color: #006B3C;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover { background-color: #025730; }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -48,18 +55,22 @@
             width: 100%;
             padding: 0.75rem;
             border-radius: 0.5rem;
-            border: 1px solid #e2e8f0;
+            border: 2px solid #006B3C;
             box-sizing: border-box;
             transition: border-color 0.2s ease-in-out;
             font-size: 1em;
-        }
-        input[type="file"] {
-            padding: 0.5rem;
+            background-color: #f9fffb;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #38a169;
-            box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.1);
+            border-color: #006B3C;
+            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.4);
+        }
+        input[type="file"] {
+            border: none;
+        }
+        input[type="file"]:focus {
+            box-shadow: none;
         }
         .required {
             color: red;
@@ -75,7 +86,7 @@
         button[type="submit"] {
             width: 100%;
             padding: 1rem;
-            background-color: #48bb78;
+            background-color: #006B3C;
             color: white;
             font-size: 1rem;
             font-weight: 700;
@@ -85,7 +96,7 @@
             transition: background-color 0.2s ease-in-out;
         }
         button[type="submit"]:hover {
-            background-color: #38a169;
+            background-color: #025730;
         }
         .form-check {
             margin-bottom: 0.5rem;
@@ -148,7 +159,7 @@
         .alert.success-message { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
         .alert.warning-message { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
         .is-invalid {
-            border-color: #dc3545;
+            border-color: #dc3545 !important;
         }
         .invalid-feedback {
             color: #dc3545;
@@ -164,6 +175,41 @@
             color: #006B3C;
             text-decoration: none;
         }
+        /* Style for the dropdown container and list */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+        }
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #006B3C;
+            border-top: none;
+            z-index: 99;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0 0 0.5rem 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .autocomplete-list-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .autocomplete-list-item:hover, .autocomplete-list-item.selected {
+            background-color: #e9f7ef;
+        }
+        
+        /* Make description font size the same as title font size */
+        #description {
+            font-size: 1em;
+        }
     </style>
 </head>
 <body>
@@ -173,7 +219,7 @@
         </a>
         
         <h2><i class="fas fa-bullhorn"></i> Post Your Advert</h2>
-        {# Flash Messages #}
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <ul class="flashes">
@@ -190,15 +236,14 @@
                 </ul>
             {% endif %}
         {% endwith %}
-        {# End Flash Messages #}
-        {# Always visible options for subscriptions and referrals (Moved to top) #}
+        
         <div class="advert-options-info">
             <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
             <p>Looking for more advert slots, longer durations, or increased visibility?</p>
             <a href="{{ url_for('subscribe') }}"><i class="fas fa-crown"></i> Explore Subscription Plans</a>
             <a href="{{ url_for('referral_benefit') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
-        {# Main advert posting options and form - only display if options are available #}
+        
         {% if available_options %}
             <form id="post-advert-form" method="POST" action="{{ url_for('sell', advert_id=advert.id) if advert else url_for('sell') }}" enctype="multipart/form-data">
                 
@@ -231,21 +276,11 @@
                 {% endif %}
                 
                 <div class="form-group">
-                    <label for="category" class="form-label"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
-                    <input 
-                        type="text" 
-                        class="form-control" 
-                        id="category" 
-                        name="category" 
-                        list="category-list" 
-                        placeholder="Type or select a category..." 
-                        value="{{ form_data.category or advert_data.category_name or '' }}"
-                        required>
-                    <datalist id="category-list">
-                        {% for cat in categories %}
-                            <option value="{{ cat.name }}"></option>
-                        {% endfor %}
-                    </datalist>
+                    <label for="category_input"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
+                    <div class="autocomplete-container">
+                        <input type="text" class="form-control" id="category_input" name="category" placeholder="Type or select a category..." value="{{ form_data.category or advert_data.category_name or '' }}" required>
+                        <ul id="category-dropdown" class="autocomplete-list hidden"></ul>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -284,19 +319,19 @@
                 
                 <div class="form-group">
                     <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
-                    <input type="text" name="state" id="state_input" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
-                    <datalist id="state-list">
-                        {% for state in NIGERIAN_STATES %}
-                            <option value="{{ state }}">
-                        {% endfor %}
-                    </datalist>
+                    <div class="autocomplete-container">
+                        <input type="text" name="state" id="state_input" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required>
+                        <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="school_input"><i class="fas fa-university"></i> School<span class="required">*</span></label>
-                    <input type="text" name="school" id="school_input" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
-                    <span id="school_error" class="invalid-feedback"></span>
-                    <datalist id="school-list"></datalist>
+                    <div class="autocomplete-container">
+                        <input type="text" name="school" id="school_input" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required>
+                        <span id="school_error" class="invalid-feedback"></span>
+                        <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -335,7 +370,7 @@
                     {% endif %}
                 </div>
                 
-                <button type="submit"><i class="fas fa-paper-plane"></i> Submit Advert for review</button>
+                <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Submit Advert for review</button>
             </form>
         {% else %}
             <div class="warning-message alert">
@@ -347,15 +382,20 @@
     
     <script>
         const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
+        const CATEGORIES = [
+            {% for cat in categories %}"{{ cat.name }}",{% endfor %}
+        ];
+        const NIGERIAN_STATES = [
+            {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
+        ];
         const availableOptions = {{ available_options | tojson | safe }};
 
-        // Form field references
         const form = document.getElementById('post-advert-form');
         const postingOptionSelect = document.getElementById('posting_option');
+        const categoryInput = document.getElementById('category_input');
         const stateInput = document.getElementById('state_input');
         const schoolInput = document.getElementById('school_input');
         const locationInput = document.getElementById('location_input');
-        const schoolDatalist = document.getElementById('school-list');
         const schoolError = document.getElementById('school_error');
         const mainImageInput = document.getElementById('mainImage');
         const mainImageError = document.getElementById('main-image-error');
@@ -364,28 +404,126 @@
         const videoInput = document.getElementById('video');
         const videoError = document.getElementById('video-error');
 
-        // File size and type limits
         const MAX_IMAGE_SIZE_MB = 10;
         const MAX_VIDEO_SIZE_MB = 15;
         const MAX_ADDITIONAL_IMAGES = 3;
 
-        // Function to populate schools datalist based on selected state
-        function populateSchools(state) {
+        // Autocomplete/Dropdown logic for category, state, and school
+        function setupAutocomplete(inputElement, dataList, dropdownElement) {
+            function filterAndDisplay() {
+                const query = inputElement.value.toLowerCase();
+                dropdownElement.innerHTML = '';
+                if (!query) {
+                    dropdownElement.classList.add('hidden');
+                    return;
+                }
+                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+                if (filteredData.length > 0) {
+                    filteredData.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        li.className = 'autocomplete-list-item';
+                        li.addEventListener('click', () => {
+                            inputElement.value = item;
+                            dropdownElement.classList.add('hidden');
+                            inputElement.focus();
+                            // Trigger change event to update dependent fields
+                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                        dropdownElement.appendChild(li);
+                    });
+                    dropdownElement.classList.remove('hidden');
+                } else {
+                    dropdownElement.classList.add('hidden');
+                }
+            }
+
+            inputElement.addEventListener('input', filterAndDisplay);
+            inputElement.addEventListener('focus', filterAndDisplay);
+            inputElement.addEventListener('blur', () => {
+                // Delay hiding to allow click event on list item
+                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+            });
+        }
+        
+        setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
+        setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
+
+        // Logic for School dropdown, dependent on State
+        const schoolDropdown = document.getElementById('school-dropdown');
+        function populateSchoolsDropdown(state) {
             const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDatalist.innerHTML = '';
+            schoolDropdown.innerHTML = '';
             schools.forEach(school => {
-                const option = document.createElement('option');
-                option.value = school.name;
-                schoolDatalist.appendChild(option);
+                const li = document.createElement('li');
+                li.textContent = school.name;
+                li.className = 'autocomplete-list-item';
+                li.addEventListener('click', () => {
+                    schoolInput.value = school.name;
+                    schoolDropdown.classList.add('hidden');
+                    locationInput.disabled = false;
+                    locationInput.placeholder = 'e.g., Faculty of Engineering';
+                    schoolInput.focus();
+                });
+                schoolDropdown.appendChild(li);
             });
             schoolInput.disabled = false;
             schoolInput.placeholder = 'Select from the list or type...';
         }
+
+        stateInput.addEventListener('change', function() {
+            const state = this.value;
+            schoolInput.value = '';
+            locationInput.value = '';
+            locationInput.disabled = true;
+            populateSchoolsDropdown(state);
+        });
         
-        // Function to update the dynamic information box
+        schoolInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const state = stateInput.value;
+            const schools = NIGERIAN_SCHOOLS[state] || [];
+            schoolDropdown.innerHTML = '';
+            if (query && schools.length > 0) {
+                const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
+                if (filteredSchools.length > 0) {
+                    filteredSchools.forEach(school => {
+                        const li = document.createElement('li');
+                        li.textContent = school.name;
+                        li.className = 'autocomplete-list-item';
+                        li.addEventListener('click', () => {
+                            schoolInput.value = school.name;
+                            schoolDropdown.classList.add('hidden');
+                            locationInput.disabled = false;
+                            locationInput.placeholder = 'e.g., Faculty of Engineering';
+                            schoolInput.focus();
+                        });
+                        schoolDropdown.appendChild(li);
+                    });
+                    schoolDropdown.classList.remove('hidden');
+                } else {
+                    schoolDropdown.classList.add('hidden');
+                }
+            } else {
+                schoolDropdown.classList.add('hidden');
+            }
+        });
+        
+        schoolInput.addEventListener('focus', function() {
+            const state = stateInput.value;
+            if (state) {
+                populateSchoolsDropdown(state);
+                schoolDropdown.classList.remove('hidden');
+            }
+        });
+
+        schoolInput.addEventListener('blur', () => {
+            setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
+        });
+
+        // Other form logic
         function updateSubscriptionInfo(selectedType) {
             const selectedOption = availableOptions.find(opt => opt.type === selectedType);
-            
             const infoPlanName = document.getElementById('info-plan-name');
             const infoDuration = document.getElementById('info-duration');
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
@@ -395,77 +533,48 @@
                 infoDuration.textContent = selectedOption.advert_duration_days;
                 infoVisibilityLevel.textContent = selectedOption.visibility_level;
             } else {
-                // Set default values if no option is selected
                 infoPlanName.textContent = 'Not Selected';
                 infoDuration.textContent = '0';
                 infoVisibilityLevel.textContent = 'Standard';
             }
         }
         
-        // Function to update character count for description
         function updateCharCount() {
             const desc = document.getElementById('description');
             document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
         }
 
-        // Client-side file validation functions
         function validateFile(file, maxSizeBytes, errorElement) {
             if (!file) {
                 if (errorElement) errorElement.textContent = '';
                 return true;
             }
-            
             const sizeInBytes = file.size;
             const sizeInMB = sizeInBytes / (1024 * 1024);
-
             if (sizeInMB > maxSizeBytes) {
                 if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
                 return false;
             }
-            
             return true;
         }
 
-        // Initial setup and event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            // Initial school population if a state is pre-selected
-            if (stateInput.value) {
-                populateSchools(stateInput.value);
-            }
-
-            // Update plan info on initial page load
             const initialPlan = postingOptionSelect.value;
             if (initialPlan) {
                 updateSubscriptionInfo(initialPlan);
             }
-        });
-
-        stateInput.addEventListener('change', function() {
-            const state = this.value;
-            schoolInput.value = ''; // Clear school input when state changes
-            locationInput.value = ''; // Clear location when state changes
-            locationInput.disabled = true;
-            populateSchools(state);
-        });
-
-        schoolInput.addEventListener('change', function() {
-            locationInput.disabled = !this.value;
-            if (this.value) {
-                locationInput.placeholder = 'e.g., Faculty of Engineering';
-            } else {
-                locationInput.placeholder = 'Select a school first...';
+            if (stateInput.value) {
+                populateSchoolsDropdown(stateInput.value);
             }
+            updateCharCount();
         });
 
         postingOptionSelect.addEventListener('change', function() {
             updateSubscriptionInfo(this.value);
         });
 
-        // Form submission and file validation
         form.addEventListener('submit', function(event) {
             let isValid = true;
-
-            // Validate Main Image
             const mainImageFile = mainImageInput.files[0];
             const hasExistingMainImage = document.querySelector('input[name="existing_main_image"]');
             if (!hasExistingMainImage && !mainImageFile) {
@@ -476,8 +585,6 @@
             } else {
                 mainImageError.textContent = '';
             }
-
-            // Validate Additional Images
             const additionalImagesFiles = additionalImagesInput.files;
             if (additionalImagesFiles.length > MAX_ADDITIONAL_IMAGES) {
                 additionalImagesError.textContent = `You can only upload up to ${MAX_ADDITIONAL_IMAGES} additional images.`;
@@ -490,20 +597,14 @@
                     }
                 }
             }
-
-            // Validate Video
             const videoFile = videoInput.files[0];
             if (videoFile && !validateFile(videoFile, MAX_VIDEO_SIZE_MB, videoError)) {
                 isValid = false;
             }
-
             if (!isValid) {
                 event.preventDefault();
             }
         });
-
-        // Initial character count update
-        updateCharCount();
     </script>
 </body>
 </html>
