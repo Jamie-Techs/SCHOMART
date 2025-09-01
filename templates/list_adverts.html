@@ -284,22 +284,24 @@
 <body>
     <div class="container">
 
+
         <div class="navigation-buttons">
-            <a href="javascript:history.back()" class="btn-navigation">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <a href="{{ url_for('home') }}" class="btn-navigation">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="{{ url_for('profile') }}" class="btn-navigation">
-                <i class="fas fa-user"></i> Profile
-            </a>
-            <a href="{{ url_for('saved_adverts_page') }}" class="btn-navigation">
+    <a href="javascript:history.back()" class="btn-navigation">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+    <a href="{{ url_for('home') }}" class="btn-navigation">
+        <i class="fas fa-home"></i> Home
+    </a>
+    <a href="{{ url_for('profile') }}" class="btn-navigation">
+        <i class="fas fa-user"></i> Profile
+    </a>
+    <a href="{{ url_for('saved_adverts_page') }}" class="btn-navigation">
         <i class="fas fa-bookmark"></i> Saved Adverts
     </a>
-    
-    
-   </div>
+    <a href="{{ url_for('sell') }}" class="btn-navigation">
+        <i class="fas fa-dollar-sign"></i> Post Advert
+    </a>
+</div>
 
 
         
