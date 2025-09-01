@@ -1820,6 +1820,40 @@ def get_user_advert_options(user_id):
     return options
 
 
+def delete_advert_and_data(advert_id):
+    """
+    Deletes an advert document from Firestore and all associated media files
+    (main image, videos, and additional images) from Firebase Storage.
+    """
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists:
+        return False, "Advert not found."
+
+    advert_data = advert_doc.to_dict()
+    main_image_url = advert_data.get('image_url')
+    video_url = advert_data.get('video_url')
+    additional_images = advert_data.get('additional_images', [])
+
+    # Delete the main image
+    if main_image_url:
+        delete_file_from_storage(main_image_url)
+
+    # Delete the video
+    if video_url:
+        delete_file_from_storage(video_url)
+    
+    # Delete any additional images in the list
+    for img_url in additional_images:
+        delete_file_from_storage(img_url)
+
+    # Finally, delete the Firestore document
+    try:
+        advert_ref.delete()
+        return True, "Advert and associated data deleted successfully!"
+    except Exception as e:
+        return False, f"Error deleting advert from Firestore: {e}"
 
 
 
@@ -2230,7 +2264,10 @@ def repost_advert(advert_id):
 
     return redirect(url_for('list_adverts'))
 
-# The delete route should be modified to use the new helper function
+
+
+
+# The delete route
 @app.route('/delete_advert/<advert_id>', methods=['POST'])
 @login_required
 def delete_advert(advert_id):
@@ -2248,6 +2285,11 @@ def delete_advert(advert_id):
         flash(message, 'error')
         
     return redirect(url_for('list_adverts'))
+
+
+
+
+
 
 
 @app.route('/admin/adverts/review')
@@ -2627,26 +2669,6 @@ def report_advert(advert_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @app.route('/submit_review', methods=['POST'])
 @login_required
 def submit_review():
@@ -2713,13 +2735,6 @@ def submit_review():
         flash('An unexpected error occurred. Please try again.', 'error')
         
     return redirect(url_for('advert_detail', advert_id=advert_id))
-
-
-
-
-
-
-
 
 
 
@@ -4651,6 +4666,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
