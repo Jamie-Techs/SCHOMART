@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schomart | Sign Up</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         /* Custom styles for the app */
@@ -24,6 +22,47 @@
         }
         .btn-primary:hover { background-color: #025730; }
         .input-group input { padding-left: 2.5rem; }
+
+        /* Styles to ensure input visibility and use Font Awesome */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            border-color: #006B3C;
+            border-width: 2px;
+            background-color: #f9fffb;
+            color: #000;
+            font-weight: 500;
+        }
+        
+        input[type="text"]::placeholder,
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: #888;
+        }
+        
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.4);
+        }
+
+        .fa-solid {
+            color: #006B3C;
+        }
+
+        #signup-form .relative {
+            position: relative;
+        }
+        
+        #signup-form .relative .absolute {
+            left: 0.75rem; /* Adjust padding for icon */
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #signup-form .relative input {
+            padding-left: 3rem; /* Increase padding for icon */
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -34,7 +73,6 @@
             <p class="mt-2 text-sm text-gray-600">Create your account</p>
         </div>
 
-        <!-- Flash Message Section -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="space-y-2">
@@ -105,7 +143,6 @@
         <div id="message" class="text-center mt-4"></div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
