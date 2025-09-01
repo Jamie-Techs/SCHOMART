@@ -63,8 +63,6 @@ import boto3
 from botocore.exceptions import ClientError
 from authlib.integrations.flask_client import OAuth
 
-# Add these imports at the top of your file
-from algoliasearch.search_client import SearchClient
 
 
 
@@ -73,12 +71,6 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
-# Add Algolia client initialization
-ALGOLIA_APP_ID = os.environ.get('ALGOLIA_APP_ID') # Or hardcode if not using environment variables
-ALGOLIA_API_KEY = os.environ.get('ALGOLIA_SEARCH_API_KEY') # Use the Search API key
-ALGOLIA_INDEX_NAME = 'adverts'
-search_client = SearchClient.create(ALGOLIA_APP_ID, ALGOLIA_API_KEY)
-index = search_client.init_index(ALGOLIA_INDEX_NAME)
 
 
 bcrypt = Bcrypt(app)
@@ -3324,52 +3316,6 @@ def subscribe():
 
 
 
-# ... other routes ...
-
-@app.route('/api/adverts', methods=['GET'])
-def get_adverts_api():
-    query = request.args.get('search_query', '')
-    page = int(request.args.get('page', 0))
-    filters = []
-
-    # Build Algolia filters from query parameters
-    if request.args.get('category'):
-        filters.append(f"category:'{request.args.get('category')}'")
-    if request.args.get('state'):
-        filters.append(f"state:'{request.args.get('state')}'")
-    if request.args.get('school'):
-        filters.append(f"school:'{request.args.get('school')}'")
-    if request.args.get('condition'):
-        filters.append(f"condition:'{request.args.get('condition')}'")
-    if request.args.get('negotiation'):
-        negotiable_value = 'true' if request.args.get('negotiation') == 'yes' else 'false'
-        filters.append(f"negotiable:{negotiable_value}")
-
-    price_min = request.args.get('price_min')
-    price_max = request.args.get('price_max')
-    if price_min and price_max:
-        filters.append(f"price:{price_min} TO {price_max}")
-    elif price_min:
-        filters.append(f"price>={price_min}")
-    elif price_max:
-        filters.append(f"price<={price_max}")
-
-    # Perform the search using Algolia
-    try:
-        results = index.search(query, {
-            'filters': ' AND '.join(filters),
-            'page': page,
-            'hitsPerPage': 20,
-        })
-
-        # Algolia returns all the necessary data, so no extra fetches are needed
-        return jsonify(results['hits'])
-
-    except Exception as e:
-        # Handle Algolia-specific errors
-        return jsonify({'error': str(e)}), 500
-
-
 
 @app.route('/search')
 def search():
@@ -4620,6 +4566,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
