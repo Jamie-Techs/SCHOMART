@@ -2131,14 +2131,12 @@ def submit_advert(advert_id):
 
 
 
-
-
-
 @app.route('/adverts')
 @login_required
 def list_adverts():
     """
-    Renders the list of a user's adverts, handling status updates and expiration.
+    Renders the list of a user's adverts, handling status updates and expiration,
+    and sorting them for display.
     """
     user_id = g.current_user.id
     adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
@@ -2174,7 +2172,7 @@ def list_adverts():
                     # Update status to 'expired' in Firestore
                     doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
                     status = 'expired'
-            
+        
         # Check if the advert is expired and passed the 2-day grace period
         if status == 'expired' and advert_data.get('expired_at'):
             expired_at = advert_data['expired_at']
@@ -2212,8 +2210,22 @@ def list_adverts():
     # Process the batch deletion of expired adverts
     for advert_id in adverts_to_delete:
         delete_advert_and_data(advert_id)
-        
+    
+    # Sort the adverts list for display
+    def sort_key(advert):
+        status_order = {
+            'rejected': 0,
+            'pending_payment': 1,
+            'pending_review': 2,
+            'published': 3,
+            'expired': 4,
+        }
+        return status_order.get(advert.get('status'), 99)
+
+    adverts.sort(key=sort_key)
+    
     return render_template("list_adverts.html", adverts=adverts)
+
 
 
 
@@ -4666,6 +4678,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
