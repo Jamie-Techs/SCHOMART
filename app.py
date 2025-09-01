@@ -2415,102 +2415,6 @@ def delete_file_from_storage(file_url):
 
 
 
-@app.route('/admin/adverts/approve', methods=['POST'])
-@login_required
-@admin_required
-def admin_advert_approve():
-    """
-    Handles the approval of an advert.
-
-    Updates the advert's status to 'published' and sets the
-    publication date.
-    """
-    advert_id = request.form.get('advert_id')
-    if not advert_id:
-        return redirect(url_for('admin_advert_review'))
-
-    advert_ref = db.collection("adverts").document(advert_id)
-    advert_doc = advert_ref.get()
-
-    if advert_doc.exists:
-        # Correctly set the status to 'published'
-        # Set the publication date using a Firestore Server Timestamp
-        advert_ref.update({
-            'status': 'published',
-            'published_at': firestore.SERVER_TIMESTAMP
-        })
-
-    return redirect(url_for('admin_advert_review'))
-
-
-
-@app.route('/admin/adverts/reject', methods=['POST'])
-@login_required
-@admin_required
-def admin_advert_reject():
-    """
-    Handles the rejection of an advert, deletes its image, and updates referral counts.
-    """
-    advert_id = request.form.get('advert_id')
-    rejection_reason = request.form.get('rejection_reason', 'No reason provided.')
-
-    if not advert_id:
-        return redirect(url_for('admin_advert_review'))
-
-    advert_ref = db.collection("adverts").document(advert_id)
-    advert_doc = advert_ref.get()
-
-    if advert_doc.exists:
-        advert_data = advert_doc.to_dict()
-        user_id = advert_data.get('user_id')
-        referred_by_id = advert_data.get('referred_by')
-        image_url = advert_data.get('image_url')
-
-        # Delete the image from Firebase Storage if a URL exists
-        if image_url:
-            delete_image_from_storage(image_url)
-
-        # Update the advert's status in Firestore
-        advert_ref.update({
-            'status': 'rejected',
-            'rejection_reason': rejection_reason,
-            'is_published': False
-        })
-        
-        # Increment for the advertiser's referral count, effectively returning their point
-        if user_id:
-            user_ref = db.collection("users").document(user_id)
-            user_ref.update({'referral_count': firestore.firestore.Increment(1)})
-
-        # Subtraction for the referrer's referral count, removing the point they earned
-        if referred_by_id:
-            referrer_ref = db.collection("users").document(referred_by_id)
-            referrer_ref.update({'referral_count': firestore.firestore.Increment(-1)})
-
-    return redirect(url_for('admin_advert_review'))
-
-def delete_image_from_storage(image_url):
-    """
-    Deletes an image from Firebase Storage using its download URL.
-    """
-    try:
-        # Extract the image path from the full download URL
-        image_path = image_url.split('/o/')[1].split('?')[0]
-        
-        # Unquote the URL-encoded path to get the actual file path
-        file_path = urllib.parse.unquote(image_path)
-        
-        # Get the blob and delete it
-        blob = bucket.blob(file_path)
-        blob.delete()
-        print(f"Image deleted successfully: {file_path}")
-    except Exception as e:
-        print(f"Error deleting image: {e}")
-
-
-
-
-
 
 
 
@@ -4747,6 +4651,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
