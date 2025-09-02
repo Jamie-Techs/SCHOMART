@@ -1600,6 +1600,46 @@ def get_state_name(state_id):
     else:
         return 'Unknown State'
 
+def get_school_name(school_id):
+    """Fetches the name of a school from its ID."""
+    if not school_id:
+        return 'N/A'
+    
+    school_ref = db.collection('schools').document(school_id)
+    school_doc = school_ref.get()
+
+    if school_doc.exists:
+        return school_doc.to_dict().get('name', 'Unknown School')
+    else:
+        return 'Unknown School'
+
+# Add this function to your helpers.py file.
+def is_advert_saved_by_user(user_id, advert_id):
+    """
+    Checks if a specific advert has been saved by a user.
+    
+    Args:
+        user_id (str): The ID of the current user.
+        advert_id (str): The ID of the advert to check.
+    
+    Returns:
+        bool: True if the advert is saved by the user, False otherwise.
+    """
+    if not user_id or not advert_id:
+        return False
+        
+    try:
+        user_doc_ref = db.collection('users').document(user_id)
+        saved_adverts_list = user_doc_ref.get().to_dict().get('saved_adverts', [])
+        
+        return advert_id in saved_adverts_list
+        
+    except Exception as e:
+        logging.error(f"Error checking if advert {advert_id} is saved by user {user_id}: {e}", exc_info=True)
+        return False
+
+
+
 
 def get_school_acronym(state, school):
     """Finds the acronym for a school from the hardcoded data."""
@@ -4858,6 +4898,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
