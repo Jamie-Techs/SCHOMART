@@ -3217,118 +3217,8 @@ def referral_benefit():
 
 
 
-
-
-
-
-def get_school_name(school_id):
-    """Fetches the name of a school from its ID."""
-    if not school_id:
-        return 'N/A'
-    
-    school_ref = db.collection('schools').document(school_id)
-    school_doc = school_ref.get()
-
-    if school_doc.exists:
-        return school_doc.to_dict().get('name', 'Unknown School')
-    else:
-        return 'Unknown School'
-
-# Add this function to your helpers.py file.
-def is_advert_saved_by_user(user_id, advert_id):
-    """
-    Checks if a specific advert has been saved by a user.
-    
-    Args:
-        user_id (str): The ID of the current user.
-        advert_id (str): The ID of the advert to check.
-    
-    Returns:
-        bool: True if the advert is saved by the user, False otherwise.
-    """
-    if not user_id or not advert_id:
-        return False
-        
-    try:
-        user_doc_ref = db.collection('users').document(user_id)
-        saved_adverts_list = user_doc_ref.get().to_dict().get('saved_adverts', [])
-        
-        return advert_id in saved_adverts_list
-        
-    except Exception as e:
-        logging.error(f"Error checking if advert {advert_id} is saved by user {user_id}: {e}", exc_info=True)
-        return False
-
-@app.route('/advert/<string:advert_id>')
-@login_required
-def advert_detail(advert_id):
-    """
-    Handles displaying a single advert detail page and increments view count
-    for unique, non-owner users. Fetches and displays similar adverts.
-    """
-    current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
-
-    try:
-        # Step 1: Fetch the advert document.
-        advert_ref = db.collection('adverts').document(advert_id)
-        advert_doc = advert_ref.get()
-
-        if not advert_doc.exists:
-            abort(404)
-        
-        advert = advert_doc.to_dict()
-        advert['id'] = advert_doc.id
-        advert_owner_id = advert.get('user_id')
-
-        is_owner = current_user_id == advert_owner_id
-        if advert.get('status') != 'published' and not is_owner:
-            abort(404)
-
-        # Step 2: Fetch seller info and attach the profile picture URL.
-        seller_doc = db.collection('users').document(advert_owner_id).get()
-        seller = seller_doc.to_dict() if seller_doc.exists else {}
-        seller['id'] = seller_doc.id
-
-        # Step 3: Fetch related advert data.
-        advert['category_name'] = get_category_name(advert.get('category_id'))
-        advert['state_name'] = get_state_name(advert.get('state'))
-        advert['school_name'] = get_school_name(advert.get('school'))
-        
-        # Step 4: Check if the current user has saved the advert
-        is_saved = is_advert_saved_by_user(current_user_id, advert_id)
-
-        # Step 5: Fetch reviews for the current advert and process reviewer images
-        reviews = [] # Placeholder
-
-        # Step 6: Fetch similar adverts based on category and location, and then sort by visibility.
-        similar_adverts = get_similar_adverts(
-            advert['category_id'], 
-            advert['school'],
-            advert['state'],
-            advert_id, # Exclude the current advert
-            limit=8
-        )
-
-        # Step 7: Render the template with all the necessary data
-        return render_template(
-            'advert_detail.html',
-            advert=advert,
-            seller=seller,
-            reviews=reviews,
-            is_saved=is_saved,
-            current_user_id=current_user_id,
-            is_owner=is_owner,
-            similar_adverts=similar_adverts
-        )
-
-    except Exception as e:
-        logging.error(f"Error fetching advert detail: {e}", exc_info=True)
-        return abort(500)
-
-
-
-
-
+# You will need to add this new function to your helpers.py file as well.
+# This function is the one that fetches and sorts similar adverts.
 def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
     """
     Fetches a list of similar adverts based on a weighted criteria,
@@ -3378,7 +3268,6 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
         elif user_role == 'premium':
             visibility_level = 'premium'
         
-        # Using datetime.fromtimestamp(0, tz=UTC) as the default to avoid the 'year 0' error.
         published_at = ad.get('published_at', datetime.fromtimestamp(0, tz=UTC))
         return (visibility_priority.get(visibility_level, 0), published_at)
     
@@ -3392,6 +3281,86 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
             advert['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
 
     return similar_list[:limit]
+
+# The main route, updated to remove 'is_following' and include all new features
+@app.route('/advert/<string:advert_id>')
+@login_required
+def advert_detail(advert_id):
+    """
+    Handles displaying a single advert detail page and increments view count
+    for unique, non-owner users. Fetches and displays similar adverts.
+    """
+    current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
+
+    try:
+        advert_ref = db.collection('adverts').document(advert_id)
+        advert_doc = advert_ref.get()
+
+        if not advert_doc.exists:
+            abort(404)
+        
+        advert = advert_doc.to_dict()
+        advert['id'] = advert_doc.id
+        advert_owner_id = advert.get('user_id')
+
+        is_owner = current_user_id == advert_owner_id
+        if advert.get('status') != 'published' and not is_owner:
+            abort(404)
+
+        seller_doc = db.collection('users').document(advert_owner_id).get()
+        seller = seller_doc.to_dict() if seller_doc.exists else {}
+        seller['id'] = seller_doc.id
+        
+        seller.setdefault('rating', 0.0)
+        seller.setdefault('review_count', 0)
+        seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
+
+        advert['category_name'] = get_category_name(advert.get('category_id'))
+        advert['state_name'] = get_state_name(advert.get('state'))
+        advert['school_name'] = get_school_name(advert.get('school'))
+        
+        is_saved = False
+        if current_user_id:
+            is_saved = check_if_saved(current_user_id, advert_id)
+
+        reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
+        reviews = []
+        for review_doc in reviews_ref:
+            review_data = review_doc.to_dict()
+            reviewer_info = db.collection('users').document(review_data['user_id']).get()
+            if reviewer_info.exists:
+                reviewer_data = reviewer_info.to_dict()
+                review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
+                review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
+            reviews.append(review_data)
+        
+        similar_adverts = get_similar_adverts(
+            advert['category_id'], 
+            advert['school'],
+            advert['state'],
+            advert_id,
+            limit=8
+        )
+
+        return render_template(
+            'advert_detail.html',
+            advert=advert,
+            seller=seller,
+            reviews=reviews,
+            is_saved=is_saved,
+            current_user_id=current_user_id,
+            is_owner=is_owner,
+            similar_adverts=similar_adverts
+        )
+
+    except Exception as e:
+        logging.error(f"Error fetching advert detail: {e}", exc_info=True)
+        return abort(500)
+
+
+
+
+
 
 
 
@@ -4889,6 +4858,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
