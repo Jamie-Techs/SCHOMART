@@ -3632,9 +3632,7 @@ def subscribe():
 @app.route('/search')
 @login_required
 def search():
-    """
-    Renders the search page and fetches the initial set of adverts for the first scroll.
-    """
+    """Renders the search page with filters and initial advert display."""
     search_query = request.args.get('search_query', '')
     category = request.args.get('category', '')
     state = request.args.get('state', '')
@@ -3651,32 +3649,16 @@ def search():
 
     categories_ref = db.collection('categories').stream()
     categories_data = {doc.id: doc.to_dict() for doc in categories_ref}
-    
-    # Fetch schools for the dropdown if a state is pre-selected
+
     schools_in_state = []
     if state:
-        schools_in_state = get_school_by_state(state)
-
-    # Fetch the first batch of adverts (for the initial page load)
-    adverts_data = fetch_and_filter_adverts(
-        search_query=search_query,
-        category=category,
-        state=state,
-        school=school,
-        price_min=price_min,
-        price_max=price_max,
-        condition=condition,
-        negotiation=negotiation,
-        start_after_doc_id=None
-    )
-
+        schools_in_state = NIGERIAN_SCHOOLS.get(state, [])
+        
     return render_template(
         'search.html',
-        adverts=adverts_data['adverts'],
         locations=locations_data,
         categories=categories_data,
         states=NIGERIAN_STATES,
-        schools_in_state=schools_in_state,
         search_query=search_query,
         selected_category=category,
         selected_state=state,
@@ -3684,8 +3666,12 @@ def search():
         price_min=price_min,
         price_max=price_max,
         selected_condition=condition,
-        selected_negotiation=negotiation
+        selected_negotiation=negotiation,
+        schools_in_state=schools_in_state
     )
+
+
+
 
 @app.route('/api/search_adverts')
 @login_required
@@ -4838,6 +4824,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
