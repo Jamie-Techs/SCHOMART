@@ -307,224 +307,235 @@
         <div class="loading-indicator" id="loading-indicator">Loading more adverts...</div>
         <p class="no-results" id="no-results" style="display: none;">No adverts found matching your criteria.</p>
     </div>
-
     <script>
-        const advertsContainer = document.getElementById('adverts-container');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const noResultsMessage = document.getElementById('no-results');
-        const searchForm = document.getElementById('searchForm');
-        let currentPage = 1;
-        let isLoading = false;
-        let allResultsLoaded = false;
-        
-        function createAdvertCard(advert) {
-            const card = document.createElement('a');
-            card.href = "{{ url_for('advert_detail', advert_id='PLACEHOLDER') }}".replace('PLACEHOLDER', advert.id);
-            card.classList.add('ad-card');
-        
-            const price = advert.price ? `₦${advert.price.toLocaleString('en-US')}` : 'Price not available';
-            const location = `${advert.school || ''}${advert.school && advert.state ? ', ' : ''}${advert.state || ''}`;
-        
-            card.innerHTML = `
-                <img src="${advert.display_image}" alt="${advert.title}" class="ad-image">
-                <div class="ad-content">
-                    <h4>${advert.title}</h4>
-                    <div class="ad-meta">
-                        <p class="price">${price}</p>
-                        <p><i class="fas fa-map-marker-alt"></i> ${location}</p>
-                    </div>
+    // --- Global Variables and Constants ---
+    const advertsContainer = document.getElementById('adverts-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const noResultsMessage = document.getElementById('no-results');
+    const searchForm = document.getElementById('searchForm');
+    const stateInput = document.getElementById('state_input');
+    const schoolInput = document.getElementById('school_input');
+    const stateDropdown = document.getElementById('state-dropdown');
+    const schoolDropdown = document.getElementById('school-dropdown');
+
+    // Your Flask backend MUST provide these variables in the Jinja template
+    const NIGERIAN_STATES = {{ locations.NIGERIAN_STATES | tojson | safe }};
+    const NIGERIAN_SCHOOLS = {{ locations.NIGERIAN_SCHOOLS | tojson | safe }};
+
+    let currentPage = 1;
+    let isLoading = false;
+    let allResultsLoaded = false;
+    
+    // --- Advert Card Creation Function ---
+    function createAdvertCard(advert) {
+        const card = document.createElement('a');
+        card.href = "{{ url_for('advert_detail', advert_id='PLACEHOLDER') }}".replace('PLACEHOLDER', advert.id);
+        card.classList.add('ad-card');
+    
+        const price = advert.price ? `₦${advert.price.toLocaleString('en-US')}` : 'Price not available';
+        const location = `${advert.school || ''}${advert.school && advert.state ? ', ' : ''}${advert.state || ''}`;
+    
+        card.innerHTML = `
+            <img src="${advert.display_image}" alt="${advert.title}" class="ad-image">
+            <div class="ad-content">
+                <h4>${advert.title}</h4>
+                <div class="ad-meta">
+                    <p class="price">${price}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> ${location}</p>
                 </div>
-            `;
-            return card;
+            </div>
+        `;
+        return card;
+    }
+
+    // --- Core Search and Infinite Scroll Logic ---
+    async function fetchAndDisplayAdverts(page, isNewSearch = false) {
+        if (isLoading || (allResultsLoaded && !isNewSearch)) return;
+
+        isLoading = true;
+        loadingIndicator.classList.add('visible');
+        
+        if (isNewSearch) {
+            advertsContainer.innerHTML = '';
+            currentPage = 1;
+            allResultsLoaded = false;
+            noResultsMessage.style.display = 'none';
         }
 
-        async function fetchAndDisplayAdverts(page, isNewSearch = false) {
-            if (isLoading || (allResultsLoaded && !isNewSearch)) return;
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData);
+        params.append('page', currentPage);
 
-            isLoading = true;
-            loadingIndicator.classList.add('visible');
+        try {
+            const response = await fetch(`/api/search_adverts?${params.toString()}`);
+            const adverts = await response.json();
             
-            if (isNewSearch) {
-                advertsContainer.innerHTML = '';
-                currentPage = 1;
-                allResultsLoaded = false;
-                noResultsMessage.style.display = 'none';
+            if (adverts.length === 0 && (isNewSearch || currentPage === 1)) {
+                noResultsMessage.style.display = 'block';
+            } else if (adverts.length === 0) {
+                allResultsLoaded = true;
+                loadingIndicator.style.display = 'none';
             }
 
-            const formData = new FormData(searchForm);
-            const params = new URLSearchParams(formData);
-            params.append('page', currentPage);
-
-            try {
-                const response = await fetch(`/api/search_adverts?${params.toString()}`);
-                const adverts = await response.json();
-                
-                if (adverts.length === 0 && (isNewSearch || currentPage === 1)) {
-                    noResultsMessage.style.display = 'block';
-                } else if (adverts.length === 0) {
-                    allResultsLoaded = true;
-                    loadingIndicator.style.display = 'none';
-                }
-
-                adverts.forEach(advert => {
-                    const advertCard = createAdvertCard(advert);
-                    advertsContainer.appendChild(advertCard);
-                });
-                
-                currentPage++;
-            } catch (error) {
-                console.error('Failed to fetch adverts:', error);
-                if (isNewSearch) {
-                    advertsContainer.innerHTML = '<p class="no-results">Failed to load adverts. Please try again.</p>';
-                }
-            } finally {
-                isLoading = false;
-                loadingIndicator.classList.remove('visible');
-            }
-        }
-        
-        function handleSearch(event) {
-            event.preventDefault();
-            fetchAndDisplayAdverts(1, true);
-        }
-
-        window.addEventListener('scroll', () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-                fetchAndDisplayAdverts(currentPage);
-            }
-        });
-
-        // --- New Autocomplete/Dropdown Logic from sell.html ---
-
-        const stateInput = document.getElementById('state_input');
-        const schoolInput = document.getElementById('school_input');
-        const stateDropdown = document.getElementById('state-dropdown');
-        const schoolDropdown = document.getElementById('school-dropdown');
-        
-        // Ensure your Flask backend passes these two variables to this page
-        const NIGERIAN_STATES = {{ locations.NIGERIAN_STATES | tojson | safe }};
-        const NIGERIAN_SCHOOLS = {{ locations.NIGERIAN_SCHOOLS | tojson | safe }};
-
-        function setupAutocomplete(inputElement, dataList, dropdownElement) {
-            function filterAndDisplay() {
-                const query = inputElement.value.toLowerCase();
-                dropdownElement.innerHTML = '';
-                if (!query) {
-                    dropdownElement.classList.add('hidden');
-                    return;
-                }
-                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
-                if (filteredData.length > 0) {
-                    filteredData.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = item;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            inputElement.value = item;
-                            dropdownElement.classList.add('hidden');
-                            inputElement.focus();
-                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
-                        dropdownElement.appendChild(li);
-                    });
-                    dropdownElement.classList.remove('hidden');
-                } else {
-                    dropdownElement.classList.add('hidden');
-                }
-            }
-
-            inputElement.addEventListener('input', filterAndDisplay);
-            inputElement.addEventListener('focus', filterAndDisplay);
-            inputElement.addEventListener('blur', () => {
-                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+            adverts.forEach(advert => {
+                const advertCard = createAdvertCard(advert);
+                advertsContainer.appendChild(advertCard);
             });
-        }
-        
-        function populateSchoolsDropdown(state) {
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDropdown.innerHTML = '';
-            schoolInput.value = '';
             
-            if (schools.length > 0) {
-                schools.forEach(school => {
+            currentPage++;
+        } catch (error) {
+            console.error('Failed to fetch adverts:', error);
+            if (isNewSearch) {
+                advertsContainer.innerHTML = '<p class="no-results">Failed to load adverts. Please try again.</p>';
+            }
+        } finally {
+            isLoading = false;
+            loadingIndicator.classList.remove('visible');
+        }
+    }
+    
+    function handleSearch(event) {
+        event.preventDefault();
+        fetchAndDisplayAdverts(1, true);
+    }
+
+    window.addEventListener('scroll', () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+            fetchAndDisplayAdverts(currentPage);
+        }
+    });
+
+    // --- Autocomplete & Dropdown Logic for State and School ---
+    function setupAutocomplete(inputElement, dataList, dropdownElement) {
+        function filterAndDisplay() {
+            const query = inputElement.value.toLowerCase();
+            dropdownElement.innerHTML = '';
+            if (!query) {
+                dropdownElement.classList.add('hidden');
+                return;
+            }
+            const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+            if (filteredData.length > 0) {
+                filteredData.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    li.className = 'autocomplete-list-item';
+                    li.addEventListener('mousedown', (e) => {
+                        // Prevent default blur behavior to keep the input's focus
+                        e.preventDefault();
+                        inputElement.value = item;
+                        dropdownElement.classList.add('hidden');
+                        inputElement.focus();
+                        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    dropdownElement.appendChild(li);
+                });
+                dropdownElement.classList.remove('hidden');
+            } else {
+                dropdownElement.classList.add('hidden');
+            }
+        }
+
+        inputElement.addEventListener('input', filterAndDisplay);
+        inputElement.addEventListener('focus', filterAndDisplay);
+        inputElement.addEventListener('blur', () => {
+            // Delay hiding the dropdown to allow for a click on a list item to register
+            setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+        });
+    }
+    
+    function populateSchoolsDropdown(state) {
+        const schools = NIGERIAN_SCHOOLS[state] || [];
+        schoolDropdown.innerHTML = '';
+        
+        if (schools.length > 0) {
+            schools.forEach(school => {
+                const li = document.createElement('li');
+                li.textContent = school.name;
+                li.className = 'autocomplete-list-item';
+                li.addEventListener('mousedown', (e) => {
+                    // Prevent default blur behavior to keep the input's focus
+                    e.preventDefault();
+                    schoolInput.value = school.name;
+                    schoolDropdown.classList.add('hidden');
+                    schoolInput.focus();
+                });
+                schoolDropdown.appendChild(li);
+            });
+            schoolInput.disabled = false;
+            schoolInput.placeholder = 'Select from the list or type...';
+        } else {
+            schoolInput.disabled = true;
+            schoolInput.value = ''; // Ensure the field is cleared when no schools are found
+            schoolInput.placeholder = 'No universities for this state.';
+        }
+    }
+    
+    // --- Event Listeners for Autocomplete and Initial Load ---
+    stateInput.addEventListener('change', function() {
+        const state = this.value;
+        // Clear and repopulate the school input and dropdown
+        schoolInput.value = '';
+        populateSchoolsDropdown(state);
+    });
+
+    schoolInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const state = stateInput.value;
+        const schools = NIGERIAN_SCHOOLS[state] || [];
+        
+        schoolDropdown.innerHTML = '';
+        
+        if (query && schools.length > 0) {
+            const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
+            if (filteredSchools.length > 0) {
+                filteredSchools.forEach(school => {
                     const li = document.createElement('li');
                     li.textContent = school.name;
                     li.className = 'autocomplete-list-item';
-                    li.addEventListener('click', () => {
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
                         schoolInput.value = school.name;
                         schoolDropdown.classList.add('hidden');
                         schoolInput.focus();
                     });
                     schoolDropdown.appendChild(li);
                 });
-                schoolInput.disabled = false;
-                schoolInput.placeholder = 'Select from the list or type...';
-            } else {
-                schoolInput.disabled = true;
-                schoolInput.placeholder = 'No schools available for this state.';
-            }
-        }
-        
-        stateInput.addEventListener('change', function() {
-            const state = this.value;
-            populateSchoolsDropdown(state);
-            schoolInput.disabled = false;
-        });
-
-        schoolInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const state = stateInput.value;
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            
-            schoolDropdown.innerHTML = '';
-            
-            if (query && schools.length > 0) {
-                const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
-                if (filteredSchools.length > 0) {
-                    filteredSchools.forEach(school => {
-                        const li = document.createElement('li');
-                        li.textContent = school.name;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            schoolInput.value = school.name;
-                            schoolDropdown.classList.add('hidden');
-                            schoolInput.focus();
-                        });
-                        schoolDropdown.appendChild(li);
-                    });
-                    schoolDropdown.classList.remove('hidden');
-                } else {
-                    schoolDropdown.classList.add('hidden');
-                }
+                schoolDropdown.classList.remove('hidden');
             } else {
                 schoolDropdown.classList.add('hidden');
             }
-        });
-        
-        schoolInput.addEventListener('focus', function() {
-            const state = stateInput.value;
-            if (state) {
-                populateSchoolsDropdown(state);
-                schoolDropdown.classList.remove('hidden');
-            }
-        });
+        } else {
+            schoolDropdown.classList.add('hidden');
+        }
+    });
 
-        schoolInput.addEventListener('blur', () => {
-            setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
-        });
+    schoolInput.addEventListener('focus', function() {
+        const state = stateInput.value;
+        if (state) {
+            populateSchoolsDropdown(state);
+            schoolDropdown.classList.remove('hidden');
+        }
+    });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize the autocomplete for the state input
-            setupAutocomplete(stateInput, NIGERIAN_STATES, stateDropdown);
+    schoolInput.addEventListener('blur', () => {
+        setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
+    });
 
-            // Populate schools if a state was pre-selected on page load
-            if (stateInput.value) {
-                populateSchoolsDropdown(stateInput.value);
-            }
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize the autocomplete for the state input
+        setupAutocomplete(stateInput, NIGERIAN_STATES, stateDropdown);
 
-            // Fetch initial search results
-            fetchAndDisplayAdverts(1, true);
-        });
-    </script>
+        // Populate schools if a state was pre-selected on page load
+        if (stateInput.value) {
+            populateSchoolsDropdown(stateInput.value);
+        }
+
+        // Fetch initial search results
+        fetchAndDisplayAdverts(1, true);
+    });
+</script>
+    
+
 </body>
 </html>
