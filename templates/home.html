@@ -618,9 +618,9 @@
                 <h4>{{ advert['title'] }}</h4>
                 <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
                 <p>
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                    {% if advert['school'] and advert['state'] %}, {% endif %}
                     {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
                 </p>
                 <p>{{ advert['condition'] }}</p>
             </a>
@@ -633,9 +633,9 @@
                 <h4>{{ advert['title'] }}</h4>
                 <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
                 <p>
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                    {% if advert['school'] and advert['state'] %}, {% endif %}
                     {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
                 </p>
                 <p>{{ advert['condition'] }}</p>
             </a>
@@ -667,9 +667,9 @@
             <h4>{{ advert['title'] }}</h4>
             <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
             <p>
-                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                {% if advert['school'] and advert['state'] %}, {% endif %}
                 {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                {% if advert['state'] and advert['school'] %}, {% endif %}
+                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
             </p>
             <p>{{ advert['condition'] }}</p>
         </a>
