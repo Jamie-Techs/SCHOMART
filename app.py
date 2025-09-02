@@ -3218,15 +3218,11 @@ def referral_benefit():
 
 
 
-
-
-
 def get_school_name(school_id):
     """Fetches the name of a school from its ID."""
     if not school_id:
         return 'N/A'
     
-    # Assuming `db` is your Firestore client.
     school_ref = db.collection('schools').document(school_id)
     school_doc = school_ref.get()
 
@@ -3270,21 +3266,18 @@ def advert_detail(advert_id):
         seller['id'] = seller_doc.id
 
         # Step 3: Fetch related advert data.
-        # Use your provided helper functions.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
         advert['school_name'] = get_school_name(advert.get('school'))
         
-        # Step 4: Check if the current user is following the seller or has saved the advert
-        is_following = is_following_seller(current_user_id, advert_owner_id)
+        # Step 4: Check if the current user has saved the advert
+        # The line `is_following = is_following_seller(...)` has been removed.
         is_saved = is_advert_saved_by_user(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
-        # ... (You can add this back)
         reviews = [] # Placeholder
 
-        # Step 6: Fetch similar adverts based on category and location,
-        #         and then sort by visibility.
+        # Step 6: Fetch similar adverts based on category and location, and then sort by visibility.
         similar_adverts = get_similar_adverts(
             advert['category_id'], 
             advert['school'],
@@ -3299,7 +3292,6 @@ def advert_detail(advert_id):
             advert=advert,
             seller=seller,
             reviews=reviews,
-            is_following=is_following,
             is_saved=is_saved,
             current_user_id=current_user_id,
             is_owner=is_owner,
@@ -3309,6 +3301,7 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
 
 
 
@@ -4895,6 +4888,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
