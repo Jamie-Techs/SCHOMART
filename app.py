@@ -3217,6 +3217,25 @@ def referral_benefit():
 
 
 
+
+
+
+
+def get_school_name(school_id):
+    """Fetches the name of a school from its ID."""
+    if not school_id:
+        return 'N/A'
+    
+    # Assuming `db` is your Firestore client.
+    school_ref = db.collection('schools').document(school_id)
+    school_doc = school_ref.get()
+
+    if school_doc.exists:
+        return school_doc.to_dict().get('name', 'Unknown School')
+    else:
+        return 'Unknown School'
+
+
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
@@ -3243,25 +3262,29 @@ def advert_detail(advert_id):
             abort(404)
 
         # --- View Count Logic ---
-        # ... (unchanged)
+        # ... (You can add this back if it was in your original code)
 
         # Step 2: Fetch seller info and attach the profile picture URL.
-        # ... (unchanged)
+        seller_doc = db.collection('users').document(advert_owner_id).get()
+        seller = seller_doc.to_dict() if seller_doc.exists else {}
+        seller['id'] = seller_doc.id
 
         # Step 3: Fetch related advert data.
+        # Use your provided helper functions.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
-        advert['school_name'] = get_school_acronym(advert.get('school'))
+        advert['school_name'] = get_school_name(advert.get('school'))
         
-        # The 'location' field is already in the 'advert' dictionary if it exists.
-
         # Step 4: Check if the current user is following the seller or has saved the advert
-        # ... (unchanged)
+        is_following = is_following_seller(current_user_id, advert_owner_id)
+        is_saved = is_advert_saved_by_user(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
-        # ... (unchanged)
-        
-        # Step 6: Fetch similar adverts based on category and location
+        # ... (You can add this back)
+        reviews = [] # Placeholder
+
+        # Step 6: Fetch similar adverts based on category and location,
+        #         and then sort by visibility.
         similar_adverts = get_similar_adverts(
             advert['category_id'], 
             advert['school'],
@@ -3289,15 +3312,28 @@ def advert_detail(advert_id):
 
 
 
+
+
 def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
     """
     Fetches a list of similar adverts based on a weighted criteria,
     then sorts them by visibility level.
+    
+    Args:
+        category_id (str): The category ID of the current advert.
+        school (str): The school ID of the current advert.
+        state (str): The state ID of the current advert.
+        exclude_id (str): The ID of the current advert to exclude from the results.
+        limit (int): The maximum number of similar adverts to return.
+    
+    Returns:
+        list: A sorted list of similar advert dictionaries.
     """
     similar_list = []
     seen_ids = {exclude_id}
     
     # Priority score based on visibility level
+    # Higher value means higher priority.
     visibility_priority = {
         'admin': 4,
         'featured': 3,
@@ -3335,24 +3371,34 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
         user_doc = db.collection('users').document(user_id).get()
         user_role = user_doc.to_dict().get('role', 'standard') if user_doc.exists else 'standard'
         
-        # Determine the advert's visibility level.
-        # This assumes 'featured' and 'premium' are fields on the advert doc itself
-        # or can be derived from the user's role. For simplicity, we'll map roles.
-        # You may need to adjust this to fit your exact data model.
+        # Determine the advert's visibility level based on user role or advert status flags.
+        visibility_level = 'standard'
         if user_role == 'admin':
             visibility_level = 'admin'
-        elif user_role == 'featured' or ad.get('featured_advert'): # Assuming a field like `featured_advert`
+        # The following lines assume 'featured' and 'premium' are fields on the user document.
+        # Adjust as needed if they are on the advert document.
+        elif user_role == 'featured':
             visibility_level = 'featured'
-        elif user_role == 'premium' or ad.get('premium_advert'): # Assuming a field like `premium_advert`
+        elif user_role == 'premium':
             visibility_level = 'premium'
-        else:
-            visibility_level = 'standard'
-
-        return (visibility_priority.get(visibility_level, 0), ad.get('published_at', datetime.min))
+        
+        # Use a tuple for sorting: primary key is visibility, secondary is recency.
+        # This ensures that within the same visibility tier, newer ads are shown first.
+        published_at = ad.get('published_at', datetime.min.astimezone(timezone.utc))
+        return (visibility_priority.get(visibility_level, 0), published_at)
     
     similar_list.sort(key=sort_by_priority, reverse=True)
     
+    # Add display images to the final list before returning
+    for advert in similar_list:
+        main_image_url = advert.get('main_image')
+        if main_image_url:
+            advert['display_image'] = main_image_url
+        else:
+            advert['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
+
     return similar_list[:limit]
+
 
 
 
@@ -4849,6 +4895,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
