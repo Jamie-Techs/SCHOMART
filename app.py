@@ -1685,32 +1685,35 @@ def get_category_name(category_id):
     return "Unknown"
 
 
-
-
 def upload_file_to_firebase(file, folder):
     """
     Uploads a file to Firebase Storage.
-    Returns the public URL of the uploaded file on success, None otherwise.
+    Returns a dictionary with the public URL and file path on success, None otherwise.
     """
     if not file or not file.filename:
         return None
 
     filename = secure_filename(file.filename)
     extension = os.path.splitext(filename)[1]
-    unique_filename = f"{uuid.uuid4().hex}{extension}" # Use .hex for a cleaner filename
+    unique_filename = f"{uuid.uuid4().hex}{extension}"
     destination_path = f"{folder}/{unique_filename}"
 
     try:
-        # Reset the file pointer to the beginning before uploading
         file.seek(0)
         
         blob = storage.bucket().blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
-        return blob.public_url
+        
+        return {
+            "public_url": blob.public_url,
+            "file_path": destination_path  # This is the key value to save
+        }
     except Exception as e:
         logging.error(f"Failed to upload file to Firebase Storage: {e}")
         return None
+
+
 
 
 def handle_file_uploads(files, user_id, advert_data):
@@ -4957,6 +4960,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
