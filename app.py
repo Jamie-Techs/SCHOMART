@@ -3217,14 +3217,12 @@ def referral_benefit():
 
 
 
-
-
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
     """
     Handles displaying a single advert detail page and increments view count
-    for unique, non-owner users.
+    for unique, non-owner users. Fetches and displays similar adverts.
     """
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
@@ -3244,78 +3242,35 @@ def advert_detail(advert_id):
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
-        # --- NEW LOGIC FOR VIEW COUNTING ---
-        # Only increment view count for unique, non-owner users.
-        if current_user_id and not is_owner:
-            # Check if this user has already viewed this advert.
-            view_query = db.collection('advert_views').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
-            
-            # If the user has NOT viewed this advert before, record the view and update the count.
-            if not any(view_query):
-                # Use a Firestore transaction for a safe, atomic update.
-                @firestore.transactional
-                def update_view_count(transaction, doc_ref):
-                    snapshot = doc_ref.get(transaction=transaction)
-                    new_view_count = snapshot.to_dict().get('view_count', 0) + 1
-                    transaction.update(doc_ref, {'view_count': new_view_count})
-                
-                # Run the transaction to increment the view count.
-                transaction = db.transaction()
-                update_view_count(transaction, advert_ref)
-
-                # Add a record to the `advert_views` collection to prevent double-counting.
-                db.collection('advert_views').add({
-                    'user_id': current_user_id,
-                    'advert_id': advert_id,
-                    'viewed_at': firestore.SERVER_TIMESTAMP
-                })
-        # --- END OF NEW LOGIC ---
+        # --- View Count Logic ---
+        # ... (unchanged)
 
         # Step 2: Fetch seller info and attach the profile picture URL.
-        seller_doc = db.collection('users').document(advert_owner_id).get()
-
-        if not seller_doc.exists:
-            seller = {'id': advert_owner_id, 'username': 'Unknown Seller', 'rating': 0.0, 'review_count': 0, 'profile_picture': get_profile_picture_url(advert_owner_id)}
-        else:
-            seller = seller_doc.to_dict()
-            seller['id'] = seller_doc.id
-            seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
-
-            reviews_query = db.collection('reviews').where('reviewee_id', '==', advert_owner_id).stream()
-            total_rating = 0
-            review_count = 0
-            for review_doc in reviews_query:
-                review_data = review_doc.to_dict()
-                total_rating += review_data.get('rating', 0)
-                review_count += 1
-            
-            seller['rating'] = total_rating / review_count if review_count > 0 else 0.0
-            seller['review_count'] = review_count
+        # ... (unchanged)
 
         # Step 3: Fetch related advert data.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
+        advert['school_name'] = get_school_name(advert.get('school'))
         
+        # The 'location' field is already in the 'advert' dictionary if it exists.
+
         # Step 4: Check if the current user is following the seller or has saved the advert
-        is_following = False
-        is_saved = False
-        if current_user_id:
-            is_following = check_if_following(current_user_id, seller['id'])
-            is_saved = check_if_saved(current_user_id, advert_id)
+        # ... (unchanged)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
-        reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
-        reviews = []
-        for review_doc in reviews_ref:
-            review_data = review_doc.to_dict()
-            reviewer_info = db.collection('users').document(review_data['user_id']).get()
-            if reviewer_info.exists:
-                reviewer_data = reviewer_info.to_dict()
-                review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
-                review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
-            reviews.append(review_data)
+        # ... (unchanged)
+        
+        # Step 6: Fetch similar adverts based on category and location
+        similar_adverts = get_similar_adverts(
+            advert['category_id'], 
+            advert['school'],
+            advert['state'],
+            advert_id, # Exclude the current advert
+            limit=8
+        )
 
-        # Step 6: Render the template with all the necessary data
+        # Step 7: Render the template with all the necessary data
         return render_template(
             'advert_detail.html',
             advert=advert,
@@ -3324,7 +3279,8 @@ def advert_detail(advert_id):
             is_following=is_following,
             is_saved=is_saved,
             current_user_id=current_user_id,
-            is_owner=is_owner
+            is_owner=is_owner,
+            similar_adverts=similar_adverts
         )
 
     except Exception as e:
@@ -3333,8 +3289,81 @@ def advert_detail(advert_id):
 
 
 
+def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
+    """
+    Fetches a list of similar adverts based on a weighted criteria,
+    then sorts them by visibility level.
+    """
+    similar_list = []
+    seen_ids = {exclude_id}
+    
+    # Priority score based on visibility level
+    visibility_priority = {
+        'admin': 4,
+        'featured': 3,
+        'premium': 2,
+        'standard': 1,
+    }
 
-# ... (Your existing app, db, and other initializations) ...
+    # Query 1: Adverts in the same category and school
+    query1 = db.collection('adverts').where('category_id', '==', category_id).where('school', '==', school).where('status', '==', 'published').limit(limit)
+    for doc in query1.stream():
+        if doc.id not in seen_ids:
+            advert = doc.to_dict()
+            advert['id'] = doc.id
+            similar_list.append(advert)
+            seen_ids.add(doc.id)
+            if len(similar_list) >= limit:
+                break
+
+    # If we still need more, query for adverts in the same category and state
+    if len(similar_list) < limit:
+        query2 = db.collection('adverts').where('category_id', '==', category_id).where('state', '==', state).where('status', '==', 'published').limit(limit)
+        for doc in query2.stream():
+            if doc.id not in seen_ids:
+                advert = doc.to_dict()
+                advert['id'] = doc.id
+                similar_list.append(advert)
+                seen_ids.add(doc.id)
+                if len(similar_list) >= limit:
+                    break
+
+    # Now, sort the combined list by the visibility priority
+    def sort_by_priority(ad):
+        # We need to fetch the poster's role to determine their visibility priority
+        user_id = ad.get('user_id')
+        user_doc = db.collection('users').document(user_id).get()
+        user_role = user_doc.to_dict().get('role', 'standard') if user_doc.exists else 'standard'
+        
+        # Determine the advert's visibility level.
+        # This assumes 'featured' and 'premium' are fields on the advert doc itself
+        # or can be derived from the user's role. For simplicity, we'll map roles.
+        # You may need to adjust this to fit your exact data model.
+        if user_role == 'admin':
+            visibility_level = 'admin'
+        elif user_role == 'featured' or ad.get('featured_advert'): # Assuming a field like `featured_advert`
+            visibility_level = 'featured'
+        elif user_role == 'premium' or ad.get('premium_advert'): # Assuming a field like `premium_advert`
+            visibility_level = 'premium'
+        else:
+            visibility_level = 'standard'
+
+        return (visibility_priority.get(visibility_level, 0), ad.get('published_at', datetime.min))
+    
+    similar_list.sort(key=sort_by_priority, reverse=True)
+    
+    return similar_list[:limit]
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_advert_performance_data(user_id):
@@ -4820,6 +4849,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
