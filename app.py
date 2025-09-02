@@ -763,8 +763,6 @@ NIGERIAN_SCHOOLS = {
 
 
 
-
-
 @app.route('/profile')
 @login_required
 def profile():
@@ -773,16 +771,12 @@ def profile():
     and generating signed URLs for profile pictures.
     """
     try:
-        # CORRECTED: Get the user's UID from the Flask session, which is where
-        # your login route stores it.
         user_uid = session.get('user')
         
         if not user_uid:
-            # This check is a failsafe; the decorator should prevent this.
             flash("User authentication failed. Please log in again.", "error")
             return redirect(url_for('signup'))
             
-        # Fetch the latest user data from Firestore to avoid using stale session data.
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
 
@@ -793,13 +787,9 @@ def profile():
 
         user_data = user_doc.to_dict()
 
-        # REMOVED: The email verification check is no longer needed here.
-
-        # Assuming you have a format_timestamp function defined somewhere
         user_data['last_active'] = format_timestamp(user_data.get('last_active'))
         user_data['created_at'] = format_timestamp(user_data.get('created_at'))
 
-        # Generate signed URLs for profile and cover photos from Firebase Storage
         profile_pic_url = ""
         cover_photo_url = ""
 
@@ -825,8 +815,8 @@ def profile():
             
         referral_link = f"https://schomart.onrender.com/signup?ref={user_uid}"
 
-        # Fetch the referral count
-        referral_count = get_user_referral_count(user_uid)
+        # Fetch the referral count directly from the user_data dictionary
+        referral_count = user_data.get('referral_count', 0)
 
         return render_template('profile.html',
                                user=user_data,
@@ -3349,21 +3339,33 @@ def get_state_name_from_list(state_name):
     return 'Unknown State'
 
 
-def get_school_name_from_dict(school_acronym):
+# Updated helper function to handle case and missing acronyms
+def get_school_name_from_dict(school_id):
     """
-    Finds the full school name from an acronym by searching the nested 
-    NIGERIAN_SCHOOLS dictionary.
+    Finds the full school name from a school ID by searching the nested 
+    NIGERIAN_SCHOOLS dictionary, handling case-insensitivity.
     """
-    if not school_acronym:
+    if not school_id:
         return 'Unknown School'
     
-    # Iterate through the dictionary's values (which are lists of schools)
+    # Iterate through the lists of schools for each state
     for state_schools in NIGERIAN_SCHOOLS.values():
         for school in state_schools:
-            if school.get('acronym') == school_acronym:
+            # Check for both 'acronym' and 'name' for a match, handling case-insensitivity
+            acronym = school.get('acronym', '').lower()
+            name = school.get('name', '').lower()
+            
+            # The lookup key from your advert document
+            advert_key = school_id.lower()
+            
+            # Check for a match on acronym or name
+            if acronym == advert_key or name == advert_key:
                 return school.get('name')
                 
     return 'Unknown School'
+
+
+
 
 
 @app.route('/advert/<string:advert_id>')
@@ -4946,6 +4948,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
