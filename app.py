@@ -1219,6 +1219,10 @@ def get_geo_info(ip_address):
         return {'city': None, 'state': None, 'country': None}
 
 
+
+
+
+
 @app.route('/')
 def home():
     """
@@ -1291,14 +1295,13 @@ def home():
                 expiration_date = published_at + timedelta(days=duration_days)
                 
                 if expiration_date > now:
+                    # Poster info is still needed for roles, but you'll get location directly.
                     poster_user_ref = db.collection('users').document(advert_data['user_id'])
                     poster_user_doc = poster_user_ref.get()
                     if poster_user_doc.exists:
                         poster_user_data = poster_user_doc.to_dict()
-                        advert_data['poster_username'] = poster_user_data.get('username')
                         advert_data['poster_role'] = poster_user_data.get('role', 'standard')
                     else:
-                        advert_data['poster_username'] = 'Unknown'
                         advert_data['poster_role'] = 'standard'
                     
                     main_image_url = advert_data.get('main_image')
@@ -1321,14 +1324,15 @@ def home():
         def sort_relevance_score(ad):
             score = 0
             # Prioritize by user's IP location
-            advert_location = ad.get('location', '').lower()
-            if user_city and user_city.lower() in advert_location:
+            advert_state = ad.get('state', '').lower()
+            advert_school = ad.get('school', '').lower()
+            if user_ip_state and user_ip_state.lower() == advert_state:
                 score += 500
             
             # Prioritize by user's saved state/school from their profile
-            if user_preferences['state'] and user_preferences['state'].lower() == ad.get('state', '').lower():
+            if user_preferences['state'] and user_preferences['state'].lower() == advert_state:
                 score += 300
-            if user_preferences['school'] and user_preferences['school'].lower() == ad.get('school', '').lower():
+            if user_preferences['school'] and user_preferences['school'].lower() == advert_school:
                 score += 200
 
             # Prioritize by user's preferred categories
@@ -1345,9 +1349,8 @@ def home():
         # Sort all regular adverts by relevance score
         sorted_by_relevance = sorted(regular_adverts, key=sort_relevance_score, reverse=True)
         
-        # Merge the lists, giving admin/featured ads top priority and using visibility level for the final sort
-        final_adverts_list = sorted(admin_ads_for_display + sorted_by_relevance, 
-                                    key=lambda ad: visibility_order.get(ad.get('visibility_level', 'Standard'), 99))
+        # Merge the lists, giving admin/featured ads top priority
+        final_adverts_list = admin_ads_for_display + sorted_by_relevance
 
         return render_template('home.html',
                                locations=locations_data,
@@ -1361,6 +1364,10 @@ def home():
         logger.error(f"An unexpected error occurred in home route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again later.", "danger")
         return render_template('home.html', adverts=[], categories=[], locations=[])
+
+
+
+
 
 
 
@@ -4813,6 +4820,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
