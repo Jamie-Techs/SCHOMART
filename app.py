@@ -763,6 +763,8 @@ NIGERIAN_SCHOOLS = {
 
 
 
+
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -823,16 +825,25 @@ def profile():
             
         referral_link = f"https://schomart.onrender.com/signup?ref={user_uid}"
 
+        # Fetch the referral count
+        referral_count = get_user_referral_count(user_uid)
+
         return render_template('profile.html',
                                user=user_data,
                                profile_pic_url=profile_pic_url,
                                cover_photo_url=cover_photo_url,
-                               referral_link=referral_link)
+                               referral_link=referral_link,
+                               referral_count=referral_count) # Pass the count to the template
 
     except Exception as e:
         logging.error(f"An unexpected error occurred in profile route: {e}", exc_info=True)
         flash(f"An unexpected error occurred: {str(e)}. Please try again.", "error")
         return redirect(url_for('signup'))
+
+
+
+
+
 
 
 @app.route('/profile/personal', methods=['GET', 'POST'])
@@ -4898,6 +4909,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
