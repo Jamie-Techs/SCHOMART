@@ -149,8 +149,8 @@
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
         }
         .ad-image {
-            width: 200%;
-            height: 400px;
+            width: 100%;
+            height: 200px;
             object-fit: cover;
             display: block;
         }
@@ -196,6 +196,32 @@
         .loading-indicator.visible {
             display: block;
         }
+        /* Autocomplete styles from sell.html */
+        .autocomplete-container {
+            position: relative;
+        }
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+        .autocomplete-list.hidden {
+            display: none;
+        }
+        .autocomplete-list-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .autocomplete-list-item:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -226,35 +252,22 @@
                             {% endfor %}
                         </select>
                     </div>
+
                     <div class="filter-group">
-    <label for="state-dropdown">State</label>
-    <select id="state-dropdown" name="state">
-        <option value="">All States</option>
-        {% for state in states %}
-            <option value="{{ state }}" {% if state == selected_state %}selected{% endif %}>{{ state }}</option>
-        {% endfor %}
-    </select>
-</div>
+                        <label for="state_input">State</label>
+                        <div class="autocomplete-container">
+                            <input type="text" name="state" id="state_input" value="{{ selected_state or '' }}" placeholder="e.g., Lagos">
+                            <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
+                        </div>
+                    </div>
 
-<div class="filter-group">
-    <label for="location-dropdown">University</label>
-    <select id="location-dropdown" name="school">
-        <option value="">All Universities</option>
-        {% if selected_state %}
-            {% for school in schools_in_state %}
-                <option value="{{ school.name }}" {% if school.name == selected_school %}selected{% endif %}>{{ school.name }}</option>
-            {% endfor %}
-        {% endif %}
-    </select>
-</div>
-
-
-
-
-
-
-                    
-                    
+                    <div class="filter-group">
+                        <label for="school_input">University</label>
+                        <div class="autocomplete-container">
+                            <input type="text" name="school" id="school_input" value="{{ selected_school or '' }}" placeholder="Select a state first..." disabled>
+                            <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
+                        </div>
+                    </div>
                     <div class="filter-group">
                         <label>Price Range (₦)</label>
                         <div class="price-range">
@@ -380,34 +393,137 @@
                 fetchAndDisplayAdverts(currentPage);
             }
         });
+
+        // --- New Autocomplete/Dropdown Logic from sell.html ---
+
+        const stateInput = document.getElementById('state_input');
+        const schoolInput = document.getElementById('school_input');
+        const stateDropdown = document.getElementById('state-dropdown');
+        const schoolDropdown = document.getElementById('school-dropdown');
         
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchAndDisplayAdverts(1, true);
+        // Ensure your Flask backend passes these two variables to this page
+        const NIGERIAN_STATES = {{ locations.NIGERIAN_STATES | tojson | safe }};
+        const NIGERIAN_SCHOOLS = {{ locations.NIGERIAN_SCHOOLS | tojson | safe }};
+
+        function setupAutocomplete(inputElement, dataList, dropdownElement) {
+            function filterAndDisplay() {
+                const query = inputElement.value.toLowerCase();
+                dropdownElement.innerHTML = '';
+                if (!query) {
+                    dropdownElement.classList.add('hidden');
+                    return;
+                }
+                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+                if (filteredData.length > 0) {
+                    filteredData.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        li.className = 'autocomplete-list-item';
+                        li.addEventListener('click', () => {
+                            inputElement.value = item;
+                            dropdownElement.classList.add('hidden');
+                            inputElement.focus();
+                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                        dropdownElement.appendChild(li);
+                    });
+                    dropdownElement.classList.remove('hidden');
+                } else {
+                    dropdownElement.classList.add('hidden');
+                }
+            }
+
+            inputElement.addEventListener('input', filterAndDisplay);
+            inputElement.addEventListener('focus', filterAndDisplay);
+            inputElement.addEventListener('blur', () => {
+                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+            });
+        }
+        
+        function populateSchoolsDropdown(state) {
+            const schools = NIGERIAN_SCHOOLS[state] || [];
+            schoolDropdown.innerHTML = '';
+            schoolInput.value = '';
+            
+            if (schools.length > 0) {
+                schools.forEach(school => {
+                    const li = document.createElement('li');
+                    li.textContent = school.name;
+                    li.className = 'autocomplete-list-item';
+                    li.addEventListener('click', () => {
+                        schoolInput.value = school.name;
+                        schoolDropdown.classList.add('hidden');
+                        schoolInput.focus();
+                    });
+                    schoolDropdown.appendChild(li);
+                });
+                schoolInput.disabled = false;
+                schoolInput.placeholder = 'Select from the list or type...';
+            } else {
+                schoolInput.disabled = true;
+                schoolInput.placeholder = 'No schools available for this state.';
+            }
+        }
+        
+        stateInput.addEventListener('change', function() {
+            const state = this.value;
+            populateSchoolsDropdown(state);
+            schoolInput.disabled = false;
         });
 
-        // --- Location/School Dropdown Logic ---
-        const stateDropdown = document.getElementById('state-dropdown');
-        const schoolDropdown = document.getElementById('location-dropdown');
-
-        stateDropdown.addEventListener('change', function() {
-            const selectedState = this.value;
-            schoolDropdown.innerHTML = '<option value="">All Universities</option>';
-            if (selectedState) {
-                fetch(`/api/schools_by_state/${selectedState}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                        return response.json();
-                    })
-                    .then(schools => {
-                        schools.forEach(school => {
-                            const option = document.createElement('option');
-                            option.value = school.name;
-                            option.textContent = school.name;
-                            schoolDropdown.appendChild(option);
+        schoolInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const state = stateInput.value;
+            const schools = NIGERIAN_SCHOOLS[state] || [];
+            
+            schoolDropdown.innerHTML = '';
+            
+            if (query && schools.length > 0) {
+                const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
+                if (filteredSchools.length > 0) {
+                    filteredSchools.forEach(school => {
+                        const li = document.createElement('li');
+                        li.textContent = school.name;
+                        li.className = 'autocomplete-list-item';
+                        li.addEventListener('click', () => {
+                            schoolInput.value = school.name;
+                            schoolDropdown.classList.add('hidden');
+                            schoolInput.focus();
                         });
-                    })
-                    .catch(error => console.error('Error fetching schools:', error));
+                        schoolDropdown.appendChild(li);
+                    });
+                    schoolDropdown.classList.remove('hidden');
+                } else {
+                    schoolDropdown.classList.add('hidden');
+                }
+            } else {
+                schoolDropdown.classList.add('hidden');
             }
+        });
+        
+        schoolInput.addEventListener('focus', function() {
+            const state = stateInput.value;
+            if (state) {
+                populateSchoolsDropdown(state);
+                schoolDropdown.classList.remove('hidden');
+            }
+        });
+
+        schoolInput.addEventListener('blur', () => {
+            setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize the autocomplete for the state input
+            setupAutocomplete(stateInput, NIGERIAN_STATES, stateDropdown);
+
+            // Populate schools if a state was pre-selected on page load
+            if (stateInput.value) {
+                populateSchoolsDropdown(stateInput.value);
+            }
+
+            // Fetch initial search results
+            fetchAndDisplayAdverts(1, true);
         });
     </script>
 </body>
