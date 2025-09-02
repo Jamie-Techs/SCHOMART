@@ -3218,6 +3218,9 @@ def referral_benefit():
 
 
 
+
+
+
 def get_school_name(school_id):
     """Fetches the name of a school from its ID."""
     if not school_id:
@@ -3231,6 +3234,30 @@ def get_school_name(school_id):
     else:
         return 'Unknown School'
 
+# Add this function to your helpers.py file.
+def is_advert_saved_by_user(user_id, advert_id):
+    """
+    Checks if a specific advert has been saved by a user.
+    
+    Args:
+        user_id (str): The ID of the current user.
+        advert_id (str): The ID of the advert to check.
+    
+    Returns:
+        bool: True if the advert is saved by the user, False otherwise.
+    """
+    if not user_id or not advert_id:
+        return False
+        
+    try:
+        user_doc_ref = db.collection('users').document(user_id)
+        saved_adverts_list = user_doc_ref.get().to_dict().get('saved_adverts', [])
+        
+        return advert_id in saved_adverts_list
+        
+    except Exception as e:
+        logging.error(f"Error checking if advert {advert_id} is saved by user {user_id}: {e}", exc_info=True)
+        return False
 
 @app.route('/advert/<string:advert_id>')
 @login_required
@@ -3257,9 +3284,6 @@ def advert_detail(advert_id):
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
-        # --- View Count Logic ---
-        # ... (You can add this back if it was in your original code)
-
         # Step 2: Fetch seller info and attach the profile picture URL.
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
@@ -3271,7 +3295,6 @@ def advert_detail(advert_id):
         advert['school_name'] = get_school_name(advert.get('school'))
         
         # Step 4: Check if the current user has saved the advert
-        # The line `is_following = is_following_seller(...)` has been removed.
         is_saved = is_advert_saved_by_user(current_user_id, advert_id)
 
         # Step 5: Fetch reviews for the current advert and process reviewer images
@@ -3301,6 +3324,9 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
 
 
 
@@ -4888,6 +4914,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
