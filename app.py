@@ -1641,18 +1641,20 @@ def upload_file_to_firebase(file, folder):
 
     filename = secure_filename(file.filename)
     extension = os.path.splitext(filename)[1]
-    unique_filename = f"{uuid.uuid4()}{extension}"
+    unique_filename = f"{uuid.uuid4().hex}{extension}" # Use .hex for a cleaner filename
     destination_path = f"{folder}/{unique_filename}"
 
     try:
-        blob = bucket.blob(destination_path)
+        # Reset the file pointer to the beginning before uploading
+        file.seek(0)
+        
+        blob = storage.bucket().blob(destination_path)
         blob.upload_from_file(file, content_type=file.content_type)
         blob.make_public()
         return blob.public_url
     except Exception as e:
         logging.error(f"Failed to upload file to Firebase Storage: {e}")
         return None
-
 
 
 def handle_file_uploads(files, user_id, advert_data):
@@ -2306,10 +2308,9 @@ def delete_advert(advert_id):
 
 
 
-
 @app.route('/admin/adverts/review')
-@login_required  # This decorator runs first, populating g.current_user
-@admin_required  # This decorator runs second, after g.current_user is available
+@login_required
+@admin_required
 def admin_advert_review():
     """
     Renders the admin review page with adverts awaiting review,
@@ -2329,13 +2330,19 @@ def admin_advert_review():
 
         advert['category_name'] = get_category_name(advert.get('category_id'))
 
+        # This part of the code correctly handles the duration and expiry
         duration_days = advert.get("advert_duration_days")
         if duration_days and advert.get("created_at"):
             advert['calculated_expiry'] = datetime.now() + timedelta(days=duration_days)
         else:
             advert['calculated_expiry'] = None
 
+        # -----------------------------------------------------------------
+        # The key correction is here
+        # Retrieve the main image using the consistent key 'main_image'
         main_image_url = advert.get('main_image')
+        # -----------------------------------------------------------------
+  
         if main_image_url:
             advert['display_image'] = main_image_url
         else:
@@ -2346,6 +2353,10 @@ def admin_advert_review():
         pending_adverts.append(advert)
 
     return render_template('admin_review.html', adverts=pending_adverts)
+
+
+
+
 
 
 @app.route('/admin/adverts/approve', methods=['POST'])
@@ -3543,30 +3554,6 @@ def get_media_type_from_extension(filename):
 
 
 
-# Your existing upload_file_to_firebase function
-def upload_file_to_firebase(file, folder):
-    """
-    Uploads a file to Firebase Storage.
-    Returns the public URL of the uploaded file on success, None otherwise.
-    """
-    if not file or not file.filename:
-        return None
-
-    filename = secure_filename(file.filename)
-    extension = os.path.splitext(filename)[1]
-    unique_filename = f"{uuid.uuid4()}{extension}"
-    destination_path = f"{folder}/{unique_filename}"
-
-    try:
-        blob = bucket.blob(destination_path)
-        blob.upload_from_file(file, content_type=file.content_type)
-        blob.make_public()
-        return blob.public_url
-    except Exception as e:
-        logging.error(f"Failed to upload file to Firebase Storage: {e}")
-        return None
-
-
 
 
 
@@ -4670,6 +4657,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
