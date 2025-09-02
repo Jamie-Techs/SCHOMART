@@ -320,6 +320,7 @@
             }
             .main-nav ul li a {
                 font-size: 16px;
+                padding: 5px 0;
             }
             .green-search {
                 padding: 20px 10px;
@@ -531,7 +532,7 @@
         }
     </style>
                 
-        </head>
+</head>
 <body>
 <header class="main-header">
     <h1>SCHOMART</h1>
@@ -554,9 +555,9 @@
                 </a>
             </li>
             <li>
-    <a href="/materials" class="nav-button" title="Check out Study Materials">
-        <i class="fas fa-book"></i> School hub
-    </a>
+                <a href="/materials" class="nav-button" title="Check out Study Materials">
+                    <i class="fas fa-book"></i> School hub
+                </a>
             </li>
             
             
@@ -616,10 +617,12 @@
                 <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
                 <h4>{{ advert['title'] }}</h4>
                 <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>{{ advert['location'] }}{% if advert['condition'] %} - {{ advert['condition'] }}{% endif %}</p>
-                {% if advert['poster_username'] %}
-                    <p>By: {{ advert['poster_username'] }}</p>
-                {% endif %}
+                <p>
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                    {% if advert['school'] and advert['state'] %}, {% endif %}
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
             </a>
             {% endfor %}
 
@@ -629,10 +632,12 @@
                 <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
                 <h4>{{ advert['title'] }}</h4>
                 <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>{{ advert['location'] }}{% if advert['condition'] %} - {{ advert['condition'] }}{% endif %}</p>
-                {% if advert['poster_username'] %}
-                    <p>By: {{ advert['poster_username'] }}</p>
-                {% endif %}
+                <p>
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                    {% if advert['school'] and advert['state'] %}, {% endif %}
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
             </a>
             {% endfor %}
         </div>
@@ -661,10 +666,12 @@
             <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
             <h4>{{ advert['title'] }}</h4>
             <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-            <p>{{ advert['location'] }}{% if advert['condition'] %} - {{ advert['condition'] }}{% endif %}</p>
-            {% if advert['poster_username'] %}
-                <p>By: {{ advert['poster_username'] }}</p>
-            {% endif %}
+            <p>
+                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                {% if advert['school'] and advert['state'] %}, {% endif %}
+                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+            </p>
+            <p>{{ advert['condition'] }}</p>
         </a>
         {% endfor %}
     </div>
@@ -701,90 +708,14 @@
             if (posts.length === 0) {
                 airtimeSection.style.display = 'none'; // Hide the entire section if no posts
             } else {
-                airtimeSection.style.display = 'block'; // Show the entire section
-                noAirtimeMessage.style.display = 'none'; // Ensure no-message is hidden
-                container.style.display = 'grid'; // Ensure grid is displayed
-
-                posts.forEach(post => {
-                    const postElement = document.createElement('div');
-                    postElement.classList.add('airtime-card');
-                    postElement.setAttribute('data-post-id', post.id); // Store post ID for deletion
-
-                    const createdAt = new Date(post.created_at);
-                    const expiresAt = new Date(post.expires_at);
-                    const now = new Date();
-
-                    let timeLeftSeconds = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
-
-                    const amountDisplay = post.amount ? `<p class="amount">Amount: ₦${post.amount}</p>` : '';
-                    const instructionsDisplay = post.instructions ? `<p class="instructions">${post.instructions}</p>` : '';
-                    const digitsDisplay = post.digits ? `<div class="airtime-digits">${post.digits}</div>` : '';
-
-                    postElement.innerHTML = `
-                        ${post.network ? `<div class="network-badge"><i class="fas fa-wifi"></i> ${post.network}</div>` : ''}
-                        ${post.image_url ? `<img src="${post.image_url}" alt="Airtime Image" class="airtime-image" onerror="this.onerror=null;this.src='https://placehold.co/200x150/e0e0e0/777777?text=Image+Unavailable';">` : ''}
-                        ${amountDisplay}
-                        ${instructionsDisplay}  ${digitsDisplay}
-                        <p class="post-time">Posted: ${createdAt.toLocaleString()}</p>
-                        `;
-                    container.appendChild(postElement);
-
-                    // Start a timer for each individual post to check for expiry
-                    startPostExpiryTimer(postElement, timeLeftSeconds);
-                });
+                airtimeSection.style.display = 'block'
             }
         } catch (error) {
-            console.error('Error fetching airtime posts:', error);
-            airtimeSection.style.display = 'none'; // Hide section on network error or other issues
+            console.error('An error occurred during fetch:', error);
+            document.getElementById('airtime-posts-section').style.display = 'none';
         }
     }
 
-    /**
-     * Starts a timer for a single post to check if it has expired.
-     * This timer is different from a general page refresh timer.
-     * It runs every 10 seconds to check if the post's expiry time has passed.
-     */
-    function startPostExpiryTimer(postElement, initialSeconds) {
-        let timeLeft = initialSeconds;
-        const postId = postElement.getAttribute('data-post-id');
-
-        const checkExpiry = () => {
-            if (timeLeft <= 0) {
-                postElement.remove(); // Remove the element from the DOM
-                deleteExpiredPost(postId); // Notify backend to delete
-                clearInterval(interval); // Stop this specific post's timer
-                fetchAirtimePosts(); // Re-fetch all posts to update the UI
-            } else {
-                timeLeft -= 10; // Decrease by 10 seconds since the interval is 10 seconds
-            }
-        };
-
-        const interval = setInterval(checkExpiry, 10000); // Check expiry every 10 seconds
-    }
-
-    /**
-     * Notifies the server to delete a post that has expired.
-     */
-    async function deleteExpiredPost(postId) {
-        try {
-            const response = await fetch(`/api/airtime-posts/${postId}/delete`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (!response.ok) {
-                console.error(`Failed to delete expired post ${postId}:`, response.statusText);
-            } else {
-                const result = await response.json();
-                if (result.message) {
-                    console.log(result.message);
-                }
-            }
-        } catch (error) {
-            console.error(`Error deleting expired post ${postId}:`, error);
-        }
-    }
-
-    // Call fetchAirtimePosts only when the page loads, not on an interval.
     document.addEventListener('DOMContentLoaded', () => {
         fetchAirtimePosts();
     });
