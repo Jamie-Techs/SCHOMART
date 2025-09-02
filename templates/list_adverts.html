@@ -385,12 +385,16 @@
                         {% if advert.status == 'pending_payment' %}
                             <a href="{{ url_for('payment', advert_id=advert.id) }}" class="btn btn-info">Complete Payment</a>
                             <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
+                        <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn">View</a>
+                            
                             <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
                         {% elif advert.status == 'pending_review' %}
                             <span class="btn">Pending Review</span>
                             <a href="{{ url_for('sell', advert_id=advert.id) }}" class="btn btn-warning">Edit</a>
+                        <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn">View</a>
+                            
                             <form action="{{ url_for('delete_advert', advert_id=advert.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this advert?');">
                                 <button type="submit" class="btn btn-danger">Delete</button>
                             </form>
