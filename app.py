@@ -3238,7 +3238,7 @@ def clean_expired_posts():
             # Delete the Firestore document
             db.collection('airtime_posts').document(post_id).delete()
             deleted_count += 1
-        
+       
         flash(f'Successfully cleaned up {deleted_count} expired airtime posts.', 'success')
         return redirect(url_for('admin_post_airtime'))
 
@@ -3333,7 +3333,12 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
 
     return similar_list[:limit]
 
-# The main route, updated to remove 'is_following' and include all new features
+
+
+
+
+
+
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
@@ -3344,6 +3349,7 @@ def advert_detail(advert_id):
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
+        # Step 1: Fetch the advert document.
         advert_ref = db.collection('adverts').document(advert_id)
         advert_doc = advert_ref.get()
 
@@ -3358,6 +3364,7 @@ def advert_detail(advert_id):
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
+        # Step 2: Fetch seller info and attach the profile picture URL.
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
@@ -3366,14 +3373,24 @@ def advert_detail(advert_id):
         seller.setdefault('review_count', 0)
         seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
 
+        # Step 3: Get location and category names from the dictionaries,
+        #         using .get() to handle cases where the key might be missing.
         advert['category_name'] = get_category_name(advert.get('category_id'))
-        advert['state_name'] = get_state_name(advert.get('state'))
-        advert['school_name'] = get_school_name(advert.get('school'))
         
+        # Use .get() on the dictionaries to safely retrieve the names.
+        # This mirrors the logic in your home route.
+        advert_state_id = advert.get('state')
+        advert_school_id = advert.get('school')
+        
+        advert['state_name'] = NIGERIAN_STATES.get(advert_state_id, 'Unknown State')
+        advert['school_name'] = NIGERIAN_SCHOOLS.get(advert_school_id, 'Unknown School')
+
+        # Step 4: Check if the current user has saved the advert
         is_saved = False
         if current_user_id:
             is_saved = check_if_saved(current_user_id, advert_id)
 
+        # Step 5: Fetch reviews for the current advert and process reviewer images
         reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
         reviews = []
         for review_doc in reviews_ref:
@@ -3385,6 +3402,8 @@ def advert_detail(advert_id):
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
             reviews.append(review_data)
         
+        # Step 6: Fetch similar adverts based on category and location,
+        #         and then sort by visibility.
         similar_adverts = get_similar_adverts(
             advert['category_id'], 
             advert['school'],
@@ -3393,6 +3412,7 @@ def advert_detail(advert_id):
             limit=8
         )
 
+        # Step 7: Render the template with all the necessary data
         return render_template(
             'advert_detail.html',
             advert=advert,
@@ -3407,7 +3427,6 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
-
 
 
 
@@ -4909,6 +4928,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
