@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Search - SCHOMART</title>
+    <title>Search - Futo Jiji</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -283,20 +283,7 @@
             </form>
         </div>
 
-        <div class="adverts-grid" id="adverts-container">
-            {% for advert in adverts %}
-                <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="ad-card">
-                    <img src="{{ advert.display_image }}" alt="{{ advert.title }}" class="ad-image">
-                    <div class="ad-content">
-                        <h4>{{ advert.title }}</h4>
-                        <div class="ad-meta">
-                            <p class="price">₦{{ "{:,.2f}".format(advert.price) }}</p>
-                            <p><i class="fas fa-map-marker-alt"></i> {{ advert.school or advert.state or '' }}</p>
-                        </div>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
+        <div class="adverts-grid" id="adverts-container"></div>
         
         <div class="loading-indicator" id="loading-indicator">Loading more adverts...</div>
         <p class="no-results" id="no-results" style="display: none;">No adverts found matching your criteria.</p>
@@ -307,10 +294,9 @@
         const loadingIndicator = document.getElementById('loading-indicator');
         const noResultsMessage = document.getElementById('no-results');
         const searchForm = document.getElementById('searchForm');
-        
+        let currentPage = 1;
         let isLoading = false;
-        let lastDocId = null;
-        let hasMoreResults = true;
+        let allResultsLoaded = false;
         
         function createAdvertCard(advert) {
             const card = document.createElement('a');
@@ -333,40 +319,40 @@
             return card;
         }
 
-        async function fetchAndDisplayAdverts(isNewSearch = false) {
-            if (isLoading || (!hasMoreResults && !isNewSearch)) return;
+        async function fetchAndDisplayAdverts(page, isNewSearch = false) {
+            if (isLoading || (allResultsLoaded && !isNewSearch)) return;
 
             isLoading = true;
             loadingIndicator.classList.add('visible');
             
             if (isNewSearch) {
                 advertsContainer.innerHTML = '';
-                lastDocId = null;
-                hasMoreResults = true;
+                currentPage = 1;
+                allResultsLoaded = false;
                 noResultsMessage.style.display = 'none';
             }
 
             const formData = new FormData(searchForm);
             const params = new URLSearchParams(formData);
-            if (lastDocId) {
-                params.append('start_after', lastDocId);
-            }
+            params.append('page', currentPage);
 
             try {
                 const response = await fetch(`/api/search_adverts?${params.toString()}`);
-                const data = await response.json();
+                const adverts = await response.json();
                 
-                lastDocId = data.last_doc_id;
-                hasMoreResults = data.has_more;
-
-                if (data.adverts.length === 0 && isNewSearch) {
+                if (adverts.length === 0 && (isNewSearch || currentPage === 1)) {
                     noResultsMessage.style.display = 'block';
+                } else if (adverts.length === 0) {
+                    allResultsLoaded = true;
+                    loadingIndicator.style.display = 'none';
                 }
-                
-                data.adverts.forEach(advert => {
+
+                adverts.forEach(advert => {
                     const advertCard = createAdvertCard(advert);
                     advertsContainer.appendChild(advertCard);
                 });
+                
+                currentPage++;
             } catch (error) {
                 console.error('Failed to fetch adverts:', error);
                 if (isNewSearch) {
@@ -380,17 +366,17 @@
         
         function handleSearch(event) {
             event.preventDefault();
-            fetchAndDisplayAdverts(true);
+            fetchAndDisplayAdverts(1, true);
         }
 
         window.addEventListener('scroll', () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-                fetchAndDisplayAdverts(false);
+                fetchAndDisplayAdverts(currentPage);
             }
         });
         
         document.addEventListener('DOMContentLoaded', () => {
-            fetchAndDisplayAdverts(true);
+            fetchAndDisplayAdverts(1, true);
         });
 
         // --- Location/School Dropdown Logic ---
