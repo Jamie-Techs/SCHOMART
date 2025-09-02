@@ -226,28 +226,28 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="filter-group">
+    <label for="state-dropdown">State</label>
+    <select id="state-dropdown" name="state">
+        <option value="">All States</option>
+        {% for state in states %}
+            <option value="{{ state }}" {% if state == selected_state %}selected{% endif %}>{{ state }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="filter-group">
+    <label for="location-dropdown">University</label>
+    <select id="location-dropdown" name="school">
+        <option value="">All Universities</option>
+        {% if selected_state %}
+            {% for school in schools_in_state %}
+                <option value="{{ school.name }}" {% if school.name == selected_school %}selected{% endif %}>{{ school.name }}</option>
+            {% endfor %}
+        {% endif %}
+    </select>
+</div>
                     
-                    <div class="filter-group">
-                        <label for="state-dropdown">State</label>
-                        <select id="state-dropdown" name="state">
-                            <option value="">All States</option>
-                            {% for state in states %}
-                                <option value="{{ state }}" {% if state == selected_state %}selected{% endif %}>{{ state }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-            
-                    <div class="filter-group">
-                        <label for="location-dropdown">University</label>
-                        <select id="location-dropdown" name="school">
-                            <option value="">All Universities</option>
-                            {% if selected_state %}
-                                {% for school in schools_in_state %}
-                                    <option value="{{ school.name }}" {% if school.name == selected_school %}selected{% endif %}>{{ school.name }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                    </div>
                     
                     <div class="filter-group">
                         <label>Price Range (₦)</label>
