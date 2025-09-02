@@ -1614,6 +1614,16 @@ def get_school_name(school_id):
     else:
         return 'Unknown School'
 
+# This new helper function should be placed in your helpers.py or app.py
+def get_school_by_state(state_name):
+    """
+    Returns a list of schools for a given state from the NIGERIAN_SCHOOLS dictionary.
+    """
+    # Use the .get() method to safely retrieve the list of schools,
+    # returning an empty list if the state is not found.
+    return NIGERIAN_SCHOOLS.get(state_name, [])
+
+
 # Add this function to your helpers.py file.
 def is_advert_saved_by_user(user_id, advert_id):
     """
@@ -3763,8 +3773,6 @@ def subscribe():
 
 
 
-
-
 @app.route('/search')
 @login_required
 def search():
@@ -3787,6 +3795,7 @@ def search():
     categories_data = {doc.id: doc.to_dict() for doc in categories_ref}
 
     schools_in_state = []
+    # Fetch schools only if a state has been selected
     if state:
         schools_in_state = get_school_by_state(state)
 
@@ -3794,7 +3803,7 @@ def search():
         'search.html',
         locations=locations_data,
         categories=categories_data,
-        states=NIGERIAN_STATES,
+        states=NIGERIAN_STATES,  # This should be a list as per your data
         search_query=search_query,
         selected_category=category,
         selected_state=state,
@@ -3831,6 +3840,8 @@ def api_search_adverts():
         page=page
     )
     return jsonify(adverts)
+
+
 
 def fetch_and_filter_adverts(search_query, category, state, school, price_min, price_max, condition, negotiation, page, per_page=20):
     """
@@ -4948,6 +4959,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
