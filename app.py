@@ -3329,30 +3329,14 @@ def advert_detail(advert_id):
 
 
 
-
-
-
-
 def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
     """
     Fetches a list of similar adverts based on a weighted criteria,
     then sorts them by visibility level.
-    
-    Args:
-        category_id (str): The category ID of the current advert.
-        school (str): The school ID of the current advert.
-        state (str): The state ID of the current advert.
-        exclude_id (str): The ID of the current advert to exclude from the results.
-        limit (int): The maximum number of similar adverts to return.
-    
-    Returns:
-        list: A sorted list of similar advert dictionaries.
     """
     similar_list = []
     seen_ids = {exclude_id}
     
-    # Priority score based on visibility level
-    # Higher value means higher priority.
     visibility_priority = {
         'admin': 4,
         'featured': 3,
@@ -3360,7 +3344,6 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
         'standard': 1,
     }
 
-    # Query 1: Adverts in the same category and school
     query1 = db.collection('adverts').where('category_id', '==', category_id).where('school', '==', school).where('status', '==', 'published').limit(limit)
     for doc in query1.stream():
         if doc.id not in seen_ids:
@@ -3371,7 +3354,6 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
             if len(similar_list) >= limit:
                 break
 
-    # If we still need more, query for adverts in the same category and state
     if len(similar_list) < limit:
         query2 = db.collection('adverts').where('category_id', '==', category_id).where('state', '==', state).where('status', '==', 'published').limit(limit)
         for doc in query2.stream():
@@ -3383,32 +3365,25 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
                 if len(similar_list) >= limit:
                     break
 
-    # Now, sort the combined list by the visibility priority
     def sort_by_priority(ad):
-        # We need to fetch the poster's role to determine their visibility priority
         user_id = ad.get('user_id')
         user_doc = db.collection('users').document(user_id).get()
         user_role = user_doc.to_dict().get('role', 'standard') if user_doc.exists else 'standard'
         
-        # Determine the advert's visibility level based on user role or advert status flags.
         visibility_level = 'standard'
         if user_role == 'admin':
             visibility_level = 'admin'
-        # The following lines assume 'featured' and 'premium' are fields on the user document.
-        # Adjust as needed if they are on the advert document.
         elif user_role == 'featured':
             visibility_level = 'featured'
         elif user_role == 'premium':
             visibility_level = 'premium'
         
-        # Use a tuple for sorting: primary key is visibility, secondary is recency.
-        # This ensures that within the same visibility tier, newer ads are shown first.
-        published_at = ad.get('published_at', datetime.min.astimezone(timezone.utc))
+        # Using datetime.fromtimestamp(0, tz=UTC) as the default to avoid the 'year 0' error.
+        published_at = ad.get('published_at', datetime.fromtimestamp(0, tz=UTC))
         return (visibility_priority.get(visibility_level, 0), published_at)
     
     similar_list.sort(key=sort_by_priority, reverse=True)
     
-    # Add display images to the final list before returning
     for advert in similar_list:
         main_image_url = advert.get('main_image')
         if main_image_url:
@@ -4914,6 +4889,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
