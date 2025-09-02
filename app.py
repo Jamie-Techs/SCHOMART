@@ -3251,7 +3251,7 @@ def advert_detail(advert_id):
         # Step 3: Fetch related advert data.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         advert['state_name'] = get_state_name(advert.get('state'))
-        advert['school_name'] = get_school_name(advert.get('school'))
+        advert['school_name'] = get_school_acronym(advert.get('school'))
         
         # The 'location' field is already in the 'advert' dictionary if it exists.
 
@@ -4849,6 +4849,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
