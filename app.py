@@ -3629,26 +3629,202 @@ def subscribe():
 
 
 
-
-
 @app.route('/search')
+@login_required
 def search():
-    """Renders the search page with filters but no initial adverts."""
+    """
+    Renders the search page and fetches the initial set of adverts for the first scroll.
+    """
+    search_query = request.args.get('search_query', '')
+    category = request.args.get('category', '')
+    state = request.args.get('state', '')
+    school = request.args.get('school', '')
+    price_min = request.args.get('price_min')
+    price_max = request.args.get('price_max')
+    condition = request.args.get('condition', '')
+    negotiation = request.args.get('negotiation', '')
+
     locations_data = {
         'NIGERIAN_STATES': NIGERIAN_STATES,
         'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
     }
-    
+
     categories_ref = db.collection('categories').stream()
-    categories_data = {}
-    for doc in categories_ref:
-        categories_data[doc.id] = doc.to_dict()
+    categories_data = {doc.id: doc.to_dict() for doc in categories_ref}
+    
+    # Fetch schools for the dropdown if a state is pre-selected
+    schools_in_state = []
+    if state:
+        schools_in_state = get_school_by_state(state)
+
+    # Fetch the first batch of adverts (for the initial page load)
+    adverts_data = fetch_and_filter_adverts(
+        search_query=search_query,
+        category=category,
+        state=state,
+        school=school,
+        price_min=price_min,
+        price_max=price_max,
+        condition=condition,
+        negotiation=negotiation,
+        start_after_doc_id=None
+    )
+
+    return render_template(
+        'search.html',
+        adverts=adverts_data['adverts'],
+        locations=locations_data,
+        categories=categories_data,
+        states=NIGERIAN_STATES,
+        schools_in_state=schools_in_state,
+        search_query=search_query,
+        selected_category=category,
+        selected_state=state,
+        selected_school=school,
+        price_min=price_min,
+        price_max=price_max,
+        selected_condition=condition,
+        selected_negotiation=negotiation
+    )
+
+@app.route('/api/search_adverts')
+@login_required
+def api_search_adverts():
+    """
+    API endpoint to fetch the next batch of adverts for infinite scrolling.
+    """
+    search_query = request.args.get('search_query', '')
+    category = request.args.get('category', '')
+    state = request.args.get('state', '')
+    school = request.args.get('school', '')
+    price_min = request.args.get('price_min')
+    price_max = request.args.get('price_max')
+    condition = request.args.get('condition', '')
+    negotiation = request.args.get('negotiation', '')
+    start_after_doc_id = request.args.get('start_after')
+
+    try:
+        adverts_data = fetch_and_filter_adverts(
+            search_query=search_query,
+            category=category,
+            state=state,
+            school=school,
+            price_min=price_min,
+            price_max=price_max,
+            condition=condition,
+            negotiation=negotiation,
+            start_after_doc_id=start_after_doc_id
+        )
+        return jsonify(adverts_data)
+    except Exception as e:
+        logging.error(f"Error in API search endpoint: {e}", exc_info=True)
+        return jsonify({'adverts': [], 'last_doc_id': None, 'has_more': False, 'error': 'An error occurred'}), 500
+
+def fetch_and_filter_adverts(search_query, category, state, school, price_min, price_max, condition, negotiation, start_after_doc_id, per_page=20):
+    """
+    Centralized function to query and filter adverts based on search parameters
+    using cursor-based pagination for infinite scroll.
+    """
+    try:
+        query_ref = db.collection('adverts').where(filter=FieldFilter('status', '==', 'published'))
         
-    return render_template('search.html',
-                           locations=locations_data,
-                           categories=categories_data,
-                           states=NIGERIAN_STATES
-                          )
+        # Apply filters
+        if category:
+            query_ref = query_ref.where(filter=FieldFilter('category', '==', category))
+        if state:
+            query_ref = query_ref.where(filter=FieldFilter('state', '==', state))
+        if school:
+            query_ref = query_ref.where(filter=FieldFilter('school', '==', school))
+        if condition:
+            query_ref = query_ref.where(filter=FieldFilter('condition', '==', condition))
+        if negotiation:
+            query_ref = query_ref.where(filter=FieldFilter('negotiable', '==', negotiation == 'yes'))
+        if price_min:
+            query_ref = query_ref.where(filter=FieldFilter('price', '>=', int(price_min)))
+        if price_max:
+            query_ref = query_ref.where(filter=FieldFilter('price', '<=', int(price_max)))
+
+        # Always order by published_at for consistent pagination
+        query_ref = query_ref.order_by('published_at', direction='DESCENDING')
+
+        # Handle infinite scroll cursor
+        if start_after_doc_id:
+            start_after_doc_ref = db.collection('adverts').document(start_after_doc_id).get()
+            if start_after_doc_ref.exists:
+                query_ref = query_ref.start_after(start_after_doc_ref)
+
+        query_ref = query_ref.limit(per_page)
+        
+        adverts_docs = query_ref.stream()
+        
+        adverts = []
+        last_doc_id = None
+        now = datetime.now(timezone.utc)
+        
+        for doc in adverts_docs:
+            advert_data = doc.to_dict()
+            
+            # Server-side keyword search filtering
+            if search_query:
+                if search_query.lower() not in advert_data.get('title', '').lower() and \
+                   search_query.lower() not in advert_data.get('description', '').lower():
+                    continue
+
+            # Expiration check
+            published_at = advert_data.get('published_at')
+            duration_days = advert_data.get('advert_duration_days', 0)
+            if published_at:
+                if not isinstance(published_at, datetime):
+                    published_at = published_at.to_datetime().astimezone(timezone.utc)
+                expiration_date = published_at + timedelta(days=duration_days)
+                if expiration_date <= now:
+                    continue
+
+            # Fetch poster info and prepare data for display
+            poster_user_doc = db.collection('users').document(advert_data['user_id']).get()
+            if poster_user_doc.exists:
+                poster_user_data = poster_user_doc.to_dict()
+                advert_data['poster_username'] = poster_user_data.get('username')
+                advert_data['poster_role'] = poster_user_data.get('role', 'standard')
+            else:
+                advert_data['poster_username'] = 'Unknown'
+                advert_data['poster_role'] = 'standard'
+            
+            main_image_url = advert_data.get('main_image')
+            if main_image_url:
+                advert_data['display_image'] = main_image_url
+            else:
+                advert_data['display_image'] = 'https://placehold.co/400x250/E0E0E0/333333?text=No+Image'
+            
+            advert_data['id'] = doc.id
+            adverts.append(advert_data)
+            last_doc_id = doc.id
+        
+        has_more = len(adverts) == per_page
+        
+        return {
+            'adverts': adverts,
+            'last_doc_id': last_doc_id,
+            'has_more': has_more
+        }
+
+    except Exception as e:
+        logging.error(f"Error fetching filtered adverts: {e}", exc_info=True)
+        return {
+            'adverts': [],
+            'last_doc_id': None,
+            'has_more': False,
+            'error': str(e)
+        }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4662,6 +4838,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
