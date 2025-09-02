@@ -1825,40 +1825,6 @@ def get_user_advert_options(user_id):
     return options
 
 
-def delete_advert_and_data(advert_id):
-    """
-    Deletes an advert document from Firestore and all associated media files
-    (main image, videos, and additional images) from Firebase Storage.
-    """
-    advert_ref = db.collection('adverts').document(advert_id)
-    advert_doc = advert_ref.get()
-
-    if not advert_doc.exists:
-        return False, "Advert not found."
-
-    advert_data = advert_doc.to_dict()
-    main_image_url = advert_data.get('image_url')
-    video_url = advert_data.get('video_url')
-    additional_images = advert_data.get('additional_images', [])
-
-    # Delete the main image
-    if main_image_url:
-        delete_file_from_storage(main_image_url)
-
-    # Delete the video
-    if video_url:
-        delete_file_from_storage(video_url)
-    
-    # Delete any additional images in the list
-    for img_url in additional_images:
-        delete_file_from_storage(img_url)
-
-    # Finally, delete the Firestore document
-    try:
-        advert_ref.delete()
-        return True, "Advert and associated data deleted successfully!"
-    except Exception as e:
-        return False, f"Error deleting advert from Firestore: {e}"
 
 
 
@@ -2471,25 +2437,6 @@ def admin_advert_reject():
         })
         
     return redirect(url_for('admin_advert_review'))
-
-def delete_file_from_storage(file_url):
-    """
-    Deletes a file from Firebase Storage using its download URL.
-    This function is reusable for images, videos, and any other file types.
-    """
-    try:
-        # Extract the file path from the full download URL
-        image_path = file_url.split('/o/')[1].split('?')[0]
-        
-        # Unquote the URL-encoded path to get the actual file path
-        file_path = urllib.parse.unquote(image_path)
-        
-        # Get the blob and delete it
-        blob = bucket.blob(file_path)
-        blob.delete()
-        print(f"File deleted successfully: {file_path}")
-    except Exception as e:
-        print(f"Error deleting file: {e}")
 
 
 
@@ -3148,10 +3095,6 @@ def advert_detail(advert_id):
 
 # ... (Your existing app, db, and other initializations) ...
 
-def get_user_adverts_ids(user_id):
-    """Helper function to get all advert IDs for a given user."""
-    adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
-    return [doc.id for doc in adverts_ref]
 
 def get_advert_performance_data(user_id):
     """Fetches all performance data for a user's adverts."""
@@ -3530,132 +3473,6 @@ def change_phone():
 
 
 
-def get_media_type_from_extension(filename):
-    """
-    Determines the media type (image or video) from a filename's extension.
-    It defaults to 'image' for any unrecognized file types.
-    """
-    if not isinstance(filename, str):
-        # Fallback for non-string filenames
-        return 'image'
-
-    filename = filename.lower()
-    
-    # List of common video file extensions
-    video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv']
-
-    ext = os.path.splitext(filename)[1]
-
-    if ext in video_extensions:
-        return 'video'
-    else:
-        # Treats all other file types, including images, as 'image'.
-        return 'image'
-
-
-
-
-
-
-
-
-def fetch_posts_for_display(category, search_query):
-    """
-    Fetches all searchable posts from Firestore for a given category.
-    Includes the document ID in each post dictionary.
-    """
-    if db is None:
-        return [], 0, "Database connection not established."
-
-    try:
-        posts_ref = db.collection('posts')
-        posts_query = posts_ref.where('categories', 'array_contains', category).stream()
-        
-        all_posts = []
-        for doc in posts_query:
-            post_data = doc.to_dict()
-            post_data['id'] = doc.id 
-            all_posts.append(post_data)
-        
-        if search_query:
-            search_query_lower = search_query.lower()
-            filtered_posts = [
-                post for post in all_posts
-                if search_query_lower in post.get("title", "").lower() or
-                   search_query_lower in post.get("content", "").lower()
-            ]
-        else:
-            filtered_posts = all_posts
-        
-        filtered_posts.sort(key=lambda x: x.get('post_date', datetime.min), reverse=True)
-
-        return filtered_posts, len(filtered_posts), None
-    except Exception as e:
-        logging.error(f"Error fetching posts: {e}", exc_info=True)
-        return [], 0, str(e)
-
-
-def fetch_single_post(post_id):
-    """
-    Fetches a single post from Firestore by its ID from the 'posts' collection.
-    """
-    if db is None:
-        return None
-    try:
-        post_ref = db.collection("posts").document(post_id)
-        doc = post_ref.get()
-        if doc.exists:
-            post_data = doc.to_dict()
-            post_data['id'] = doc.id
-            return post_data
-    except Exception as e:
-        app.logger.error(f"Error fetching post {post_id} from Firestore: {e}", exc_info=True)
-    return None
-
-
-def delete_media_from_firebase(media_url):
-    """Deletes a file from Firebase Storage given its public URL."""
-    try:
-        # The URL contains a path, so we need to get the part after the bucket domain
-        blob = bucket.blob(media_url.split(f"schomart-7a743.appspot.com/")[1])
-        blob.delete()
-        logging.info(f"Successfully deleted media at URL: {media_url}")
-        return True
-    except Exception as e:
-        logging.error(f"Failed to delete media from Firebase Storage: {e}")
-        return False
-
-
-
-
-
-
-# Helper function to strictly determine media type as image or video
-def get_media_type_from_extension(filename):
-    """
-    Strictly determines the media type (image or video) from a filename's extension.
-    Returns None if the file is not an allowed image or video type.
-    """
-    if not isinstance(filename, str):
-        return None
-
-    filename = filename.lower()
-    
-    # List of allowed image and video file extensions
-    allowed_image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-    allowed_video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv']
-
-    ext = os.path.splitext(filename)[1]
-
-    if ext in allowed_image_extensions:
-        return 'image'
-    elif ext in allowed_video_extensions:
-        return 'video'
-    else:
-        # Returns None for any file type that is not an image or video
-        return None
-
-
 # The fully updated route
 @app.route("/admin/create_post", methods=["GET", "POST"])
 @login_required
@@ -3836,52 +3653,6 @@ def faq():
 
 
 
-
-
-# Helper functions for Firebase interactions
-def upload_file_to_firebase(file, filename):
-    blob = bucket.blob(filename)
-    blob.upload_from_file(file, content_type=file.content_type)
-    blob.make_public()
-    return blob.public_url
-
-def get_file_from_firebase(file_path):
-    try:
-        blob = bucket.blob(file_path)
-        if not blob.exists():
-            return None
-        
-        # Create a temporary file to store the downloaded content
-        temp_dir = tempfile.gettempdir()
-        temp_file_path = os.path.join(temp_dir, os.path.basename(file_path))
-        blob.download_to_filename(temp_file_path)
-        
-        return temp_file_path
-    except Exception as e:
-        logging.error(f"Failed to get file from Firebase: {e}")
-        return None
-
-def get_all_materials(query=''):
-    materials_ref = db.collection('study_materials')
-    query_results = materials_ref.stream()
-    
-    materials_list = []
-    for doc in query_results:
-        material = doc.to_dict()
-        material['id'] = doc.id
-        # Simple server-side filtering for demonstration
-        if not query or any(query.lower() in str(val).lower() for val in material.values()):
-            materials_list.append(material)
-
-    return materials_list
-
-def get_material_by_id(material_id):
-    material_doc = db.collection('study_materials').document(material_id).get()
-    if material_doc.exists:
-        material_data = material_doc.to_dict()
-        material_data['id'] = material_doc.id
-        return material_data
-    return None
 
 
 
@@ -4657,6 +4428,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
