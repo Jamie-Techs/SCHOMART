@@ -1614,13 +1614,11 @@ def get_school_name(school_id):
     else:
         return 'Unknown School'
 
-# This new helper function should be placed in your helpers.py or app.py
+# Place this helper function in your app.py or helpers.py file
 def get_school_by_state(state_name):
     """
     Returns a list of schools for a given state from the NIGERIAN_SCHOOLS dictionary.
     """
-    # Use the .get() method to safely retrieve the list of schools,
-    # returning an empty list if the state is not found.
     return NIGERIAN_SCHOOLS.get(state_name, [])
 
 
@@ -4959,6 +4957,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
