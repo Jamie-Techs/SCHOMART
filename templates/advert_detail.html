@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ advert.title }} - Advert Details</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {# You might want to include Font Awesome if you're using icons #}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/advert_detail.css') }}">
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -662,11 +662,62 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        /* advert_detail.css */
+
+/* Zoom Modal */
+.modal-content-zoom {
+    position: relative;
+    margin: auto;
+    width: 90%;
+    max-width: 900px;
+    background-color: transparent; /* Makes the background of the content itself transparent */
+    box-shadow: none; /* Removes the box shadow for a cleaner look */
+    border-radius: 0;
+    padding: 20px;
+    z-index: 1002;
+    overflow: hidden;
+    height: auto;
+}
+
+.modal-content-zoom .close {
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    color: #fff; /* White close button for visibility */
+    font-size: 35px;
+    font-weight: bold;
+    z-index: 1003;
+}
+
+.modal-content-zoom .close:hover,
+.modal-content-zoom .close:focus {
+    color: #999;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.zoom-content-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#zoomedImage, #zoomedVideo {
+    max-width: 100%;
+    max-height: 80vh; /* Limits the size to 80% of the viewport height */
+    object-fit: contain; /* Ensures the image/video is fully visible within the container */
+}
     </style>
 </head>
-<body>
 
+
+
+
+
+    
+<body>
 <div class="container">
+
     {# Flash Messages #}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -678,7 +729,7 @@
     {% endif %}
     {% endwith %}
     {# End Flash Messages #}
-    
+
     <div class="top-navigation">
         <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
             <i class="fas fa-arrow-left"></i> Back
@@ -689,56 +740,37 @@
         <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
             <i class="fas fa-user"></i> Profile
         </a>
-         <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+        <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
             <i class="fas fa-bookmark"></i> Saved Adverts
         </a> 
-        
-        {# CORRECTION: This button was previously separate and now it's merged with the contact-actions section below. It's better practice to have one single "Save/Unsave" button for consistency. #}
     </div>
     
-        <div class="seller-info">
-    <div style="display: flex; align-items: center; margin-top: 10px;">
-        <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-            <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
-            <div class="seller-details">
-                <h3>{{ seller.username }}</h3>
-                <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
-                <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
-            </div>
-        </a>
-    </div>
-</div>
-
-
-    
-        
-          <!-- {% if g.current_user and g.current_user.id != seller.id %}
-                <form id="followForm" onsubmit="handleFollowToggle(event, '{{ seller.id }}')" style="margin-left: auto;">
-                    <button class="follow-btn" type="submit" id="followButton">
-                        {% if is_following %}
-                            <i class="fas fa-user-minus"></i> Unfollow
-                        {% else %}
-                            <i class="fas fa-user-plus"></i> Follow
-                        {% endif %}
-                    </button>
-                </form>
-            {% endif %} -->
+    <div class="seller-info">
+        <div style="display: flex; align-items: center; margin-top: 10px;">
+            <a href="{{ url_for('seller_profile_view', seller_id=seller.id) }}" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+                <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
+                <div class="seller-details">
+                    <h3>{{ seller.username }}</h3>
+                    <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
+                    <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
+                </div>
+            </a>
         </div>
     </div> 
-    
+
     <div class="media-gallery">
         <div class="image-slider">
             <span class="arrow left" onclick="prevSlide()">‹</span>
             <span class="arrow right" onclick="nextSlide()">›</span>
             
             {% if advert.main_image %}
-                <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image">
+                <img class="slide" src="{{ advert.main_image }}" alt="Main Advert Image" onclick="openZoomModal(this)">
             {% endif %}
             {% for image in advert.additional_images %}
-                <img class="slide" src="{{ image }}" alt="Additional Advert Image">
+                <img class="slide" src="{{ image }}" alt="Additional Advert Image" onclick="openZoomModal(this)">
             {% endfor %}
             {% if advert.video %}
-                <video class="slide" controls>
+                <video class="slide" controls onclick="openZoomModal(this)">
                     <source src="{{ advert.video }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -756,52 +788,59 @@
             {% endif %}
         </div>
     </div>
+    
     <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
     
     <h2>{{ advert.title }}</h2>
     <p><strong>Price:</strong> ₦{{ "{:,}".format(advert.price) }}</p>
-    <p><strong>Location:</strong> {{ advert.school }}, {{ advert.state_name }}</p>
+    <p>
+        <strong>Location:</strong>
+        {% if advert.state_name %}{{ advert.state_name }}{% endif %}
+        {% if advert.school_name and advert.state_name %}, {% endif %}
+        {% if advert.school_name %}{{ advert.school_name }}{% endif %}
+        {% if advert.location and (advert.state_name or advert.school_name) %}, {% endif %}
+        {% if advert.location %}{{ advert.location }}{% endif %}
+    </p>
+
     <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
     <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
     <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
+    
     <div class="product-description">
         <h3>Description</h3>
         <p>{{ advert.description }}</p>
     </div>
-
-    <div class="contact-actions">
-    {% if seller.phone_number %}
-        <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
-            <i class="fas fa-phone"></i> Call Seller
-        </a>
-    {% endif %}
-    <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
-        Message Seller
-    </a>
-
-   {# CORRECTED: The button is now always displayed because the route is protected #}
-    <button id="save-toggle-btn"
-            class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
-            data-advert-id="{{ advert.id }}"
-            onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
-        {% if is_saved %}
-            <i class="fas fa-bookmark"></i> Unsave
-        {% else %}
-            <i class="far fa-bookmark"></i> Save
-        {% endif %}
-    </button> 
     
-    <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
-        <i class="fas fa-flag"></i> Report Advert
-    </button>
-    <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
-        <i class="fas fa-share-alt"></i> Share
-    </button>
+    <div class="contact-actions">
+        {% if seller.phone_number %}
+            <a href="tel:{{ seller.phone_number }}" class="nav-button" title="Call Seller">
+                <i class="fas fa-phone"></i> Call Seller
+            </a>
+        {% endif %}
+        <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
+            Message Seller
+        </a>
+        
+        <button id="save-toggle-btn"
+                class="nav-button {% if is_saved %}saved{% else %}unsaved{% endif %}"
+                data-advert-id="{{ advert.id }}"
+                onclick="toggleSaveAdvert(this, '{{ advert.id }}')">
+            {% if is_saved %}
+                <i class="fas fa-bookmark"></i> Unsave
+            {% else %}
+                <i class="far fa-bookmark"></i> Save
+            {% endif %}
+        </button> 
+        
+        <button class="nav-button report-btn" onclick="document.getElementById('reportModal').style.display='block'" title="Report this advert">
+            <i class="fas fa-flag"></i> Report Advert
+        </button>
+        <button onclick="shareAdvert()" class="nav-button" title="Share this advert">
+            <i class="fas fa-share-alt"></i> Share
+        </button>
     </div>
-
-
-    </div>
+    
     <div class="safety-tips">
         <h3>Safety Tips</h3>
         <ul>
@@ -811,32 +850,30 @@
             <li>Keep communication on the platform.</li>
         </ul>
     </div>
-
-
-    <div class="reviews-section">
-    <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
-    {% if reviews %}
-        {% for review in reviews %}
-            <div class="review-box">
-                <div class="reviewer-info">
-                    <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
-                    <span class="reviewer-name">{{ review.reviewer_username }}</span>
-                </div>
-                <div class="review-content">
-                    <div class="review-stars">
-                        {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
-                    </div>
-                    <p class="review-comment">{{ review.comment }}</p>
-                    <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
-                </div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No reviews yet for this advert. Be the first to leave a review!</p>
-    {% endif %}
-    </div>
-      
     
+    <div class="reviews-section">
+        <h2>Customer Reviews ({{ reviews|length or 0 }})</h2>
+        {% if reviews %}
+            {% for review in reviews %}
+                <div class="review-box">
+                    <div class="reviewer-info">
+                        <img src="{{ review.reviewer_profile_picture }}" class="reviewer-profile-pic" alt="{{ review.reviewer_username }}'s Profile" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                        <span class="reviewer-name">{{ review.reviewer_username }}</span>
+                    </div>
+                    <div class="review-content">
+                        <div class="review-stars">
+                            {{ '★' * review.rating|int }}{{ '☆' * (5 - review.rating|int) }}
+                        </div>
+                        <p class="review-comment">{{ review.comment }}</p>
+                        <p class="review-date">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No reviews yet for this advert. Be the first to leave a review!</p>
+        {% endif %}
+    </div>
+
     <div class="review-form">
         <h3>Submit Your Review</h3>
         <form action="{{ url_for('submit_review') }}" method="POST">
@@ -857,7 +894,6 @@
         </form>
     </div>
     
-    
     <h3>Similar Adverts</h3>
     <div class="similar-adverts">
         {% if similar_adverts %}
@@ -876,6 +912,7 @@
 </div>
 
 {# Modals #}
+
 {# Report Advert Modal #}
 <div id="reportModal" class="modal">
     <div class="modal-content">
@@ -898,6 +935,19 @@
     </div>
 </div>
 
+{# Zoom Modal #}
+<div id="zoomModal" class="modal">
+    <div class="modal-content-zoom">
+        <span class="close" onclick="closeZoomModal()">&times;</span>
+        <div class="zoom-content-container">
+            <img id="zoomedImage" src="" alt="Zoomed Image" style="display: none;">
+            <video id="zoomedVideo" controls style="display: none;">
+                <source src="" type="video/mp4">
+            </video>
+        </div>
+    </div>
+</div>
+
 <script>
     let slideIndex = 0;
     const slides = document.querySelectorAll('.image-slider .slide');
@@ -906,6 +956,11 @@
     const alertModalTitle = document.getElementById('alertModalTitle');
     const alertModalMessage = document.getElementById('alertModalMessage');
     const saveButton = document.getElementById('save-toggle-btn');
+    
+    // New Zoom Modal elements
+    const zoomModal = document.getElementById('zoomModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+    const zoomedVideo = document.getElementById('zoomedVideo');
 
     function showSlide(n) {
         if (slides.length === 0) return;
@@ -920,24 +975,48 @@
             slide.style.display = 'none';
             if (slide.tagName === 'VIDEO') {
                 slide.pause();
+                slide.currentTime = 0;
             }
         });
         thumbnails.forEach(thumb => thumb.classList.remove('active-thumb'));
+        
         slides[slideIndex].style.display = 'block';
         if (slides[slideIndex].tagName === 'VIDEO') {
             slides[slideIndex].play();
         }
         thumbnails[slideIndex].classList.add('active-thumb');
     }
-
+    
     function nextSlide() { showSlide(slideIndex + 1); }
     function prevSlide() { showSlide(slideIndex - 1); }
-
+    
     thumbnails.forEach(thumb => {
         thumb.addEventListener('click', function() {
             showSlide(parseInt(this.dataset.index));
         });
     });
+    
+    // Zoom functionality
+    function openZoomModal(element) {
+        zoomModal.style.display = 'flex';
+        if (element.tagName === 'IMG') {
+            zoomedImage.src = element.src;
+            zoomedImage.style.display = 'block';
+            zoomedVideo.style.display = 'none';
+            zoomedVideo.pause();
+        } else if (element.tagName === 'VIDEO') {
+            zoomedVideo.src = element.src;
+            zoomedVideo.style.display = 'block';
+            zoomedImage.style.display = 'none';
+            zoomedVideo.play();
+        }
+    }
+    
+    function closeZoomModal() {
+        zoomModal.style.display = 'none';
+        zoomedVideo.pause();
+        zoomedVideo.currentTime = 0;
+    }
 
     // Initial display
     showSlide(0);
@@ -948,12 +1027,11 @@
         alertModalMessage.textContent = message;
         alertModal.style.display = 'flex';
     }
-
+    
     function closeAlertModal() {
         alertModal.style.display = 'none';
     }
     
-    // CORRECTION: The main issue was in this function
     async function toggleSaveAdvert(button, advertId) {
         const isCurrentlySaved = button.classList.contains('saved');
         const endpoint = isCurrentlySaved ? '/api/unsave_advert' : '/api/save_advert';
@@ -966,9 +1044,7 @@
             });
             
             const data = await response.json();
-
             if (response.ok && data.success) {
-                // CORRECTION: Correctly toggle classes and content
                 if (isCurrentlySaved) {
                     button.classList.remove('saved');
                     button.classList.add('unsaved');
@@ -1003,8 +1079,7 @@
             prompt("Copy this link to share:", shareText);
         }
     }
-
-    // You can remove the old `flashMessage` function and related code since the new `showAlertModal` handles it better.
 </script>
+
 </body>
 </html>
