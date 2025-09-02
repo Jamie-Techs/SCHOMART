@@ -210,10 +210,52 @@
         #description {
             font-size: 1em;
         }
+        #description {
+            height: 200px;
+            resize: vertical;
+        }
+
+        /* New styles for navigation buttons */
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1.5rem; /* Space between buttons */
+            margin-bottom: 2rem;
+        }
+        .top-nav a {
+            color: #006B3C;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+        .top-nav a:hover {
+            color: #025730;
+        }
+        .top-nav i {
+            font-size: 1.25rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        
+        <nav class="top-nav">
+            <a href="{{ url_for('profile') }}" title="My Profile">
+                <i class="fas fa-user-circle"></i>
+                <span>Profile</span>
+            </a>
+            <a href="{{ url_for('home') }}" title="Go to Home">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="{{ url_for('list_adverts') }}" title="My Adverts">
+                <i class="fas fa-list"></i>
+                <span>My Adverts</span>
+            </a>
+        </nav>
         <a onclick="history.back()" class="back-button-top-left" title="Go back to previous page">
             <i class="fas fa-arrow-left"></i> Back
         </a>
