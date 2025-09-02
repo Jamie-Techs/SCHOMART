@@ -3339,17 +3339,42 @@ def get_similar_adverts(category_id, school, state, exclude_id, limit=8):
 
 
 
+
+
+# New Helper Functions to find names from your existing data format
+def get_state_name_from_list(state_name):
+    """Safely retrieves a state name from the NIGERIAN_STATES list."""
+    if state_name in NIGERIAN_STATES:
+        return state_name
+    return 'Unknown State'
+
+
+def get_school_name_from_dict(school_acronym):
+    """
+    Finds the full school name from an acronym by searching the nested 
+    NIGERIAN_SCHOOLS dictionary.
+    """
+    if not school_acronym:
+        return 'Unknown School'
+    
+    # Iterate through the dictionary's values (which are lists of schools)
+    for state_schools in NIGERIAN_SCHOOLS.values():
+        for school in state_schools:
+            if school.get('acronym') == school_acronym:
+                return school.get('name')
+                
+    return 'Unknown School'
+
+
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page and increments view count
-    for unique, non-owner users. Fetches and displays similar adverts.
+    Handles displaying a single advert detail page and fetches similar adverts.
     """
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
-        # Step 1: Fetch the advert document.
         advert_ref = db.collection('adverts').document(advert_id)
         advert_doc = advert_ref.get()
 
@@ -3364,33 +3389,26 @@ def advert_detail(advert_id):
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
 
-        # Step 2: Fetch seller info and attach the profile picture URL.
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
-        
         seller.setdefault('rating', 0.0)
         seller.setdefault('review_count', 0)
         seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
 
-        # Step 3: Get location and category names from the dictionaries,
-        #         using .get() to handle cases where the key might be missing.
         advert['category_name'] = get_category_name(advert.get('category_id'))
         
-        # Use .get() on the dictionaries to safely retrieve the names.
-        # This mirrors the logic in your home route.
-        advert_state_id = advert.get('state')
-        advert_school_id = advert.get('school')
+        advert_state = advert.get('state')
+        advert_school = advert.get('school')
         
-        advert['state_name'] = NIGERIAN_STATES.get(advert_state_id, 'Unknown State')
-        advert['school_name'] = NIGERIAN_SCHOOLS.get(advert_school_id, 'Unknown School')
+        # Now use the new helper functions to safely get the names
+        advert['state_name'] = get_state_name_from_list(advert_state)
+        advert['school_name'] = get_school_name_from_dict(advert_school)
 
-        # Step 4: Check if the current user has saved the advert
         is_saved = False
         if current_user_id:
             is_saved = check_if_saved(current_user_id, advert_id)
 
-        # Step 5: Fetch reviews for the current advert and process reviewer images
         reviews_ref = db.collection('reviews').where('advert_id', '==', advert_id).order_by('created_at', direction=firestore.Query.DESCENDING).stream()
         reviews = []
         for review_doc in reviews_ref:
@@ -3402,8 +3420,6 @@ def advert_detail(advert_id):
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
             reviews.append(review_data)
         
-        # Step 6: Fetch similar adverts based on category and location,
-        #         and then sort by visibility.
         similar_adverts = get_similar_adverts(
             advert['category_id'], 
             advert['school'],
@@ -3412,7 +3428,6 @@ def advert_detail(advert_id):
             limit=8
         )
 
-        # Step 7: Render the template with all the necessary data
         return render_template(
             'advert_detail.html',
             advert=advert,
@@ -3427,6 +3442,9 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+
+
 
 
 
@@ -4928,6 +4946,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
