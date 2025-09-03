@@ -736,8 +736,8 @@
         </a>
         <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
             <i class="fas fa-user"></i> Profile
-        </a>
-        <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+        </a
+        ><a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
             <i class="fas fa-bookmark"></i> Saved Adverts
         </a> 
     </div>
@@ -774,6 +774,8 @@
             {% endif %}
         </div>
         <div class="thumbnail-gallery">
+            {% set total_images = (1 if advert.main_image else 0) + advert.additional_images|length %}
+            
             {% if advert.main_image %}
                 <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
             {% endif %}
@@ -781,7 +783,7 @@
                 <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
             {% endfor %}
             {% if advert.video %}
-                <video class="thumbnail-item video-thumb" src="{{ advert.video }}" alt="Video Thumbnail" data-index="{{ loop.length }}" {% if advert.video_thumbnail %} poster="{{ advert.video_thumbnail }}" {% endif %}></video>
+                <video class="thumbnail-item video-thumb" src="{{ advert.video }}" alt="Video Thumbnail" data-index="{{ total_images }}" {% if advert.video_thumbnail %} poster="{{ advert.video_thumbnail }}" {% endif %}></video>
             {% endif %}
         </div>
     </div>
