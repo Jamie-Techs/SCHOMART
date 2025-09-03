@@ -3382,63 +3382,58 @@ def get_school_name_from_dict(school_id):
 
 
 
-
-
-
-# Updated advert_detail function to handle view counting
+# Updated advert_detail function to handle view counting using FieldValue.increment
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
     """
     Handles displaying a single advert detail page, fetches similar adverts,
-    and increments view count for unique, non-owner users.
+    and increments view count for unique, non-owner users using a simple atomic increment.
     """
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
         advert_ref = db.collection('adverts').document(advert_id)
         
-        # New Logic for View Counting
+        # Check if the user is a logged-in non-owner
         if current_user_id:
-            user_view_ref = advert_ref.collection('views').document(current_user_id)
-            user_view_doc = user_view_ref.get()
+            advert_doc_initial = advert_ref.get()
+            if not advert_doc_initial.exists:
+                abort(404)
             
-            # Check if this user has already viewed this advert
-            if not user_view_doc.exists:
-                # If it's a new, unique view, increment the count using a batched write
-                batch = db.batch()
-                batch.update(advert_ref, {
-                    'views_count': firestore.Increment(1)
-                })
-                
-                # Add the user's ID to the views subcollection to prevent repeat counts
-                batch.set(user_view_ref, {
-                    'viewed_at': firestore.SERVER_TIMESTAMP
-                })
-                
-                # Commit the batched write
-                batch.commit()
-                
-        # Re-read the advert document AFTER the potential write to ensure the latest count
-        advert_doc = advert_ref.get()
+            advert_owner_id = advert_doc_initial.get('user_id')
+            is_owner = current_user_id == advert_owner_id
 
+            if not is_owner:
+                # Check if this user has already viewed this advert
+                user_view_ref = advert_ref.collection('views').document(current_user_id)
+                user_view_doc = user_view_ref.get()
+                
+                if not user_view_doc.exists:
+                    # It's a unique view. Atomically increment the count on the server.
+                    advert_ref.update({'views_count': firestore.Increment(1)})
+                    
+                    # Mark the user as having viewed the advert
+                    user_view_ref.set({'viewed_at': firestore.SERVER_TIMESTAMP})
+
+        # Re-fetch the document to get the final, accurate count
+        advert_doc = advert_ref.get()
         if not advert_doc.exists:
             abort(404)
         
         advert = advert_doc.to_dict()
         advert['id'] = advert_doc.id
-        advert_owner_id = advert.get('user_id')
-
-        is_owner = current_user_id == advert_owner_id
+        
+        # Check status again with the latest document
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
-            
+
+        # The rest of your code to fetch seller info, reviews, etc.
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
         seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
 
-        # Corrected Logic: Calculate the seller's overall rating and review count
         seller_reviews_query = db.collection('reviews').where('reviewee_id', '==', advert_owner_id).stream()
         total_seller_rating = 0
         seller_review_count = 0
@@ -3457,7 +3452,7 @@ def advert_detail(advert_id):
         
         advert['state_name'] = get_state_name_from_list(advert_state)
         advert['school_name'] = get_school_name_from_dict(advert_school)
-        advert.setdefault('views_count', 0) # Ensure views_count is always present
+        advert.setdefault('views_count', 0)
 
         is_saved = False
         if current_user_id:
@@ -5006,6 +5001,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
