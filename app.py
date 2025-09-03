@@ -2123,6 +2123,8 @@ def delete_advert_and_data(advert_id):
 
 
 
+
+
 # Updated sell function with new validation and referral logic
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
@@ -2215,6 +2217,9 @@ def sell(advert_id=None):
             
             category_name = form_data.get('category')
             category_id = get_category_id_from_name(category_name)
+
+            # Get the new delivery option from the form
+            delivery_option = form_data.get("delivery_option")
             
             advert_payload = {
                 "user_id": user_id,
@@ -2222,8 +2227,9 @@ def sell(advert_id=None):
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
                 "price": float(form_data.get('price')),
-                "negotiable": form_data.get("negotiable") == "Yes", 
+                "negotiable": form_data.get("negotiable") == "Yes",
                 "condition": form_data.get("condition"),
+                "delivery_option": delivery_option,  # Add the new field here
                 "state": form_data.get('state'),
                 "school": form_data.get('school'),
                 "specific_location": form_data.get("specific_location"),
@@ -2288,6 +2294,7 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
 
 
 
@@ -4960,6 +4967,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
