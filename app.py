@@ -3382,13 +3382,13 @@ def get_school_name_from_dict(school_id):
 
 
 
-
-
+# Updated advert_detail function to handle view counting
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
     """
-    Handles displaying a single advert detail page and fetches similar adverts.
+    Handles displaying a single advert detail page, fetches similar adverts,
+    and increments view count for unique, non-owner users.
     """
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
@@ -3406,22 +3406,60 @@ def advert_detail(advert_id):
         is_owner = current_user_id == advert_owner_id
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
+        
+        # New Logic for View Counting
+        if not is_owner and current_user_id:
+            # Check if this user has already viewed this advert
+            user_view_ref = advert_ref.collection('views').document(current_user_id)
+            user_view_doc = user_view_ref.get()
+            
+            if not user_view_doc.exists:
+                # If it's a new, unique view, increment the count
+                batch = db.batch()
+                
+                # 1. Increment the main advert's view count
+                batch.update(advert_ref, {
+                    'views_count': firestore.Increment(1)
+                })
+                
+                # 2. Add the user's ID to the views subcollection to prevent repeat counts
+                batch.set(user_view_ref, {
+                    'viewed_at': firestore.SERVER_TIMESTAMP
+                })
+                
+                # Commit the batched write
+                batch.commit()
+                
+                # Increment the view count in the advert dict to show the new value immediately
+                advert['views_count'] = advert.get('views_count', 0) + 1
+        
+        # End of New Logic
 
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
-        seller.setdefault('rating', 0.0)
-        seller.setdefault('review_count', 0)
         seller['profile_picture'] = get_profile_picture_url(advert_owner_id)
+
+        # Corrected Logic: Calculate the seller's overall rating and review count
+        seller_reviews_query = db.collection('reviews').where('reviewee_id', '==', advert_owner_id).stream()
+        total_seller_rating = 0
+        seller_review_count = 0
+        for review_doc in seller_reviews_query:
+            review_data = review_doc.to_dict()
+            total_seller_rating += review_data.get('rating', 0)
+            seller_review_count += 1
+        
+        seller['rating'] = total_seller_rating / seller_review_count if seller_review_count > 0 else 0.0
+        seller['review_count'] = seller_review_count
 
         advert['category_name'] = get_category_name(advert.get('category_id'))
         
         advert_state = advert.get('state')
         advert_school = advert.get('school')
         
-        # Now use the new helper functions to safely get the names
         advert['state_name'] = get_state_name_from_list(advert_state)
         advert['school_name'] = get_school_name_from_dict(advert_school)
+        advert.setdefault('views_count', 0) # Ensure views_count is always present
 
         is_saved = False
         if current_user_id:
@@ -3460,6 +3498,7 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
 
 
 
@@ -4965,6 +5004,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
