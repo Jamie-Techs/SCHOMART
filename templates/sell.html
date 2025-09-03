@@ -349,15 +349,26 @@
                         <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert_data.negotiable == 'No') %}selected{% endif %}>No</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="condition"><i class="fas fa-box-open"></i> Condition:</label>
-                    <select id="condition" name="condition">
-                        <option value="">Select condition</option>
-                        <option value="new" {% if (form_data.condition == 'new') or (advert and advert_data.condition == 'new') %}selected{% endif %}>New</option>
-                        <option value="used" {% if (form_data.condition == 'used') or (advert and advert_data.condition == 'used') %}selected{% endif %}>Used</option>
-                    </select>
-                </div>
+    <label for="condition"><i class="fas fa-box-open"></i> Condition:</label>
+    <select id="condition" name="condition">
+        <option value="">Select condition</option>
+        <option value="new" {% if (form_data.condition == 'new') or (advert and advert_data.condition == 'new') %}selected{% endif %}>New</option>
+        <option value="used" {% if (form_data.condition == 'used') or (advert and advert_data.condition == 'used') %}selected{% endif %}>Used</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label for="delivery_option"><i class="fas fa-shipping-fast"></i> Delivery Option:</label>
+    <select id="delivery_option" name="delivery_option">
+        <option value="">Select an option</option>
+        <option value="pick-up" {% if (form_data.delivery_option == 'pick-up') or (advert and advert_data.delivery_option == 'pick-up') %}selected{% endif %}>Pick-up</option>
+        <option value="shipping" {% if (form_data.delivery_option == 'shipping') or (advert and advert_data.delivery_option == 'shipping') %}selected{% endif %}>Shipping</option>
+        <option value="meet-up" {% if (form_data.delivery_option == 'meet-up') or (advert and advert_data.delivery_option == 'meet-up') %}selected{% endif %}>Meet-up/Delivery</option>
+    </select>
+            </div>
+                
                 
                 <div class="form-group">
                     <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
