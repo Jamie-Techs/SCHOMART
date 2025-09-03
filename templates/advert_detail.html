@@ -135,13 +135,13 @@
             max-width: 700px;
             margin: 0 auto;
             overflow: hidden;
-            background-color: #eee; /* Added to make the background visible */
+            background-color: #eee;
         }
         .image-slider .slide {
             width: 100%;
             display: none;
             max-height: 450px;
-            object-fit: contain; /* ensures image fits within bounds without distortion */
+            object-fit: contain;
             cursor: pointer;
         }
         .image-slider .slide.active {
@@ -293,11 +293,11 @@
         #advertImageViewModal .close-modal-btn {
             background-color: #FDB813;
             color: #333;
-            padding: 20px 30px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 3em;
+            font-size: 1em;
             transition: background-color 0.3s ease;
             margin-top: 10px;
         }
@@ -1094,8 +1094,43 @@
             prompt("Copy this link to share:", shareText);
         }
     }
+    
+    // Asynchronous view recording
+    function recordAdvertView() {
+        const advertId = "{{ advert.id }}";
+        const isOwner = "{{ is_owner }}";
+        const currentUserId = "{{ current_user_id }}";
+
+        // Don't count views for the owner or if the user is not logged in
+        if (isOwner === "True" || !currentUserId) {
+            return;
+        }
+
+        // Wait a few seconds to ensure a legitimate view
+        setTimeout(() => {
+            fetch(`/api/advert/${advertId}/view`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('View successfully recorded:', data.message);
+                } else {
+                    console.error('Failed to record view:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending view request:', error);
+            });
+        }, 3000); // 3-second delay
+    }
+
+    // Call the function when the page is fully loaded
+    window.onload = recordAdvertView;
 </script>
 
 </body>
 </html>
-
