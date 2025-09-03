@@ -135,13 +135,13 @@
             max-width: 700px;
             margin: 0 auto;
             overflow: hidden;
+            background-color: #eee; /* Added to make the background visible */
         }
         .image-slider .slide {
             width: 100%;
             display: none;
             max-height: 450px;
-            object-fit: contain;
-            background-color: #eee;
+            object-fit: contain; /* ensures image fits within bounds without distortion */
             cursor: pointer;
         }
         .image-slider .slide.active {
@@ -669,7 +669,7 @@
         .modal-content-zoom {
             position: relative;
             margin: auto;
-            width: 90%;
+            width: 100%;
             max-width: 900px;
             background-color: transparent;
             box-shadow: none;
@@ -678,7 +678,7 @@
             z-index: 1002;
             overflow: hidden;
             height: auto;
-            display: flex; /* Flex container to center the content */
+            display: flex;
             justify-content: center;
             align-items: center;
         }
@@ -736,8 +736,8 @@
         </a>
         <a href="{{ url_for('profile') }}" class="nav-button" title="View your Profile">
             <i class="fas fa-user"></i> Profile
-        </a
-        ><a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
+        </a>
+        <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
             <i class="fas fa-bookmark"></i> Saved Adverts
         </a> 
     </div>
