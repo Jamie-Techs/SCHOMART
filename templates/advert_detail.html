@@ -25,20 +25,19 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .top-navigation {
-    display: flex;
-    justify-content: flex-start; /* Default for larger screens */
-    flex-wrap: wrap; /* Allows buttons to wrap to a new line */
-    gap: 15px;
-    margin-bottom: 20px;
-}
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
 
-@media (max-width: 600px) {
-    .top-navigation {
-        justify-content: center; /* Center buttons on smaller screens */
-    }
+        @media (max-width: 600px) {
+            .top-navigation {
+                justify-content: center;
             }
-        /* Define .nav-button style to be used by all buttons with icons */
-        .nav-button { /* Apply common styles for all interactive buttons */
+        }
+        .nav-button {
             background-color: #006B3C;
             color: #FDB813;
             border: none;
@@ -48,21 +47,20 @@
             text-decoration: none;
             font-size: 16px;
             transition: background-color 0.3s ease;
-            display: inline-flex; /* Use flexbox for icon and text alignment */
-            align-items: center; /* Vertically align icon and text */
-            justify-content: center; /* Center content horizontally */
-            gap: 5px; /* Space between icon and text */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
         .nav-button:hover {
             background-color: #FDB813;
             color: #000;
         }
 
-        /* Specific styles for buttons/links that are also "nav-button" */
         .contact-actions .nav-button,
         .report-btn,
         .follow-btn,
-        .save-btn { /* Apply these styles to all new button types using nav-button base */
+        .save-btn {
             background-color: #006B3C;
             color: #FDB813;;
             border: none;
@@ -92,7 +90,7 @@
             margin-bottom: 20px;
             border-bottom: 1px solid #ddd;
             padding-bottom: 15px;
-            justify-content: space-between; /* Distribute space between items */
+            justify-content: space-between;
         }
         .profile-pic {
             width: 80px;
@@ -105,14 +103,14 @@
         .seller-details {
             display: flex;
             flex-direction: column;
-            flex-grow: 1; /* Allows seller-details to take up available space */
+            flex-grow: 1;
         }
 
         .seller-info .follow-btn {
-            margin-left: auto; /* Pushes the button to the right within its flex container */
+            margin-left: auto;
         }
         .seller-info form {
-            margin-left: auto; /* This targets the form containing the button */
+            margin-left: auto;
         }
 
         .seller-details h3 {
@@ -133,26 +131,26 @@
         }
         .image-slider {
             position: relative;
-            width: 100%; /* Adjust as needed */
-            max-width: 700px; /* Max width for the main display */
+            width: 100%;
+            max-width: 700px;
             margin: 0 auto;
-            overflow: hidden; /* Hide overflowing parts of slides */
+            overflow: hidden;
         }
         .image-slider .slide {
             width: 100%;
-            display: none; /* Hidden by default */
-            max-height: 450px; /* Limit height for main image/video */
-            object-fit: contain; /* Ensure entire image/video is visible within bounds */
-            background-color: #eee; /* Background for containment */
-            cursor: pointer; /* Indicate clickable for full view */
+            display: none;
+            max-height: 450px;
+            object-fit: contain;
+            background-color: #eee;
+            cursor: pointer;
         }
         .image-slider .slide.active {
-            display: block; /* Show active slide */
+            display: block;
         }
         .image-slider .slide video {
             width: 100%;
             height: auto;
-            display: block; /* Ensure video takes up space when active */
+            display: block;
         }
         .arrow {
             position: absolute;
@@ -165,7 +163,7 @@
             cursor: pointer;
             z-index: 10;
             border-radius: 5px;
-            user-select: none; /* Prevent text selection */
+            user-select: none;
         }
         .arrow.left {
             left: 10px;
@@ -177,11 +175,11 @@
         /* Thumbnail Gallery */
         .thumbnail-gallery {
             display: flex;
-            flex-wrap: wrap; /* Allow thumbnails to wrap to next line */
+            flex-wrap: wrap;
             gap: 10px;
             margin-top: 15px;
-            justify-content: center; /* Center thumbnails */
-            max-width: 700px; /* Match max-width of main slider */
+            justify-content: center;
+            max-width: 700px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -195,9 +193,27 @@
             transition: border-color 0.2s, transform 0.2s;
         }
         .thumbnail-item.active-thumb {
-            border-color: #006B3C; /* Highlight active thumbnail */
+            border-color: #006B3C;
             transform: scale(1.05);
         }
+        .thumbnail-item.video-thumb {
+            position: relative;
+        }
+        .thumbnail-item.video-thumb::after {
+            content: "\f04b";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            padding: 8px 12px;
+        }
+
         /* --- END MEDIA GALLERY STYLES --- */
 
         .product-description {
@@ -211,7 +227,7 @@
             display: inline-block;
             width: 200px;
             margin-right: 10px;
-            vertical-align: top; /* Align to the top for better layout */
+            vertical-align: top;
         }
         .advert-card img {
             width: 100%;
@@ -240,14 +256,14 @@
             width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
-            overflow: auto; /* Enable scrolling for modal content if it's too tall */
-            justify-content: center; /* Center content horizontally */
-            align-items: center; /* Center content vertically */
+            overflow: auto;
+            justify-content: center;
+            align-items: center;
         }
         .modal-content {
             background: white;
             max-width: 500px;
-            margin: 10% auto; /* Fallback for older browsers, flex aligns it anyway */
+            margin: 10% auto;
             padding: 20px;
             border-radius: 8px;
             position: relative;
@@ -255,7 +271,7 @@
 
         /* Styles for the new ImageViewModal */
         #advertImageViewModal .modal-content {
-            max-width: 90%; /* Larger for images */
+            max-width: 90%;
             max-height: 90%;
             display: flex;
             flex-direction: column;
@@ -263,14 +279,14 @@
             align-items: center;
             padding: 20px;
             box-sizing: border-box;
-            background-color: #333; /* Dark background for image modal */
+            background-color: #333;
             border-radius: 10px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
         #advertModalImage {
             max-width: 100%;
-            max-height: 80vh; /* Max height relative to viewport */
-            object-fit: contain; /* Ensure entire image is visible */
+            max-height: 80vh;
+            object-fit: contain;
             display: block;
             margin-bottom: 20px;
         }
@@ -283,7 +299,7 @@
             cursor: pointer;
             font-size: 1em;
             transition: background-color 0.3s ease;
-            margin-top: 10px; /* Space from image */
+            margin-top: 10px;
         }
         #advertImageViewModal .close-modal-btn:hover {
             background-color: #e6a700;
@@ -308,7 +324,7 @@
             gap: 10px;
             margin-top: 20px;
         }
-        .follow-btn { /* Re-applied nav-button styling here */
+        .follow-btn {
             background: #006B3C;
             color: white;
             border: none;
@@ -324,8 +340,7 @@
             background-color: #FDB813;
             color: #000;
         }
-        /* Updated Report Advert button hover style */
-        .report-btn { /* Re-applied nav-button styling here */
+        .report-btn {
             background: #006B3C;
             color: #FDB813;
             border: none;
@@ -338,10 +353,9 @@
             gap: 5px;
         }
         .report-btn:hover {
-            background-color: #ff4d4d; /* Red on hover */
+            background-color: #ff4d4d;
             color: white;
         }
-        /* Save Button styling */
         .save-btn {
             background: #006B3C;
             color: white;
@@ -385,16 +399,15 @@
             font-weight: bold;
             color: #f39c12;
         }
-        /* Review box styling */
         .review-box {
             border: 1px solid #ddd;
             padding: 15px;
             margin-bottom: 15px;
             border-radius: 8px;
             background-color: #f9f9f9;
-            display: flex; /* Use flexbox for review layout */
-            align-items: flex-start; /* Align items to the top */
-            gap: 10px; /* Space between profile pic and text */
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
         .review-box .reviewer-info {
             display: flex;
@@ -402,7 +415,7 @@
             align-items: center;
         }
         .review-box .reviewer-profile-pic {
-            width: 40px; /* Smaller profile picture for reviews */
+            width: 40px;
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
@@ -415,7 +428,7 @@
             text-align: center;
         }
         .review-box .review-content {
-            flex-grow: 1; /* Allows content to take up remaining space */
+            flex-grow: 1;
         }
         .review-box .review-stars {
             color: #FDB813;
@@ -432,7 +445,6 @@
             font-size: 12px;
             color: #777;
         }
-        /* Review submission form styling */
         .review-form {
             margin-top: 20px;
             background-color: #fff;
@@ -453,7 +465,7 @@
             border: 1px solid #ccc;
             margin-bottom: 15px;
             font-size: 15px;
-            resize: vertical; /* Allow vertical resizing */
+            resize: vertical;
         }
         .review-submit-btn {
             background-color: #006B3C;
@@ -470,52 +482,48 @@
             color: #000;
         }
 
-        /* Star Rating - Horizontal Display in review form */
         .star-rating {
             unicode-bidi: bidi-override;
-            direction: rtl; /* For horizontal star display in input form */
-            font-size: 30px; /* Larger stars for input */
+            direction: rtl;
+            font-size: 30px;
             text-align: left;
             margin-bottom: 15px;
-            display: inline-flex; /* Use flexbox for horizontal alignment */
+            display: inline-flex;
             align-items: center;
         }
         .star-rating > input {
             display: none;
         }
         .star-rating > label {
-            display: inline-block; /* Ensure labels are next to each other */
-            padding: 0 4px; /* Adjusted padding for closer stars */
+            display: inline-block;
+            padding: 0 4px;
             cursor: pointer;
-            color: #ddd; /* Default star color */
+            color: #ddd;
             transition: color 0.2s ease;
         }
         .star-rating > label:before {
             content: '★';
         }
-        /* Style for selected and hovered stars */
         .star-rating > input:checked ~ label:before,
-        .star-rating > input:checked ~ label, /* Apply to checked and subsequent labels */
+        .star-rating > input:checked ~ label,
         .star-rating > label:hover:before,
         .star-rating > label:hover ~ label:before {
-            color: #FDB813; /* Filled star color */
+            color: #FDB813;
         }
 
-        /* Adjustments for displayed review stars (read-only) */
         .review-stars {
             color: #FDB813;
             font-size: 18px;
-            display: inline-block; /* Ensure this is also horizontal */
+            display: inline-block;
         }
 
-        /* Contact Options Modal */
         .contact-options-modal-content {
-            max-width: 300px; /* Smaller modal for contact options */
+            max-width: 300px;
             text-align: center;
         }
         .contact-options-modal-content button,
-        .contact-options-modal-content a.contact-option-btn { /* Style for anchor tags as buttons */
-            display: block; /* Each button/link on a new line */
+        .contact-options-modal-content a.contact-option-btn {
+            display: block;
             width: 90%;
             margin: 10px auto;
             padding: 12px 0;
@@ -524,13 +532,13 @@
             color: white;
             border: none;
             border-radius: 5px;
-            text-decoration: none; /* Remove underline for links */
+            text-decoration: none;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            display: inline-flex; /* Use flexbox for icon and text alignment */
-            align-items: center; /* Vertically align icon and text */
-            justify-content: center; /* Center content horizontally */
-            gap: 5px; /* Space between icon and text */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
         .contact-options-modal-content button:hover,
         .contact-options-modal-content a.contact-option-btn:hover {
@@ -538,40 +546,37 @@
             color: #000;
         }
 
-        /* New: Styles for Font Awesome icons used as status indicators */
         .status-icon {
-            margin-left: 5px; /* Adds a little space between text and icon */
-            font-size: 1.1em; /* Adjust icon size relative to surrounding text */
-            vertical-align: middle; /* Aligns the icon with the text */
+            margin-left: 5px;
+            font-size: 1.1em;
+            vertical-align: middle;
         }
-        /* Specific colors for status icons if desired */
         .status-icon.verified {
-            color: #28a745; /* Green for verified */
+            color: #28a745;
         }
         .status-icon.unverified {
-            color: #dc3545; /* Red for unverified */
+            color: #dc3545;
         }
 
-        /* Report Advert Modal Styling */
-        #reportModal .modal-content {
+        .report-modal .modal-content {
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             text-align: center;
         }
-        #reportModal h3 {
-            color: #D32F2F; /* A strong red for reporting */
+        .report-modal h3 {
+            color: #D32F2F;
             margin-bottom: 20px;
         }
-        #reportModal label {
+        .report-modal label {
             font-weight: bold;
             display: block;
             margin-bottom: 10px;
             color: #555;
             text-align: left;
         }
-        #reportModal textarea {
-            width: calc(100% - 20px); /* Account for padding */
+        .report-modal textarea {
+            width: calc(100% - 20px);
             padding: 10px;
             margin-bottom: 20px;
             border: 1px solid #ccc;
@@ -580,8 +585,8 @@
             resize: vertical;
             min-height: 80px;
         }
-        #reportModal .submit-report-btn {
-            background-color: #D32F2F; /* Red color for submit */
+        .report-modal .submit-report-btn {
+            background-color: #D32F2F;
             color: white;
             padding: 12px 25px;
             border: none;
@@ -590,10 +595,10 @@
             font-size: 1.1rem;
             transition: background-color 0.3s ease;
         }
-        #reportModal .submit-report-btn:hover {
-            background-color: #B71C1C; /* Darker red on hover */
+        .report-modal .submit-report-btn:hover {
+            background-color: #B71C1C;
         }
-        #reportModal .close {
+        .report-modal .close {
             color: #aaa;
             float: right;
             font-size: 30px;
@@ -602,27 +607,24 @@
             top: 10px;
             right: 20px;
         }
-        #reportModal .close:hover,
-        #reportModal .close:focus {
+        .report-modal .close:hover,
+        .report-modal .close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
         }
         .views-count {
             text-align: right;
-            margin-right: 20px;  /* adjust as needed */
+            margin-right: 20px;
         }
-    
-    
-
-        /* Add or modify these styles for the button's appearance */
+        
         .unsaved {
             background-color: var(--secondary-color);
             color: white;
         }
 
         .saved {
-            background-color: #004d26; /* A darker green for the 'saved' state */
+            background-color: #004d26;
             color: white;
         }
 
@@ -662,59 +664,54 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        /* advert_detail.css */
 
-/* Zoom Modal */
-.modal-content-zoom {
-    position: relative;
-    margin: auto;
-    width: 90%;
-    max-width: 900px;
-    background-color: transparent; /* Makes the background of the content itself transparent */
-    box-shadow: none; /* Removes the box shadow for a cleaner look */
-    border-radius: 0;
-    padding: 20px;
-    z-index: 1002;
-    overflow: hidden;
-    height: auto;
-}
+        /* Zoom Modal */
+        .modal-content-zoom {
+            position: relative;
+            margin: auto;
+            width: 90%;
+            max-width: 900px;
+            background-color: transparent;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 20px;
+            z-index: 1002;
+            overflow: hidden;
+            height: auto;
+            display: flex; /* Flex container to center the content */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content-zoom .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: #fff;
+            font-size: 35px;
+            font-weight: bold;
+            z-index: 1003;
+        }
 
-.modal-content-zoom .close {
-    position: absolute;
-    top: 10px;
-    right: 25px;
-    color: #fff; /* White close button for visibility */
-    font-size: 35px;
-    font-weight: bold;
-    z-index: 1003;
-}
+        .modal-content-zoom .close:hover,
+        .modal-content-zoom .close:focus {
+            color: #999;
+            text-decoration: none;
+            cursor: pointer;
+        }
 
-.modal-content-zoom .close:hover,
-.modal-content-zoom .close:focus {
-    color: #999;
-    text-decoration: none;
-    cursor: pointer;
-}
+        .zoom-content-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-.zoom-content-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#zoomedImage, #zoomedVideo {
-    max-width: 100%;
-    max-height: 80vh; /* Limits the size to 80% of the viewport height */
-    object-fit: contain; /* Ensures the image/video is fully visible within the container */
-}
+        #zoomedImage, #zoomedVideo {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+        }
     </style>
 </head>
-
-
-
-
-
-    
 <body>
 <div class="container">
 
@@ -770,25 +767,24 @@
                 <img class="slide" src="{{ image }}" alt="Additional Advert Image" onclick="openZoomModal(this)">
             {% endfor %}
             {% if advert.video %}
-                <video class="slide" controls onclick="openZoomModal(this)">
+                <video class="slide" controls loop muted playsinline onclick="openZoomModal(this)" {% if advert.video_thumbnail %} poster="{{ advert.video_thumbnail }}" {% endif %}>
                     <source src="{{ advert.video }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             {% endif %}
         </div>
-
         <div class="thumbnail-gallery">
-    {% if advert.main_image %}
-        <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
-    {% endif %}
-    {% for image in advert.additional_images %}
-        <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
-    {% endfor %}
-    {% if advert.video %}
-        <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ (advert.additional_images|length) + (1 if advert.main_image else 0) }}">
-    {% endif %}
-</div>
-        
+            {% if advert.main_image %}
+                <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
+            {% endif %}
+            {% for image in advert.additional_images %}
+                <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
+            {% endfor %}
+            {% if advert.video %}
+                <video class="thumbnail-item video-thumb" src="{{ advert.video }}" alt="Video Thumbnail" data-index="{{ loop.length }}" {% if advert.video_thumbnail %} poster="{{ advert.video_thumbnail }}" {% endif %}></video>
+            {% endif %}
+        </div>
+    </div>
     
     <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
@@ -820,7 +816,7 @@
             </a>
         {% endif %}
         <a href="https://wa.me/{{ seller.phone_number }}?text={{ url_for('advert_detail', advert_id=advert.id, _external=True) }}" class="nav-button">
-            Message Seller
+            <i class="fab fa-whatsapp"></i> Message Seller
         </a>
         
         <button id="save-toggle-btn"
@@ -942,8 +938,9 @@
         <span class="close" onclick="closeZoomModal()">&times;</span>
         <div class="zoom-content-container">
             <img id="zoomedImage" src="" alt="Zoomed Image" style="display: none;">
-            <video id="zoomedVideo" controls style="display: none;">
+            <video id="zoomedVideo" controls loop playsinline style="display: none;">
                 <source src="" type="video/mp4">
+                Your browser does not support the video tag.
             </video>
         </div>
     </div>
@@ -979,13 +976,21 @@
                 slide.currentTime = 0;
             }
         });
-        thumbnails.forEach(thumb => thumb.classList.remove('active-thumb'));
+        thumbnails.forEach(thumb => {
+            thumb.classList.remove('active-thumb');
+            if (thumb.tagName === 'VIDEO') {
+                thumb.pause();
+            }
+        });
         
         slides[slideIndex].style.display = 'block';
         if (slides[slideIndex].tagName === 'VIDEO') {
             slides[slideIndex].play();
         }
         thumbnails[slideIndex].classList.add('active-thumb');
+        if (thumbnails[slideIndex].tagName === 'VIDEO') {
+            thumbnails[slideIndex].play();
+        }
     }
     
     function nextSlide() { showSlide(slideIndex + 1); }
@@ -1018,6 +1023,13 @@
         zoomedVideo.pause();
         zoomedVideo.currentTime = 0;
     }
+
+    // New: Close modal on click outside content
+    window.addEventListener('click', function(event) {
+        if (event.target === zoomModal) {
+            closeZoomModal();
+        }
+    });
 
     // Initial display
     showSlide(0);
@@ -1084,4 +1096,3 @@
 
 </body>
 </html>
-
