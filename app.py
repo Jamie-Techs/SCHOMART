@@ -3382,53 +3382,33 @@ def get_school_name_from_dict(school_id):
 
 
 
-# Updated advert_detail function to handle view counting using FieldValue.increment
+
+
+
+
+# The updated advert_detail function - NO LONGER handles view counting
 @app.route('/advert/<string:advert_id>')
 @login_required
 def advert_detail(advert_id):
-    """
-    Handles displaying a single advert detail page, fetches similar adverts,
-    and increments view count for unique, non-owner users using a simple atomic increment.
-    """
+    # This function's sole responsibility is to fetch and render the page.
     current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
 
     try:
         advert_ref = db.collection('adverts').document(advert_id)
-        
-        # Check if the user is a logged-in non-owner
-        if current_user_id:
-            advert_doc_initial = advert_ref.get()
-            if not advert_doc_initial.exists:
-                abort(404)
-            
-            advert_owner_id = advert_doc_initial.get('user_id')
-            is_owner = current_user_id == advert_owner_id
-
-            if not is_owner:
-                # Check if this user has already viewed this advert
-                user_view_ref = advert_ref.collection('views').document(current_user_id)
-                user_view_doc = user_view_ref.get()
-                
-                if not user_view_doc.exists:
-                    # It's a unique view. Atomically increment the count on the server.
-                    advert_ref.update({'views_count': firestore.Increment(1)})
-                    
-                    # Mark the user as having viewed the advert
-                    user_view_ref.set({'viewed_at': firestore.SERVER_TIMESTAMP})
-
-        # Re-fetch the document to get the final, accurate count
         advert_doc = advert_ref.get()
+
         if not advert_doc.exists:
             abort(404)
         
         advert = advert_doc.to_dict()
         advert['id'] = advert_doc.id
-        
-        # Check status again with the latest document
+        advert_owner_id = advert.get('user_id')
+
+        is_owner = current_user_id == advert_owner_id
         if advert.get('status') != 'published' and not is_owner:
             abort(404)
-
-        # The rest of your code to fetch seller info, reviews, etc.
+            
+        # All other existing logic to fetch seller, reviews, etc. goes here
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
@@ -3446,7 +3426,6 @@ def advert_detail(advert_id):
         seller['review_count'] = seller_review_count
 
         advert['category_name'] = get_category_name(advert.get('category_id'))
-        
         advert_state = advert.get('state')
         advert_school = advert.get('school')
         
@@ -3476,7 +3455,7 @@ def advert_detail(advert_id):
             advert_id,
             limit=8
         )
-
+        
         return render_template(
             'advert_detail.html',
             advert=advert,
@@ -3491,6 +3470,49 @@ def advert_detail(advert_id):
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
         return abort(500)
+
+@app.route('/api/advert/<string:advert_id>/view', methods=['POST'])
+@login_required
+def record_advert_view(advert_id):
+    """
+    A dedicated API endpoint to record a view for a given advert.
+    """
+    current_user_id = g.current_user.id if hasattr(g, 'current_user') and g.current_user else None
+
+    if not current_user_id:
+        return jsonify({'success': False, 'message': 'User not logged in.'}), 401
+    
+    advert_ref = db.collection('adverts').document(advert_id)
+    advert_doc = advert_ref.get()
+
+    if not advert_doc.exists:
+        return jsonify({'success': False, 'message': 'Advert not found.'}), 404
+
+    # Ensure the user is not the owner
+    if current_user_id == advert_doc.get('user_id'):
+        return jsonify({'success': False, 'message': 'Owner views are not counted.'}), 200
+
+    user_view_ref = advert_ref.collection('views').document(current_user_id)
+    user_view_doc = user_view_ref.get()
+    
+    # Only record the view if it's the first time for this user
+    if not user_view_doc.exists:
+        try:
+            # Atomically increment the view count on the server
+            advert_ref.update({'views_count': firestore.Increment(1)})
+            # Record the user's view to prevent future increments
+            user_view_ref.set({'viewed_at': firestore.SERVER_TIMESTAMP})
+            return jsonify({'success': True, 'message': 'View count updated.'}), 200
+        except Exception as e:
+            logging.error(f"Failed to update view count for advert {advert_id}: {e}")
+            return jsonify({'success': False, 'message': 'Failed to update view count.'}), 500
+            
+    return jsonify({'success': False, 'message': 'View already recorded.'}), 200
+
+
+
+
+
 
 
 
@@ -5001,6 +5023,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
