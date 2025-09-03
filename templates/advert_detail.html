@@ -776,18 +776,19 @@
                 </video>
             {% endif %}
         </div>
+
         <div class="thumbnail-gallery">
-            {% if advert.main_image %}
-                <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
-            {% endif %}
-            {% for image in advert.additional_images %}
-                <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
-            {% endfor %}
-            {% if advert.video %}
-                <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ loop.length }}">
-            {% endif %}
-        </div>
-    </div>
+    {% if advert.main_image %}
+        <img class="thumbnail-item" src="{{ advert.main_image }}" alt="Thumbnail 1" data-index="0">
+    {% endif %}
+    {% for image in advert.additional_images %}
+        <img class="thumbnail-item" src="{{ image }}" alt="Thumbnail {{ loop.index + 1 }}" data-index="{{ loop.index }}">
+    {% endfor %}
+    {% if advert.video %}
+        <img class="thumbnail-item video-thumb" src="{{ url_for('static', filename='images/video_play_icon.png') }}" alt="Video Thumbnail" data-index="{{ (advert.additional_images|length) + (1 if advert.main_image else 0) }}">
+    {% endif %}
+</div>
+        
     
     <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
@@ -1083,3 +1084,4 @@
 
 </body>
 </html>
+
