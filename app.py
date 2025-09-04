@@ -3828,7 +3828,6 @@ def subscribe():
 
 
 
-
 @app.route('/search')
 @login_required
 def search():
@@ -3837,11 +3836,12 @@ def search():
     category = request.args.get('category', '')
     state = request.args.get('state', '')
     school = request.args.get('school', '')
-    location = request.args.get('location', '') # ADDED
+    location = request.args.get('location', '')
     price_min = request.args.get('price_min')
     price_max = request.args.get('price_max')
     condition = request.args.get('condition', '')
     negotiation = request.args.get('negotiation', '')
+    delivery = request.args.get('delivery', '') # ADDED
 
     locations_data = {
         'NIGERIAN_STATES': NIGERIAN_STATES,
@@ -3865,11 +3865,12 @@ def search():
         selected_category=category,
         selected_state=state,
         selected_school=school,
-        selected_location=location, # ADDED
+        selected_location=location,
         price_min=price_min,
         price_max=price_max,
         selected_condition=condition,
         selected_negotiation=negotiation,
+        selected_delivery=delivery, # ADDED
         schools_in_state=schools_in_state
     )
 
@@ -3880,11 +3881,12 @@ def api_search_adverts():
     category = request.args.get('category', '')
     state = request.args.get('state', '')
     school = request.args.get('school', '')
-    location = request.args.get('location', '') # ADDED
+    location = request.args.get('location', '')
     price_min = request.args.get('price_min')
     price_max = request.args.get('price_max')
     condition = request.args.get('condition', '')
     negotiation = request.args.get('negotiation', '')
+    delivery = request.args.get('delivery', '') # ADDED
     page = int(request.args.get('page', 1))
 
     adverts = fetch_and_filter_adverts(
@@ -3892,16 +3894,17 @@ def api_search_adverts():
         category=category,
         state=state,
         school=school,
-        location=location, # ADDED
+        location=location,
         price_min=price_min,
         price_max=price_max,
         condition=condition,
         negotiation=negotiation,
+        delivery=delivery, # ADDED
         page=page
     )
     return jsonify(adverts)
 
-def fetch_and_filter_adverts(search_query, category, state, school, location, price_min, price_max, condition, negotiation, page, per_page=20):
+def fetch_and_filter_adverts(search_query, category, state, school, location, price_min, price_max, condition, negotiation, delivery, page, per_page=20):
     """
     Centralized function to query and filter adverts based on search parameters.
     """
@@ -3919,6 +3922,8 @@ def fetch_and_filter_adverts(search_query, category, state, school, location, pr
             query_ref = query_ref.where('condition', '==', condition)
         if negotiation:
             query_ref = query_ref.where('negotiable', '==', negotiation == 'yes')
+        if delivery:
+            query_ref = query_ref.where('delivery_option', '==', delivery == 'yes') # ADDED
         
         # NOTE: Firestore does not support range queries on multiple fields.
         # This price filtering will continue to be done in Python.
@@ -3944,7 +3949,7 @@ def fetch_and_filter_adverts(search_query, category, state, school, location, pr
             combined_search_string = (
                 f"{advert_data.get('title', '').lower()} "
                 f"{advert_data.get('description', '').lower()} "
-                f"{advert_data.get('location', '').lower()}" # ADDED 'location' to the search string
+                f"{advert_data.get('location', '').lower()}"
             )
             
             if search_query:
@@ -3993,6 +3998,8 @@ def fetch_and_filter_adverts(search_query, category, state, school, location, pr
     except Exception as e:
         logging.error(f"Error fetching filtered adverts: {e}", exc_info=True)
         return []
+
+
 
 
 
@@ -5025,6 +5032,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
