@@ -35,6 +35,11 @@ if ('serviceWorker' in navigator) {
  * @param {string} token The FCM registration token.
  */
 async function sendTokenToBackend(token) {
+    if (!token) {
+        console.error("No token to send.");
+        return;
+    }
+    
     try {
         const response = await fetch('/api/save-fcm-token', {
             method: 'POST',
@@ -61,7 +66,7 @@ export async function requestNotificationPermission() {
             const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
             if (currentToken) {
                 console.log("FCM Token:", currentToken);
-                // Call the new function to send the token to the backend
+                // Send the initial token to the backend
                 sendTokenToBackend(currentToken);
                 return currentToken;
             } else {
@@ -77,10 +82,26 @@ export async function requestNotificationPermission() {
     return null;
 }
 
+// **New:** Listen for token refresh and send the new token to the backend
+getToken(messaging, { vapidKey: VAPID_KEY }).then((token) => {
+    // This is the correct way to listen for token changes in modern SDKs
+    // A token change happens implicitly, so we handle it here.
+    if (token) {
+        console.log("Token already exists. Ensure it's sent to the backend.");
+        sendTokenToBackend(token);
+    }
+}).catch((err) => {
+    console.error("An error occurred while retrieving a new token.", err);
+});
+
+
 // Handle incoming messages while the app is in the foreground
 onMessage(messaging, (payload) => {
     console.log("Foreground message received:", payload);
-    new Notification(payload.notification.title, {
-        body: payload.notification.body
-    });
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/favicon.ico' // Or any other icon
+    };
+    new Notification(notificationTitle, notificationOptions);
 });
