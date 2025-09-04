@@ -4339,34 +4339,32 @@ def faq():
 
 
 
-
-
-# NEW: Helper function to get all materials to extract unique fields
-def get_all_materials():
-    """Helper function to get all materials from Firestore."""
+def get_all_materials(query=''):
+    materials_ref = db.collection('study_materials')
+    query_results = materials_ref.stream()
+    
     materials_list = []
-    try:
-        docs = db.collection('study_materials').stream()
-        for doc in docs:
-            material = doc.to_dict()
-            material['id'] = doc.id
+    for doc in query_results:
+        material = doc.to_dict()
+        material['id'] = doc.id
+        # Simple server-side filtering for demonstration
+        if not query or any(query.lower() in str(val).lower() for val in material.values()):
             materials_list.append(material)
-    except Exception as e:
-        logging.error(f"Error getting all materials: {e}")
+
     return materials_list
 
-# NEW: Endpoint to get unique states and schools for autocomplete
-@app.route('/api/materials/unique_fields', methods=['GET'])
-def api_get_unique_fields():
-    """Returns unique states and schools for autocomplete."""
-    materials = get_all_materials()
-    unique_states = sorted(list(set(m.get('state', '') for m in materials if m.get('state'))))
-    unique_schools = sorted(list(set(m.get('school', '') for m in materials if m.get('school'))))
-    
+
+
+# NEW: API endpoint to serve the hardcoded state and school lists for autocomplete
+@app.route('/api/autocomplete_data', methods=['GET'])
+def get_autocomplete_data():
+    """Serves the hardcoded states and schools to the frontend."""
     return jsonify({
-        'states': unique_states,
-        'schools': unique_schools
+        'states': NIGERIAN_STATES,
+        'schools': NIGERIAN_SCHOOLS
     })
+
+
 
 # UPDATED: The route to handle material posting
 @app.route('/admin/post_material', methods=['POST'])
@@ -5193,6 +5191,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
