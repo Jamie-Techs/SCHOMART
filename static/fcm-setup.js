@@ -30,6 +30,29 @@ if ('serviceWorker' in navigator) {
         });
 }
 
+/**
+ * Sends the FCM token to the backend.
+ * @param {string} token The FCM registration token.
+ */
+async function sendTokenToBackend(token) {
+    try {
+        const response = await fetch('/api/save-fcm-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ fcm_token: token })
+        });
+        if (response.ok) {
+            console.log('FCM token successfully sent to backend.');
+        } else {
+            console.error('Failed to send FCM token to backend:', await response.text());
+        }
+    } catch (error) {
+        console.error('Network error while sending token:', error);
+    }
+}
+
 // Function to request permission and get the token
 export async function requestNotificationPermission() {
     try {
@@ -38,13 +61,15 @@ export async function requestNotificationPermission() {
             const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
             if (currentToken) {
                 console.log("FCM Token:", currentToken);
-                // TODO: Send this token to your backend to save it in Firestore
+                // Call the new function to send the token to the backend
+                sendTokenToBackend(currentToken);
                 return currentToken;
             } else {
                 console.log("No registration token available.");
             }
         } else {
             console.log("Permission denied.");
+            alert("To enable notifications, please allow permissions in your browser settings.");
         }
     } catch (err) {
         console.error("Error getting token:", err);
