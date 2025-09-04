@@ -4372,8 +4372,12 @@ def admin():
         locations=locations_data
     )
 
+
+
+
+# This is the only route you need to check
 @app.route('/admin/post_material', methods=['POST'])
-@login_required
+@login_required  # Assuming these decorators exist
 @admin_required
 def post_material():
     title = request.form.get('title')
@@ -4382,17 +4386,19 @@ def post_material():
     school = request.form.get('school')
     file = request.files.get('file')
 
+    # Basic validation
     if not all([title, state, school, file]):
         flash('Missing required fields: Title, State, School, and a File are mandatory.', 'error')
         return redirect(url_for('admin'))
 
     try:
-        # Assuming you have a file upload helper function
+        # Assuming upload_file_to_firebase is the only necessary helper function here
         file_data = upload_file_to_firebase(file, title)
         
         if not file_data:
             raise Exception("File upload helper failed.")
 
+        # Save data to Firestore. The 'state' and 'school' are stored as plain strings.
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
@@ -4406,11 +4412,14 @@ def post_material():
         
         flash('Material posted successfully!', 'success')
         return redirect(url_for('admin'))
-
+    
     except Exception as e:
+        # This will now catch the error and log it
         logging.error(f"Error posting material: {e}")
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('admin'))
+
+
 
 
 
@@ -5185,6 +5194,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
