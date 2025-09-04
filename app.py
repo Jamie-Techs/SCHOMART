@@ -4353,28 +4353,23 @@ def faq():
 
 
 
-
-
-
-
-
-
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
 def post_material():
+    # ... (existing form data retrieval) ...
     title = request.form.get('title')
+    category = request.form.get('category')
     content = request.form.get('content')
     state = request.form.get('state')
     school = request.form.get('school')
     file = request.files.get('file')
 
-    # All fields are now optional except for the title and the file itself.
-    if not all([title, file]):
-        return jsonify({'success': False, 'error': 'Title and file are required fields.'}), 400
+    if not all([title, category, content, state, school, file]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     try:
-        # Assuming the handle_material_file helper function is already in your code and works as intended
+        # Use our new, consistent helper function
         file_data = handle_material_file(file, title)
         
         if not file_data:
@@ -4383,20 +4378,22 @@ def post_material():
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
+            'category': category,
             'content': content,
             'state': state,
             'school': school,
-            'file_url': file_data['download_url'],
-            'file_path': file_data['file_path'],
+            'file_url': file_data['download_url'],  # Store the public URL for direct linking
+            'file_path': file_data['file_path'],    # Store the internal path for SDK operations
             'created_at': firestore.SERVER_TIMESTAMP
         })
-        
         flash('Material posted successfully!', 'success')
         return jsonify({'success': True, 'message': 'Material posted successfully!'})
-        
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
 
 
 
@@ -5170,6 +5167,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
