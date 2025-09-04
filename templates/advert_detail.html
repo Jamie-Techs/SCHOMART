@@ -710,6 +710,16 @@
             max-height: 80vh;
             object-fit: contain;
         }
+
+        .location-details {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .location-details p {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -788,22 +798,29 @@
         </div>
     </div>
     
-    <p class="views-count"><strong>Views:</strong> {{ advert.view_count or 0 }}</p>
+    <p class="views-count"><strong>Views:</strong> {{ advert.views_count or 0 }}</p>
     <p><strong>Category:</strong> {{ advert.category_name }}</p>
     
     <h2>{{ advert.title }}</h2>
     <p><strong>Price:</strong> ₦{{ "{:,}".format(advert.price) }}</p>
-    <p>
-        <strong>Location:</strong>
-        {% if advert.state_name %}{{ advert.state_name }}{% endif %}
-        {% if advert.school_name and advert.state_name %}, {% endif %}
-        {% if advert.school_name %}{{ advert.school_name }}{% endif %}
-        {% if advert.location and (advert.state_name or advert.school_name) %}, {% endif %}
-        {% if advert.location %}{{ advert.location }}{% endif %}
-    </p>
-
-    <p><strong>Delivery Options:</strong> {{ advert.delivery or 'Not specified' }}</p>
-    <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'yes' else 'No' }}</p>
+    
+    <div class="location-details">
+        <h3>Location & Delivery</h3>
+        {% if advert.state_name %}
+            <p><strong>State:</strong> {{ advert.state_name }}</p>
+        {% endif %}
+        {% if advert.school_name %}
+            <p><strong>School:</strong> {{ advert.school_name }}</p>
+        {% endif %}
+        {% if advert.specific_location %}
+            <p><strong>Precise Location:</strong> {{ advert.specific_location }}</p>
+        {% endif %}
+        
+        {% if advert.delivery_option %}
+            <p><strong>Delivery Option:</strong> {{ advert.delivery_option }}</p>
+        {% endif %}
+    </div>
+    <p><strong>Negotiable:</strong> {{ 'Yes' if advert.negotiable == 'Yes' else 'No' }}</p>
     <p><strong>Condition:</strong> {{ advert.condition|capitalize or 'Not specified' }}</p>
     
     <div class="product-description">
@@ -1094,42 +1111,6 @@
             prompt("Copy this link to share:", shareText);
         }
     }
-    
-    // Asynchronous view recording
-    function recordAdvertView() {
-        const advertId = "{{ advert.id }}";
-        const isOwner = "{{ is_owner }}";
-        const currentUserId = "{{ current_user_id }}";
-
-        // Don't count views for the owner or if the user is not logged in
-        if (isOwner === "True" || !currentUserId) {
-            return;
-        }
-
-        // Wait a few seconds to ensure a legitimate view
-        setTimeout(() => {
-            fetch(`/api/advert/${advertId}/view`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('View successfully recorded:', data.message);
-                } else {
-                    console.error('Failed to record view:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error sending view request:', error);
-            });
-        }, 3000); // 3-second delay
-    }
-
-    // Call the function when the page is fully loaded
-    window.onload = recordAdvertView;
 </script>
 
 </body>
