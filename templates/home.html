@@ -1,860 +1,664 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Home - SCHOMART</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
-    <style>
-        /* Define CSS Variables (adjust these colors as per your site's theme) */
-        :root {
-            --primary-green: #006B3C;
-            --mid-bg: #FFFFFF; /* Assuming white or light grey for card background */
-            --border-color: #E0E0E0;
-            --shadow-light: rgba(0,0,0,0.08);
-            --secondary-yellow: #FDB813;
-            --text-dark: #333333;
-            --text-medium: #666666;
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --info-color: #17a2b8;
-        }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Home - SCHOMART</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        /* Your CSS styles here (unchanged from your original code) */
+        :root {
+            --primary-green: #006B3C;
+            --mid-bg: #FFFFFF;
+            --border-color: #E0E0E0;
+            --shadow-light: rgba(0,0,0,0.08);
+            --secondary-yellow: #FDB813;
+            --text-dark: #333333;
+            --text-medium: #666666;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+        }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding-top: 80px; /* Adjust this value based on your header's height */
-        }
-        .container {
-            width: 90%;
-            margin: auto;
-            max-width: 1200px; /* Limit max width for large screens */
-        }
-        .main-header {
-            background-color: #006B3C;
-            padding: 15px;
-            color: #fff;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            /* Added for better mobile alignment */
-            text-align: center;
-        }
-        .main-header h1 {
-            font-size: 24px;
-            margin-bottom: 10px; /* Space between title and nav on small screens */
-        }
-        .main-nav ul {
-            list-style: none;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center; /* Center nav items */
-            width: 100%; /* Occupy full width for wrapping */
-        }
-        .main-nav ul li a {
-            color: #f5f5f5;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 18px;
-            display: flex; /* Allow icon and text to be side-by-side */
-            align-items: center;
-            gap: 5px; /* Space between icon and text */
-        }
-        .green-search {
-            background-color: #006B3C;
-            padding: 30px 10px;
-            text-align: center;
-            color: white;
-        }
-        .green-search h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .search-row {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .dropdown-btn, .search-input {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 100%;
-            max-width: 280px; /* Increased max-width for better usability */
-        }
-        .search-form {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-        .search-form > div {
-            width: 100%;
-            max-width: 280px; /* Match max-width of input */
-        }
-        .admin-ads, .products-section {
-            background-color: #fff;
-            padding: 20px 0;
-            overflow: hidden; /* Ensures content outside is not visible */
-        }
-        .admin-ads h3, .products-section h3 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #006B3C;
-        }
-        .product-card {
-            background-color: #f9f9f9;
-            width: 100%;
-            max-width: 220px; /* Fixed width for scrolling cards, max-width for grid cards */
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #E0E0E0;
-            flex-shrink: 0; /* Prevent cards from shrinking in scrolling wrapper */
-            text-decoration: none; /* Remove underline from card links */
-            color: inherit; /* Inherit text color for card links */
-            display: flex; /* Use flexbox for vertical alignment */
-            flex-direction: column;
-            justify-content: space-between; /* Distribute space vertically */
-        }
-        /* Apply text overflow handling to product card text elements */
-        .product-card h4,
-        .product-card .product-price,
-        .product-card p {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 5px;
-        }
-        .product-img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 10px; /* Space below image */
-        }
-        .product-price {
-            color: #FDB813;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-        .category-grid {
-            background: #fff;
-            padding: 30px 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Smaller min-width for more columns on small screens */
-            gap: 20px;
-        }
-        .category-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        .category-box {
-            background-color: #EFF7EF;
-            border: 2px solid #006B3C;
-            border-radius: 10px;
-            padding: 10px;
-            transition: transform 0.3s ease;
-            text-align: center; /* Center content within category box */
-        }
-        .category-box:hover {
-            transform: scale(1.05);
-            background-color: #FDB81320;
-        }
-        .category-box img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-        .category-box span {
-            display: block;
-            margin-top: 8px;
-            font-weight: bold;
-            color: #006B3C;
-            white-space: nowrap; /* Prevent category names from wrapping */
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .product-grid {
-            display: grid; /* Changed to grid for better control over responsiveness */
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust minmax for desired card size */
-            gap: 20px;
-            justify-content: center;
-        }
-        .main-footer {
-            background-color: #00391F;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        /* New styles for continuous scrolling */
-        .scrolling-container {
-            overflow: hidden;
-            width: 100%;
-        }
-        .scrolling-wrapper {
-            display: flex;
-            animation: scroll-right-to-left var(--scroll-duration, 30s) linear infinite;
-            white-space: nowrap;
-            padding: 10px 0; /* Add padding for visual spacing around cards */
-        }
-        .scrolling-wrapper .product-card {
-            margin: 0 10px; /* Space between scrolling cards */
-        }
-        @keyframes scroll-right-to-left {
-            0% {
-                transform: translateX(0%);
-            }
-            100% {
-                transform: translateX(-50%); /* Needs to be -50% if content is duplicated once */
-            }
-        }
-        .scrolling-wrapper:hover {
-            animation-play-state: paused;
-        }
-
-        /* Styles for the custom searchable dropdown */
-        .custom-dropdown-container {
-            position: relative;
-            width: 100%;
-            max-width: 280px; /* Match search input max-width */
-        }
-        .dropdown-search-input {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 100%;
-            box-sizing: border-box;
-            outline: none;
-        }
-        .dropdown-options {
-            position: absolute;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            list-style: none;
-            padding: 0;
-            margin-top: 5px;
-        }
-        .dropdown-options li {
-            padding: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            color: #333;
-        }
-        .dropdown-options li:hover {
-            background-color: #f0f0f0;
-        }
-        .dropdown-options li.selected {
-            background-color: #e0e0e0;
-        }
-
-        /* Flash message styling */
-        .flashes {
-            list-style: none;
-            padding: 15px;
-            margin: 10px auto; /* Center flashes below header on smaller screens */
-            width: 90%;
-            max-width: 600px; /* Limit width of flash messages */
-            border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .flashes li {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        .flashes .error {
-            background-color: var(--error-color);
-            color: white;
-        }
-        .flashes .success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        .flashes .info, .flashes .warning {
-            background-color: #ffc107;
-            color: #333;
-        }
-
-        /* Media Queries */
-        @media (max-width: 768px) {
-            .main-header {
-                flex-direction: column;
-                align-items: center; /* Center items in column layout */
-                padding: 10px;
-            }
-            .main-header h1 {
-                margin-bottom: 10px;
-            }
-            .main-nav ul {
-                flex-direction: row; /* Keep nav items in a row if space allows */
-                flex-wrap: wrap; /* Allow wrapping */
-                justify-content: center;
-                gap: 10px;
-            }
-            .main-nav ul li {
-                flex-basis: auto; /* Let items take natural width */
-            }
-            .main-nav ul li a {
-                font-size: 16px;
-                padding: 5px 0;
-            }
-            .green-search {
-                padding: 20px 10px;
-            }
-            .green-search h2 {
-                font-size: 20px;
-            }
-            .search-row {
-                flex-direction: column;
-                align-items: center;
-            }
-            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div {
-                max-width: 90%; /* Occupy more width on smaller screens */
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Adjust for even smaller screens */
-                gap: 15px;
-            }
-            .product-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Adjust for smaller screens */
-            }
-            .admin-ads .product-card {
-                width: 180px; /* Slightly smaller fixed width for scrolling on smaller devices */
-            }
-            .scrolling-wrapper {
-                animation-duration: 25s !important; /* Slightly faster scroll on smaller screens */
-            }
-        }
-        @media (max-width: 480px) {
-            body {
-                padding-top: 100px; /* Adjust padding for smaller header */
-            }
-            .main-header h1 {
-                font-size: 22px;
-            }
-            .main-nav ul {
-                flex-direction: column; /* Stack nav items vertically on very small screens */
-                align-items: center;
-            }
-            .main-nav ul li a {
-                font-size: 14px;
-                padding: 5px 0;
-            }
-            .green-search h2 {
-                font-size: 18px;
-            }
-            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div {
-                max-width: 100%;
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 10px;
-            }
-            .product-grid {
-                grid-template-columns: 1fr; /* Single column layout for very small screens */
-            }
-            .product-card {
-                max-width: 90%;
-                margin: auto; /* Center single column cards */
-            }
-            .admin-ads .product-card {
-                width: 160px; /* Further reduce fixed width for very small screens */
-            }
-            .flashes {
-                width: 95%;
-            }
-        }
-        /* Airtime Post Display Styles */
-        #airtime-posts-section {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 30px auto;
-            background-color: var(--mid-bg);
-            border-radius: 12px;
-            box-shadow: 0 8px 20px var(--shadow-light);
-            /* Hidden by default, JS will show if there are posts */
-            display: none;
-        }
-
-        #airtime-posts-section h2 {
-            text-align: center;
-            color: var(--primary-green);
-            font-size: 2em;
-            margin-bottom: 25px;
-            font-weight: 700;
-        }
-        #airtime-posts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .airtime-card {
-            background-color: var(--mid-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-        }
-
-        .airtime-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-
-        .airtime-card .network-badge {
-            background-color: var(--primary-green);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .airtime-card .amount {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: var(--primary-green);
-            margin-bottom: 10px;
-        }
-
-        .airtime-card .airtime-digits {
-            font-family: 'Consolas', 'Courier New', monospace; /* Monospace font for digits */
-            font-size: 1.4em; /* Larger for readability */
-            font-weight: bold;
-            color: var(--text-dark);
-            background-color: var(--secondary-yellow); /* Yellow background */
-            padding: 12px 18px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            letter-spacing: 1px; /* Space out digits */
-            display: block; /* Ensure it takes its own line */
-            word-break: break-all; /* Allow digits to break if too long */
-        }
-
-        .airtime-card .instructions {
-            font-size: 0.95em;
-            color: var(--text-medium);
-            margin-bottom: 15px;
-        }
-
-        .airtime-card .post-time {
-            font-size: 0.85em;
-            color: var(--text-medium);
-            margin-bottom: 10px;
-        }
-
-        .airtime-card .airtime-image {
-            max-width: 100%;
-            max-height: 150px;
-            object-fit: contain;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Responsive adjustments for airtime cards */
-        @media(max-width: 768px) {
-            #airtime-posts-section {
-                padding: 15px;
-                margin: 20px auto;
-                border-radius: 8px;
-            }
-            #airtime-posts-section h2 {
-                font-size: 1.6em;
-                margin-bottom: 20px;
-            }
-            #airtime-posts-container {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-            }
-            .airtime-card {
-                padding: 15px;
-            }
-            .airtime-card .network-badge {
-                font-size: 0.8em;
-                padding: 6px 12px;
-            }
-            .airtime-card .amount {
-                font-size: 1.1em;
-            }
-            .airtime-card .airtime-digits {
-                font-size: 1.2em;
-                padding: 10px 15px;
-            }
-            .airtime-card .instructions, .airtime-card .post-time {
-                font-size: 0.85em;
-            }
-        }
-
-        @media(max-width: 480px) {
-            #airtime-posts-container {
-                grid-template-columns: 1fr; /* Single column on very small screens */
-            }
-        }
-        /* Updated styles for the notifications button and messages */
-        .notifications-cta {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: var(--mid-bg);
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 600px;
-            text-align: center;
-            box-shadow: 0 4px 15px var(--shadow-light);
-            border: 1px solid var(--border-color);
-        }
-        .notifications-cta h4 {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: var(--text-dark);
-        }
-        .notifications-cta p {
-            font-size: 0.9em;
-            color: var(--text-medium);
-            margin-bottom: 15px;
-        }
-        .notifications-cta button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .notifications-cta button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .notifications-cta button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        /* Button colors based on state */
-        .notifications-cta button.btn-primary {
-            background-color: var(--primary-green);
-            color: white;
-        }
-        .notifications-cta button.btn-success {
-            background-color: var(--success-color);
-            color: white;
-            cursor: default;
-        }
-        .notifications-cta button.btn-danger {
-            background-color: var(--error-color);
-            color: white;
-        }
-        .notifications-cta button.btn-info {
-            background-color: var(--info-color);
-            color: white;
-        }
-    </style>
-            
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding-top: 80px;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            max-width: 1200px;
+        }
+        .main-header {
+            background-color: #006B3C;
+            padding: 15px;
+            color: #fff;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .main-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .main-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+        .main-nav ul li a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .green-search {
+            background-color: #006B3C;
+            padding: 30px 10px;
+            text-align: center;
+            color: white;
+        }
+        .green-search h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .dropdown-btn, .search-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 280px;
+        }
+        .search-form {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .search-form > div {
+            width: 100%;
+            max-width: 280px;
+        }
+        .admin-ads, .products-section {
+            background-color: #fff;
+            padding: 20px 0;
+            overflow: hidden;
+        }
+        .admin-ads h3, .products-section h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #006B3C;
+        }
+        .product-card {
+            background-color: #f9f9f9;
+            width: 100%;
+            max-width: 220px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #E0E0E0;
+            flex-shrink: 0;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .product-card h4, .product-card .product-price, .product-card p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+        .product-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .product-price {
+            color: #FDB813;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .category-grid {
+            background: #fff;
+            padding: 30px 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        .category-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .category-box {
+            background-color: #EFF7EF;
+            border: 2px solid #006B3C;
+            border-radius: 10px;
+            padding: 10px;
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .category-box:hover {
+            transform: scale(1.05);
+            background-color: #FDB81320;
+        }
+        .category-box img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .category-box span {
+            display: block;
+            margin-top: 8px;
+            font-weight: bold;
+            color: #006B3C;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            justify-content: center;
+        }
+        .main-footer {
+            background-color: #00391F;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .scrolling-container {
+            overflow: hidden;
+            width: 100%;
+        }
+        .scrolling-wrapper {
+            display: flex;
+            animation: scroll-right-to-left var(--scroll-duration, 30s) linear infinite;
+            white-space: nowrap;
+            padding: 10px 0;
+        }
+        .scrolling-wrapper .product-card {
+            margin: 0 10px;
+        }
+        @keyframes scroll-right-to-left {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .scrolling-wrapper:hover {
+            animation-play-state: paused;
+        }
+        .custom-dropdown-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+        }
+        .dropdown-search-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .dropdown-options {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            list-style: none;
+            padding: 0;
+            margin-top: 5px;
+        }
+        .dropdown-options li {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+        }
+        .dropdown-options li:hover {
+            background-color: #f0f0f0;
+        }
+        .dropdown-options li.selected {
+            background-color: #e0e0e0;
+        }
+        .flashes {
+            list-style: none;
+            padding: 15px;
+            margin: 10px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .flashes li {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .flashes .error {
+            background-color: var(--error-color);
+            color: white;
+        }
+        .flashes .success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .flashes .info, .flashes .warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .main-header { flex-direction: column; align-items: center; padding: 10px; }
+            .main-header h1 { margin-bottom: 10px; }
+            .main-nav ul { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; }
+            .main-nav ul li { flex-basis: auto; }
+            .main-nav ul li a { font-size: 16px; padding: 5px 0; }
+            .green-search { padding: 20px 10px; }
+            .green-search h2 { font-size: 20px; }
+            .search-row { flex-direction: column; align-items: center; }
+            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div { max-width: 90%; margin-bottom: 10px; }
+            .category-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; }
+            .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .admin-ads .product-card { width: 180px; }
+            .scrolling-wrapper { animation-duration: 25s !important; }
+        }
+        @media (max-width: 480px) {
+            body { padding-top: 100px; }
+            .main-header h1 { font-size: 22px; }
+            .main-nav ul { flex-direction: column; align-items: center; }
+            .main-nav ul li a { font-size: 14px; padding: 5px 0; }
+            .green-search h2 { font-size: 18px; }
+            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div { max-width: 100%; margin-bottom: 10px; }
+            .category-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+            .product-grid { grid-template-columns: 1fr; }
+            .product-card { max-width: 90%; margin: auto; }
+            .admin-ads .product-card { width: 160px; }
+            .flashes { width: 95%; }
+        }
+        #airtime-posts-section {
+            padding: 20px; max-width: 1200px; margin: 30px auto; background-color: var(--mid-bg);
+            border-radius: 12px; box-shadow: 0 8px 20px var(--shadow-light); display: none;
+        }
+        #airtime-posts-section h2 {
+            text-align: center; color: var(--primary-green); font-size: 2em; margin-bottom: 25px; font-weight: 700;
+        }
+        #airtime-posts-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;
+        }
+        .airtime-card {
+            background-color: var(--mid-bg); border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex;
+            flex-direction: column; align-items: center; text-align: center; position: relative;
+            overflow: hidden; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .airtime-card:hover {
+            transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .airtime-card .network-badge {
+            background-color: var(--primary-green); color: white; padding: 8px 15px; border-radius: 20px;
+            font-size: 0.9em; font-weight: 700; margin-bottom: 15px; display: inline-flex;
+            align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .airtime-card .amount {
+            font-size: 1.3em; font-weight: 600; color: var(--primary-green); margin-bottom: 10px;
+        }
+        .airtime-card .airtime-digits {
+            font-family: 'Consolas', 'Courier New', monospace; font-size: 1.4em; font-weight: bold;
+            color: var(--text-dark); background-color: var(--secondary-yellow); padding: 12px 18px;
+            border-radius: 8px; margin-bottom: 15px; letter-spacing: 1px; display: block;
+            word-break: break-all;
+        }
+        .airtime-card .instructions {
+            font-size: 0.95em; color: var(--text-medium); margin-bottom: 15px;
+        }
+        .airtime-card .post-time {
+            font-size: 0.85em; color: var(--text-medium); margin-bottom: 10px;
+        }
+        .airtime-card .airtime-image {
+            max-width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;
+            margin-bottom: 15px; border: 1px solid var(--border-color);
+        }
+        @media(max-width: 768px) {
+            #airtime-posts-section { padding: 15px; margin: 20px auto; border-radius: 8px; }
+            #airtime-posts-section h2 { font-size: 1.6em; margin-bottom: 20px; }
+            #airtime-posts-container { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+            .airtime-card { padding: 15px; }
+            .airtime-card .network-badge { font-size: 0.8em; padding: 6px 12px; }
+            .airtime-card .amount { font-size: 1.1em; }
+            .airtime-card .airtime-digits { font-size: 1.2em; padding: 10px 15px; }
+            .airtime-card .instructions, .airtime-card .post-time { font-size: 0.85em; }
+        }
+        @media(max-width: 480px) {
+            #airtime-posts-container { grid-template-columns: 1fr; }
+        }
+        .notifications-cta {
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            background-color: var(--mid-bg); border-radius: 10px; margin: 20px auto;
+            max-width: 600px; text-align: center; box-shadow: 0 4px 15px var(--shadow-light);
+            border: 1px solid var(--border-color);
+        }
+        .notifications-cta h4 {
+            font-size: 1.2em; margin-bottom: 10px; color: var(--text-dark);
+        }
+        .notifications-cta p {
+            font-size: 0.9em; color: var(--text-medium); margin-bottom: 15px;
+        }
+        .notifications-cta button {
+            padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold;
+            cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .notifications-cta button:hover {
+            transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .notifications-cta button:active {
+            transform: translateY(0); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .notifications-cta button.btn-primary {
+            background-color: var(--primary-green); color: white;
+        }
+        .notifications-cta button.btn-success {
+            background-color: var(--success-color); color: white; cursor: default;
+        }
+        .notifications-cta button.btn-danger {
+            background-color: var(--error-color); color: white;
+        }
+        .notifications-cta button.btn-info {
+            background-color: var(--info-color); color: white;
+        }
+    </style>
 </head>
 <body>
 <header class="main-header">
-    <h1>SCHOMART</h1>
-
-    <nav class="main-nav">
-        <ul>
-            <li>
-                <a href="/" class="nav-button" title="Go to Home Page">
-                    <i class="fas fa-home"></i> Home
-                </a>
-            </li>
-            <li>
-                <a href="/profile" class="nav-button" title="View your Profile">
-                    <i class="fas fa-user"></i> Profile
-                </a>
-            </li>
-            <li>
-                <a href="/sell" class="nav-button" title="Sell an item or service">
-                    <i class="fas fa-tag"></i> Sell
-                </a>
-            </li>
-            <li>
-                <a href="/materials" class="nav-button" title="Check out Study Materials">
-                    <i class="fas fa-book"></i> School hub
-                </a>
-            </li>
-            
-            
-            
-            <li>
-                <a href="/leaderboard" class="nav-button" title="View the Leaderboard">
-                    <i class="fas fa-trophy"></i> Leaderboard
-                </a>
-            </li>
-        </ul>
-    </nav>
+    <h1>SCHOMART</h1>
+    <nav class="main-nav">
+        <ul>
+            <li>
+                <a href="/" class="nav-button" title="Go to Home Page">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            <li>
+                <a href="/profile" class="nav-button" title="View your Profile">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </li>
+            <li>
+                <a href="/sell" class="nav-button" title="Sell an item or service">
+                    <i class="fas fa-tag"></i> Sell
+                </a>
+            </li>
+            <li>
+                <a href="/materials" class="nav-button" title="Check out Study Materials">
+                    <i class="fas fa-book"></i> School hub
+                </a>
+            </li>
+            <li>
+                <a href="/leaderboard" class="nav-button" title="View the Leaderboard">
+                    <i class="fas fa-trophy"></i> Leaderboard
+                </a>
+            </li>
+        </ul>
+    </nav>
 </header>
-
 {# Flash Messages - Moved outside header but still prominently visible #}
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-    <ul class="flashes container">
-        {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
+    <ul class="flashes container">
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
 {% endif %}
 {% endwith %}
 {# End Flash Messages #}
-
-    {# Add a section for the push notification call-to-action #}
+    {# Add a section for the push notification call-to-action #}
 <section id="notifications-cta" class="notifications-cta container">
-    <div id="notifications-content">
-        <h4>Never miss an important update! 🔔</h4>
-        <p>Get notified about new messages, advert updates, and more.</p>
-        <button id="enable-notifications" class="btn-primary">
-            <i class="fas fa-bell"></i> Enable Notifications
-        </button>
-    </div>
+    <div id="notifications-content">
+        <h4>Never miss an important update! 🔔</h4>
+        <p>Get notified about new messages, advert updates, and more.</p>
+        <button id="enable-notifications" class="btn-primary">
+            <i class="fas fa-bell"></i> Enable Notifications
+        </button>
+    </div>
 </section>
-
 <section id="airtime-posts-section" style="padding: 20px; max-width: 1200px; margin: 30px auto; background-color: var(--mid-bg); border-radius: 12px; box-shadow: 0 8px 20px var(--shadow-light);">
-    <h2 style="text-align: center; color: var(--primary-green); font-size: 2em; margin-bottom: 25px; font-weight: 700;">
-        <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
-    </h2>
-    <div id="airtime-posts-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-    </div>
-    <p id="no-airtime-message" style="text-align: center; color: var(--text-medium); font-size: 1.1em; padding: 30px; display: none;">
-        No airtime giveaways currently active. Check back later!
-    </p>
+    <h2 style="text-align: center; color: var(--primary-green); font-size: 2em; margin-bottom: 25px; font-weight: 700;">
+        <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
+    </h2>
+    <div id="airtime-posts-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    </div>
+    <p id="no-airtime-message" style="text-align: center; color: var(--text-medium); font-size: 1.1em; padding: 30px; display: none;">
+        No airtime giveaways currently active. Check back later!
+    </p>
 </section>
-
-
 <section class="green-search">
-    <h2>What are you looking for?</h2>
-    <div class="search-row">
-        <div class="search-form" onclick="window.location.href='/search'" style="cursor: pointer;">
-            <div style="position: relative; width: 100%;">
-                <input type="text" class="search-input" placeholder="I'm looking for..." readonly>
-                <i class="fas fa-search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: black;"></i>
-            </div>
-        </div>
-    </div>
+    <h2>What are you looking for?</h2>
+    <div class="search-row">
+        <div class="search-form" onclick="window.location.href='/search'" style="cursor: pointer;">
+            <div style="position: relative; width: 100%;">
+                <input type="text" class="search-input" placeholder="I'm looking for..." readonly>
+                <i class="fas fa-search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: black;"></i>
+            </div>
+        </div>
+    </div>
 </section>
-
 <section class="admin-ads container">
-    <h3>Featured Adverts</h3>
-    <div class="scrolling-container">
-        <div class="scrolling-wrapper" style="--scroll-duration: {{ adverts|length * 5 }}s;">
-            {# Loop through all adverts now that they are sorted #}
-            {% for advert in adverts %}
-            <a href="/advert/{{ advert['id'] }}" class="product-card">
-                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-                <h4>{{ advert['title'] }}</h4>
-                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>
-                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                    {% if advert['state'] and advert['school'] %}, {% endif %}
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                </p>
-                <p>{{ advert['condition'] }}</p>
-            </a>
-            {% endfor %}
-
-            {# Duplicate the content for seamless loop #}
-            {% for advert in adverts %}
-            <a href="/advert/{{ advert['id'] }}" class="product-card">
-                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-                <h4>{{ advert['title'] }}</h4>
-                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>
-                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                    {% if advert['state'] and advert['school'] %}, {% endif %}
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                </p>
-                <p>{{ advert['condition'] }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
+    <h3>Featured Adverts</h3>
+    <div class="scrolling-container">
+        <div class="scrolling-wrapper" style="--scroll-duration: {{ adverts|length * 5 }}s;">
+            {# Loop through all adverts now that they are sorted #}
+            {% for advert in adverts %}
+            <a href="/advert/{{ advert['id'] }}" class="product-card">
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+                <h4>{{ advert['title'] }}</h4>
+                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+                <p>
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
+            </a>
+            {% endfor %}
+            {# Duplicate the content for seamless loop #}
+            {% for advert in adverts %}
+            <a href="/advert/{{ advert['id'] }}" class="product-card">
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+                <h4>{{ advert['title'] }}</h4>
+                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+                <p>
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
 </section>
-
 <section class="category-grid container">
-    {% for category in categories %}
-    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
-        <div class="category-box">
-            <img src="{{ category.image_url }}"
-                 alt="{{ category.name }}"
-                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
-            <span>{{ category.name }}</span>
-        </div>
-    </a>
-    {% endfor %}
+    {% for category in categories %}
+    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
+        <div class="category-box">
+            <img src="{{ category.image_url }}"
+                 alt="{{ category.name }}"
+                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
+            <span>{{ category.name }}</span>
+        </div>
+    </a>
+    {% endfor %}
 </section>
-
 <section class="products-section container">
-    <h3>Trending Adverts</h3>
-    <div class="product-grid">
-        {# Loop through the same adverts list. The sorting logic in the route takes care of everything. #}
-        {% for advert in adverts %}
-        <a href="/advert/{{ advert['id'] }}" class="product-card">
-            <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-            <h4>{{ advert['title'] }}</h4>
-            <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-            <p>
-                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                {% if advert['state'] and advert['school'] %}, {% endif %}
-                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-            </p>
-            <p>{{ advert['condition'] }}</p>
-        </a>
-        {% endfor %}
-    </div>
+    <h3>Trending Adverts</h3>
+    <div class="product-grid">
+        {# Loop through the same adverts list. The sorting logic in the route takes care of everything. #}
+        {% for advert in adverts %}
+        <a href="/advert/{{ advert['id'] }}" class="product-card">
+            <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+            <h4>{{ advert['title'] }}</h4>
+            <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+            <p>
+                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                {% if advert['state'] and advert['school'] %}, {% endif %}
+                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+            </p>
+            <p>{{ advert['condition'] }}</p>
+        </a>
+        {% endfor %}
+    </div>
 </section>
-
 <footer class="main-footer">
-    <p>© 2025 SCHOMART. All rights reserved.</p>
+    <p>© 2025 SCHOMART. All rights reserved.</p>
 </footer>
-
 <script>
-    const currentUserId = "{{ current_user_id | default('') }}";
+    const currentUserId = "{{ current_user_id | default('') }}";
 
-    /**
-     * Fetches the latest airtime posts from the server and renders them.
-     * This function is now only called once on page load.
-     */
-    async function fetchAirtimePosts() {
-        const airtimeSection = document.getElementById('airtime-posts-section');
-        const container = document.getElementById('airtime-posts-container');
-        const noAirtimeMessage = document.getElementById('no-airtime-message');
+    /**
+     * Fetches the latest airtime posts from the server and renders them.
+     * This function is now only called once on page load.
+     */
+    async function fetchAirtimePosts() {
+        const airtimeSection = document.getElementById('airtime-posts-section');
+        const container = document.getElementById('airtime-posts-container');
+        const noAirtimeMessage = document.getElementById('no-airtime-message');
+        try {
+            const response = await fetch('/api/airtime-posts');
+            if (!response.ok) {
+                console.error('Failed to fetch airtime posts:', response.statusText);
+                airtimeSection.style.display = 'none'; // Hide section on error
+                return;
+            }
+            const posts = await response.json();
+            // Clear previous posts to prevent duplication on re-fetch
+            container.innerHTML = ''; 
+            if (posts.length === 0) {
+                airtimeSection.style.display = 'none'; // Hide the entire section if no posts
+            } else {
+                airtimeSection.style.display = 'block'
+            }
+        } catch (error) {
+            console.error('An error occurred during fetch:', error);
+            document.getElementById('airtime-posts-section').style.display = 'none';
+        }
+    }
 
-        try {
-            const response = await fetch('/api/airtime-posts');
-            if (!response.ok) {
-                console.error('Failed to fetch airtime posts:', response.statusText);
-                airtimeSection.style.display = 'none'; // Hide section on error
-                return;
-            }
-            const posts = await response.json();
-
-            // Clear previous posts to prevent duplication on re-fetch
-            container.innerHTML = ''; 
-
-            if (posts.length === 0) {
-                airtimeSection.style.display = 'none'; // Hide the entire section if no posts
-            } else {
-                airtimeSection.style.display = 'block'
-            }
-        } catch (error) {
-            console.error('An error occurred during fetch:', error);
-            document.getElementById('airtime-posts-section').style.display = 'none';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchAirtimePosts();
-    });
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchAirtimePosts();
+    });
 </script>
-    <script type="module">
-        import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
+<script type="module">
+    import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
+    const ctaSection = document.getElementById('notifications-cta');
+    const enableButton = document.getElementById('enable-notifications');
 
-        const ctaSection = document.getElementById('notifications-cta');
-        const enableButton = document.getElementById('enable-notifications');
+    // Key for localStorage to remember the user's choice
+    const NOTIFICATIONS_ENABLED_KEY = 'notificationsEnabled';
 
-        /**
-         * Checks the current notification permission and updates the UI accordingly.
-         */
-        function updateNotificationUI() {
-            if (!("Notification" in window)) {
-                // Browser doesn't support notifications
-                ctaSection.style.display = 'none';
-            } else if (Notification.permission === "granted") {
-                // User has already granted permission. Hide the CTA.
-                ctaSection.style.display = 'none';
-            } else if (Notification.permission === "denied") {
-                // User has denied permission. Update button to inform them.
-                enableButton.textContent = "Notifications Blocked";
-                enableButton.classList.remove('btn-primary');
-                enableButton.classList.add('btn-danger');
-                enableButton.disabled = true;
-                const infoText = ctaSection.querySelector('p');
-                infoText.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
-                ctaSection.style.display = 'flex';
-            } else {
-                // Permission is "default" (not yet requested/granted). Show the CTA.
-                ctaSection.style.display = 'flex';
-            }
-        }
+    /**
+     * Updates the UI based on notification permission and local storage.
+     */
+    function updateNotificationUI() {
+        // Check if the browser even supports notifications
+        if (!("Notification" in window)) {
+            ctaSection.style.display = 'none';
+            return;
+        }
 
-        // Run on page load
-        updateNotificationUI();
+        // Check if the user has already enabled notifications on a previous visit
+        const hasEnabledBefore = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY) === 'true';
 
-        if (enableButton) {
-            enableButton.addEventListener('click', async () => {
-                const initialPermission = Notification.permission;
-                const token = await requestNotificationPermission();
-                
-                // Re-evaluate the UI state after the permission request
-                if (token) {
-                    console.log("Token received:", token);
-                    // The fcm-setup.js script now handles sending the token to the backend.
-                    // A success message is logged in that file.
-                    // No further action is needed here in the HTML file's JS.
-                    
-                    // You can optionally show a success message or hide the button
-                    // right here, after the token is handled.
-                    ctaSection.innerHTML = `
-                        <h4>🎉 You're all set!</h4>
-                        <p>You will now receive timely notifications from SCHOMART.</p>
-                    `;
-                    ctaSection.style.backgroundColor = 'var(--success-color)';
-                    ctaSection.style.color = 'white';
-                } else if (Notification.permission === 'denied' && initialPermission !== 'denied') {
-                    // This block handles the case where the user denies permission in the prompt.
-                    updateNotificationUI();
-                }
-            });
-        }
-    </script>
+        const currentPermission = Notification.permission;
+
+        if (currentPermission === "granted" || hasEnabledBefore) {
+            // Hide the CTA if permission is granted or if the user enabled it before
+            ctaSection.style.display = 'none';
+        } else if (currentPermission === "denied") {
+            // Show a message explaining that notifications are blocked
+            enableButton.textContent = "Notifications Blocked";
+            enableButton.classList.remove('btn-primary');
+            enableButton.classList.add('btn-danger');
+            enableButton.disabled = true;
+            const infoText = ctaSection.querySelector('p');
+            infoText.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
+            ctaSection.style.display = 'flex';
+        } else {
+            // Permission is "default", show the CTA to prompt the user
+            ctaSection.style.display = 'flex';
+        }
+    }
+
+    // Run on page load
+    updateNotificationUI();
+
+    if (enableButton) {
+        enableButton.addEventListener('click', async () => {
+            const token = await requestNotificationPermission();
+            
+            // After permission is handled, check the new state
+            if (Notification.permission === "granted") {
+                // If permission was granted, save the state to localStorage
+                localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, 'true');
+                
+                // Provide visual feedback to the user and then hide the CTA
+                ctaSection.innerHTML = `
+                    <h4>🎉 You're all set!</h4>
+                    <p>You will now receive timely notifications from SCHOMART.</p>
+                `;
+                ctaSection.style.backgroundColor = 'var(--success-color)';
+                ctaSection.style.color = 'white';
+                
+                // Optionally hide the CTA after a short delay
+                setTimeout(() => {
+                    ctaSection.style.display = 'none';
+                }, 3000); // 3-second delay
+            } else {
+                // If permission was denied, update the UI to reflect that
+                updateNotificationUI();
+            }
+        });
+    }
+</script>
 </body>
 </html>
