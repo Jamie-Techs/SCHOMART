@@ -68,7 +68,7 @@
 
         .form-group {
             margin-bottom: 1.5rem;
-            position: relative; /* Added for autocomplete positioning */
+            position: relative;
         }
 
         .form-group label {
@@ -149,7 +149,7 @@
             max-height: 200px;
             overflow-y: auto;
             margin-top: 4px;
-            display: none; /* Hidden by default */
+            display: none;
         }
 
         .autocomplete-item {
@@ -228,11 +228,11 @@
         const schoolDropdown = document.getElementById('school-dropdown');
         
         let uniqueStates = [];
-        let uniqueSchools = [];
+        let uniqueSchools = {}; // Use an object to map states to schools
 
         async function fetchAutocompleteData() {
             try {
-                const response = await fetch('/api/materials/unique_fields');
+                const response = await fetch('/api/autocomplete_data');
                 if (response.ok) {
                     const data = await response.json();
                     uniqueStates = data.states;
@@ -250,8 +250,11 @@
                 const value = input.value.toLowerCase();
                 dropdown.innerHTML = '';
                 
+                // Determine the list of options to filter based on the input
+                const optionsToFilter = Array.isArray(options) ? options : (options[stateInput.value] ? options[stateInput.value].map(s => s.name) : []);
+
                 if (value.length > 0) {
-                    const filteredOptions = options.filter(option => option.toLowerCase().includes(value));
+                    const filteredOptions = optionsToFilter.filter(option => option.toLowerCase().includes(value));
                     
                     if (filteredOptions.length > 0) {
                         filteredOptions.forEach(option => {
@@ -261,6 +264,11 @@
                             div.addEventListener('click', () => {
                                 input.value = option;
                                 dropdown.style.display = 'none';
+                                
+                                // If the user selects a state, clear the school field
+                                if (input === stateInput) {
+                                    schoolInput.value = '';
+                                }
                             });
                             dropdown.appendChild(div);
                         });
@@ -300,11 +308,12 @@
                     body: formData,
                 });
                 
+                const result = await response.json();
+                
                 if (response.ok) {
                     alert('Material posted successfully!');
                     form.reset();
                 } else {
-                    const result = await response.json();
                     alert('Error: ' + result.error);
                 }
             } catch (error) {
