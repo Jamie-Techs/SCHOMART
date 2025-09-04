@@ -4296,18 +4296,47 @@ def faq():
 
 
 
-@app.route('/admin')
-@login_required
-@admin_required
 
-def admin():
-    return render_template('admin.html')
+
+
+
+def handle_material_file(file, title):
+    """
+    Handles file upload to Firebase Storage and returns the file's path and URL.
+    This function is a single point of truth for file path generation.
+    """
+    try:
+        # Generate a unique and consistent filename
+        file_extension = os.path.splitext(file.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        
+        # The path to the file inside the Firebase bucket
+        file_path = f"study_materials/{unique_filename}"
+        
+        # Get the bucket instance
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
+        
+        # Upload the file
+        blob.upload_from_file(file)
+        
+        # Get the public download URL
+        # We'll use a signed URL with a long expiration to avoid needing to make the file public.
+        download_url = blob.generate_signed_url(expiration=datetime.now() + timedelta(days=3650))
+        
+        return {'file_path': file_path, 'download_url': download_url}
+        
+    except Exception as e:
+        logging.error(f"File upload failed: {str(e)}")
+        return None
+
 
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
-
 def post_material():
+    # ... (existing form data retrieval) ...
     title = request.form.get('title')
     category = request.form.get('category')
     content = request.form.get('content')
@@ -4319,14 +4348,12 @@ def post_material():
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     try:
-        # Generate a unique filename to prevent overwrites
-        file_extension = os.path.splitext(file.filename)[1]
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
-        file_path = f"study_materials/{unique_filename}"
+        # Use our new, consistent helper function
+        file_data = handle_material_file(file, title)
         
-        download_url = upload_file_to_firebase(file, file_path)
-        
+        if not file_data:
+            raise Exception("File upload helper failed.")
+
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
@@ -4334,8 +4361,8 @@ def post_material():
             'content': content,
             'state': state,
             'school': school,
-            'file_url': download_url,
-            'file_path': file_path,
+            'file_url': file_data['download_url'],  # Store the public URL for direct linking
+            'file_path': file_data['file_path'],    # Store the internal path for SDK operations
             'created_at': firestore.SERVER_TIMESTAMP
         })
         flash('Material posted successfully!', 'success')
@@ -4343,6 +4370,127 @@ def post_material():
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+
+
+def get_file_blob(file_path):
+    """
+    Retrieves a Firebase Storage Blob object.
+    Separating this logic makes it reusable.
+    """
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
+        
+        if not blob.exists():
+            return None
+        return blob
+    except Exception as e:
+        logging.error(f"Error accessing blob: {e}")
+        return None
+
+@app.route('/download_material/<material_id>')
+@login_required
+def download_material(material_id):
+    material = get_material_by_id(material_id)
+    if not material:
+        return "Material not found.", 404
+
+    file_path = material.get('file_path')
+    if not file_path:
+        return "File path not found in database.", 404
+
+    try:
+        blob = get_file_blob(file_path)
+        if not blob:
+            # This is the "File not found" error you were seeing.
+            return "File not found in storage. It may have been deleted or the path is incorrect.", 404
+
+        # Download the file to a temporary location
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        blob.download_to_filename(temp_file.name)
+        temp_file.close()
+        
+        filename = os.path.basename(file_path)
+
+        @after_this_request
+        def remove_file(response):
+            try:
+                os.remove(temp_file.name)
+            except Exception as e:
+                app.logger.error(f"Error removing temporary file: {e}")
+            return response
+
+        return send_file(temp_file.name, as_attachment=True, download_name=filename)
+    
+    except Exception as e:
+        app.logger.error(f"An error occurred during file download: {str(e)}", exc_info=True)
+        return "An internal error occurred.", 500
+
+
+@app.route('/delete_material/<material_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_material(material_id):
+    try:
+        material_ref = db.collection('study_materials').document(material_id)
+        material_doc = material_ref.get()
+
+        if not material_doc.exists:
+            flash("Material not found.", "error")
+            return redirect(url_for('get_materials_page'))
+
+        material_data = material_doc.to_dict()
+        file_path = material_data.get('file_path')
+
+        if file_path:
+            try:
+                # Use the file_path directly with the Firebase SDK
+                bucket = storage.bucket()
+                blob = bucket.blob(file_path)
+                blob.delete()
+                logging.info(f"Successfully deleted file from storage: {file_path}")
+            except Exception as e:
+                # The 404 error you see is handled here
+                logging.error(f"Failed to delete file from storage: {e}")
+        
+        material_ref.delete()
+        flash("Material has been successfully deleted.", "success")
+        
+    except Exception as e:
+        logging.error(f"Error deleting material {material_id}: {e}", exc_info=True)
+        flash("An error occurred while deleting the material. Please try again.", "error")
+        
+    return redirect(url_for('get_materials_page'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/admin')
+@login_required
+@admin_required
+
+def admin():
+    return render_template('admin.html')
+
 
 @app.route('/materials')
 @login_required
@@ -4365,78 +4513,6 @@ def api_get_materials():
         'materials': materials,
         'is_admin': is_admin_status
     })
-
-
-
-
-
-@app.route('/download_material/<material_id>')
-@login_required
-def download_material(material_id):
-    material = get_material_by_id(material_id)
-    if not material:
-        return "Material not found.", 404
-
-    file_path = material.get('file_path')
-    if not file_path:
-        return "File path not found in database for this material.", 404
-
-    try:
-        # Use the new helper function to download the file
-        temp_file_path = download_file_to_temp_location(file_path)
-        
-        if temp_file_path is None:
-            return "File not found in storage.", 404
-        
-        filename = os.path.basename(file_path)
-
-        @after_this_request
-        def remove_file(response):
-            try:
-                os.remove(temp_file_path)
-            except Exception as e:
-                app.logger.error(f"Error removing temporary file: {e}")
-            return response
-
-        return send_file(temp_file_path, as_attachment=True, download_name=filename)
-
-    except Exception as e:
-        app.logger.error(f"An error occurred during file download for material {material_id}: {str(e)}", exc_info=True)
-        return "An error occurred during download. Please try again later.", 500
-
-# ----------------------------------------------------------------------------------------------------------------------
-
-@app.route('/delete_material/<material_id>', methods=['POST'])
-@login_required
-@admin_required
-def delete_material(material_id):
-    try:
-        material_ref = db.collection('study_materials').document(material_id)
-        material_doc = material_ref.get()
-
-        if not material_doc.exists:
-            flash("Material not found.", "error")
-            return redirect(url_for('get_materials_page'))
-
-        material_data = material_doc.to_dict()
-        file_path = material_data.get('file_path')
-
-        if file_path:
-            # Use the new helper function to delete the file
-            if delete_file_from_firebase(file_path):
-                logging.info(f"Successfully deleted file from storage: {file_path}")
-            else:
-                flash("An error occurred while deleting the file from storage.", "warning")
-        
-        material_ref.delete()
-        
-        flash("Material has been successfully deleted.", "success")
-
-    except Exception as e:
-        logging.error(f"Error deleting material {material_id}: {e}", exc_info=True)
-        flash("An error occurred while deleting the material. Please try again.", "error")
-
-    return redirect(url_for('get_materials_page'))
 
 
 
@@ -5082,6 +5158,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
