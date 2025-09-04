@@ -273,6 +273,15 @@
                         <label for="location_input">Precise Location</label>
                         <input type="text" id="location_input" name="location" placeholder="e.g., Akoka, Surulere" value="{{ selected_location or '' }}">
                     </div>
+                    
+                    <div class="filter-group">
+                        <label for="delivery">Delivery Option</label>
+                        <select id="delivery" name="delivery">
+                            <option value="" {% if not selected_delivery %}selected{% endif %}>Any</option>
+                            <option value="yes" {% if selected_delivery == 'yes' %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if selected_delivery == 'no' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
 
                     <div class="filter-group">
                         <label>Price Range (₦)</label>
@@ -323,7 +332,7 @@
     const schoolInput = document.getElementById('school_input');
     const stateDropdown = document.getElementById('state-dropdown');
     const schoolDropdown = document.getElementById('school-dropdown');
-    const locationInput = document.getElementById('location_input'); // ADDED
+    const locationInput = document.getElementById('location_input');
 
     // Your Flask backend MUST provide these variables in the Jinja template
     const NIGERIAN_STATES = {{ locations.NIGERIAN_STATES | tojson | safe }};
@@ -346,7 +355,8 @@
         if (advert.state) locationParts.push(advert.state);
 
         const location = locationParts.join(', ');
-        
+        const deliveryStatus = advert.delivery_option ? 'Yes' : 'No';
+
         card.innerHTML = `
             <img src="${advert.display_image}" alt="${advert.title}" class="ad-image">
             <div class="ad-content">
@@ -354,6 +364,7 @@
                 <div class="ad-meta">
                     <p class="price">${price}</p>
                     <p><i class="fas fa-map-marker-alt"></i> ${location || 'Location not specified'}</p>
+                    <p>Delivery: ${deliveryStatus}</p>
                 </div>
             </div>
         `;
