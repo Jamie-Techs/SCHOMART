@@ -4355,19 +4355,23 @@ def get_all_materials(query=''):
 
 
 
-# NEW: API endpoint to serve the hardcoded state and school lists for autocomplete
-@app.route('/api/autocomplete_data', methods=['GET'])
-def get_autocomplete_data():
-    """Serves the hardcoded states and schools to the frontend."""
-    return jsonify({
-        'states': NIGERIAN_STATES,
-        'schools': NIGERIAN_SCHOOLS
-    })
 
+# In your main Flask application file (e.g., app.py)
 
+@app.route('/admin')
+@login_required
+@admin_required
+def admin():
+    # Pass the hardcoded data to the template
+    locations_data = {
+        'NIGERIAN_STATES': NIGERIAN_STATES,
+        'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
+    }
+    return render_template(
+        'admin.html',
+        locations=locations_data
+    )
 
-
-# UPDATED: The route to handle material posting
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
@@ -4383,6 +4387,7 @@ def post_material():
         return redirect(url_for('admin'))
 
     try:
+        # Assuming you have a file upload helper function
         file_data = upload_file_to_firebase(file, title)
         
         if not file_data:
@@ -4401,11 +4406,14 @@ def post_material():
         
         flash('Material posted successfully!', 'success')
         return redirect(url_for('admin'))
-    
+
     except Exception as e:
         logging.error(f"Error posting material: {e}")
         flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('admin'))
+
+
+
 
 
 
@@ -4509,12 +4517,6 @@ def delete_material(material_id):
 
 
 
-@app.route('/admin')
-@login_required
-@admin_required
-
-def admin():
-    return render_template('admin.html')
 
 
 @app.route('/materials')
@@ -5183,6 +5185,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
