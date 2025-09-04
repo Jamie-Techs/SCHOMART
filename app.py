@@ -4339,6 +4339,104 @@ def faq():
 
 
 
+
+# This is the main API route to handle filtering
+@app.route('/api/materials', methods=['GET'])
+@login_required
+def api_get_materials():
+    """
+    Fetches materials based on multiple optional query parameters.
+    Supports filtering by title, state, and school.
+    """
+    title_query = request.args.get('title', '').strip().lower()
+    state_query = request.args.get('state', '').strip().lower()
+    school_query = request.args.get('school', '').strip().lower()
+
+    materials = get_all_materials()
+    
+    # Filter the materials based on the provided query parameters
+    filtered_materials = [
+        m for m in materials
+        if (not title_query or (m.get('title', '').lower().find(title_query) != -1)) and
+           (not state_query or (m.get('state', '').lower() == state_query)) and
+           (not school_query or (m.get('school', '').lower() == school_query))
+    ]
+
+    # Check for admin status from the global context
+    is_admin_status = getattr(g.current_user, 'is_admin', False) if 'current_user' in g else False
+    
+    return jsonify({
+        'materials': filtered_materials,
+        'is_admin': is_admin_status
+    })
+
+@app.route('/admin')
+@login_required
+@admin_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin/post_material', methods=['POST'])
+@login_required
+@admin_required
+def post_material():
+    title = request.form.get('title')
+    # Removed 'category' from here as per the prompt
+    content = request.form.get('content')
+    state = request.form.get('state')
+    school = request.form.get('school')
+    file = request.files.get('file')
+
+    # Making all fields optional except for the title and file
+    if not all([title, file]):
+        return jsonify({'success': False, 'error': 'Title and file are required'}), 400
+
+    try:
+        file_extension = os.path.splitext(file.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        file_path = f"study_materials/{unique_filename}"
+        
+        # Assume upload_file_to_firebase is already a working helper function
+        download_url = upload_file_to_firebase(file, file_path)
+        
+        new_material_ref = db.collection('study_materials').document()
+        new_material_ref.set({
+            'title': title,
+            'content': content,
+            'state': state,
+            'school': school,
+            'file_url': download_url,
+            'file_path': file_path,
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        flash('Material posted successfully!', 'success')
+        return jsonify({'success': True, 'message': 'Material posted successfully!'})
+    except Exception as e:
+        flash(f'An error occurred: {str(e)}', 'error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+        
+@app.route('/materials')
+@login_required
+def get_materials_page():
+    return render_template('get_materials.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_all_materials(query=''):
     materials_ref = db.collection('study_materials')
     query_results = materials_ref.stream()
@@ -4354,65 +4452,6 @@ def get_all_materials(query=''):
     return materials_list
 
 
-
-
-# In your main Flask application file (e.g., app.py)
-
-@app.route('/admin')
-@login_required
-@admin_required
-def admin():
-    # Pass the hardcoded data to the template
-    locations_data = {
-        'NIGERIAN_STATES': NIGERIAN_STATES,
-        'NIGERIAN_SCHOOLS': NIGERIAN_SCHOOLS
-    }
-    return render_template(
-        'admin.html',
-        locations=locations_data
-    )
-
-
-@app.route('/admin/post_material', methods=['POST'])
-@login_required
-@admin_required
-
-def post_material():
-    title = request.form.get('title')
-    
-    content = request.form.get('content')
-    state = request.form.get('state')
-    school = request.form.get('school')
-    file = request.files.get('file')
-
-    if not all([title, content, state, school, file]):
-        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-
-    try:
-        # Generate a unique filename to prevent overwrites
-        file_extension = os.path.splitext(file.filename)[1]
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
-        file_path = f"study_materials/{unique_filename}"
-        
-        download_url = upload_file_to_firebase(file, file_path)
-        
-        new_material_ref = db.collection('study_materials').document()
-        new_material_ref.set({
-            'title': title,
-            
-            'content': content,
-            'state': state,
-            'school': school,
-            'file_url': download_url,
-            'file_path': file_path,
-            'created_at': firestore.SERVER_TIMESTAMP
-        })
-        flash('Material posted successfully!', 'success')
-        return jsonify({'success': True, 'message': 'Material posted successfully!'})
-    except Exception as e:
-        flash(f'An error occurred: {str(e)}', 'error')
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 
@@ -5193,6 +5232,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
