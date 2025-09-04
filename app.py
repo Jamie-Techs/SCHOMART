@@ -2059,6 +2059,36 @@ def get_file_from_firebase(file_path):
 
 
 
+def download_file_to_temp_location(file_path):
+    """Downloads a file from Firebase Storage to a temporary local file."""
+    try:
+        blob = bucket.blob(file_path)
+
+        if not blob.exists():
+            logging.error(f"Blob does not exist at path: {file_path}")
+            return None
+
+        # Use tempfile to create a secure temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        blob.download_to_filename(temp_file.name)
+        temp_file.close()
+
+        return temp_file.name
+    except Exception as e:
+        logging.error(f"Error downloading file from Firebase: {e}", exc_info=True)
+        return None
+
+def delete_file_from_firebase(file_path):
+    """Deletes a file from Firebase Storage."""
+    try:
+        blob = bucket.blob(file_path)
+        blob.delete()
+        logging.info(f"Successfully deleted file from storage: {file_path}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to delete file from storage: {e}", exc_info=True)
+        return False
+
 def get_all_materials(query=''):
     materials_ref = db.collection('study_materials')
     query_results = materials_ref.stream()
@@ -4349,37 +4379,32 @@ def download_material(material_id):
 
     file_path = material.get('file_path')
     if not file_path:
-        # This message provides more specific debugging info.
         return "File path not found in database for this material.", 404
 
     try:
-        # Assuming get_file_from_firebase uses the `file_path` to get the file.
-        temp_file_path = get_file_from_firebase(file_path)
+        # Use the new helper function to download the file
+        temp_file_path = download_file_to_temp_location(file_path)
         
         if temp_file_path is None:
-            # This indicates the file is missing from Firebase Storage.
             return "File not found in storage.", 404
         
-        # Get the original filename from the file_path for a better download name.
         filename = os.path.basename(file_path)
 
-        # Schedule the temporary file for deletion after the response is sent.
         @after_this_request
         def remove_file(response):
             try:
                 os.remove(temp_file_path)
             except Exception as e:
-                # Log any cleanup errors but don't stop the download.
                 app.logger.error(f"Error removing temporary file: {e}")
             return response
 
-        # Send the downloaded file to the user.
         return send_file(temp_file_path, as_attachment=True, download_name=filename)
 
     except Exception as e:
         app.logger.error(f"An error occurred during file download for material {material_id}: {str(e)}", exc_info=True)
-        return f"An error occurred: {str(e)}", 500
+        return "An error occurred during download. Please try again later.", 500
 
+# ----------------------------------------------------------------------------------------------------------------------
 
 @app.route('/delete_material/<material_id>', methods=['POST'])
 @login_required
@@ -4397,16 +4422,12 @@ def delete_material(material_id):
         file_path = material_data.get('file_path')
 
         if file_path:
-            try:
-                # Use the `file_path` from the database directly to reference the blob.
-                blob = bucket.blob(file_path)
-                blob.delete()
+            # Use the new helper function to delete the file
+            if delete_file_from_firebase(file_path):
                 logging.info(f"Successfully deleted file from storage: {file_path}")
-            except Exception as e:
-                # The 404 error you saw is handled here.
-                logging.error(f"Failed to delete file from storage: {e}")
+            else:
+                flash("An error occurred while deleting the file from storage.", "warning")
         
-        # Always delete the Firestore document to keep the database clean.
         material_ref.delete()
         
         flash("Material has been successfully deleted.", "success")
@@ -4416,6 +4437,12 @@ def delete_material(material_id):
         flash("An error occurred while deleting the material. Please try again.", "error")
 
     return redirect(url_for('get_materials_page'))
+
+
+
+
+
+
 
 
 
@@ -5055,6 +5082,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
