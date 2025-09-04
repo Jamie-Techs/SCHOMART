@@ -4557,49 +4557,6 @@ def delete_material(material_id):
 
 
 
-
-
-
-
-
-
-
-
-
-@app.route('/materials')
-@login_required
-def get_materials_page():
-    return render_template('get_materials.html')
-
-
-# Updated to pass admin status using the `g` object
-@app.route('/api/materials')
-@login_required
-def api_get_materials():
-    query = request.args.get('query', '')
-    materials = get_all_materials(query)
-    
-    # Check if 'current_user' is in g and if they are an admin.
-    # This correctly uses your existing decorators' logic.
-    is_admin_status = getattr(g.current_user, 'is_admin', False) if 'current_user' in g else False
-    
-    return jsonify({
-        'materials': materials,
-        'is_admin': is_admin_status
-    })
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Updated CGPA Calculator Routes
 @app.route('/cgpa_calculator')
 @login_required
@@ -5232,6 +5189,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
