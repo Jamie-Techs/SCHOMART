@@ -16,6 +16,8 @@
             --text-dark: #333333;
             --text-medium: #666666;
             --error-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
         }
 
         * {
@@ -287,11 +289,11 @@
             margin-bottom: 10px;
         }
         .flashes .error {
-            background-color: #dc3545;
+            background-color: var(--error-color);
             color: white;
         }
         .flashes .success {
-            background-color: #28a745;
+            background-color: var(--success-color);
             color: white;
         }
         .flashes .info, .flashes .warning {
@@ -530,43 +532,70 @@
                 grid-template-columns: 1fr; /* Single column on very small screens */
             }
         }
+        /* Updated styles for the notifications button and messages */
         .notifications-cta {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            margin: 20px auto;
-            max-width: 600px;
-            text-align: center;
-        }
-        .notifications-cta h4 {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: var(--text-dark);
-        }
-        .notifications-cta p {
-            font-size: 0.9em;
-            color: var(--text-medium);
-            margin-bottom: 15px;
-        }
-        .notifications-cta button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--primary-green);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .notifications-cta button:hover {
-            background-color: #004d28;
-        }
-    
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: var(--mid-bg);
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 4px 15px var(--shadow-light);
+            border: 1px solid var(--border-color);
+        }
+        .notifications-cta h4 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        .notifications-cta p {
+            font-size: 0.9em;
+            color: var(--text-medium);
+            margin-bottom: 15px;
+        }
+        .notifications-cta button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .notifications-cta button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .notifications-cta button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        /* Button colors based on state */
+        .notifications-cta button.btn-primary {
+            background-color: var(--primary-green);
+            color: white;
+        }
+        .notifications-cta button.btn-success {
+            background-color: var(--success-color);
+            color: white;
+            cursor: default;
+        }
+        .notifications-cta button.btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+        .notifications-cta button.btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
     </style>
-                
+            
 </head>
 <body>
 <header class="main-header">
@@ -619,10 +648,14 @@
 {# End Flash Messages #}
 
     {# Add a section for the push notification call-to-action #}
-<section class="notifications-cta container">
-    <h4>Never miss an important update! 🔔</h4>
-    <p>Get notified about new messages, advert updates, and more.</p>
-    <button id="enable-notifications">Enable Notifications</button>
+<section id="notifications-cta" class="notifications-cta container">
+    <div id="notifications-content">
+        <h4>Never miss an important update! 🔔</h4>
+        <p>Get notified about new messages, advert updates, and more.</p>
+        <button id="enable-notifications" class="btn-primary">
+            <i class="fas fa-bell"></i> Enable Notifications
+        </button>
+    </div>
 </section>
 
 <section id="airtime-posts-section" style="padding: 20px; max-width: 1200px; margin: 30px auto; background-color: var(--mid-bg); border-radius: 12px; box-shadow: 0 8px 20px var(--shadow-light);">
@@ -763,20 +796,65 @@
     });
 </script>
     <script type="module">
-    import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
+        import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
 
-    const enableButton = document.getElementById('enable-notifications');
-    if (enableButton) {
-        enableButton.addEventListener('click', async () => {
-            const token = await requestNotificationPermission();
-            if (token) {
-                console.log("Token received, now send it to your backend.");
-                // TODO: You will need to make a Flask API call here
-                // to save the token for the currently logged-in user.
-                // e.g., sendTokenToServer(token);
+        const ctaSection = document.getElementById('notifications-cta');
+        const enableButton = document.getElementById('enable-notifications');
+
+        /**
+         * Checks the current notification permission and updates the UI accordingly.
+         */
+        function updateNotificationUI() {
+            if (!("Notification" in window)) {
+                // Browser doesn't support notifications
+                ctaSection.style.display = 'none';
+            } else if (Notification.permission === "granted") {
+                // User has already granted permission. Hide the CTA.
+                ctaSection.style.display = 'none';
+            } else if (Notification.permission === "denied") {
+                // User has denied permission. Update button to inform them.
+                enableButton.textContent = "Notifications Blocked";
+                enableButton.classList.remove('btn-primary');
+                enableButton.classList.add('btn-danger');
+                enableButton.disabled = true;
+                const infoText = ctaSection.querySelector('p');
+                infoText.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
+                ctaSection.style.display = 'flex';
+            } else {
+                // Permission is "default" (not yet requested/granted). Show the CTA.
+                ctaSection.style.display = 'flex';
             }
-        });
-    }
+        }
+
+        // Run on page load
+        updateNotificationUI();
+
+        if (enableButton) {
+            enableButton.addEventListener('click', async () => {
+                const initialPermission = Notification.permission;
+                const token = await requestNotificationPermission();
+                
+                // Re-evaluate the UI state after the permission request
+                if (token) {
+                    console.log("Token received:", token);
+                    // The fcm-setup.js script now handles sending the token to the backend.
+                    // A success message is logged in that file.
+                    // No further action is needed here in the HTML file's JS.
+                    
+                    // You can optionally show a success message or hide the button
+                    // right here, after the token is handled.
+                    ctaSection.innerHTML = `
+                        <h4>🎉 You're all set!</h4>
+                        <p>You will now receive timely notifications from SCHOMART.</p>
+                    `;
+                    ctaSection.style.backgroundColor = 'var(--success-color)';
+                    ctaSection.style.color = 'white';
+                } else if (Notification.permission === 'denied' && initialPermission !== 'denied') {
+                    // This block handles the case where the user denies permission in the prompt.
+                    updateNotificationUI();
+                }
+            });
+        }
     </script>
 </body>
 </html>
