@@ -687,7 +687,7 @@
             top: 10px;
             right: 25px;
             color: #fff;
-            font-size: 35px;
+            font-size: 50px;
             font-weight: bold;
             z-index: 1003;
         }
@@ -750,6 +750,10 @@
         <a href="{{ url_for('saved_adverts_page') }}" class="nav-button" title="View your Saved Adverts">
             <i class="fas fa-bookmark"></i> Saved Adverts
         </a> 
+        </a>
+        <a href="{{ url_for('sell') }}" class="nav-button" title="View your Saved Adverts">
+            <i class="fas fa-tag"></i> Sell
+        </a> 
     </div>
     
     <div class="seller-info">
@@ -758,7 +762,6 @@
                 <img src="{{ seller.profile_picture }}" alt="{{ seller.username }}'s profile picture" class="profile-pic" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';"/>
                 <div class="seller-details">
                     <h3>{{ seller.username }}</h3>
-                    <p>Adverts Posted: {{ seller.adverts_count or 0 }}</p>
                     <p>Rating: <span class="review-stars">{{ '★' * seller.rating|int }}{{ '☆' * (5 - seller.rating|int) }}</span> ({{ "%.1f"|format(seller.rating or 0.0) }} / 5 from {{ seller.review_count or 0 }} reviews)</p>
                 </div>
             </a>
@@ -1115,3 +1118,4 @@
 
 </body>
 </html>
+
