@@ -357,7 +357,19 @@
                                 <li><strong>Category:</strong> {{ advert.category_name }}</li>
                                 <li><strong>Price:</strong> ₦{{ "{:,.2f}".format(advert.price) }} {% if advert.negotiable == 'yes' %}(Negotiable){% endif %}</li>
                                 <li><strong>Condition:</strong> {{ advert.condition.replace('_', ' ').title() }}</li>
-                                <li><strong>Location:</strong> {{ advert.location }}</li>
+                                
+                                {% if advert.state %}
+                                <li><strong>State:</strong> {{ advert.state }}</li>
+                                {% endif %}
+                                {% if advert.school %}
+                                <li><strong>School:</strong> {{ advert.school }}</li>
+                                {% endif %}
+                                {% if advert.specific_location %}
+                                <li><strong>Precise Location:</strong> {{ advert.specific_location }}</li>
+                                {% endif %}
+                                {% if advert.delivery_option %}
+                                <li><strong>Delivery Option:</strong> {{ advert.delivery_option }}</li>
+                                {% endif %}
                                 <li><strong>Plan:</strong> {{ advert.plan_name }} (Visibility: {{ advert.visibility_level }})</li>
                                 <li><strong>Submitted On:</strong> {{ advert.created_at }}</li>
                                 {% if advert.expires_at %}
@@ -522,7 +534,7 @@ async function toggleSaveAdvert(button, advertId) {
         alert('An unexpected error occurred. Please try again.');
     }
 }
-                                
+                               
     </script>
 </body>
 </html>
