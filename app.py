@@ -245,14 +245,17 @@ def update_online_status(user_id, is_online):
     except Exception as e:
         logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
 
-     
 
-# Add this new route directly to your app.py file
+
+
+
+
 @app.route('/api/save-fcm-token', methods=['POST'])
-@login_required 
+@login_required
 def save_fcm_token():
     """
-    Saves the FCM token for the current user to Firestore.
+    Saves the FCM token for the current user to Firestore,
+    handling multiple device tokens without a transaction.
     """
     data = request.get_json()
     fcm_token = data.get('fcm_token')
@@ -262,21 +265,41 @@ def save_fcm_token():
         return jsonify({"error": "FCM token not provided."}), 400
 
     user_id = g.current_user.id
+    user_doc_ref = db.collection('users').document(user_id)
 
     try:
-        user_doc_ref = db.collection('users').document(user_id)
-        
-        # Update the 'fcm_token' field in the user's Firestore document
-        user_doc_ref.update({
-            'fcm_token': fcm_token
-        })
-        
-        logging.info(f"FCM token saved successfully for user: {user_id}")
+        # Get the current user document
+        user_doc = user_doc_ref.get()
+
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            current_tokens = user_data.get('fcm_tokens', [])
+
+            # Add the new token only if it's not already in the list
+            if fcm_token not in current_tokens:
+                current_tokens.append(fcm_token)
+                
+                # Update the document with the new list of tokens
+                user_doc_ref.update({
+                    'fcm_tokens': current_tokens
+                })
+                logging.info(f"FCM token added for user: {user_id}. Total tokens: {len(current_tokens)}")
+            else:
+                logging.info(f"FCM token already exists for user: {user_id}. No update needed.")
+        else:
+            # If the document doesn't exist, create it with the new token
+            user_doc_ref.set({
+                'fcm_tokens': [fcm_token]
+            })
+            logging.info(f"New user document created and FCM token saved for user: {user_id}")
+            
         return jsonify({"message": "FCM token saved successfully."}), 200
 
     except Exception as e:
         logging.error(f"Failed to save FCM token for user {user_id}: {e}", exc_info=True)
         return jsonify({"error": "An internal server error occurred."}), 500
+
+     
 
 
 
@@ -5204,6 +5227,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
