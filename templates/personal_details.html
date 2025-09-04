@@ -78,6 +78,36 @@
         .validation-feedback { display: none; }
         .is-invalid { border-color: #dc3545; }
         .invalid-feedback { color: #dc3545; font-size: 0.85em; margin-top: 5px; display: block; }
+        
+        /* New styles for autocomplete dropdown */
+        .autocomplete-container {
+            position: relative;
+        }
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .autocomplete-list.hidden {
+            display: none;
+        }
+        .autocomplete-list-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .autocomplete-list-item:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
@@ -152,18 +182,18 @@
                     </div>
                     <div class="form-group">
                         <label for="state_input">State*</label>
-                        <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required list="state-list"/>
-                        <datalist id="state-list">
-                            {% for state in NIGERIAN_STATES %}
-                                <option value="{{ state }}">
-                            {% endfor %}
-                        </datalist>
+                        <div class="autocomplete-container">
+                            <input type="text" name="state" id="state_input" value="{{ user.state or '' }}" placeholder="e.g., Lagos" required>
+                            <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="school_input">School*</label>
-                        <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required list="school-list"/>
-                        <span id="school_error" class="invalid-feedback"></span>
-                        <datalist id="school-list"></datalist>
+                        <div class="autocomplete-container">
+                            <input type="text" name="school" id="school_input" value="{{ user.school or '' }}" placeholder="Select a state first..." disabled required>
+                            <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
+                        </div>
+                        <span id="school_error" class="invalid-feedback" style="display: none;">Please select a valid school from the list.</span>
                     </div>
                     <div class="form-group">
                         <label for="location_input">Location in School</label>
@@ -244,7 +274,7 @@
                 </section>
 
                 <div class="action-buttons">
-                    <button type="submit" class="save-btn">
+                    <button type="button" class="save-btn" onclick="showConfirmModal()">
                         <i class="fas fa-save"></i> Save Changes
                     </button>
                 </div>
@@ -266,147 +296,183 @@
     </div>
     
     <script>
-        // Store your hardcoded data globally
-        const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
-        const NIGERIAN_STATES = Object.keys(NIGERIAN_SCHOOLS);
+    // Store your hardcoded data globally
+    const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
+    const NIGERIAN_STATES = Object.keys(NIGERIAN_SCHOOLS);
 
-        const stateInput = document.getElementById('state_input');
-        const schoolInput = document.getElementById('school_input');
-        const locationInput = document.getElementById('location_input');
-        const schoolDatalist = document.getElementById('school-list');
-        const schoolError = document.getElementById('school_error');
+    const stateInput = document.getElementById('state_input');
+    const schoolInput = document.getElementById('school_input');
+    const locationInput = document.getElementById('location_input');
+    const stateDropdown = document.getElementById('state-dropdown');
+    const schoolDropdown = document.getElementById('school-dropdown');
+    const schoolError = document.getElementById('school_error');
 
-        const populateSchools = (state) => {
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDatalist.innerHTML = '';
-            schools.forEach(school => {
-                const option = document.createElement('option');
-                option.value = school.name;
-                schoolDatalist.appendChild(option);
-            });
+    // Autocomplete function from your search page
+    function setupAutocomplete(inputElement, dataList, dropdownElement, onSelectCallback = null) {
+        function filterAndDisplay() {
+            const query = inputElement.value.toLowerCase();
+            dropdownElement.innerHTML = '';
+            if (!query) {
+                dropdownElement.classList.add('hidden');
+                return;
+            }
+            const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+            if (filteredData.length > 0) {
+                filteredData.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    li.className = 'autocomplete-list-item';
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        inputElement.value = item;
+                        dropdownElement.classList.add('hidden');
+                        inputElement.focus();
+                        if (onSelectCallback) {
+                            onSelectCallback(item);
+                        }
+                    });
+                    dropdownElement.appendChild(li);
+                });
+                dropdownElement.classList.remove('hidden');
+            } else {
+                dropdownElement.classList.add('hidden');
+            }
+        }
+
+        inputElement.addEventListener('input', filterAndDisplay);
+        inputElement.addEventListener('focus', filterAndDisplay);
+        inputElement.addEventListener('blur', () => {
+            setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+        });
+    }
+
+    // Function to populate and enable the schools dropdown
+    function populateSchools() {
+        const stateValue = stateInput.value.trim();
+        const schools = NIGERIAN_SCHOOLS[stateValue] ? NIGERIAN_SCHOOLS[stateValue].map(s => s.name) : [];
+
+        if (schools.length > 0) {
             schoolInput.disabled = false;
             schoolInput.placeholder = 'Select from the list or type...';
-        };
-
-        // Validate if the typed school is in the list
-        const validateSchool = () => {
-            const stateValue = stateInput.value.trim();
-            const schoolValue = schoolInput.value.trim();
-            const schoolsForState = (NIGERIAN_SCHOOLS[stateValue] || []).map(s => s.name);
-            
-            if (schoolValue && !schoolsForState.includes(schoolValue)) {
-                schoolInput.classList.add('is-invalid');
-                schoolError.textContent = 'Please select a valid school from the list.';
-                locationInput.disabled = true;
-                return false;
-            } else {
-                schoolInput.classList.remove('is-invalid');
-                schoolError.textContent = '';
+            setupAutocomplete(schoolInput, schools, schoolDropdown, (selectedSchool) => {
                 locationInput.disabled = false;
                 locationInput.placeholder = 'e.g., Faculty of Engineering';
-                return true;
-            }
-        };
-
-        // Initialize fields on page load based on existing data
-        document.addEventListener('DOMContentLoaded', () => {
-            const currentState = stateInput.value.trim();
-            if (NIGERIAN_SCHOOLS[currentState]) {
-                populateSchools(currentState);
-            }
-
-            const currentSchool = schoolInput.value.trim();
-            if (currentSchool) {
-                // We'll rely on the input validation for this
-            }
-        });
-
-        // Event listener for state input
-        stateInput.addEventListener('input', () => {
-            const stateValue = stateInput.value.trim();
-            if (NIGERIAN_SCHOOLS[stateValue]) {
-                populateSchools(stateValue);
-                schoolInput.value = '';
-                locationInput.disabled = true;
-                locationInput.value = '';
-                locationInput.placeholder = 'Select a school first...';
-                schoolInput.classList.remove('is-invalid');
-                schoolError.textContent = '';
-            } else {
-                schoolInput.disabled = true;
-                schoolInput.placeholder = 'Select a state from the list.';
-                schoolDatalist.innerHTML = '';
-                locationInput.disabled = true;
-                locationInput.value = '';
-                locationInput.placeholder = 'Select a school first...';
-                schoolInput.classList.remove('is-invalid');
-                schoolError.textContent = '';
-            }
-        });
-
-        // Event listener for school input
-        schoolInput.addEventListener('input', validateSchool);
-
-        // Function to validate and submit the form
-        function validateAndSubmit() {
-            if (validateSchool()) {
-                document.getElementById('editProfileForm').submit();
-            } else {
-                closeConfirmModal();
-            }
+            });
+        } else {
+            schoolInput.disabled = true;
+            schoolInput.placeholder = 'No universities for this state.';
+            schoolInput.value = '';
+            schoolDropdown.innerHTML = '';
+            locationInput.disabled = true;
+            locationInput.placeholder = 'Select a school first...';
+            locationInput.value = '';
         }
+    }
 
-        // --- Standard functions from your previous code ---
-        function toggleTimeInputs(day) {
-            const checkbox = document.getElementById(`checkbox-${day}`);
-            const openTimeInput = document.getElementById(`${day}_open`);
-            const closeTimeInput = document.getElementById(`${day}_close`);
-            const dayItem = document.getElementById(`day-item-${day}`);
-            if (checkbox.checked) {
-                openTimeInput.disabled = false;
-                closeTimeInput.disabled = false;
-                dayItem.classList.remove('disabled-day');
-            } else {
-                openTimeInput.disabled = true;
-                closeTimeInput.disabled = true;
-                dayItem.classList.add('disabled-day');
-                openTimeInput.value = '';
-                closeTimeInput.value = '';
-            }
-        }
-
-        function updateCharCount(id, max) {
-            const input = document.getElementById(id);
-            const countDisplay = document.getElementById(id + '_char_count');
-            if (input && countDisplay) {
-                countDisplay.textContent = `${input.value.length} / ${max}`;
-            }
-        }
+    // New validation function for form submission
+    function validateForm() {
+        const stateValue = stateInput.value.trim();
+        const schoolValue = schoolInput.value.trim();
+        const schoolsForState = (NIGERIAN_SCHOOLS[stateValue] || []).map(s => s.name);
         
-        function showConfirmModal() {
-             document.getElementById('confirmModal').classList.add('active');
-             document.body.style.overflow = 'hidden';
-        }
-        function closeConfirmModal() {
-             document.getElementById('confirmModal').classList.remove('active');
-             document.body.style.overflow = '';
+        // Reset validation state
+        stateInput.classList.remove('is-invalid');
+        schoolInput.classList.remove('is-invalid');
+        schoolError.style.display = 'none';
+
+        if (stateValue && !NIGERIAN_STATES.includes(stateValue)) {
+            stateInput.classList.add('is-invalid');
+            return false;
         }
 
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('confirmModal');
-            if (event.target === modal) {
-                closeConfirmModal();
-            }
+        if (schoolValue && schoolsForState.length > 0 && !schoolsForState.includes(schoolValue)) {
+            schoolInput.classList.add('is-invalid');
+            schoolError.style.display = 'block';
+            return false;
+        }
+
+        return true;
+    }
+
+    // Initialize autocomplete on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Setup state autocomplete first
+        setupAutocomplete(stateInput, NIGERIAN_STATES, stateDropdown, (selectedState) => {
+            // When a state is selected, populate and enable the school field
+            populateSchools();
+            schoolInput.value = ''; // Clear school field
+            locationInput.value = ''; // Clear location field
         });
 
-        // Auto-hide flash messages
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            }, 5000);
-        });
+        // If state is already set (e.g., from initial load), populate schools
+        if (stateInput.value) {
+            populateSchools();
+        }
+
+        // Add a blur listener to school to validate on unfocus
+        schoolInput.addEventListener('blur', validateForm);
+    });
+
+    // --- The rest of your existing functions remain here ---
+
+    function toggleTimeInputs(day) {
+        const checkbox = document.getElementById(`checkbox-${day}`);
+        const openTimeInput = document.getElementById(`${day}_open`);
+        const closeTimeInput = document.getElementById(`${day}_close`);
+        const dayItem = document.getElementById(`day-item-${day}`);
+        if (checkbox.checked) {
+            openTimeInput.disabled = false;
+            closeTimeInput.disabled = false;
+            dayItem.classList.remove('disabled-day');
+        } else {
+            openTimeInput.disabled = true;
+            closeTimeInput.disabled = true;
+            dayItem.classList.add('disabled-day');
+            openTimeInput.value = '';
+            closeTimeInput.value = '';
+        }
+    }
+
+    function updateCharCount(id, max) {
+        const input = document.getElementById(id);
+        const countDisplay = document.getElementById(id + '_char_count');
+        if (input && countDisplay) {
+            countDisplay.textContent = `${input.value.length} / ${max}`;
+        }
+    }
+    
+    // Updated modal functions to use the new validation
+    function showConfirmModal() {
+        if (validateForm()) {
+            document.getElementById('confirmModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function validateAndSubmit() {
+        // Form is already validated by showConfirmModal
+        document.getElementById('editProfileForm').submit();
+    }
+
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('confirmModal');
+        if (event.target === modal) {
+            closeConfirmModal();
+        }
+    });
+
+    // Auto-hide flash messages
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }, 5000);
+    });
     </script>
 </body>
 </html>
