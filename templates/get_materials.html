@@ -60,15 +60,50 @@
             margin: 2rem auto;
             padding: 0 2rem;
         }
+        
+        /* New Styles for Autocomplete Dropdown */
+        .autocomplete-container {
+            position: relative;
+            flex: 1;
+        }
+        
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        
+        .autocomplete-item {
+            padding: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: var(--light-background);
+        }
 
         .search-bar {
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
         }
+        
+        .search-bar .input-group {
+            position: relative;
+            flex: 1;
+        }
 
         .search-bar input {
-            flex: 1;
+            width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
@@ -115,6 +150,35 @@
             font-size: 0.95rem;
             color: #666;
             margin-bottom: 0.5rem;
+        }
+        
+        /* New Styles for Document Icon */
+        .document-icon-container {
+            width: 80px;
+            height: 100px;
+            background-color: #f0f4f8; /* A light background for the icon */
+            border: 1px solid #dcdfe4;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .document-icon-container .fas {
+            font-size: 2.5rem;
+            color: #607d8b; /* A neutral icon color */
+        }
+        
+        .document-icon-container .file-ext {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #263238;
+            margin-top: 4px;
+            text-transform: uppercase;
         }
 
         .material-card .meta {
@@ -186,7 +250,6 @@
             <i class="fas fa-home"></i> Home
         </a>
         
-        
         <a href="/profile">
             <i class="fas fa-user-circle"></i> Profile
         </a>
@@ -230,10 +293,36 @@
         const searchInput = document.getElementById('search-input');
         const searchBtn = document.getElementById('search-btn');
 
+        function getFileIcon(filename) {
+            const extension = filename.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'pdf':
+                    return { icon: 'fa-file-pdf', ext: 'pdf' };
+                case 'doc':
+                case 'docx':
+                    return { icon: 'fa-file-word', ext: 'doc' };
+                case 'xls':
+                case 'xlsx':
+                    return { icon: 'fa-file-excel', ext: 'xls' };
+                case 'ppt':
+                case 'pptx':
+                    return { icon: 'fa-file-powerpoint', ext: 'ppt' };
+                case 'zip':
+                case 'rar':
+                    return { icon: 'fa-file-archive', ext: 'zip' };
+                case 'jpg':
+                case 'jpeg':
+                case 'png':
+                case 'gif':
+                    return { icon: 'fa-file-image', ext: 'img' };
+                default:
+                    return { icon: 'fa-file', ext: 'file' };
+            }
+        }
+
         async function fetchMaterials(query = '') {
             materialsContainer.innerHTML = '<p id="loading-message" class="text-center text-gray-500"><i class="fas fa-spinner fa-spin"></i> Loading materials...</p>';
             try {
-                // The API now returns an object with `materials` and `is_admin` keys
                 const response = await fetch(`/api/materials?query=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 const materials = data.materials;
@@ -246,7 +335,6 @@
                         card.className = 'material-card';
 
                         let deleteButtonHTML = '';
-                        // Conditionally add the delete button if the user is an admin
                         if (isAdmin) {
                             deleteButtonHTML = `
                                 <form action="/delete_material/${material.id}" method="post" onsubmit="return confirm('Are you sure you want to delete this material? This action cannot be undone.');">
@@ -256,17 +344,28 @@
                                 </form>
                             `;
                         }
+                        
+                        // Get file icon based on filename
+                        const filename = material.file_path ? material.file_path.split('/').pop() : 'unknown';
+                        const fileInfo = getFileIcon(filename);
 
                         card.innerHTML = `
-                            <div>
-                                <h3>${material.title}</h3>
-                                <p><strong>Category:</strong> ${material.category}</p>
-                                <p><strong>School:</strong> ${material.school}</p>
-                                <p><strong>State:</strong> ${material.state}</p>
-                                <p>${material.content}</p>
+                            <div class="flex items-start mb-4">
+                                <div class="document-icon-container mr-4">
+                                    <i class="fas ${fileInfo.icon}"></i>
+                                    <span class="file-ext">${fileInfo.ext}</span>
+                                </div>
+                                <div class="flex-1">
+                                    <h3>${material.title}</h3>
+                                    <p><strong>Category:</strong> ${material.category}</p>
+                                    <p><strong>School:</strong> ${material.school}</p>
+                                    <p><strong>State:</strong> ${material.state}</p>
+                                    <p>${material.content}</p>
+                                </div>
                             </div>
                             <a href="/download_material/${material.id}">Download <i class="fas fa-download"></i></a>
-                            ${deleteButtonHTML} `;
+                            ${deleteButtonHTML}
+                        `;
                         materialsContainer.appendChild(card);
                     });
                 } else {
