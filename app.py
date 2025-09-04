@@ -129,9 +129,6 @@ def allowed_file(filename):
 
 
 
-
-
-# --- User Model Class ---
 class User:
     """
     User data model that retrieves and represents a user from Firestore.
@@ -160,6 +157,7 @@ class User:
         self.is_referral_verified = bool(kwargs.get('is_referral_verified', False))
         self.last_referral_verification_at = kwargs.get('last_referral_verification_at')
         self.businessname = kwargs.get('businessname', '')
+        self.fcm_token = kwargs.get('fcm_token', None) # Add this line
         self.phone_number = kwargs.get('phone_number', '')
         self.verified_phone = bool(kwargs.get('verified_phone', False))
         self.last_email_otp_sent_at = kwargs.get('last_email_otp_sent_at')
@@ -171,7 +169,7 @@ class User:
         self.working_days = kwargs.get('working_days') if isinstance(kwargs.get('working_days'), list) else []
         self.working_times = kwargs.get('working_times') if isinstance(kwargs.get('working_times'), dict) else {}
         self.delivery_methods = kwargs.get('delivery_methods') if isinstance(kwargs.get('delivery_methods'), list) else []
-
+        
     @staticmethod
     def get(uid):
         """
@@ -186,10 +184,9 @@ class User:
                 return User(doc.id, **doc.to_dict())
             return None
         except Exception as e:
-            # Note: If you have a logger, ensure it's imported
-            # import logging
-            # logging.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
+            logging.error(f"Error fetching user by ID {uid}: {e}", exc_info=True)
             return None
+
 
 # --- login_required Decorator ---
 def login_required(f):
@@ -239,10 +236,6 @@ def admin_required(f):
 
 
 
-
-
-
-
 def update_online_status(user_id, is_online):
     # This is the function we generated previously
     try:
@@ -253,6 +246,42 @@ def update_online_status(user_id, is_online):
         logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
 
      
+
+# Add this new route directly to your app.py file
+@app.route('/api/save-fcm-token', methods=['POST'])
+@login_required 
+def save_fcm_token():
+    """
+    Saves the FCM token for the current user to Firestore.
+    """
+    data = request.get_json()
+    fcm_token = data.get('fcm_token')
+
+    if not fcm_token:
+        logging.warning("FCM token not provided in the request.")
+        return jsonify({"error": "FCM token not provided."}), 400
+
+    user_id = g.current_user.id
+
+    try:
+        user_doc_ref = db.collection('users').document(user_id)
+        
+        # Update the 'fcm_token' field in the user's Firestore document
+        user_doc_ref.update({
+            'fcm_token': fcm_token
+        })
+        
+        logging.info(f"FCM token saved successfully for user: {user_id}")
+        return jsonify({"message": "FCM token saved successfully."}), 200
+
+    except Exception as e:
+        logging.error(f"Failed to save FCM token for user {user_id}: {e}", exc_info=True)
+        return jsonify({"error": "An internal server error occurred."}), 500
+
+
+
+
+
 
 
 # --- Routes for Authentication ---
@@ -5175,6 +5204,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
