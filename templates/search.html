@@ -273,15 +273,19 @@
                         <label for="location_input">Precise Location</label>
                         <input type="text" id="location_input" name="location" placeholder="e.g., Akoka, Surulere" value="{{ selected_location or '' }}">
                     </div>
-                    
+
+
+
                     <div class="filter-group">
-                        <label for="delivery">Delivery Option</label>
-                        <select id="delivery" name="delivery">
-                            <option value="" {% if not selected_delivery %}selected{% endif %}>Any</option>
-                            <option value="yes" {% if selected_delivery == 'yes' %}selected{% endif %}>Yes</option>
-                            <option value="no" {% if selected_delivery == 'no' %}selected{% endif %}>No</option>
-                        </select>
+    <label for="delivery">Delivery Option</label>
+    <select id="delivery" name="delivery">
+        <option value="" {% if not selected_delivery %}selected{% endif %}>Any</option>
+        <option value="Pick-up" {% if selected_delivery == 'Pick-up' %}selected{% endif %}>Pick-up</option>
+        <option value="Shipping" {% if selected_delivery == 'Shipping' %}selected{% endif %}>Shipping</option>
+        <option value="Meet-up/Delivery" {% if selected_delivery == 'Meet-up/Delivery' %}selected{% endif %}>Meet-up/Delivery</option>
+    </select>
                     </div>
+                    
 
                     <div class="filter-group">
                         <label>Price Range (₦)</label>
