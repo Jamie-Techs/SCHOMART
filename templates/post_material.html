@@ -3,239 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Materials</title>
+    <title>Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        :root {
-            --primary-color: #006B3C;
-            --secondary-color: #FDB813;
-            --accent-color: #00391F;
-            --light-background: #f5f5f5;
-            --card-background: #ffffff;
-            --border-color: #e0e0e0;
-            --text-color: #333;
-            --white-text: #fff;
-            --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            --border-radius: 8px;
-            --transition-speed: 0.3s ease;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--light-background);
-            color: var(--text-color);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .header {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--box-shadow);
-        }
-
-        .header-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .header-links a {
-            color: var(--white-text);
-            margin-left: 1.5rem;
-            font-weight: 500;
-            transition: color var(--transition-speed);
-        }
-
-        .header-links a:hover {
-            color: var(--secondary-color);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-        
-        /* New Styles for Autocomplete Dropdown */
-        .autocomplete-container {
-            position: relative;
-            flex: 1;
-        }
-        
+        /* Your existing styles... */
         .autocomplete-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
             z-index: 10;
-            background-color: var(--card-background);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
             max-height: 200px;
             overflow-y: auto;
             margin-top: 4px;
         }
-        
+
         .autocomplete-item {
             padding: 0.75rem;
             cursor: pointer;
         }
-        
+
         .autocomplete-item:hover {
-            background-color: var(--light-background);
-        }
-
-        .search-bar {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .search-bar .input-group {
-            position: relative;
-            flex: 1;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-        }
-
-        .search-bar button {
-            padding: 0.75rem 1.5rem;
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            transition: background-color var(--transition-speed);
-        }
-
-        .search-bar button:hover {
-            background-color: var(--accent-color);
-        }
-
-        #materials-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .material-card {
-            background-color: var(--card-background);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .material-card h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .material-card p {
-            font-size: 0.95rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
-
-        .material-card .meta {
-            font-size: 0.875rem;
-            color: #888;
-            margin-top: 1rem;
-        }
-
-        .material-card a {
-            padding: 0.5rem 1rem;
-            background-color: var(--secondary-color);
-            color: var(--text-color);
-            border-radius: 50px;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 1rem;
-            transition: background-color var(--transition-speed);
-        }
-
-        .material-card a:hover {
-            background-color: #e0a612;
-        }
-
-        #message-container {
-            text-align: center;
-            margin-top: 2rem;
-            font-size: 1.25rem;
-            color: #888;
-        }
-
-        .flash-messages {
-            margin-top: 1rem;
-        }
-        .flash-messages .alert {
-            padding: 1rem;
-            border-radius: 0.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .flash-messages .success { background-color: #d4edda; color: #155724; }
-        .flash-messages .error { background-color: #f8d7da; color: #721c24; }
-        .flash-messages .warning { background-color: #fff3cd; color: #856404; }
-        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; }
-        
-        .btn-delete-material {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 12px;
-            background-color: #dc3545; /* Red color for delete action */
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 10px; /* Space below the material content */
-        }
-        .btn-delete-material:hover {
-            background-color: #c82333;
+            background-color: #f5f5f5;
         }
     </style>
 </head>
 <body>
     <header class="header">
-        <div class="header-title">Study Hub</div>
-        <div class="header-links">
-            <a href="/">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="/profile">
-                <i class="fas fa-user-circle"></i> Profile
-            </a>
-            <a href="/cgpa_calculator">
-                <i class="fas fa-calculator"></i> CGPA Calculator
-            </a>
-            {% if user and user.is_admin %}
-                <a href="/admin">
-                    <i class="fas fa-user-shield"></i> Admin
-                </a>
-            {% endif %}
-        </div>
-    </header>
-    
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center mb-6 text-primary-color">Available Study Materials</h1>
+        </header>
+
+    <div class="container mx-auto mt-8 p-4">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary-color">Admin Dashboard</h1>
 
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -247,131 +50,83 @@
             {% endwith %}
         </div>
 
-        <div class="search-bar flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <div class="input-group">
-                <input type="text" id="title-search" placeholder="Search by title...">
-            </div>
-            
-            <div class="input-group autocomplete-container">
-                <input type="text" id="state-search" placeholder="Filter by state..." autocomplete="off">
-                <div id="state-dropdown" class="autocomplete-dropdown hidden"></div>
-            </div>
-            
-            <div class="input-group autocomplete-container">
-                <input type="text" id="school-search" placeholder="Filter by school..." autocomplete="off">
-                <div id="school-dropdown" class="autocomplete-dropdown hidden"></div>
-            </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-primary-color mb-4">Post a New Study Material</h2>
+            <form id="post-material-form" action="/admin/post_material" method="post" enctype="multipart/form-data">
+                <div class="mb-4">
+                    <label for="title" class="block text-gray-700 font-medium mb-2">Title <span class="text-red-500">*</span></label>
+                    <input type="text" id="title" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-secondary-color">
+                </div>
+                
+                <div class="mb-4 relative">
+                    <label for="state" class="block text-gray-700 font-medium mb-2">State <span class="text-red-500">*</span></label>
+                    <input type="text" id="state" name="state" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-secondary-color" autocomplete="off">
+                    <div id="state-dropdown" class="autocomplete-dropdown hidden"></div>
+                </div>
+                
+                <div class="mb-4 relative">
+                    <label for="school" class="block text-gray-700 font-medium mb-2">School <span class="text-red-500">*</span></label>
+                    <input type="text" id="school" name="school" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-secondary-color" autocomplete="off">
+                    <div id="school-dropdown" class="autocomplete-dropdown hidden"></div>
+                </div>
 
-            <button id="search-btn" class="w-full sm:w-auto"><i class="fas fa-search"></i> Search</button>
-        </div>
-
-        <div id="materials-container">
-            <p id="loading-message" class="text-center text-gray-500">Loading materials...</p>
+                <div class="mb-4">
+                    <label for="content" class="block text-gray-700 font-medium mb-2">Description (Optional)</label>
+                    <textarea id="content" name="content" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-secondary-color"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="file" class="block text-gray-700 font-medium mb-2">Upload File <span class="text-red-500">*</span></label>
+                    <input type="file" id="file" name="file" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-secondary-color">
+                </div>
+                <button type="submit" class="w-full py-2 px-4 bg-primary-color text-white font-semibold rounded-lg hover:bg-accent-color focus:outline-none focus:ring focus:ring-accent-color">
+                    Post Material
+                </button>
+            </form>
         </div>
     </div>
 
     <script>
-        const materialsContainer = document.getElementById('materials-container');
-        const titleInput = document.getElementById('title-search');
-        const stateInput = document.getElementById('state-search');
-        const schoolInput = document.getElementById('school-search');
+        const stateInput = document.getElementById('state');
+        const schoolInput = document.getElementById('school');
         const stateDropdown = document.getElementById('state-dropdown');
         const schoolDropdown = document.getElementById('school-dropdown');
-        const searchBtn = document.getElementById('search-btn');
-
-        let allMaterials = [];
+        
         let uniqueStates = [];
         let uniqueSchools = [];
 
-        async function fetchInitialData() {
+        async function fetchAutocompleteData() {
             try {
-                const response = await fetch(`/api/materials`);
-                const data = await response.json();
-                allMaterials = data.materials;
-
-                // Extract unique values for autocomplete
-                uniqueStates = [...new Set(allMaterials.map(m => m.state).filter(Boolean))];
-                uniqueSchools = [...new Set(allMaterials.map(m => m.school).filter(Boolean))];
-
-                renderMaterials(allMaterials, data.is_admin);
+                const response = await fetch('/api/materials/unique_fields');
+                if (response.ok) {
+                    const data = await response.json();
+                    uniqueStates = data.states;
+                    uniqueSchools = data.schools;
+                } else {
+                    console.error('Failed to fetch autocomplete data.');
+                }
             } catch (error) {
-                console.error('Failed to fetch initial data:', error);
-                materialsContainer.innerHTML = '<p class="text-center text-red-500">Failed to load materials. Please try again later.</p>';
+                console.error('An error occurred while fetching autocomplete data:', error);
             }
         }
 
-        function renderMaterials(materials, isAdmin) {
-            materialsContainer.innerHTML = ''; // Clear existing content
-            if (materials.length > 0) {
-                materials.forEach(material => {
-                    const card = document.createElement('div');
-                    card.className = 'material-card';
-                    let deleteButtonHTML = '';
-                    if (isAdmin) {
-                        deleteButtonHTML = `
-                            <form action="/delete_material/${material.id}" method="post" onsubmit="return confirm('Are you sure you want to delete this material? This action cannot be undone.');">
-                                <button type="submit" class="btn-delete-material">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </button>
-                            </form>
-                        `;
-                    }
-                    card.innerHTML = `
-                        <div>
-                            <h3>${material.title}</h3>
-                            <p><strong>School:</strong> ${material.school}</p>
-                            <p><strong>State:</strong> ${material.state}</p>
-                            <p>${material.content}</p>
-                        </div>
-                        <a href="/download_material/${material.id}">Download <i class="fas fa-download"></i></a>
-                        ${deleteButtonHTML} `;
-                    materialsContainer.appendChild(card);
-                });
-            } else {
-                materialsContainer.innerHTML = '<p class="text-center text-gray-500">No materials found matching your search.</p>';
-            }
-        }
-
-        function filterMaterials() {
-            const titleQuery = titleInput.value.toLowerCase();
-            const stateQuery = stateInput.value.toLowerCase();
-            const schoolQuery = schoolInput.value.toLowerCase();
-
-            const filtered = allMaterials.filter(material => {
-                const titleMatch = material.title.toLowerCase().includes(titleQuery);
-                const stateMatch = material.state.toLowerCase().includes(stateQuery);
-                const schoolMatch = material.school.toLowerCase().includes(schoolQuery);
-                
-                // All filters are optional
-                return titleMatch && stateMatch && schoolMatch;
-            });
-
-            // Re-fetch admin status since it's not stored in allMaterials
-            fetch(`/api/materials?query=`)
-                .then(res => res.json())
-                .then(data => {
-                    renderMaterials(filtered, data.is_admin);
-                });
-        }
-
-        // Autocomplete Logic
         function setupAutocomplete(input, dropdown, options) {
             input.addEventListener('input', () => {
                 const value = input.value.toLowerCase();
                 dropdown.innerHTML = '';
+                
                 if (value.length > 0) {
                     const filteredOptions = options.filter(option => option.toLowerCase().includes(value));
+                    
                     if (filteredOptions.length > 0) {
                         filteredOptions.forEach(option => {
-                            const item = document.createElement('div');
-                            item.className = 'autocomplete-item';
-                            item.textContent = option;
-                            item.addEventListener('click', () => {
+                            const div = document.createElement('div');
+                            div.className = 'autocomplete-item';
+                            div.textContent = option;
+                            div.addEventListener('click', () => {
                                 input.value = option;
                                 dropdown.classList.add('hidden');
-                                filterMaterials(); // Trigger filter on selection
                             });
-                            dropdown.appendChild(item);
+                            dropdown.appendChild(div);
                         });
                         dropdown.classList.remove('hidden');
                     } else {
@@ -382,7 +137,6 @@
                 }
             });
 
-            // Hide dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!input.contains(e.target) && !dropdown.contains(e.target)) {
                     dropdown.classList.add('hidden');
@@ -390,20 +144,8 @@
             });
         }
 
-        searchBtn.addEventListener('click', filterMaterials);
-        titleInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') filterMaterials();
-        });
-        stateInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') filterMaterials();
-        });
-        schoolInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') filterMaterials();
-        });
-
-        // Initial load and setup
         window.onload = async () => {
-            await fetchInitialData();
+            await fetchAutocompleteData();
             setupAutocomplete(stateInput, stateDropdown, uniqueStates);
             setupAutocomplete(schoolInput, schoolDropdown, uniqueSchools);
         };
