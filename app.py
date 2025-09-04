@@ -2146,19 +2146,7 @@ def delete_file_from_firebase(file_path):
         logging.error(f"Failed to delete file from storage: {e}", exc_info=True)
         return False
 
-def get_all_materials(query=''):
-    materials_ref = db.collection('study_materials')
-    query_results = materials_ref.stream()
-    
-    materials_list = []
-    for doc in query_results:
-        material = doc.to_dict()
-        material['id'] = doc.id
-        # Simple server-side filtering for demonstration
-        if not query or any(query.lower() in str(val).lower() for val in material.values()):
-            materials_list.append(material)
 
-    return materials_list
 
 def get_material_by_id(material_id):
     material_doc = db.collection('study_materials').document(material_id).get()
@@ -4353,24 +4341,53 @@ def faq():
 
 
 
+# NEW: Helper function to get all materials to extract unique fields
+def get_all_materials():
+    """Helper function to get all materials from Firestore."""
+    materials_list = []
+    try:
+        docs = db.collection('study_materials').stream()
+        for doc in docs:
+            material = doc.to_dict()
+            material['id'] = doc.id
+            materials_list.append(material)
+    except Exception as e:
+        logging.error(f"Error getting all materials: {e}")
+    return materials_list
+
+# NEW: Endpoint to get unique states and schools for autocomplete
+@app.route('/api/materials/unique_fields', methods=['GET'])
+def api_get_unique_fields():
+    """Returns unique states and schools for autocomplete."""
+    materials = get_all_materials()
+    unique_states = sorted(list(set(m.get('state', '') for m in materials if m.get('state'))))
+    unique_schools = sorted(list(set(m.get('school', '') for m in materials if m.get('school'))))
+    
+    return jsonify({
+        'states': unique_states,
+        'schools': unique_schools
+    })
+
+# UPDATED: The route to handle material posting
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
 def post_material():
-    # ... (existing form data retrieval) ...
+    # Retrieve form data. 'content' is now optional. 'category' is removed.
     title = request.form.get('title')
-    category = request.form.get('category')
     content = request.form.get('content')
     state = request.form.get('state')
     school = request.form.get('school')
     file = request.files.get('file')
 
-    if not all([title, category, content, state, school, file]):
-        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    # UPDATED: Check for mandatory fields (title, state, school, file)
+    if not all([title, state, school, file]):
+        flash('Missing required fields: Title, State, School, and a File are mandatory.', 'error')
+        return redirect(url_for('admin')) # Redirect back to the admin page with an error
 
     try:
-        # Use our new, consistent helper function
-        file_data = handle_material_file(file, title)
+        # Assuming you have a helper function to upload files to Firebase Storage
+        file_data = upload_file_to_firebase(file, title)
         
         if not file_data:
             raise Exception("File upload helper failed.")
@@ -4378,19 +4395,28 @@ def post_material():
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
-            'category': category,
             'content': content,
             'state': state,
             'school': school,
-            'file_url': file_data['download_url'],  # Store the public URL for direct linking
-            'file_path': file_data['file_path'],    # Store the internal path for SDK operations
+            'file_url': file_data['download_url'],
+            'file_path': file_data['file_path'],
             'created_at': firestore.SERVER_TIMESTAMP
         })
+        
         flash('Material posted successfully!', 'success')
-        return jsonify({'success': True, 'message': 'Material posted successfully!'})
+        return redirect(url_for('admin'))
+    
     except Exception as e:
-        flash(f'An error occurred: {str(e)}', 'error')
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logging.error(f"Error posting material: {e}")
+        flash(f'An error occurred while posting: {str(e)}', 'error')
+        return redirect(url_for('admin'))
+
+# The search route is not updated as per your request but can be modified to use the hardcoded lists if needed.
+# @app.route('/api/materials', methods=['GET'])
+# ... (rest of your backend code) ...
+
+
+
 
 
 
@@ -5167,6 +5193,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
