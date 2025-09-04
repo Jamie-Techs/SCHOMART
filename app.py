@@ -1889,58 +1889,6 @@ def get_user_advert_options(user_id):
 
 
 
-def handle_material_file(file, title):
-    """
-    Handles file upload to Firebase Storage and returns the file's path and URL.
-    This function is a single point of truth for file path generation.
-    """
-    try:
-        # Generate a unique and consistent filename
-        file_extension = os.path.splitext(file.filename)[1]
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
-        
-        # The path to the file inside the Firebase bucket
-        file_path = f"study_materials/{unique_filename}"
-        
-        # Get the bucket instance
-        bucket = storage.bucket()
-        blob = bucket.blob(file_path)
-        
-        # Upload the file
-        blob.upload_from_file(file)
-        
-        # Get the public download URL
-        # We'll use a signed URL with a long expiration to avoid needing to make the file public.
-        download_url = blob.generate_signed_url(expiration=datetime.now() + timedelta(days=3650))
-        
-        return {'file_path': file_path, 'download_url': download_url}
-        
-    except Exception as e:
-        logging.error(f"File upload failed: {str(e)}")
-        return None
-
-
-
-
-
-def get_file_blob(file_path):
-    """
-    Retrieves a Firebase Storage Blob object.
-    Separating this logic makes it reusable.
-    """
-    try:
-        bucket = storage.bucket()
-        blob = bucket.blob(file_path)
-        
-        if not blob.exists():
-            return None
-        return blob
-    except Exception as e:
-        logging.error(f"Error accessing blob: {e}")
-        return None
-
-
 
 
 
@@ -4340,136 +4288,90 @@ def faq():
 
 
 
-# This is the main API route to handle filtering
-@app.route('/api/materials', methods=['GET'])
-@login_required
-def api_get_materials():
+def handle_material_file(file, title):
     """
-    Fetches materials based on multiple optional query parameters.
-    Supports filtering by title, state, and school.
+    Handles file upload to Firebase Storage and returns the file's path and URL.
+    This function is a single point of truth for file path generation.
     """
-    title_query = request.args.get('title', '').strip().lower()
-    state_query = request.args.get('state', '').strip().lower()
-    school_query = request.args.get('school', '').strip().lower()
-
-    materials = get_all_materials()
-    
-    # Filter the materials based on the provided query parameters
-    filtered_materials = [
-        m for m in materials
-        if (not title_query or (m.get('title', '').lower().find(title_query) != -1)) and
-           (not state_query or (m.get('state', '').lower() == state_query)) and
-           (not school_query or (m.get('school', '').lower() == school_query))
-    ]
-
-    # Check for admin status from the global context
-    is_admin_status = getattr(g.current_user, 'is_admin', False) if 'current_user' in g else False
-    
-    return jsonify({
-        'materials': filtered_materials,
-        'is_admin': is_admin_status
-    })
-
-@app.route('/admin')
-@login_required
-@admin_required
-def admin():
-    return render_template('admin.html')
-
-@app.route('/admin/post_material', methods=['POST'])
-@login_required
-@admin_required
-def post_material():
-    title = request.form.get('title')
-    # Removed 'category' from here as per the prompt
-    content = request.form.get('content')
-    state = request.form.get('state')
-    school = request.form.get('school')
-    file = request.files.get('file')
-
-    # Making all fields optional except for the title and file
-    if not all([title, file]):
-        return jsonify({'success': False, 'error': 'Title and file are required'}), 400
-
     try:
+        # Generate a unique and consistent filename
         file_extension = os.path.splitext(file.filename)[1]
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        
+        # The path to the file inside the Firebase bucket
         file_path = f"study_materials/{unique_filename}"
         
-        # Assume upload_file_to_firebase is already a working helper function
-        download_url = upload_file_to_firebase(file, file_path)
+        # Get the bucket instance
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
         
-        new_material_ref = db.collection('study_materials').document()
-        new_material_ref.set({
-            'title': title,
-            'content': content,
-            'state': state,
-            'school': school,
-            'file_url': download_url,
-            'file_path': file_path,
-            'created_at': firestore.SERVER_TIMESTAMP
-        })
+        # Upload the file
+        blob.upload_from_file(file)
         
-        flash('Material posted successfully!', 'success')
-        return jsonify({'success': True, 'message': 'Material posted successfully!'})
+        # Get the public download URL
+        # We'll use a signed URL with a long expiration to avoid needing to make the file public.
+        download_url = blob.generate_signed_url(expiration=datetime.now() + timedelta(days=3650))
+        
+        return {'file_path': file_path, 'download_url': download_url}
+        
     except Exception as e:
-        flash(f'An error occurred: {str(e)}', 'error')
-        return jsonify({'success': False, 'error': str(e)}), 500
-        
-@app.route('/materials')
+        logging.error(f"File upload failed: {str(e)}")
+        return None
+
+
+@app.route('/delete_material/<material_id>', methods=['POST'])
 @login_required
-def get_materials_page():
-    return render_template('get_materials.html')
+@admin_required
+def delete_material(material_id):
+    try:
+        material_ref = db.collection('study_materials').document(material_id)
+        material_doc = material_ref.get()
+
+        if not material_doc.exists:
+            flash("Material not found.", "error")
+            return redirect(url_for('get_materials_page'))
+
+        material_data = material_doc.to_dict()
+        file_path = material_data.get('file_path')
+
+        if file_path:
+            try:
+                # Use the file_path directly with the Firebase SDK
+                bucket = storage.bucket()
+                blob = bucket.blob(file_path)
+                blob.delete()
+                logging.info(f"Successfully deleted file from storage: {file_path}")
+            except Exception as e:
+                # The 404 error you see is handled here
+                logging.error(f"Failed to delete file from storage: {e}")
+        
+        material_ref.delete()
+        flash("Material has been successfully deleted.", "success")
+        
+    except Exception as e:
+        logging.error(f"Error deleting material {material_id}: {e}", exc_info=True)
+        flash("An error occurred while deleting the material. Please try again.", "error")
+        
+    return redirect(url_for('get_materials_page'))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_all_materials(query=''):
-    materials_ref = db.collection('study_materials')
-    query_results = materials_ref.stream()
-    
-    materials_list = []
-    for doc in query_results:
-        material = doc.to_dict()
-        material['id'] = doc.id
-        # Simple server-side filtering for demonstration
-        if not query or any(query.lower() in str(val).lower() for val in material.values()):
-            materials_list.append(material)
-
-    return materials_list
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def get_file_blob(file_path):
+    """
+    Retrieves a Firebase Storage Blob object.
+    Separating this logic makes it reusable.
+    """
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
+        
+        if not blob.exists():
+            return None
+        return blob
+    except Exception as e:
+        logging.error(f"Error accessing blob: {e}")
+        return None
 
 @app.route('/download_material/<material_id>')
 @login_required
@@ -4510,40 +4412,124 @@ def download_material(material_id):
         return "An internal error occurred.", 500
 
 
-@app.route('/delete_material/<material_id>', methods=['POST'])
+@app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
-def delete_material(material_id):
+def post_material():
+    # ... (existing form data retrieval) ...
+    title = request.form.get('title')
+    category = request.form.get('category')
+    content = request.form.get('content')
+    state = request.form.get('state')
+    school = request.form.get('school')
+    file = request.files.get('file')
+
+    if not all([title, category, content, state, school, file]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
     try:
-        material_ref = db.collection('study_materials').document(material_id)
-        material_doc = material_ref.get()
-
-        if not material_doc.exists:
-            flash("Material not found.", "error")
-            return redirect(url_for('get_materials_page'))
-
-        material_data = material_doc.to_dict()
-        file_path = material_data.get('file_path')
-
-        if file_path:
-            try:
-                # Use the file_path directly with the Firebase SDK
-                bucket = storage.bucket()
-                blob = bucket.blob(file_path)
-                blob.delete()
-                logging.info(f"Successfully deleted file from storage: {file_path}")
-            except Exception as e:
-                # The 404 error you see is handled here
-                logging.error(f"Failed to delete file from storage: {e}")
+        # Use our new, consistent helper function
+        file_data = handle_material_file(file, title)
         
-        material_ref.delete()
-        flash("Material has been successfully deleted.", "success")
-        
+        if not file_data:
+            raise Exception("File upload helper failed.")
+
+        new_material_ref = db.collection('study_materials').document()
+        new_material_ref.set({
+            'title': title,
+            'category': category,
+            'content': content,
+            'state': state,
+            'school': school,
+            'file_url': file_data['download_url'],  # Store the public URL for direct linking
+            'file_path': file_data['file_path'],    # Store the internal path for SDK operations
+            'created_at': firestore.SERVER_TIMESTAMP
+        })
+        flash('Material posted successfully!', 'success')
+        return jsonify({'success': True, 'message': 'Material posted successfully!'})
     except Exception as e:
-        logging.error(f"Error deleting material {material_id}: {e}", exc_info=True)
-        flash("An error occurred while deleting the material. Please try again.", "error")
-        
-    return redirect(url_for('get_materials_page'))
+        flash(f'An error occurred: {str(e)}', 'error')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+
+
+# This is the main API route to handle filtering
+@app.route('/api/materials', methods=['GET'])
+@login_required
+def api_get_materials():
+    """
+    Fetches materials based on multiple optional query parameters.
+    Supports filtering by title, state, and school.
+    """
+    title_query = request.args.get('title', '').strip().lower()
+    state_query = request.args.get('state', '').strip().lower()
+    school_query = request.args.get('school', '').strip().lower()
+
+    materials = get_all_materials()
+    
+    # Filter the materials based on the provided query parameters
+    filtered_materials = [
+        m for m in materials
+        if (not title_query or (m.get('title', '').lower().find(title_query) != -1)) and
+           (not state_query or (m.get('state', '').lower() == state_query)) and
+           (not school_query or (m.get('school', '').lower() == school_query))
+    ]
+
+    # Check for admin status from the global context
+    is_admin_status = getattr(g.current_user, 'is_admin', False) if 'current_user' in g else False
+    
+    return jsonify({
+        'materials': filtered_materials,
+        'is_admin': is_admin_status
+    })
+
+@app.route('/admin')
+@login_required
+@admin_required
+def admin():
+    return render_template('admin.html')
+
+
+@app.route('/materials')
+@login_required
+def get_materials_page():
+    return render_template('get_materials.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_all_materials(query=''):
+    materials_ref = db.collection('study_materials')
+    query_results = materials_ref.stream()
+    
+    materials_list = []
+    for doc in query_results:
+        material = doc.to_dict()
+        material['id'] = doc.id
+        # Simple server-side filtering for demonstration
+        if not query or any(query.lower() in str(val).lower() for val in material.values()):
+            materials_list.append(material)
+
+    return materials_list
+
+
+
+
+
 
 
 
@@ -5189,6 +5175,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
