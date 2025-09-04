@@ -1889,6 +1889,63 @@ def get_user_advert_options(user_id):
 
 
 
+def handle_material_file(file, title):
+    """
+    Handles file upload to Firebase Storage and returns the file's path and URL.
+    This function is a single point of truth for file path generation.
+    """
+    try:
+        # Generate a unique and consistent filename
+        file_extension = os.path.splitext(file.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        
+        # The path to the file inside the Firebase bucket
+        file_path = f"study_materials/{unique_filename}"
+        
+        # Get the bucket instance
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
+        
+        # Upload the file
+        blob.upload_from_file(file)
+        
+        # Get the public download URL
+        # We'll use a signed URL with a long expiration to avoid needing to make the file public.
+        download_url = blob.generate_signed_url(expiration=datetime.now() + timedelta(days=3650))
+        
+        return {'file_path': file_path, 'download_url': download_url}
+        
+    except Exception as e:
+        logging.error(f"File upload failed: {str(e)}")
+        return None
+
+
+
+
+
+def get_file_blob(file_path):
+    """
+    Retrieves a Firebase Storage Blob object.
+    Separating this logic makes it reusable.
+    """
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(file_path)
+        
+        if not blob.exists():
+            return None
+        return blob
+    except Exception as e:
+        logging.error(f"Error accessing blob: {e}")
+        return None
+
+
+
+
+
+
+
 def get_user_adverts_ids(user_id):
     """Helper function to get all advert IDs for a given user."""
     adverts_ref = db.collection('adverts').where('user_id', '==', user_id).stream()
@@ -4300,55 +4357,24 @@ def faq():
 
 
 
-def handle_material_file(file, title):
-    """
-    Handles file upload to Firebase Storage and returns the file's path and URL.
-    This function is a single point of truth for file path generation.
-    """
-    try:
-        # Generate a unique and consistent filename
-        file_extension = os.path.splitext(file.filename)[1]
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
-        
-        # The path to the file inside the Firebase bucket
-        file_path = f"study_materials/{unique_filename}"
-        
-        # Get the bucket instance
-        bucket = storage.bucket()
-        blob = bucket.blob(file_path)
-        
-        # Upload the file
-        blob.upload_from_file(file)
-        
-        # Get the public download URL
-        # We'll use a signed URL with a long expiration to avoid needing to make the file public.
-        download_url = blob.generate_signed_url(expiration=datetime.now() + timedelta(days=3650))
-        
-        return {'file_path': file_path, 'download_url': download_url}
-        
-    except Exception as e:
-        logging.error(f"File upload failed: {str(e)}")
-        return None
 
 
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
 @admin_required
 def post_material():
-    # ... (existing form data retrieval) ...
     title = request.form.get('title')
-    category = request.form.get('category')
     content = request.form.get('content')
     state = request.form.get('state')
     school = request.form.get('school')
     file = request.files.get('file')
 
-    if not all([title, category, content, state, school, file]):
-        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    # All fields are now optional except for the title and the file itself.
+    if not all([title, file]):
+        return jsonify({'success': False, 'error': 'Title and file are required fields.'}), 400
 
     try:
-        # Use our new, consistent helper function
+        # Assuming the handle_material_file helper function is already in your code and works as intended
         file_data = handle_material_file(file, title)
         
         if not file_data:
@@ -4357,16 +4383,17 @@ def post_material():
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
-            'category': category,
             'content': content,
             'state': state,
             'school': school,
-            'file_url': file_data['download_url'],  # Store the public URL for direct linking
-            'file_path': file_data['file_path'],    # Store the internal path for SDK operations
+            'file_url': file_data['download_url'],
+            'file_path': file_data['file_path'],
             'created_at': firestore.SERVER_TIMESTAMP
         })
+        
         flash('Material posted successfully!', 'success')
         return jsonify({'success': True, 'message': 'Material posted successfully!'})
+        
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4375,21 +4402,6 @@ def post_material():
 
 
 
-def get_file_blob(file_path):
-    """
-    Retrieves a Firebase Storage Blob object.
-    Separating this logic makes it reusable.
-    """
-    try:
-        bucket = storage.bucket()
-        blob = bucket.blob(file_path)
-        
-        if not blob.exists():
-            return None
-        return blob
-    except Exception as e:
-        logging.error(f"Error accessing blob: {e}")
-        return None
 
 @app.route('/download_material/<material_id>')
 @login_required
@@ -5158,6 +5170,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
