@@ -1,4 +1,5 @@
 import os
+from flask import after_this_request
 import random
 import string
 import re
@@ -4315,6 +4316,7 @@ def api_get_materials():
 
 
 
+
 @app.route('/download_material/<material_id>')
 @login_required
 def download_material(material_id):
@@ -4324,18 +4326,37 @@ def download_material(material_id):
 
     file_path = material.get('file_path')
     if not file_path:
-        return "File path not found.", 404
+        return "File path not found in database.", 404
 
     try:
+        # Assuming get_file_from_firebase returns the local path to the downloaded file
         temp_file_path = get_file_from_firebase(file_path)
-        if temp_file_path is None:
-            return "File not found.", 404
         
+        if temp_file_path is None:
+            return "File not found in storage.", 404
+
+        # Get the original filename from the file_path for a better download name
         filename = os.path.basename(file_path)
+
+        # Use after_this_request to clean up the temporary file
+        @after_this_request
+        def remove_file(response):
+            try:
+                os.remove(temp_file_path)
+            except Exception as e:
+                app.logger.error(f"Error removing temporary file: {e}")
+            return response
+
+        # Return the file as an attachment
         return send_file(temp_file_path, as_attachment=True, download_name=filename)
 
     except Exception as e:
+        app.logger.error(f"An error occurred during file download: {str(e)}", exc_info=True)
         return f"An error occurred: {str(e)}", 500
+
+
+
+
 
 
 
@@ -5013,6 +5034,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
