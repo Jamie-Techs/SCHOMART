@@ -2400,6 +2400,11 @@ def submit_advert(advert_id):
 
 
 
+
+
+
+
+# Updated list_adverts function
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -2463,7 +2468,10 @@ def list_adverts():
         
         # Enrich advert data for display
         advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
-        advert_data['location'] = f"{advert_data.get('school', '')}, {advert_data.get('state', '')}"
+        
+        # NOTE: We remove the manual location combination. The template will now
+        # access advert_data.get('state'), advert_data.get('school'), and
+        # advert_data.get('specific_location') directly.
         
         # Format 'created_at' for display
         created_at = advert_data.get('created_at')
@@ -2494,6 +2502,8 @@ def list_adverts():
     adverts.sort(key=sort_key)
     
     return render_template("list_adverts.html", adverts=adverts)
+
+
 
 
 
@@ -5002,6 +5012,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
