@@ -56,8 +56,7 @@
 <body class="bg-gray-100 text-gray-800 antialiased">
 
     <div id="toast-message"
-     class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0"
-     style="animation: fadeIn 0.3s forwards;">
+       class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0">
     </div>
 
     <div class="profile-wrapper max-w-4xl mx-auto my-5 bg-white rounded-xl shadow-lg overflow-hidden">
@@ -133,49 +132,49 @@
             <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                 <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Business & Social</h3>
                 {% if user.social_links %}
-                    <h4 class="font-semibold mb-2 text-sm">Social Links</h4>
-                    <ul class="list-none p-0 mb-4">
-                        {% for platform, link in user.social_links.items() %}
-                            <li class="mb-1 text-sm">
-                                <strong class="font-bold">{{ platform | title }}:</strong> 
-                                <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline transition-colors duration-200">
-                                    {{ link }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                     <h4 class="font-semibold mb-2 text-sm">Social Links</h4>
+                     <ul class="list-none p-0 mb-4">
+                         {% for platform, link in user.social_links.items() %}
+                             <li class="mb-1 text-sm">
+                                 <strong class="font-bold">{{ platform | title }}:</strong> 
+                                 <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline transition-colors duration-200">
+                                     {{ link }} <i class="fas fa-external-link-alt text-xs ml-1"></i>
+                                 </a>
+                             </li>
+                         {% endfor %}
+                     </ul>
                 {% else %}
-                    <p class="text-sm mb-4">No social links set.</p>
+                     <p class="text-sm mb-4">No social links set.</p>
                 {% endif %}
 
                 <h4 class="font-semibold mb-2 text-sm">Delivery Methods</h4>
                 {% if user.delivery_methods %}
-                    <ul class="list-none p-0">
-                        {% for method in user.delivery_methods %}
-                            <li class="mb-1 text-sm"><i class="fas fa-check-square text-green-600 mr-2"></i> {{ method }}</li>
-                        {% endfor %}
-                    </ul>
+                     <ul class="list-none p-0">
+                         {% for method in user.delivery_methods %}
+                             <li class="mb-1 text-sm"><i class="fas fa-check-square text-green-600 mr-2"></i> {{ method }}</li>
+                         {% endfor %}
+                     </ul>
                 {% else %}
-                    <p class="text-sm">No delivery methods set.</p>
+                     <p class="text-sm">No delivery methods set.</p>
                 {% endif %}
             </div>
 
             <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
                 <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Working Hours</h3>
                 {% if user.working_days %}
-                    <ul class="list-none p-0 mb-4">
-                        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-                            <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
-                        {% endfor %}
-                    </ul>
+                     <ul class="list-none p-0 mb-4">
+                         {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                              <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
+                         {% endfor %}
+                     </ul>
                 {% else %}
-                    <p class="text-sm mb-4">No working hours set.</p>
+                     <p class="text-sm mb-4">No working hours set.</p>
                 {% endif %}
 
                 <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-briefcase mr-2"></i> Edit Business & Social</a></p>
             </div>
         </main>
-        
+         
         <section class="sections-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-100">
             <a href="{{ url_for('list_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-bullhorn text-4xl text-green-700 mb-2"></i>
@@ -189,53 +188,36 @@
                 <i class="fas fa-tag text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">Sell</span>
             </a>
-           <!-- <a href="{{ url_for('user_notifications') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-bell text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Notifications</span>
-            </a>
-            <a href="{{ url_for('followers') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-users text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Followers</span>
-            </a>-->
-           <!-- <a href="{{ url_for('settings') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-cog text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Settings</span>
-            </a> -->
             <a href="{{ url_for('faq') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-question-circle text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">FAQs</span>
             </a>
-         <!--   <a href="{{ url_for('create_post') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-pencil-alt text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Create School Gist</span>
-            </a> -->
+          {% if user and user.is_admin %}
+                 <a href="{{ url_for('admin_post_airtime') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                     <i class="fas fa-mobile-alt text-4xl text-green-700 mb-2"></i>
+                     <span class="text-sm font-semibold">Post Airtime</span>
+                 </a>
+                 <a href="{{ url_for('admin_advert_review') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                     <i class="fas fa-check-double text-4xl text-green-700 mb-2"></i>
+                     <span class="text-sm font-semibold">Review Adverts</span>
+                 </a>
+                 <a href="{{ url_for('admin_reported_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                     <i class="fas fa-flag text-4xl text-green-700 mb-2"></i>
+                     <span class="text-sm font-semibold">Reported Adverts</span>
+                 </a>
 
-            {% if user and user.is_admin %}
-                <a href="{{ url_for('admin_post_airtime') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-                    <i class="fas fa-mobile-alt text-4xl text-green-700 mb-2"></i>
-                    <span class="text-sm font-semibold">Post Airtime</span>
-                </a>
-                <a href="{{ url_for('admin_advert_review') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-                    <i class="fas fa-check-double text-4xl text-green-700 mb-2"></i>
-                    <span class="text-sm font-semibold">Review Adverts</span>
-                </a>
-                <a href="{{ url_for('admin_reported_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-                    <i class="fas fa-flag text-4xl text-green-700 mb-2"></i>
-                    <span class="text-sm font-semibold">Reported Adverts</span>
-                </a>
+                 <a href="{{ url_for('admin') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                     <i class="fas fa-folder-plus text-4xl text-green-700 mb-2"></i>
+                     <span class="text-sm font-semibold">Post Material</span>
+                 </a>
 
-                <a href="{{ url_for('admin') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-                    <i class="fas fa-folder-plus text-4xl text-green-700 mb-2"></i>
-                    <span class="text-sm font-semibold">Post Material</span>
-                </a>
+                 <a href="{{ url_for('create_post') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
+                     <i class="fas fa-newspaper text-4xl text-green-700 mb-2"></i>
+                     <span class="text-sm font-semibold">Create School News</span>
+                 </a>
+               {% endif %}
 
-                <a href="{{ url_for('create_post') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
-                    <i class="fas fa-newspaper text-4xl text-green-700 mb-2"></i>
-                    <span class="text-sm font-semibold">Create School News</span>
-                </a>
-             {% endif %}
-
-            
+             
 
             <a href="{{ url_for('logout') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-sign-out-alt text-4xl text-red-500 mb-2"></i>
@@ -302,12 +284,12 @@
                 closeImageModal();
             }
         });
-        
+         
         // Function to show a custom toast message
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast-message');
             toast.textContent = message;
-            
+             
             // Set toast color based on type
             let bgColor = '';
             let textColor = '';
@@ -324,7 +306,7 @@
 
             // Apply Tailwind classes
             toast.className = `fixed bottom-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-100 ${bgColor} ${textColor}`;
-            
+             
             // Hide the toast after 3 seconds
             setTimeout(() => {
                 toast.style.opacity = '0';
