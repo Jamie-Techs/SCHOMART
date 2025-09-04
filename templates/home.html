@@ -9,7 +9,7 @@
         /* Define CSS Variables (adjust these colors as per your site's theme) */
         :root {
             --primary-green: #006B3C;
-            --mid-bg: #FFFFFF; /* Assuming white or light grey for card background */
+            --mid-bg: #FFFFFF;
             --border-color: #E0E0E0;
             --shadow-light: rgba(0,0,0,0.08);
             --secondary-yellow: #FDB813;
@@ -23,15 +23,20 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
-            padding-top: 80px; /* Adjust this value based on your header's height */
+            padding: 0;
+            height: 100vh;
+            overflow: hidden; /* This makes the entire body un-scrollable */
+            display: flex;
+            flex-direction: column;
         }
         .container {
             width: 90%;
-            margin: auto;
-            max-width: 1200px; /* Limit max width for large screens */
+            margin: 0 auto;
+            max-width: 1200px;
         }
         .main-header {
             background-color: #006B3C;
@@ -41,40 +46,41 @@
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            position: fixed;
-            top: 0;
             width: 100%;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            /* Added for better mobile alignment */
-            text-align: center;
+            position: sticky;
+            top: 0;
         }
         .main-header h1 {
             font-size: 24px;
-            margin-bottom: 10px; /* Space between title and nav on small screens */
+            margin-bottom: 10px;
         }
         .main-nav ul {
             list-style: none;
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
-            justify-content: center; /* Center nav items */
-            width: 100%; /* Occupy full width for wrapping */
+            justify-content: center;
+            width: 100%;
         }
         .main-nav ul li a {
             color: #f5f5f5;
             text-decoration: none;
             font-weight: bold;
             font-size: 18px;
-            display: flex; /* Allow icon and text to be side-by-side */
+            display: flex;
             align-items: center;
-            gap: 5px; /* Space between icon and text */
+            gap: 5px;
         }
         .green-search {
             background-color: #006B3C;
             padding: 30px 10px;
             text-align: center;
             color: white;
+            position: sticky;
+            top: 80px; /* Adjust this value based on header height */
+            z-index: 999;
         }
         .green-search h2 {
             font-size: 24px;
@@ -92,7 +98,7 @@
             border-radius: 5px;
             border: 1px solid #ccc;
             width: 100%;
-            max-width: 280px; /* Increased max-width for better usability */
+            max-width: 280px;
         }
         .search-form {
             display: flex;
@@ -101,12 +107,12 @@
         }
         .search-form > div {
             width: 100%;
-            max-width: 280px; /* Match max-width of input */
+            max-width: 280px;
         }
         .admin-ads, .products-section {
             background-color: #fff;
             padding: 20px 0;
-            overflow: hidden; /* Ensures content outside is not visible */
+            overflow: hidden;
         }
         .admin-ads h3, .products-section h3 {
             text-align: center;
@@ -116,20 +122,19 @@
         .product-card {
             background-color: #f9f9f9;
             width: 100%;
-            max-width: 220px; /* Fixed width for scrolling cards, max-width for grid cards */
+            max-width: 220px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             padding: 10px;
             text-align: center;
             border: 1px solid #E0E0E0;
-            flex-shrink: 0; /* Prevent cards from shrinking in scrolling wrapper */
-            text-decoration: none; /* Remove underline from card links */
-            color: inherit; /* Inherit text color for card links */
-            display: flex; /* Use flexbox for vertical alignment */
+            flex-shrink: 0;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Distribute space vertically */
+            justify-content: space-between;
         }
-        /* Apply text overflow handling to product card text elements */
         .product-card h4,
         .product-card .product-price,
         .product-card p {
@@ -143,7 +148,7 @@
             height: 180px;
             object-fit: cover;
             border-radius: 10px;
-            margin-bottom: 10px; /* Space below image */
+            margin-bottom: 10px;
         }
         .product-price {
             color: #FDB813;
@@ -154,7 +159,7 @@
             background: #fff;
             padding: 30px 10px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Smaller min-width for more columns on small screens */
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 20px;
         }
         .category-link {
@@ -168,7 +173,7 @@
             border-radius: 10px;
             padding: 10px;
             transition: transform 0.3s ease;
-            text-align: center; /* Center content within category box */
+            text-align: center;
         }
         .category-box:hover {
             transform: scale(1.05);
@@ -185,13 +190,13 @@
             margin-top: 8px;
             font-weight: bold;
             color: #006B3C;
-            white-space: nowrap; /* Prevent category names from wrapping */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .product-grid {
-            display: grid; /* Changed to grid for better control over responsiveness */
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust minmax for desired card size */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
             justify-content: center;
         }
@@ -200,6 +205,10 @@
             color: white;
             text-align: center;
             padding: 20px;
+            width: 100%;
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
         }
         /* New styles for continuous scrolling */
         .scrolling-container {
@@ -208,19 +217,19 @@
         }
         .scrolling-wrapper {
             display: flex;
-            animation: scroll-right-to-left var(--scroll-duration, 30s) linear infinite;
+            animation: scroll-right-to-left 15s linear infinite; /* Increased speed */
             white-space: nowrap;
-            padding: 10px 0; /* Add padding for visual spacing around cards */
+            padding: 10px 0;
         }
         .scrolling-wrapper .product-card {
-            margin: 0 10px; /* Space between scrolling cards */
+            margin: 0 10px;
         }
         @keyframes scroll-right-to-left {
             0% {
                 transform: translateX(0%);
             }
             100% {
-                transform: translateX(-50%); /* Needs to be -50% if content is duplicated once */
+                transform: translateX(-50%);
             }
         }
         .scrolling-wrapper:hover {
@@ -231,7 +240,7 @@
         .custom-dropdown-container {
             position: relative;
             width: 100%;
-            max-width: 280px; /* Match search input max-width */
+            max-width: 280px;
         }
         .dropdown-search-input {
             padding: 10px;
@@ -274,9 +283,9 @@
         .flashes {
             list-style: none;
             padding: 15px;
-            margin: 10px auto; /* Center flashes below header on smaller screens */
+            margin: 10px auto;
             width: 90%;
-            max-width: 600px; /* Limit width of flash messages */
+            max-width: 600px;
             border-radius: 8px;
             font-weight: bold;
             text-align: center;
@@ -299,97 +308,6 @@
             color: #333;
         }
 
-        /* Media Queries */
-        @media (max-width: 768px) {
-            .main-header {
-                flex-direction: column;
-                align-items: center; /* Center items in column layout */
-                padding: 10px;
-            }
-            .main-header h1 {
-                margin-bottom: 10px;
-            }
-            .main-nav ul {
-                flex-direction: row; /* Keep nav items in a row if space allows */
-                flex-wrap: wrap; /* Allow wrapping */
-                justify-content: center;
-                gap: 10px;
-            }
-            .main-nav ul li {
-                flex-basis: auto; /* Let items take natural width */
-            }
-            .main-nav ul li a {
-                font-size: 16px;
-                padding: 5px 0;
-            }
-            .green-search {
-                padding: 20px 10px;
-            }
-            .green-search h2 {
-                font-size: 20px;
-            }
-            .search-row {
-                flex-direction: column;
-                align-items: center;
-            }
-            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div {
-                max-width: 90%; /* Occupy more width on smaller screens */
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Adjust for even smaller screens */
-                gap: 15px;
-            }
-            .product-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Adjust for smaller screens */
-            }
-            .admin-ads .product-card {
-                width: 180px; /* Slightly smaller fixed width for scrolling on smaller devices */
-            }
-            .scrolling-wrapper {
-                animation-duration: 25s !important; /* Slightly faster scroll on smaller screens */
-            }
-        }
-        @media (max-width: 480px) {
-            body {
-                padding-top: 100px; /* Adjust padding for smaller header */
-            }
-            .main-header h1 {
-                font-size: 22px;
-            }
-            .main-nav ul {
-                flex-direction: column; /* Stack nav items vertically on very small screens */
-                align-items: center;
-            }
-            .main-nav ul li a {
-                font-size: 14px;
-                padding: 5px 0;
-            }
-            .green-search h2 {
-                font-size: 18px;
-            }
-            .dropdown-btn, .search-input, .custom-dropdown-container, .search-form > div {
-                max-width: 100%;
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 10px;
-            }
-            .product-grid {
-                grid-template-columns: 1fr; /* Single column layout for very small screens */
-            }
-            .product-card {
-                max-width: 90%;
-                margin: auto; /* Center single column cards */
-            }
-            .admin-ads .product-card {
-                width: 160px; /* Further reduce fixed width for very small screens */
-            }
-            .flashes {
-                width: 95%;
-            }
-        }
         /* Airtime Post Display Styles */
         #airtime-posts-section {
             padding: 20px;
@@ -398,7 +316,6 @@
             background-color: var(--mid-bg);
             border-radius: 12px;
             box-shadow: 0 8px 20px var(--shadow-light);
-            /* Hidden by default, JS will show if there are posts */
             display: none;
         }
 
@@ -457,17 +374,17 @@
         }
 
         .airtime-card .airtime-digits {
-            font-family: 'Consolas', 'Courier New', monospace; /* Monospace font for digits */
-            font-size: 1.4em; /* Larger for readability */
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.4em;
             font-weight: bold;
             color: var(--text-dark);
-            background-color: var(--secondary-yellow); /* Yellow background */
+            background-color: var(--secondary-yellow);
             padding: 12px 18px;
             border-radius: 8px;
             margin-bottom: 15px;
-            letter-spacing: 1px; /* Space out digits */
-            display: block; /* Ensure it takes its own line */
-            word-break: break-all; /* Allow digits to break if too long */
+            letter-spacing: 1px;
+            display: block;
+            word-break: break-all;
         }
 
         .airtime-card .instructions {
@@ -489,6 +406,17 @@
             border-radius: 8px;
             margin-bottom: 15px;
             border: 1px solid var(--border-color);
+        }
+
+        /* --- New Styling for Scrollable Trending Adverts --- */
+        .scrollable-trending {
+            overflow-y: auto;
+            flex-grow: 1; /* Allow this section to take up remaining space */
+            padding-bottom: 70px; /* Add space for the footer */
+        }
+        /* Make sure all children of the body except the scrollable part are static */
+        .main-header, .flashes, .green-search, .admin-ads, .category-grid, .main-footer {
+            flex-shrink: 0;
         }
 
         /* Responsive adjustments for airtime cards */
@@ -527,16 +455,14 @@
 
         @media(max-width: 480px) {
             #airtime-posts-container {
-                grid-template-columns: 1fr; /* Single column on very small screens */
+                grid-template-columns: 1fr;
             }
         }
     </style>
-                
 </head>
 <body>
 <header class="main-header">
     <h1>SCHOMART</h1>
-
     <nav class="main-nav">
         <ul>
             <li>
@@ -559,9 +485,6 @@
                     <i class="fas fa-book"></i> School hub
                 </a>
             </li>
-            
-            
-            
             <li>
                 <a href="/leaderboard" class="nav-button" title="View the Leaderboard">
                     <i class="fas fa-trophy"></i> Leaderboard
@@ -610,7 +533,7 @@
 <section class="admin-ads container">
     <h3>Featured Adverts</h3>
     <div class="scrolling-container">
-        <div class="scrolling-wrapper" style="--scroll-duration: {{ adverts|length * 5 }}s;">
+        <div class="scrolling-wrapper">
             {# Loop through all adverts now that they are sorted #}
             {% for advert in adverts %}
             <a href="/advert/{{ advert['id'] }}" class="product-card">
@@ -656,26 +579,27 @@
     </a>
     {% endfor %}
 </section>
-
-<section class="products-section container">
-    <h3>Trending Adverts</h3>
-    <div class="product-grid">
-        {# Loop through the same adverts list. The sorting logic in the route takes care of everything. #}
-        {% for advert in adverts %}
-        <a href="/advert/{{ advert['id'] }}" class="product-card">
-            <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-            <h4>{{ advert['title'] }}</h4>
-            <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-            <p>
-                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                {% if advert['state'] and advert['school'] %}, {% endif %}
-                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-            </p>
-            <p>{{ advert['condition'] }}</p>
-        </a>
-        {% endfor %}
-    </div>
-</section>
+<div class="scrollable-trending">
+    <section class="products-section container">
+        <h3>Trending Adverts</h3>
+        <div class="product-grid">
+            {# Loop through the same adverts list. The sorting logic in the route takes care of everything. #}
+            {% for advert in adverts %}
+            <a href="/advert/{{ advert['id'] }}" class="product-card">
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+                <h4>{{ advert['title'] }}</h4>
+                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+                <p>
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
 
 <footer class="main-footer">
     <p>© 2025 SCHOMART. All rights reserved.</p>
@@ -697,16 +621,15 @@
             const response = await fetch('/api/airtime-posts');
             if (!response.ok) {
                 console.error('Failed to fetch airtime posts:', response.statusText);
-                airtimeSection.style.display = 'none'; // Hide section on error
+                airtimeSection.style.display = 'none';
                 return;
             }
             const posts = await response.json();
 
-            // Clear previous posts to prevent duplication on re-fetch
-            container.innerHTML = ''; 
+            container.innerHTML = '';
 
             if (posts.length === 0) {
-                airtimeSection.style.display = 'none'; // Hide the entire section if no posts
+                airtimeSection.style.display = 'none';
             } else {
                 airtimeSection.style.display = 'block'
             }
