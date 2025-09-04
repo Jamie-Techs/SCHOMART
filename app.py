@@ -4373,51 +4373,50 @@ def admin():
     )
 
 
-
-
-# This is the only route you need to check
 @app.route('/admin/post_material', methods=['POST'])
-@login_required  # Assuming these decorators exist
+@login_required
 @admin_required
+
 def post_material():
     title = request.form.get('title')
+    
     content = request.form.get('content')
     state = request.form.get('state')
     school = request.form.get('school')
     file = request.files.get('file')
 
-    # Basic validation
-    if not all([title, state, school, file]):
-        flash('Missing required fields: Title, State, School, and a File are mandatory.', 'error')
-        return redirect(url_for('admin'))
+    if not all([title, content, state, school, file]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     try:
-        # Assuming upload_file_to_firebase is the only necessary helper function here
-        file_data = upload_file_to_firebase(file, title)
+        # Generate a unique filename to prevent overwrites
+        file_extension = os.path.splitext(file.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{timestamp}_{title.replace(' ', '_')}{file_extension}"
+        file_path = f"study_materials/{unique_filename}"
         
-        if not file_data:
-            raise Exception("File upload helper failed.")
-
-        # Save data to Firestore. The 'state' and 'school' are stored as plain strings.
+        download_url = upload_file_to_firebase(file, file_path)
+        
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
+            
             'content': content,
             'state': state,
             'school': school,
-            'file_url': file_data['download_url'],
-            'file_path': file_data['file_path'],
+            'file_url': download_url,
+            'file_path': file_path,
             'created_at': firestore.SERVER_TIMESTAMP
         })
-        
         flash('Material posted successfully!', 'success')
-        return redirect(url_for('admin'))
-    
+        return jsonify({'success': True, 'message': 'Material posted successfully!'})
     except Exception as e:
-        # This will now catch the error and log it
-        logging.error(f"Error posting material: {e}")
         flash(f'An error occurred: {str(e)}', 'error')
-        return redirect(url_for('admin'))
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+
+
 
 
 
@@ -5194,6 +5193,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
