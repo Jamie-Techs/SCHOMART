@@ -82,7 +82,7 @@
         }
 
         /* Back Button Style */
-        .back-button {
+        .nav-button {
             background-color: #006B3C;
             color: white;
             border: none;
@@ -97,7 +97,7 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .back-button:hover {
+        .nav-button:hover {
             background-color: #FDB813;
             color: #000;
             transform: translateY(-2px);
@@ -552,7 +552,12 @@
                 {% endif %}
             {% endwith %}
         </ul>
-        <a href="javascript:history.back()" class="back-button"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="javascript:history.back()" class="nav-button"><i class="fas fa-arrow-left"></i> Back</a>
+        </a>
+      </a>
+        <a href="{{ url_for('sell') }}" class="nav-button" title="Sell">
+            <i class="fas fa-tag"></i> Sell
+        </a> 
         
         {# Profile Banner and Header #}
         <div class="profile-banner">
