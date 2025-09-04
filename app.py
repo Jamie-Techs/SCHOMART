@@ -3826,6 +3826,9 @@ def subscribe():
 
 
 
+
+
+
 @app.route('/search')
 @login_required
 def search():
@@ -3834,6 +3837,7 @@ def search():
     category = request.args.get('category', '')
     state = request.args.get('state', '')
     school = request.args.get('school', '')
+    location = request.args.get('location', '') # ADDED
     price_min = request.args.get('price_min')
     price_max = request.args.get('price_max')
     condition = request.args.get('condition', '')
@@ -3856,11 +3860,12 @@ def search():
         'search.html',
         locations=locations_data,
         categories=categories_data,
-        states=NIGERIAN_STATES,  # This should be a list as per your data
+        states=NIGERIAN_STATES,
         search_query=search_query,
         selected_category=category,
         selected_state=state,
         selected_school=school,
+        selected_location=location, # ADDED
         price_min=price_min,
         price_max=price_max,
         selected_condition=condition,
@@ -3875,6 +3880,7 @@ def api_search_adverts():
     category = request.args.get('category', '')
     state = request.args.get('state', '')
     school = request.args.get('school', '')
+    location = request.args.get('location', '') # ADDED
     price_min = request.args.get('price_min')
     price_max = request.args.get('price_max')
     condition = request.args.get('condition', '')
@@ -3886,6 +3892,7 @@ def api_search_adverts():
         category=category,
         state=state,
         school=school,
+        location=location, # ADDED
         price_min=price_min,
         price_max=price_max,
         condition=condition,
@@ -3894,16 +3901,14 @@ def api_search_adverts():
     )
     return jsonify(adverts)
 
-
-
-def fetch_and_filter_adverts(search_query, category, state, school, price_min, price_max, condition, negotiation, page, per_page=20):
+def fetch_and_filter_adverts(search_query, category, state, school, location, price_min, price_max, condition, negotiation, page, per_page=20):
     """
     Centralized function to query and filter adverts based on search parameters.
     """
     try:
         query_ref = db.collection('adverts').where('status', '==', 'published')
 
-        # Apply filters
+        # Apply Firestore filters for exact matches
         if category:
             query_ref = query_ref.where('category', '==', category)
         if state:
@@ -3915,10 +3920,8 @@ def fetch_and_filter_adverts(search_query, category, state, school, price_min, p
         if negotiation:
             query_ref = query_ref.where('negotiable', '==', negotiation == 'yes')
         
-        # Firestore does not support range queries on multiple fields.
-        # So, if price_min and price_max are specified, we will apply the filter
-        # in Python after fetching. For large datasets, this is not performant.
-        # A full-text search index or a different database schema would be needed.
+        # NOTE: Firestore does not support range queries on multiple fields.
+        # This price filtering will continue to be done in Python.
 
         adverts = []
         now = datetime.now(timezone.utc)
@@ -3937,11 +3940,20 @@ def fetch_and_filter_adverts(search_query, category, state, school, price_min, p
             if price_max and advert_data.get('price', 0) > int(price_max):
                 continue
             
-            # Server-side keyword search filtering
+            # Server-side keyword search and new precise location filtering
+            combined_search_string = (
+                f"{advert_data.get('title', '').lower()} "
+                f"{advert_data.get('description', '').lower()} "
+                f"{advert_data.get('location', '').lower()}" # ADDED 'location' to the search string
+            )
+            
             if search_query:
-                if search_query.lower() not in advert_data.get('title', '').lower() and \
-                   search_query.lower() not in advert_data.get('description', '').lower():
+                if search_query.lower() not in combined_search_string:
                     continue
+            
+            # Apply precise location filter
+            if location and location.lower() not in advert_data.get('location', '').lower():
+                continue
 
             # Expiration check
             published_at = advert_data.get('published_at')
@@ -3981,6 +3993,7 @@ def fetch_and_filter_adverts(search_query, category, state, school, price_min, p
     except Exception as e:
         logging.error(f"Error fetching filtered adverts: {e}", exc_info=True)
         return []
+
 
 
 
@@ -5012,6 +5025,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
