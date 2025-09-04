@@ -2020,21 +2020,44 @@ def get_media_type_from_extension(filename):
         return None
 
 
+
+
 def get_file_from_firebase(file_path):
+    """
+    Downloads a file from Firebase Storage to a temporary local file.
+    :param file_path: The relative path to the file in the bucket (e.g., 'study_materials/filename.pdf').
+    :return: The local path of the downloaded temporary file, or None if an error occurs.
+    """
     try:
+        # Create a Blob object using the provided file_path.
+        # This is the crucial step that must use the relative path, not the full URL.
         blob = bucket.blob(file_path)
+
+        # Check if the blob exists to prevent errors.
         if not blob.exists():
             return None
+
+        # Create a temporary file to store the downloaded content.
+        # `delete=False` is used to prevent the file from being auto-deleted
+        # by the `tempfile` module when the file handle is closed.
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
         
-        # Create a temporary file to store the downloaded content
-        temp_dir = tempfile.gettempdir()
-        temp_file_path = os.path.join(temp_dir, os.path.basename(file_path))
-        blob.download_to_filename(temp_file_path)
+        # Download the file's contents to the temporary file.
+        blob.download_to_filename(temp_file.name)
         
-        return temp_file_path
+        # Close the file handle before returning the path.
+        temp_file.close()
+
+        # Return the path of the downloaded temporary file.
+        return temp_file.name
+
     except Exception as e:
-        logging.error(f"Failed to get file from Firebase: {e}")
+        # Log the error for debugging purposes.
+        print(f"Error downloading file from Firebase: {e}")
         return None
+
+
+
 
 def get_all_materials(query=''):
     materials_ref = db.collection('study_materials')
@@ -4326,43 +4349,38 @@ def download_material(material_id):
 
     file_path = material.get('file_path')
     if not file_path:
-        return "File path not found in database.", 404
+        # This message provides more specific debugging info.
+        return "File path not found in database for this material.", 404
 
     try:
-        # Assuming get_file_from_firebase returns the local path to the downloaded file
+        # Assuming get_file_from_firebase uses the `file_path` to get the file.
         temp_file_path = get_file_from_firebase(file_path)
         
         if temp_file_path is None:
+            # This indicates the file is missing from Firebase Storage.
             return "File not found in storage.", 404
-
-        # Get the original filename from the file_path for a better download name
+        
+        # Get the original filename from the file_path for a better download name.
         filename = os.path.basename(file_path)
 
-        # Use after_this_request to clean up the temporary file
+        # Schedule the temporary file for deletion after the response is sent.
         @after_this_request
         def remove_file(response):
             try:
                 os.remove(temp_file_path)
             except Exception as e:
+                # Log any cleanup errors but don't stop the download.
                 app.logger.error(f"Error removing temporary file: {e}")
             return response
 
-        # Return the file as an attachment
+        # Send the downloaded file to the user.
         return send_file(temp_file_path, as_attachment=True, download_name=filename)
 
     except Exception as e:
-        app.logger.error(f"An error occurred during file download: {str(e)}", exc_info=True)
+        app.logger.error(f"An error occurred during file download for material {material_id}: {str(e)}", exc_info=True)
         return f"An error occurred: {str(e)}", 500
 
 
-
-
-
-
-
-
-# The new route for deleting materials
-# We now use the admin_required decorator for this route. Your existing decorator handles the logic.
 @app.route('/delete_material/<material_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -4380,12 +4398,15 @@ def delete_material(material_id):
 
         if file_path:
             try:
+                # Use the `file_path` from the database directly to reference the blob.
                 blob = bucket.blob(file_path)
                 blob.delete()
                 logging.info(f"Successfully deleted file from storage: {file_path}")
             except Exception as e:
+                # The 404 error you saw is handled here.
                 logging.error(f"Failed to delete file from storage: {e}")
         
+        # Always delete the Firestore document to keep the database clean.
         material_ref.delete()
         
         flash("Material has been successfully deleted.", "success")
@@ -4396,7 +4417,7 @@ def delete_material(material_id):
 
     return redirect(url_for('get_materials_page'))
 
-# ... (Your existing @app.route('/admin') and @app.route('/admin/post_material') routes here) ...
+
 
 
 
@@ -5034,6 +5055,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
