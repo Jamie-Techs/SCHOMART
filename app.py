@@ -3904,6 +3904,9 @@ def api_search_adverts():
     )
     return jsonify(adverts)
 
+
+
+# main.py
 def fetch_and_filter_adverts(search_query, category, state, school, location, price_min, price_max, condition, negotiation, delivery, page, per_page=20):
     """
     Centralized function to query and filter adverts based on search parameters.
@@ -3922,8 +3925,10 @@ def fetch_and_filter_adverts(search_query, category, state, school, location, pr
             query_ref = query_ref.where('condition', '==', condition)
         if negotiation:
             query_ref = query_ref.where('negotiable', '==', negotiation == 'yes')
+        
+        # CORRECTED: Filter by the new delivery option strings
         if delivery:
-            query_ref = query_ref.where('delivery_option', '==', delivery == 'yes') # ADDED
+            query_ref = query_ref.where('delivery_option', '==', delivery)
         
         # NOTE: Firestore does not support range queries on multiple fields.
         # This price filtering will continue to be done in Python.
@@ -3998,30 +4003,6 @@ def fetch_and_filter_adverts(search_query, category, state, school, location, pr
     except Exception as e:
         logging.error(f"Error fetching filtered adverts: {e}", exc_info=True)
         return []
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -5032,6 +5013,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
