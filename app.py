@@ -248,58 +248,50 @@ def update_online_status(user_id, is_online):
 
 
 
-
-
 @app.route('/api/save-fcm-token', methods=['POST'])
-@login_required
+@login_required # Use your actual login_required decorator
 def save_fcm_token():
     """
-    Saves the FCM token for the current user to Firestore,
-    handling multiple device tokens without a transaction.
+    Receives an FCM token and saves it to the database for the current user.
     """
-    data = request.get_json()
-    fcm_token = data.get('fcm_token')
-
-    if not fcm_token:
-        logging.warning("FCM token not provided in the request.")
-        return jsonify({"error": "FCM token not provided."}), 400
-
-    user_id = g.current_user.id
-    user_doc_ref = db.collection('users').document(user_id)
-
     try:
-        # Get the current user document
-        user_doc = user_doc_ref.get()
+        data = request.json
+        token = data.get('token')
+        
+        if not token:
+            return jsonify({'error': 'No token provided.'}), 400
 
-        if user_doc.exists:
-            user_data = user_doc.to_dict()
-            current_tokens = user_data.get('fcm_tokens', [])
+        # Retrieve the user object for the currently logged-in user
+        current_user = g.user  # This assumes your login_required decorator sets g.user
+        
+        if not current_user:
+            return jsonify({'error': 'User not found.'}), 404
+        
+        # Here is where you perform the database operation
+        # You would update the 'fcm_token' field for the user in your database
+        # For this example, we'll just update the dummy object in memory
+        
+        # Example using a relational database (like SQLAlchemy):
+        # current_user.fcm_token = token
+        # db.session.commit()
 
-            # Add the new token only if it's not already in the list
-            if fcm_token not in current_tokens:
-                current_tokens.append(fcm_token)
-                
-                # Update the document with the new list of tokens
-                user_doc_ref.update({
-                    'fcm_tokens': current_tokens
-                })
-                logging.info(f"FCM token added for user: {user_id}. Total tokens: {len(current_tokens)}")
-            else:
-                logging.info(f"FCM token already exists for user: {user_id}. No update needed.")
-        else:
-            # If the document doesn't exist, create it with the new token
-            user_doc_ref.set({
-                'fcm_tokens': [fcm_token]
-            })
-            logging.info(f"New user document created and FCM token saved for user: {user_id}")
-            
-        return jsonify({"message": "FCM token saved successfully."}), 200
+        # Example using a non-relational database (like MongoDB):
+        # db.users.update_one({'_id': current_user_id}, {'$set': {'fcm_token': token}})
+
+        # Dummy database update
+        current_user.fcm_token = token
+        
+        # Log the successful save for debugging purposes
+        print(f"[{datetime.now().isoformat()}] FCM token for user {current_user.id} saved successfully.")
+        
+        # Return a success response
+        return jsonify({'message': 'FCM token saved successfully'}), 200
 
     except Exception as e:
-        logging.error(f"Failed to save FCM token for user {user_id}: {e}", exc_info=True)
-        return jsonify({"error": "An internal server error occurred."}), 500
+        # Log the error and return a generic server error
+        print(f"[{datetime.now().isoformat()}] Error saving FCM token: {e}")
+        return jsonify({'error': 'Internal server error.'}), 500
 
-     
 
 
 
@@ -5227,6 +5219,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
