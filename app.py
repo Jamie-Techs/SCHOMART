@@ -248,49 +248,38 @@ def update_online_status(user_id, is_online):
 
 
 
+# ... (Your existing decorators and helper functions) ...
+
 @app.route('/api/save-fcm-token', methods=['POST'])
-@login_required # Use your actual login_required decorator
+@login_required # Use your existing login_required decorator
 def save_fcm_token():
     """
-    Receives an FCM token and saves it to the database for the current user.
+    Receives an FCM token and saves it to the user's Firestore document.
     """
     try:
         data = request.json
-        token = data.get('token')
+        # CRITICAL FIX: Change the key from 'token' to 'fcm_token' to match the client.
+        token = data.get('fcm_token') 
         
         if not token:
+            logging.error('No token provided in the request body.')
             return jsonify({'error': 'No token provided.'}), 400
 
-        # Retrieve the user object for the currently logged-in user
-        current_user = g.user  # This assumes your login_required decorator sets g.user
+        user_id = g.current_user.id
         
-        if not current_user:
-            return jsonify({'error': 'User not found.'}), 404
+        user_doc_ref = db.collection('users').document(user_id)
         
-        # Here is where you perform the database operation
-        # You would update the 'fcm_token' field for the user in your database
-        # For this example, we'll just update the dummy object in memory
+        # Update the 'fcm_token' field in the document.
+        user_doc_ref.update({'fcm_token': token})
         
-        # Example using a relational database (like SQLAlchemy):
-        # current_user.fcm_token = token
-        # db.session.commit()
-
-        # Example using a non-relational database (like MongoDB):
-        # db.users.update_one({'_id': current_user_id}, {'$set': {'fcm_token': token}})
-
-        # Dummy database update
-        current_user.fcm_token = token
+        logging.info(f"FCM token for user {user_id} saved successfully.")
         
-        # Log the successful save for debugging purposes
-        print(f"[{datetime.now().isoformat()}] FCM token for user {current_user.id} saved successfully.")
-        
-        # Return a success response
         return jsonify({'message': 'FCM token saved successfully'}), 200
 
     except Exception as e:
-        # Log the error and return a generic server error
-        print(f"[{datetime.now().isoformat()}] Error saving FCM token: {e}")
+        logging.error(f"Error saving FCM token for user {g.current_user.id}: {e}")
         return jsonify({'error': 'Internal server error.'}), 500
+
 
 
 
@@ -5219,6 +5208,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
