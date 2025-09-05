@@ -714,69 +714,92 @@
     import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
     const ctaSection = document.getElementById('notifications-cta');
     const enableButton = document.getElementById('enable-notifications');
+    const ctaParagraph = ctaSection.querySelector('p');
 
-    // The CTA is always visible by default on page load.
-    // Logic to hide it will only run after a successful server response.
+    /**
+     * Updates the CTA button and text based on the notification permission state.
+     * @param {string} state - The current notification permission state ('granted', 'denied', or 'default').
+     */
+    function updateCtaUI(state) {
+        if (state === 'denied') {
+            ctaParagraph.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
+            enableButton.textContent = "Notifications Blocked";
+            enableButton.classList.remove('btn-primary', 'btn-info');
+            enableButton.classList.add('btn-danger');
+            enableButton.disabled = true;
+        } else if (state === 'granted') {
+            // This is handled by the fetch success logic, but good practice to have.
+            ctaSection.style.backgroundColor = 'var(--success-color)';
+            ctaSection.style.color = 'white';
+            ctaSection.innerHTML = `
+                <h4>🎉 You're all set!</h4>
+                <p>You will now receive timely notifications from SCHOMART.</p>
+            `;
+            setTimeout(() => { ctaSection.remove(); }, 3000);
+        } else {
+            // 'default' or initial state
+            ctaParagraph.textContent = "Get notified about new messages, advert updates, and more.";
+            enableButton.textContent = "Enable Notifications";
+            enableButton.classList.remove('btn-danger', 'btn-info');
+            enableButton.classList.add('btn-primary');
+            enableButton.disabled = false;
+        }
+    }
+
+    // Check the initial state on page load
+    if ("Notification" in window) {
+        updateCtaUI(Notification.permission);
+    } else {
+        // If Notifications are not supported, hide the CTA
+        ctaSection.style.display = 'none';
+    }
 
     if (enableButton) {
         enableButton.addEventListener('click', async () => {
+            // Change UI to reflect loading state
             enableButton.disabled = true;
             enableButton.textContent = "Please wait...";
-            enableButton.classList.add('btn-info'); // Visually indicate loading
             enableButton.classList.remove('btn-primary');
+            enableButton.classList.add('btn-info');
 
             try {
+                // This function now returns the token or null if permission is denied
                 const token = await requestNotificationPermission();
 
                 if (token) {
-                    // Send the token to the server
+                    // Permission was granted, send token to server
                     const response = await fetch('/api/save-fcm-token', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: token })
                     });
 
                     if (response.ok) {
-                        // Server confirmed token was saved successfully, hide the CTA
-                        ctaSection.style.backgroundColor = 'var(--success-color)';
-                        ctaSection.style.color = 'white';
-                        ctaSection.innerHTML = `
-                            <h4>🎉 You're all set!</h4>
-                            <p>You will now receive timely notifications from SCHOMART.</p>
-                        `;
-                        // Remove the section entirely after a delay
-                        setTimeout(() => {
-                            ctaSection.remove();
-                        }, 3000);
+                        updateCtaUI('granted');
                     } else {
-                        // Server failed to save token, revert UI
+                        // Server failed to save token
                         console.error('Failed to save FCM token on server.');
+                        updateCtaUI('default'); // Revert to initial state
                         enableButton.textContent = "Error, try again!";
-                        enableButton.classList.remove('btn-info');
                         enableButton.classList.add('btn-danger');
-                        enableButton.disabled = false;
                     }
                 } else {
-                    // User denied permission, update UI accordingly
-                    enableButton.textContent = "Notifications Blocked";
-                    enableButton.classList.remove('btn-info');
-                    enableButton.classList.add('btn-danger');
-                    const infoText = ctaSection.querySelector('p');
-                    if (infoText) {
-                        infoText.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
-                    }
+                    // Permission was denied by the user.
+                    // This is the key change to handle the denied state properly.
+                    console.warn('Notification permission was denied.');
+                    updateCtaUI('denied');
                 }
             } catch (error) {
-                console.error('An error occurred:', error);
+                console.error('An error occurred during FCM setup:', error);
+                updateCtaUI('default'); // Revert to initial state
                 enableButton.textContent = "Error, try again!";
-                enableButton.classList.remove('btn-info');
                 enableButton.classList.add('btn-danger');
-                enableButton.disabled = false;
             }
         });
     }
 </script>
+    
+
 </body>
 </html>
+
