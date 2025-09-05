@@ -66,11 +66,11 @@ export async function requestNotificationPermission() {
             const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
             if (currentToken) {
                 console.log("FCM Token:", currentToken);
-                // Send the initial token to the backend
-                sendTokenToBackend(currentToken);
+                // Send the token to the backend. This is the only place it should be sent.
+                await sendTokenToBackend(currentToken);
                 return currentToken;
             } else {
-                console.log("No registration token available.");
+                console.log("No registration token available. This may be a temporary issue.");
             }
         } else {
             console.log("Permission denied.");
@@ -81,19 +81,6 @@ export async function requestNotificationPermission() {
     }
     return null;
 }
-
-// **New:** Listen for token refresh and send the new token to the backend
-getToken(messaging, { vapidKey: VAPID_KEY }).then((token) => {
-    // This is the correct way to listen for token changes in modern SDKs
-    // A token change happens implicitly, so we handle it here.
-    if (token) {
-        console.log("Token already exists. Ensure it's sent to the backend.");
-        sendTokenToBackend(token);
-    }
-}).catch((err) => {
-    console.error("An error occurred while retrieving a new token.", err);
-});
-
 
 // Handle incoming messages while the app is in the foreground
 onMessage(messaging, (payload) => {
