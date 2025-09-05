@@ -721,6 +721,7 @@
      * @param {string} state - The current notification permission state ('granted', 'denied', or 'default').
      */
     function updateCtaUI(state) {
+        console.log("Updating UI. New state:", state);
         if (state === 'denied') {
             ctaParagraph.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
             enableButton.textContent = "Notifications Blocked";
@@ -728,7 +729,6 @@
             enableButton.classList.add('btn-danger');
             enableButton.disabled = true;
         } else if (state === 'granted') {
-            // This is handled by the fetch success logic, but good practice to have.
             ctaSection.style.backgroundColor = 'var(--success-color)';
             ctaSection.style.color = 'white';
             ctaSection.innerHTML = `
@@ -737,7 +737,6 @@
             `;
             setTimeout(() => { ctaSection.remove(); }, 3000);
         } else {
-            // 'default' or initial state
             ctaParagraph.textContent = "Get notified about new messages, advert updates, and more.";
             enableButton.textContent = "Enable Notifications";
             enableButton.classList.remove('btn-danger', 'btn-info');
@@ -750,24 +749,28 @@
     if ("Notification" in window) {
         updateCtaUI(Notification.permission);
     } else {
-        // If Notifications are not supported, hide the CTA
         ctaSection.style.display = 'none';
     }
 
     if (enableButton) {
         enableButton.addEventListener('click', async () => {
-            // Change UI to reflect loading state
+            console.log("Enable button clicked.");
             enableButton.disabled = true;
             enableButton.textContent = "Please wait...";
             enableButton.classList.remove('btn-primary');
             enableButton.classList.add('btn-info');
 
             try {
-                // This function now returns the token or null if permission is denied
+                // Attempt to get the token.
                 const token = await requestNotificationPermission();
+                console.log("Token from requestNotificationPermission():", token);
 
-                if (token) {
-                    // Permission was granted, send token to server
+                // **CRITICAL FIX:** Double-check the permission status even if the token is null.
+                const permissionState = Notification.permission;
+                console.log("Current browser permission state:", permissionState);
+
+                if (token && permissionState === 'granted') {
+                    console.log("Permission granted and token received. Sending to server...");
                     const response = await fetch('/api/save-fcm-token', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -775,31 +778,44 @@
                     });
 
                     if (response.ok) {
+                        console.log("Server responded with success.");
                         updateCtaUI('granted');
                     } else {
-                        // Server failed to save token
-                        console.error('Failed to save FCM token on server.');
-                        updateCtaUI('default'); // Revert to initial state
+                        console.error('Server responded with an error:', response.status, response.statusText);
+                        updateCtaUI('default');
                         enableButton.textContent = "Error, try again!";
                         enableButton.classList.add('btn-danger');
                     }
-                } else {
-                    // Permission was denied by the user.
-                    // This is the key change to handle the denied state properly.
+                } else if (permissionState === 'denied') {
                     console.warn('Notification permission was denied.');
                     updateCtaUI('denied');
+                } else if (permissionState === 'granted' && !token) {
+                    // This is the specific case for the Android desktop mode bug.
+                    // Permission is granted, but the token variable is null or undefined.
+                    console.error("Permission is granted, but no token was returned. This may be a browser bug.");
+                    ctaParagraph.textContent = "Permission was granted but an error occurred. Please try again.";
+                    enableButton.textContent = "Error, try again!";
+                    enableButton.classList.remove('btn-info');
+                    enableButton.classList.add('btn-danger');
+                    enableButton.disabled = false; // Re-enable the button to allow retries
+                } else {
+                    console.log("Permission is still in 'default' state or an unknown error occurred.");
+                    updateCtaUI('default');
                 }
             } catch (error) {
-                console.error('An error occurred during FCM setup:', error);
-                updateCtaUI('default'); // Revert to initial state
+                console.error('An unhandled error occurred during FCM setup:', error);
+                updateCtaUI('default');
                 enableButton.textContent = "Error, try again!";
                 enableButton.classList.add('btn-danger');
             }
         });
     }
 </script>
+
+
     
 
 </body>
 </html>
+
 
