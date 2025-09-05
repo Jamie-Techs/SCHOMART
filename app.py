@@ -248,39 +248,68 @@ def update_online_status(user_id, is_online):
 
 
 
-# ... (Your existing decorators and helper functions) ...
+
+
+@app.route('/api/check-fcm-token', methods=['GET'])
+@login_required
+def check_fcm_token():
+    """
+    Checks if the current user has an FCM token saved in the database.
+    """
+    user_id = g.current_user.id
+    user_doc_ref = db.collection('users').document(user_id)
+    user_doc = user_doc_ref.get(['fcm_token'])
+    
+    # Check if the document exists and contains the 'fcm_token' field with a value
+    has_token = user_doc.exists and user_doc.to_dict().get('fcm_token')
+    
+    return jsonify({'has_token': bool(has_token)}), 200
 
 @app.route('/api/save-fcm-token', methods=['POST'])
-@login_required # Use your existing login_required decorator
+@login_required
 def save_fcm_token():
     """
     Receives an FCM token and saves it to the user's Firestore document.
     """
     try:
         data = request.json
-        # CRITICAL FIX: Change the key from 'token' to 'fcm_token' to match the client.
-        token = data.get('fcm_token') 
+        # CRITICAL FIX: The client sends 'fcm_token'. Ensure the server uses the same key.
+        token = data.get('fcm_token')
         
         if not token:
-            logging.error('No token provided in the request body.')
+            logging.error('No FCM token provided in the request body.')
             return jsonify({'error': 'No token provided.'}), 400
 
         user_id = g.current_user.id
-        
         user_doc_ref = db.collection('users').document(user_id)
         
-        # Update the 'fcm_token' field in the document.
         user_doc_ref.update({'fcm_token': token})
         
         logging.info(f"FCM token for user {user_id} saved successfully.")
-        
         return jsonify({'message': 'FCM token saved successfully'}), 200
 
     except Exception as e:
         logging.error(f"Error saving FCM token for user {g.current_user.id}: {e}")
         return jsonify({'error': 'Internal server error.'}), 500
 
+@app.route('/api/remove-fcm-token', methods=['POST'])
+@login_required
+def remove_fcm_token():
+    """
+    Removes the FCM token from the user's Firestore document.
+    """
+    try:
+        user_id = g.current_user.id
+        user_doc_ref = db.collection('users').document(user_id)
+        
+        user_doc_ref.update({'fcm_token': firestore.DELETE_FIELD})
+        
+        logging.info(f"FCM token for user {user_id} removed successfully.")
+        return jsonify({'message': 'FCM token removed successfully'}), 200
 
+    except Exception as e:
+        logging.error(f"Error removing FCM token for user {g.current_user.id}: {e}")
+        return jsonify({'error': 'Internal server error.'}), 500
 
 
 
@@ -5208,6 +5237,7 @@ def send_message():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
