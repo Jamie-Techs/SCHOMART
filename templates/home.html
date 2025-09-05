@@ -204,7 +204,7 @@
         }
         .scrolling-wrapper {
             display: flex;
-            animation: scroll-right-to-left var(--scroll-duration, 30s) linear infinite;
+            animation: scroll-right-to-left var(--scroll-duration, 15s) linear infinite;
             white-space: nowrap;
             padding: 10px 0;
         }
@@ -563,16 +563,7 @@
     </ul>
 {% endif %}
 {% endwith %}
-{# End Flash Messages #}
-<section id="notifications-cta" class="notifications-cta container">
-    <div id="notifications-content">
-        <h4>Never miss an important update! 🔔</h4>
-        <p>Get notified about new messages, advert updates, and more.</p>
-        <button id="enable-notifications" class="btn-primary">
-            <i class="fas fa-bell"></i> Enable Notifications
-        </button>
-    </div>
-</section>
+
 <section id="airtime-posts-section">
     <h2>
         <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
@@ -710,112 +701,13 @@
         fetchAirtimePosts();
     });
 </script>
-<script type="module">
-    import { requestNotificationPermission } from "{{ url_for('static', filename='fcm-setup.js') }}";
-    const ctaSection = document.getElementById('notifications-cta');
-    const enableButton = document.getElementById('enable-notifications');
-    const ctaParagraph = ctaSection.querySelector('p');
 
-    /**
-     * Updates the CTA button and text based on the notification permission state.
-     * @param {string} state - The current notification permission state ('granted', 'denied', or 'default').
-     */
-    function updateCtaUI(state) {
-        console.log("Updating UI. New state:", state);
-        if (state === 'denied') {
-            ctaParagraph.textContent = "You've blocked notifications. Please enable them in your browser settings to continue.";
-            enableButton.textContent = "Notifications Blocked";
-            enableButton.classList.remove('btn-primary', 'btn-info');
-            enableButton.classList.add('btn-danger');
-            enableButton.disabled = true;
-        } else if (state === 'granted') {
-            ctaSection.style.backgroundColor = 'var(--success-color)';
-            ctaSection.style.color = 'white';
-            ctaSection.innerHTML = `
-                <h4>🎉 You're all set!</h4>
-                <p>You will now receive timely notifications from SCHOMART.</p>
-            `;
-            setTimeout(() => { ctaSection.remove(); }, 3000);
-        } else {
-            ctaParagraph.textContent = "Get notified about new messages, advert updates, and more.";
-            enableButton.textContent = "Enable Notifications";
-            enableButton.classList.remove('btn-danger', 'btn-info');
-            enableButton.classList.add('btn-primary');
-            enableButton.disabled = false;
-        }
-    }
-
-    // Check the initial state on page load
-    if ("Notification" in window) {
-        updateCtaUI(Notification.permission);
-    } else {
-        ctaSection.style.display = 'none';
-    }
-
-    if (enableButton) {
-        enableButton.addEventListener('click', async () => {
-            console.log("Enable button clicked.");
-            enableButton.disabled = true;
-            enableButton.textContent = "Please wait...";
-            enableButton.classList.remove('btn-primary');
-            enableButton.classList.add('btn-info');
-
-            try {
-                // Attempt to get the token.
-                const token = await requestNotificationPermission();
-                console.log("Token from requestNotificationPermission():", token);
-
-                // **CRITICAL FIX:** Double-check the permission status even if the token is null.
-                const permissionState = Notification.permission;
-                console.log("Current browser permission state:", permissionState);
-
-                if (token && permissionState === 'granted') {
-                    console.log("Permission granted and token received. Sending to server...");
-                    const response = await fetch('/api/save-fcm-token', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: token })
-                    });
-
-                    if (response.ok) {
-                        console.log("Server responded with success.");
-                        updateCtaUI('granted');
-                    } else {
-                        console.error('Server responded with an error:', response.status, response.statusText);
-                        updateCtaUI('default');
-                        enableButton.textContent = "Error, try again!";
-                        enableButton.classList.add('btn-danger');
-                    }
-                } else if (permissionState === 'denied') {
-                    console.warn('Notification permission was denied.');
-                    updateCtaUI('denied');
-                } else if (permissionState === 'granted' && !token) {
-                    // This is the specific case for the Android desktop mode bug.
-                    // Permission is granted, but the token variable is null or undefined.
-                    console.error("Permission is granted, but no token was returned. This may be a browser bug.");
-                    ctaParagraph.textContent = "Permission was granted but an error occurred. Please try again.";
-                    enableButton.textContent = "Error, try again!";
-                    enableButton.classList.remove('btn-info');
-                    enableButton.classList.add('btn-danger');
-                    enableButton.disabled = false; // Re-enable the button to allow retries
-                } else {
-                    console.log("Permission is still in 'default' state or an unknown error occurred.");
-                    updateCtaUI('default');
-                }
-            } catch (error) {
-                console.error('An unhandled error occurred during FCM setup:', error);
-                updateCtaUI('default');
-                enableButton.textContent = "Error, try again!";
-                enableButton.classList.add('btn-danger');
-            }
-        });
-    }
-</script>
 
 
     
 
 </body>
 </html>
+
 
 
