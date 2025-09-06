@@ -275,7 +275,11 @@ def update_online_status(user_id, is_online):
 
 
 
-# ... (all your existing imports) ...
+
+
+
+
+
 
 def send_daily_advert_report():
     """
@@ -285,14 +289,11 @@ def send_daily_advert_report():
         try:
             logger.info("Generating a more detailed daily advert report...")
 
-            # 1. Fetch data from Firestore
             approved_adverts_ref = db.collection('adverts').where('status', '==', 'published')
             approved_adverts_stream = approved_adverts_ref.stream()
 
-            # 2. Calculate totals
             total_published_adverts = 0
             total_amount = 0.0
-            # Use 'defaultdict' for cleaner aggregation
             adverts_by_plan = defaultdict(lambda: {'count': 0, 'amount': 0.0})
 
             adverts_list = list(approved_adverts_stream)
@@ -307,17 +308,16 @@ def send_daily_advert_report():
                 amount = advert_data.get('price', 0)
                 total_amount += amount
 
-                # Use the advert's plan name for grouping
                 plan_name = advert_data.get('plan_name', 'Unknown Plan')
                 
                 adverts_by_plan[plan_name]['count'] += 1
                 adverts_by_plan[plan_name]['amount'] += amount
 
-            # 3. Format the email content for the new detailed report
+            # Use date.today() and datetime.now() as imported
             html_content = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h3 style="color: #006B3C;">Daily Advert Report: {datetime.date.today()}</h3>
+                <h3 style="color: #006B3C;">Daily Advert Report: {date.today()}</h3>
                 <p><strong>Total Published Adverts:</strong> {total_published_adverts}</p>
                 <p><strong>Overall Total Revenue from Published Adverts:</strong> ₦{total_amount:,.2f}</p>
                 
@@ -326,14 +326,14 @@ def send_daily_advert_report():
                     {"".join([f"<li style='margin-bottom: 8px;'><strong>{data['count']} {plan_name}</strong> - Total Revenue: ₦{data['amount']:,.2f}</li>" for plan_name, data in adverts_by_plan.items()])}
                 </ul>
                 <p>This is an automated report from your Schomart application.</p>
-                <p style="font-size: 0.8em; color: #888;">Report generated at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                <p style="font-size: 0.8em; color: #888;">Report generated at: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}</p>
             </body>
             </html>
             """
             
-            # 4. Create and send the email
             msg = Message(
-                subject=f"Daily Advert Report - {datetime.date.today()}",
+                # Use date.today() directly as it's imported
+                subject=f"Daily Advert Report - {date.today()}",
                 recipients=["agwujamie@gmail.com", "jamesnwoke880@gmail.com"],
                 html=html_content
             )
@@ -344,11 +344,9 @@ def send_daily_advert_report():
         except Exception as e:
             logger.error(f"Failed to generate or send daily advert report: {e}")
 
-# ... (the rest of your app's routes and code) ...
 
-# Add the job to the scheduler.
-# This will run every day at 9:00 PM (21:00).
-scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigger='cron', hour=22, minute=00)
+
+scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigger='cron', hour=22, minute=10)
 
 
 
@@ -5117,6 +5115,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
