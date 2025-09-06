@@ -75,8 +75,6 @@
             </div>
         </div>
     </div>
-
-    
 <script>
     const viewsCtx = document.getElementById('viewsChart').getContext('2d');
     const savesCtx = document.getElementById('savesChart').getContext('2d');
@@ -95,10 +93,11 @@
             const savesValues = data.saves_values;
             const advertsInfo = data.adverts_info;
             
-            // Views Chart: Always create the chart, even with zero data
+            // Views Chart: Now a line graph for better trend visualization
             if (viewsChart) viewsChart.destroy();
             viewsChart = new Chart(viewsCtx, {
-                type: 'bar',
+                // Change the chart type to 'line'
+                type: 'line', 
                 data: {
                     labels: allLabels,
                     datasets: [{
@@ -106,7 +105,8 @@
                         data: viewsValues,
                         backgroundColor: 'rgba(0, 107, 60, 0.7)',
                         borderColor: 'rgba(0, 107, 60, 1)',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        tension: 0.1 // Add this to create a smooth curve
                     }]
                 },
                 options: {
@@ -115,7 +115,7 @@
                 }
             });
             
-            // Saves Chart: Always create the chart, even with zero data
+            // Saves Chart: Remains a line graph
             if (savesChart) savesChart.destroy();
             savesChart = new Chart(savesCtx, {
                 type: 'line',
@@ -154,12 +154,10 @@
 
         } catch (error) {
             console.error('Error fetching user progress data:', error);
-            // This error handling is still important if the backend completely fails
             if (viewsChart) viewsChart.destroy();
             if (savesChart) savesChart.destroy();
             viewsCtx.style.display = 'none';
             savesCtx.style.display = 'none';
-            // You can add a single, general error message here if needed.
         }
     }
 
@@ -173,6 +171,6 @@
 
     window.onload = () => fetchAndRenderCharts('daily');
 </script>
-    
+
 </body>
 </html>
