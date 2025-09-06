@@ -3589,46 +3589,14 @@ def advert_detail(advert_id):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def get_advert_performance_data(user_id):
     """Fetches all performance data for a user's adverts."""
     advert_ids = get_user_adverts_ids(user_id)
     if not advert_ids:
-        return {'views': [], 'saves': [], 'adverts': []}
-        
+        return {'views': [], 'saves': [], 'adverts': {}}
+
+    # The 'in' operator has a limit of 10, so we may need to batch queries for many adverts.
+    # For now, we assume fewer than 10 adverts per user.
     views_ref = db.collection('advert_views').where('advert_id', 'in', advert_ids).stream()
     views_data = [doc.to_dict() for doc in views_ref]
 
@@ -3650,68 +3618,87 @@ def aggregate_data_by_period(data_list, period):
         return []
 
     data_map = defaultdict(int)
-    now = datetime.now()
+    now = datetime.now(timezone.utc) # Use timezone-aware datetime
 
     for item in data_list:
-        # Use the correct timestamp field for aggregation
         timestamp = item.get('viewed_at') or item.get('saved_at')
         if not timestamp:
             continue
 
-        dt_object = timestamp.cast(datetime)
+        dt_object = timestamp.to_datetime()
 
+        # Define time window based on period
         if period == 'hourly':
-            # Aggregate by hour for the last 24 hours
             if dt_object > now - timedelta(hours=24):
                 key = dt_object.strftime('%H:00')
                 data_map[key] += 1
         elif period == 'daily':
-            # Aggregate by day for the last 30 days
             if dt_object > now - timedelta(days=30):
                 key = dt_object.strftime('%Y-%m-%d')
                 data_map[key] += 1
         elif period == 'monthly':
-            # Aggregate by month for the last 12 months
             if dt_object > now - timedelta(days=365):
                 key = dt_object.strftime('%Y-%m')
                 data_map[key] += 1
         elif period == 'yearly':
-            # Aggregate by year
             key = dt_object.strftime('%Y')
             data_map[key] += 1
-    
-    # Sort data chronologically
+            
     sorted_data = sorted(data_map.items())
     return sorted_data
 
 @app.route('/progress_chart')
 @login_required
 def progress_chart_page():
-    """Renders the progress chart page."""
     return render_template('progress_chart.html')
 
 @app.route('/api/user_progress')
 @login_required
 def api_user_progress():
-    """
-    API endpoint to serve the user's progress data.
-    Accepts a 'period' query parameter (e.g., 'hourly', 'daily').
-    """
     user_id = g.current_user.id
-    period = request.args.get('period', 'daily') # Default to daily
+    period = request.args.get('period', 'daily')
 
-    # Get all performance data for the user
     performance_data = get_advert_performance_data(user_id)
     
-    # Aggregate data based on the requested period
     views_data = aggregate_data_by_period(performance_data['views'], period)
     saves_data = aggregate_data_by_period(performance_data['saves'], period)
     
+    # Calculate saves per advert for the table
+    advert_saves_count = defaultdict(int)
+    for save in performance_data['saves']:
+        advert_saves_count[save['advert_id']] += 1
+
+    adverts_info = []
+    for advert_id, advert_details in performance_data['adverts'].items():
+        adverts_info.append({
+            'title': advert_details.get('title', 'N/A'),
+            'view_count': advert_details.get('views', 0),  # Use the stored view count
+            'saves_count': advert_saves_count[advert_id]
+        })
+
     return jsonify({
         'views': views_data,
         'saves': saves_data,
-        'adverts_info': list(performance_data['adverts'].values())
+        'adverts_info': adverts_info
     })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4908,6 +4895,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
