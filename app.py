@@ -4745,25 +4745,69 @@ def create_notification(recipient_id, message, notification_type, related_link=N
 
 notifications_ref = db.collection('notifications')
 
-# This is the new route to render the notifications page
+
+
+# This is the single, correct route for the notifications page.
+# It handles fetching and formatting the data before rendering the template.
 @app.route('/notifications')
 @login_required
 def notifications_page():
-    return render_template('notifications.html')
-
-@app.route('/api/notifications', methods=['GET'])
-@login_required
-def get_notifications():
     user_id = g.current_user.id
-    docs = notifications_ref.where('user_id', '==', user_id).order_by('timestamp', direction='DESCENDING').stream()
+    
+    # Fetch notifications and order them correctly
+    docs = notifications_ref.where('user_id', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
     
     notifications = []
     for doc in docs:
         notification_data = doc.to_dict()
         notification_data['id'] = doc.id
+        
+        # Correctly handle and format the timestamp
+        timestamp = notification_data.get('timestamp')
+        if timestamp:
+            if not isinstance(timestamp, datetime):
+                dt_object = timestamp.to_datetime()
+            else:
+                dt_object = timestamp
+            notification_data['timestamp_formatted'] = dt_object.strftime('%b %d, %Y at %I:%M %p')
+        else:
+            notification_data['timestamp_formatted'] = 'N/A'
+        
         notifications.append(notification_data)
+        
+    return render_template('notifications.html', notifications=notifications)
 
+# This is the API route for JavaScript clients.
+# It also needs to correctly format the timestamp.
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    user_id = g.current_user.id
+    docs = notifications_ref.where('user_id', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+    
+    notifications = []
+    for doc in docs:
+        notification_data = doc.to_dict()
+        notification_data['id'] = doc.id
+        
+        # Apply the same formatting logic for the API response
+        timestamp = notification_data.get('timestamp')
+        if timestamp:
+            if not isinstance(timestamp, datetime):
+                dt_object = timestamp.to_datetime()
+            else:
+                dt_object = timestamp
+            notification_data['timestamp_formatted'] = dt_object.strftime('%b %d, %Y at %I:%M %p')
+        else:
+            notification_data['timestamp_formatted'] = 'N/A'
+
+        notifications.append(notification_data)
+    
     return jsonify(notifications)
+
+
+
+
 
 @app.route('/api/notifications/mark_all_as_read', methods=['POST'])
 @login_required
@@ -4864,6 +4908,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
