@@ -90,7 +90,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com' # Use your email provider's SMTP se
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'SCHOMART'
+app.config['MAIL_USERNAME'] = 'schomartcustomercare@gmail.com'
 app.config['MAIL_PASSWORD'] = 'gfxv ljqv hgxm qtjg'
 app.config['MAIL_DEFAULT_SENDER'] = 'schomartcustomercare@gmail.com'
 
@@ -349,7 +349,23 @@ scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigg
 
 
 
+# app.py
 
+# ... (all your existing code, including the send_daily_advert_report function) ...
+
+@app.route('/send-report-now')
+def trigger_report():
+    """
+    A temporary route to manually trigger the daily report function.
+    This is for testing purposes only and should be removed or secured later.
+    """
+    try:
+        send_daily_advert_report()
+        return "Report generation and sending has been triggered successfully! Check your inbox in a few minutes."
+    except Exception as e:
+        return f"An error occurred while trying to send the report: {e}", 500
+
+# ... (the rest of your routes and the __main__ block) ...
 
 
 
@@ -5095,6 +5111,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
