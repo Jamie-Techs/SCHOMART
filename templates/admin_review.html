@@ -22,7 +22,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h2 {
-            color: #007bff;
+            color: #006B3C; /* Changed from blue */
             text-align: center;
             margin-bottom: 25px;
         }
@@ -79,7 +79,7 @@
             color: white;
         }
         .alert.info {
-            background-color: #3498db;
+            background-color: #FDB813; /* Changed from blue */
             color: white;
         }
         .alert-icon {
@@ -126,17 +126,37 @@
         .btn-back-custom i {
             margin-right: .5rem;
         }
+
+        /* New custom button styles */
+        .btn-custom-green {
+            background-color: #006B3C;
+            color: white;
+            border-color: #006B3C;
+        }
+        .btn-custom-green:hover {
+            background-color: #00542E;
+            border-color: #00542E;
+        }
+        .btn-custom-yellow {
+            background-color: #FDB813;
+            color: #333;
+            border-color: #FDB813;
+        }
+        .btn-custom-yellow:hover {
+            background-color: #E2A610;
+            border-color: #E2A610;
+        }
         .copy-btn {
             background-color: transparent;
             border: none;
-            color: #007bff;
+            color: #006B3C; /* Changed from blue */
             padding: 0;
             margin-left: 5px;
             cursor: pointer;
             transition: color 0.2s ease-in-out;
         }
         .copy-btn:hover {
-            color: #0056b3;
+            color: #00542E; /* Changed from blue */
         }
         .list-group-item {
             display: flex;
@@ -159,10 +179,10 @@
             <a onclick="history.back()" class="btn-back-custom" title="Go back to previous page">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
-            <a href="{{ url_for('home') }}" class="btn btn-info">
+            <a href="{{ url_for('home') }}" class="btn btn-custom-yellow">
                 <i class="fas fa-home me-1"></i> Home
             </a>
-            <a href="{{ url_for('profile') }}" class="btn btn-primary">
+            <a href="{{ url_for('profile') }}" class="btn btn-custom-green">
                 <i class="fas fa-user me-1"></i> Profile
             </a>
         </div>
@@ -228,7 +248,7 @@
                             </ul>
                             <div class="mt-3">
                                 {% if advert.status == 'pending_review' %}
-                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-primary btn-sm me-2">View</a>
+                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-custom-green btn-sm me-2">View</a>
                                     <form action="{{ url_for('admin_advert_approve') }}" method="POST" class="d-inline">
                                         <input type="hidden" name="advert_id" value="{{ advert.id }}">
                                         <button type="submit" class="btn btn-success btn-sm me-2">Publish Advert</button>
@@ -260,7 +280,7 @@
                                         </div>
                                     </div>
                                 {% elif advert.status == 'rejected' %}
-                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-primary btn-sm me-2">View</a>
+                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-custom-green btn-sm me-2">View</a>
                                     <span class="badge bg-danger">Rejected</span>
                                     {% if advert.rejection_reason %}
                                     <p class="text-muted small mt-2">Reason: {{ advert.rejection_reason }}</p>
@@ -269,13 +289,13 @@
                                         <button type="submit" class="btn btn-warning btn-sm">Repost Advert</button>
                                     </form>
                                 {% elif advert.status == 'published' %}
-                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-primary btn-sm me-2">View</a>
+                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-custom-green btn-sm me-2">View</a>
                                     <span class="badge bg-success">Published</span>
                                 {% elif advert.status == 'expired' %}
-                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-primary btn-sm me-2">View</a>
+                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-custom-green btn-sm me-2">View</a>
                                     <span class="badge bg-secondary">Expired</span>
                                 {% elif advert.status == 'paused' %}
-                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-primary btn-sm me-2">View</a>
+                                    <a href="{{ url_for('advert_detail', advert_id=advert.id) }}" class="btn btn-custom-green btn-sm me-2">View</a>
                                     <span class="badge bg-secondary">Paused</span>
                                 {% endif %}
                             </div>
