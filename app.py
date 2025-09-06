@@ -65,6 +65,8 @@ from werkzeug.datastructures import FileStorage
 import boto3
 from botocore.exceptions import ClientError
 from authlib.integrations.flask_client import OAuth
+from flask import Flask
+from flask_mail import Mail, Message
 
 
 
@@ -75,7 +77,23 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'Jamiecoo15012004')
 
+# app.py
 
+
+
+
+# Flask-Mail configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com' # Use your email provider's SMTP server
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_email_password'
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com'
+
+mail = Mail(app)
+
+# ... (rest of your app code) ...
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 oauth = OAuth(app)
@@ -2780,7 +2798,9 @@ def admin_advert_reject():
         if user_id:
             advert_title = advert_data.get('title', 'Your advert')
             message = f"Your advert, '{advert_title}', has been rejected. Reason: '{rejection_reason}'"
-            create_notification(user_id, message, 'advert_status')
+            related_link = url_for('list_adverts')
+            create_notification(user_id, message, 'advert_status', related_link)
+            
         # --- END NEW ---
 
     return redirect(url_for('admin_advert_review'))
@@ -4672,20 +4692,39 @@ def leaderboard():
 
 
 
+# app.py
 
-
+# ... (all your existing imports and code) ...
 
 def create_notification(recipient_id, message, notification_type, related_link=None):
     """
-    Creates a new notification document in the Firestore database.
-
-    Args:
-        recipient_id (str): The ID of the user to be notified.
-        message (str): The content of the notification.
-        notification_type (str): A category for the notification (e.g., 'review', 'account_status', 'advert_status').
-        related_link (str, optional): A URL for the user to click to view the related item.
+    Creates a new notification and sends an email to the user.
     """
     try:
+        # Get the recipient's email address
+        users_ref = db.collection('users')
+        user_doc = users_ref.document(recipient_id).get()
+        
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            recipient_email = user_data.get('email')
+            
+            # Create a message for the email
+            email_subject = "New Notification from Your App"
+            email_body = f"Hi {user_data.get('first_name', '')},\n\nYou have a new notification: {message}"
+            if related_link:
+                email_body += f"\n\nYou can view it here: {request.url_root.strip('/')}{related_link}"
+            
+            # Create and send the email
+            msg = Message(
+                subject=email_subject,
+                recipients=[recipient_email],
+                body=email_body
+            )
+            mail.send(msg)
+            print(f"Email sent to {recipient_email}")
+
+        # Create a new notification document in Firestore
         notifications_ref.add({
             'user_id': recipient_id,
             'message': message,
@@ -4695,8 +4734,10 @@ def create_notification(recipient_id, message, notification_type, related_link=N
             'timestamp': datetime.now()
         })
         print(f"Notification created for user {recipient_id}: {message}")
+
     except Exception as e:
-        print(f"Error creating notification: {e}")
+        print(f"Error creating notification or sending email: {e}")
+
 
 
 
@@ -4823,6 +4864,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
