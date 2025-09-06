@@ -95,6 +95,11 @@ app.config['MAIL_PASSWORD'] = 'gfxv ljqv hgxm qtjg'
 app.config['MAIL_DEFAULT_SENDER'] = 'schomartcustomercare@gmail.com'
 
 mail = Mail(app)
+# --- APScheduler setup ---
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
+
 
 # ... (rest of your app code) ...
 bcrypt = Bcrypt(app)
@@ -265,6 +270,81 @@ def update_online_status(user_id, is_online):
         logger.info(f"User {user_id} online status updated to {is_online}.")
     except Exception as e:
         logger.error(f"Failed to update online status for user {user_id}: {e}", exc_info=True)
+
+
+
+
+
+def send_daily_advert_report():
+    """
+    Generates a daily report of approved adverts and sends it via email.
+    This function runs as a scheduled background task.
+    """
+    with app.app_context():
+        try:
+            logger.info("Generating daily advert report...")
+
+            # 1. Fetch data from Firestore
+            approved_adverts_ref = db.collection('adverts').where('status', '==', 'published')
+            approved_adverts = approved_adverts_ref.stream()
+
+            # 2. Calculate totals
+            total_published_adverts = 0
+            total_amount = 0.0
+            adverts_by_type = defaultdict(lambda: {'count': 0, 'amount': 0.0})
+
+            for advert in approved_adverts:
+                advert_data = advert.to_dict()
+                total_published_adverts += 1
+                
+                # Use .get() with a default value to prevent KeyErrors
+                amount = advert_data.get('price', 0)
+                total_amount += amount
+
+                # Use .get() with a default value for category name
+                advert_type = advert_data.get('category_name', 'Other')
+                
+                adverts_by_type[advert_type]['count'] += 1
+                adverts_by_type[advert_type]['amount'] += amount
+
+            # 3. Format the email content
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h3 style="color: #006B3C;">Daily Advert Report: {datetime.date.today()}</h3>
+                <p><strong>Total Published Adverts:</strong> {total_published_adverts}</p>
+                <p><strong>Overall Total Amount:</strong> ₦{total_amount:,.2f}</p>
+                <h4>Summary by Advert Type:</h4>
+                <ul style="list-style-type: none; padding: 0;">
+                    {"".join([f"<li style='margin-bottom: 8px;'><strong>{ad_type}:</strong> {data['count']} adverts, totaling ₦{data['amount']:,.2f}</li>" for ad_type, data in adverts_by_type.items()])}
+                </ul>
+                <p>This is an automated report from your Schomart application.</p>
+                <p style="font-size: 0.8em; color: #888;">Report generated at: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            </body>
+            </html>
+            """
+            
+            # 4. Create and send the email
+            # Ensure the sender is correctly specified in your app's config
+            msg = Message(
+                subject=f"Daily Advert Report - {datetime.date.today()}",
+                recipients=["agwujamie@gmail.com"],
+                html=html_content
+            )
+            mail.send(msg)
+            
+            logger.info("Daily advert report email sent successfully!")
+
+        except Exception as e:
+            logger.error(f"Failed to generate or send daily advert report: {e}")
+
+# Add the job to the scheduler.
+# This will run every day at 9:00 PM (21:00).
+scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigger='cron', hour=18, minute=20)
+
+
+
+
 
 
 
@@ -5007,13 +5087,14 @@ def support():
 
 
 
-
-
-
-
+# ... (all your existing code, including the `scheduler` setup) ...
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
+    port = int(os.environ.get("PORT", 5000))
+    # Add these two lines to initialize and start the scheduler
+    scheduler.init_app(app)
+    scheduler.start()
+    
     app.run(host="0.0.0.0", port=port)
 
 
