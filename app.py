@@ -250,70 +250,6 @@ def update_online_status(user_id, is_online):
 
 
 
-@app.route('/api/check-fcm-token', methods=['GET'])
-@login_required
-def check_fcm_token():
-    """
-    Checks if the current user has an FCM token saved in the database.
-    """
-    user_id = g.current_user.id
-    user_doc_ref = db.collection('users').document(user_id)
-    user_doc = user_doc_ref.get(['fcm_token'])
-    
-    # Check if the document exists and contains the 'fcm_token' field with a value
-    has_token = user_doc.exists and user_doc.to_dict().get('fcm_token')
-    
-    return jsonify({'has_token': bool(has_token)}), 200
-
-@app.route('/api/save-fcm-token', methods=['POST'])
-@login_required
-def save_fcm_token():
-    """
-    Receives an FCM token and saves it to the user's Firestore document.
-    """
-    try:
-        data = request.json
-        # CRITICAL FIX: The client sends 'fcm_token'. Ensure the server uses the same key.
-        token = data.get('fcm_token')
-        
-        if not token:
-            logging.error('No FCM token provided in the request body.')
-            return jsonify({'error': 'No token provided.'}), 400
-
-        user_id = g.current_user.id
-        user_doc_ref = db.collection('users').document(user_id)
-        
-        user_doc_ref.update({'fcm_token': token})
-        
-        logging.info(f"FCM token for user {user_id} saved successfully.")
-        return jsonify({'message': 'FCM token saved successfully'}), 200
-
-    except Exception as e:
-        logging.error(f"Error saving FCM token for user {g.current_user.id}: {e}")
-        return jsonify({'error': 'Internal server error.'}), 500
-
-@app.route('/api/remove-fcm-token', methods=['POST'])
-@login_required
-def remove_fcm_token():
-    """
-    Removes the FCM token from the user's Firestore document.
-    """
-    try:
-        user_id = g.current_user.id
-        user_doc_ref = db.collection('users').document(user_id)
-        
-        user_doc_ref.update({'fcm_token': firestore.DELETE_FIELD})
-        
-        logging.info(f"FCM token for user {user_id} removed successfully.")
-        return jsonify({'message': 'FCM token removed successfully'}), 200
-
-    except Exception as e:
-        logging.error(f"Error removing FCM token for user {g.current_user.id}: {e}")
-        return jsonify({'error': 'Internal server error.'}), 500
-
-
-
-
 
 
 
@@ -4716,92 +4652,83 @@ def leaderboard():
 
 
 
+notifications_ref = db.collection('notifications')
 
+# This is the new route to render the notifications page
+@app.route('/notifications')
+@login_required
+def notifications_page():
+    return render_template('notifications.html')
 
-
-
-
-
-
-
-
-
-
-
-
-
-# The `school_gist` and `school_news` routes remain the same since they only render templates.
-#@app.route('/school_gist')
-#def school_gist():
-   # current_user_id = get_current_user_id()
- #   current_user_role = get_user_role(current_user_id)
- #   return render_template('school_gist.html', current_user_id=current_user_id, current_user_role=current_user_role)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def get_unread_notifications_count(user_id):
-    """
-    Counts the number of unread notifications for a given user in Firestore.
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    user_id = g.current_user.id
+    docs = notifications_ref.where('user_id', '==', user_id).order_by('timestamp', direction='DESCENDING').stream()
     
-    This function queries the 'notifications' collection, filtering for documents
-    where 'user_id' matches and 'is_read' is False. It then counts the number
-    of documents in the resulting stream.
+    notifications = []
+    for doc in docs:
+        notification_data = doc.to_dict()
+        notification_data['id'] = doc.id
+        notifications.append(notification_data)
+
+    return jsonify(notifications)
+
+@app.route('/api/notifications/mark_all_as_read', methods=['POST'])
+@login_required
+def mark_all_as_read():
+    user_id = g.current_user.id
+    batch = db.batch()
+    docs = notifications_ref.where('user_id', '==', user_id).where('is_read', '==', False).stream()
     
-    For a very large number of notifications, a denormalized counter in the
-    'users' document would be a more scalable approach to avoid reading all
-    notification documents just to get a count.
-    """
+    for doc in docs:
+        doc_ref = doc.reference
+        batch.update(doc_ref, {'is_read': True})
+    
+    batch.commit()
+    return jsonify({'message': 'All notifications marked as read'}), 200
+
+@app.route('/api/notifications/delete/<notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    user_id = g.current_user.id
     try:
-        # Create a query to find unread notifications for the user.
-        # Firestore's query syntax is naturally protected from injection.
-        # We use a filter instead of a raw SQL string.
-        unread_notifications_query = db.collection('notifications').where(
-            filter=FieldFilter('user_id', '==', str(user_id))
-        ).where(
-            filter=FieldFilter('is_read', '==', False)
-        )
-        
-        # We stream the documents and count them.
-        notifications_stream = unread_notifications_query.stream()
-        
-        # Count the documents in the generator. This is an efficient way to count
-        # if the number of documents is not extremely large.
-        count = sum(1 for _ in notifications_stream)
-        
-        return count
+        doc_ref = notifications_ref.document(notification_id)
+        notification = doc_ref.get().to_dict()
+        if notification and notification['user_id'] == user_id:
+            doc_ref.delete()
+            return jsonify({'message': 'Notification deleted'}), 200
+        else:
+            return jsonify({'error': 'Not found or unauthorized'}), 404
     except Exception as e:
-        current_app.logger.error(f"Error getting unread notification count for user {user_id}: {e}", exc_info=True)
-        return 0  # Default to 0 on any error
+        return jsonify({'error': str(e)}), 500
 
-
-
-@app.route("/messages")
-def messages():
-    user_id = g.user.id
-    chat_users_data = fetch_chat_sidebar_data(user_id)
+@app.route('/api/notifications/delete_all', methods=['POST'])
+@login_required
+def delete_all_notifications():
+    user_id = g.current_user.id
+    batch = db.batch()
+    docs = notifications_ref.where('user_id', '==', user_id).stream()
     
-    # The logic below for redirecting to the first chat is preserved
-    if chat_users_data and request.args.get('redirect_to_first_chat', 'true').lower() == 'true':
-        first_chat = chat_users_data[0]
-        return redirect(url_for('message', receiver_id=first_chat['id'], advert_id=first_chat['advert_id']))
+    for doc in docs:
+        batch.delete(doc.reference)
+    
+    batch.commit()
+    return jsonify({'message': 'All notifications deleted'}), 200
 
-    # The original route had two identical queries. This refactors it.
-    return render_template(
-        "messages.html", chat_users=chat_users_data, recipient=None, messages=[], advert_id=None
 
-    )
+
+
+
+
+
+
+
+
+
+
+
+
         
         
 
@@ -4842,401 +4769,11 @@ def support():
 
 
 
-@app.route('/notification-settings', methods=['GET', 'POST'])
-@login_required
-def manage_notifications():
-    user_id = session['user_id']
-    settings_ref = db.collection('users').document(user_id).collection('settings').document('notifications')
-    
-    if request.method == 'POST':
-        notification_settings = {
-            'email_notifications': bool(request.form.get('email_notifications')),
-            'hot_deals': bool(request.form.get('hot_deals')),
-            'ad_info': bool(request.form.get('ad_info')),
-            'premium_packages': bool(request.form.get('premium_packages')),
-            'subscriptions': bool(request.form.get('subscriptions')),
-            'messages': bool(request.form.get('messages')),
-            'feedback': bool(request.form.get('feedback')),
-            'sms_info': bool(request.form.get('sms_info')),
-            'web_notification': bool(request.form.get('web_notification')),
-        }
-        
-        # Use set with merge=True to update or create the document
-        settings_ref.set(notification_settings, merge=True)
-        flash('Notification preferences updated!', 'success')
-        return redirect(url_for('manage_notifications'))
-        
-    # GET request: Fetch existing settings
-    settings_doc = settings_ref.get()
-    settings = settings_doc.to_dict() if settings_doc.exists else {}
-    return render_template('notifications.html', settings=settings)
-
-@app.route('/mark_all_read', methods=['POST'])
-@login_required
-def mark_all_read():
-    user_id = session['user_id']
-    notifications_ref = db.collection('users').document(user_id).collection('notifications')
-    
-    try:
-        # Get all unread notifications for the user
-        unread_notifications = notifications_ref.where('is_read', '==', False).stream()
-        
-        batch = db.batch()
-        for doc in unread_notifications:
-            batch.update(doc.reference, {'is_read': True})
-        
-        batch.commit()
-        flash('All notifications marked as read.', 'success')
-    except Exception as e:
-        flash(f'Error marking notifications as read: {str(e)}', 'danger')
-        
-    return redirect(url_for('manage_notifications'))
-
-@app.route('/clear_notifications', methods=['POST'])
-@login_required
-def clear_notifications():
-    user_id = session['user_id']
-    notifications_ref = db.collection('users').document(user_id).collection('notifications')
-    
-    try:
-        # Get all notifications for the user
-        all_notifications = notifications_ref.stream()
-        
-        batch = db.batch()
-        for doc in all_notifications:
-            batch.delete(doc.reference)
-        
-        batch.commit()
-        flash('All notifications cleared.', 'success')
-    except Exception as e:
-        flash(f'Error clearing notifications: {str(e)}', 'danger')
-        
-    return redirect(url_for('manage_notifications'))
-
-@app.route('/follow/<string:user_id>', methods=['POST'])
-
-
-
-
-        
-        
-
-        
-
-
-
-
-
-
-
-
-
-# --- NEW: Helper function to send an email notification ---
-def send_email_notification(recipient_email: str, subject: str, body: str):
-    try:
-        msg = Message(subject, recipients=[recipient_email])
-        msg.body = body
-        mail.send(msg)
-        logger.info(f"Email notification sent to {recipient_email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email to {recipient_email}: {e}", exc_info=True)
-        return False
-
-# --- UPDATED: create_notification function to use Firestore ---
-def create_notification(user_id: int, notification_type: str, message: str, related_id: int = None) -> bool:
-    """
-    Triggers a notification for a specific user, checking their preferences and sending an email.
-    """
-    try:
-        user_id_str = str(user_id)
-        # 1. Check user's notification preferences from Firestore
-        preferences_ref = db.collection('user_notification_preferences').document(user_id_str)
-        preferences_doc = preferences_ref.get()
-        preferences = preferences_doc.to_dict() if preferences_doc.exists else {}
-
-        # Default to enabled if preference is not explicitly set to False
-        enabled_for_type = preferences.get(notification_type, True)
-        
-        # We also need an email-specific preference
-        email_enabled = preferences.get('email_notifications', True)
-
-        if enabled_for_type:
-            # 2. Add the new notification to Firestore
-            notification_data = {
-                'user_id': user_id,
-                'notification_type': notification_type,
-                'notification_message': message,
-                'is_read': False,
-                'created_at': firestore.SERVER_TIMESTAMP,
-                'related_id': related_id
-            }
-            db.collection('notifications').add(notification_data)
-            print(f"Notification triggered for user {user_id}: Type='{notification_type}', Message='{message}', Related ID='{related_id}'")
-
-        # 3. Send email if enabled
-        if email_enabled:
-            user_info = get_user_info(user_id_str)
-            if user_info and user_info.get('email'):
-                subject = f"New Notification: {notification_type.replace('_', ' ').title()}"
-                send_email_notification(user_info['email'], subject, message)
-        
-        return True
-    except Exception as e:
-        logger.error(f"Error creating notification for user {user_id}: {e}", exc_info=True)
-        return False
-
-# --- UPDATED: get_user_notification_preferences function to use Firestore ---
-def get_user_notification_preferences(user_id: int) -> dict:
-    """
-    Retrieves a dictionary of notification preferences for a given user from Firestore.
-    """
-    try:
-        preferences_ref = db.collection('user_notification_preferences').document(str(user_id))
-        preferences_doc = preferences_ref.get()
-
-        if preferences_doc.exists:
-            preferences = preferences_doc.to_dict()
-        else:
-            preferences = {}
-
-        # Define all possible notification types in your application
-        all_notification_types = [
-            'advert_published',
-            'new_advert_from_followed_seller',
-            'advert_rejected',
-            'new_message',
-            'subscription_activated',
-            'email_notifications', # Add email as a manageable preference
-        ]
-
-        full_preferences = {}
-        for notif_type in all_notification_types:
-            full_preferences[notif_type] = preferences.get(notif_type, True)
-            
-        return full_preferences
-    except Exception as e:
-        logger.error(f"Error retrieving notification preferences for user {user_id}: {e}", exc_info=True)
-        return {}
-
-# --- UPDATED: update_user_notification_preference function to use Firestore ---
-def update_user_notification_preference(user_id: int, notification_type: str, enabled: bool) -> bool:
-    """
-    Inserts or updates a user's preference for a specific notification type in Firestore.
-    """
-    try:
-        preferences_ref = db.collection('user_notification_preferences').document(str(user_id))
-        preferences_ref.set({notification_type: enabled}, merge=True)
-        print(f"User {user_id} preference for '{notification_type}' set to {'enabled' if enabled else 'disabled'}.")
-        return True
-    except Exception as e:
-        logger.error(f"Error updating notification preference for user {user_id}: {e}", exc_info=True)
-        return False
-
-
-
-def send_notification(user_id, message, notification_type="info"):
-    """
-    A placeholder function to simulate sending a user notification.
-    """
-    logging.info(f"NOTIFICATION to user {user_id}: {message}")
-
-
-
-
-# --- UPDATED: get_user_notifications function to use Firestore ---
-def get_user_notifications(user_id: int, limit: int = 10, include_read: bool = False) -> list:
-    """
-    Retrieves notifications for a specific user from Firestore.
-    Note: Firestore does not support offset, so we will not include it in this implementation.
-    """
-    try:
-        query = db.collection('notifications').where('user_id', '==', user_id)
-        if not include_read:
-            query = query.where('is_read', '==', False)
-        
-        docs = query.order_by('created_at', direction=firestore.Query.DESCENDING).limit(limit).stream()
-        
-        notifications = []
-        for doc in docs:
-            notif_data = doc.to_dict()
-            notif_data['id'] = doc.id
-            if isinstance(notif_data.get('created_at'), firestore.Timestamp):
-                notif_data['created_at'] = notif_data['created_at'].isoformat()
-            notifications.append(notif_data)
-            
-        return notifications
-    except Exception as e:
-        logger.error(f"Error retrieving notifications for user {user_id}: {e}", exc_info=True)
-        return []
-
-# --- UPDATED: mark_notification_as_read function to use Firestore ---
-def mark_notification_as_read(notification_id: str, user_id: int = None) -> bool:
-    """
-    Marks a specific notification as read in Firestore.
-    """
-    try:
-        notification_ref = db.collection('notifications').document(notification_id)
-        notification_doc = notification_ref.get()
-
-        if notification_doc.exists:
-            notif_data = notification_doc.to_dict()
-            # Ensure the user has permission to update this notification
-            if user_id is None or notif_data.get('user_id') == user_id:
-                notification_ref.update({'is_read': True})
-                print(f"Notification {notification_id} marked as read.")
-                return True
-            else:
-                print(f"Notification {notification_id} not owned by user {user_id}.")
-                return False
-        else:
-            print(f"Notification {notification_id} not found.")
-            return False
-    except Exception as e:
-        logger.error(f"Error marking notification {notification_id} as read: {e}", exc_info=True)
-        return False
-
-# --- UPDATED: Mark All As Read API Route ---
-@app.route('/api/notifications/mark_all_read', methods=['POST'])
-def api_mark_all_notifications_read():
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
-    
-    try:
-        query = db.collection('notifications').where('user_id', '==', current_user_id).where('is_read', '==', False)
-        docs_to_update = query.stream()
-        
-        batch = db.batch()
-        count = 0
-        for doc in docs_to_update:
-            batch.update(doc.reference, {'is_read': True})
-            count += 1
-            
-        if count > 0:
-            batch.commit()
-            message = f"{count} notifications marked as read."
-            print(message)
-            return jsonify({'success': True, 'message': message})
-        else:
-            message = "No unread notifications to mark as read."
-            print(message)
-            return jsonify({'success': True, 'message': message})
-    except Exception as e:
-        logger.error(f"Error marking all notifications as read for user {current_user_id}: {e}", exc_info=True)
-        return jsonify({'success': False, 'message': f'Failed to mark all as read: {str(e)}'}), 500
-
-# --- UPDATED: Delete All Notifications API Route ---
-@app.route('/api/notifications/delete_all', methods=['POST'])
-def api_delete_all_notifications():
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
-    
-    try:
-        query = db.collection('notifications').where('user_id', '==', current_user_id)
-        docs_to_delete = query.stream()
-        
-        batch = db.batch()
-        count = 0
-        for doc in docs_to_delete:
-            batch.delete(doc.reference)
-            count += 1
-        
-        if count > 0:
-            batch.commit()
-            message = f"{count} notifications deleted."
-            print(message)
-            return jsonify({'success': True, 'message': message})
-        else:
-            message = "No notifications to delete."
-            print(message)
-            return jsonify({'success': True, 'message': message})
-    except Exception as e:
-        logger.error(f"Error deleting all notifications for user {current_user_id}: {e}", exc_info=True)
-        return jsonify({'success': False, 'message': f'Failed to delete all notifications: {str(e)}'}), 500
-
-# --- Flask Routes (Updated notifications route to pass current_user_id to template) ---
-@app.route('/notifications')
-def user_notifications():
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        flash('Please log in to view notifications.', 'info')
-        return redirect(url_for('login_page')) 
-
-    notifications = get_user_notifications(current_user_id) 
-    return render_template('notifications.html', notifications=notifications, current_user_id=current_user_id)
-
-@app.route('/api/notifications/<string:notification_id>/read', methods=['POST'])
-def api_mark_notification_read(notification_id):
-    current_user_id = get_current_user_id()
-    if not current_user_id:
-        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
-    
-    if mark_notification_as_read(notification_id, current_user_id):
-        return jsonify({'success': True, 'message': 'Notification marked as read.'})
-    else:
-        return jsonify({'success': False, 'message': 'Failed to mark notification as read or not authorized.'}), 400
-
-# --- NEW ROUTE: Notification Settings ---
-@app.route('/settings/notifications', methods=['GET', 'POST'])
-def notification_settings():
-    current_user_id = session.get('user_id')
-    if not current_user_id:
-        flash('Please log in to manage preferences.', 'info')
-        return redirect(url_for('login_page'))
-
-    if request.method == 'POST':
-        all_manageable_types = [
-            'advert_published',
-            'new_advert_from_followed_seller',
-            'advert_rejected',
-            'new_message',
-            'subscription_activated',
-            'email_notifications',
-        ]
-        
-        for notif_type in all_manageable_types:
-            is_enabled = request.form.get(f'pref_{notif_type}') == 'on'
-            update_user_notification_preference(current_user_id, notif_type, is_enabled)
-
-        flash('Notification preferences updated.', 'success')
-        return redirect(url_for('notification_settings'))
-
-    preferences = get_user_notification_preferences(current_user_id)
-    return render_template('notification_settings.html', preferences=preferences)
-
-# --- Routes that trigger notifications have been updated to call the new function ---
-@app.route('/send_message', methods=['POST'])
-def send_message():
-    sender_id = get_current_user_id()
-    # Assuming recipient_id is now a string to match Firestore IDs
-    recipient_id = request.form.get('recipient_id') 
-    message_content = request.form.get('message_content')
-
-    if recipient_id:
-        sender_username = get_user_info(sender_id).get('username', 'Someone')
-        
-        create_notification(
-            int(recipient_id), 
-            'new_message', 
-            f"{sender_username} sent you a new message: '{message_content[:50]}...'",
-            related_id=int(sender_id) 
-        )
-        flash('Message sent!', 'success')
-    else:
-        flash('Recipient not found.', 'error')
-    return redirect(url_for('some_page')) 
-
-
-
-
-
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
