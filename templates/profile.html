@@ -51,71 +51,12 @@
             color: white;
             transition: background-color 0.2s ease-in-out;
         }
-
-        /* The switch - the box around the slider */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 48px;
-            height: 24px;
-        }
-
-        /* Hide default HTML checkbox */
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        /* The slider */
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-        }
-
-        input:checked + .slider {
-            background-color: #10B981; /* Tailwind's green-500 */
-        }
-
-        input:focus + .slider {
-            box-shadow: 0 0 1px #10B981;
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(24px);
-        }
-
-        /* Rounded sliders */
-        .slider.round {
-            border-radius: 24px;
-        }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 antialiased">
 
     <div id="toast-message"
-       class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0">
+        class="fixed top-5 left-1/2 -translate-x-1/2 p-4 rounded-xl shadow-lg font-bold z-[1000] transition-opacity duration-300 ease-in-out opacity-0">
     </div>
 
     <div class="profile-wrapper max-w-4xl mx-auto my-5 bg-white rounded-xl shadow-lg overflow-hidden">
@@ -142,27 +83,23 @@
             </div>
 
             <div class="profile-content flex-grow pl-4 text-gray-800">
-        <h1 class="text-3xl font-bold text-green-700 mb-1">{{ user.username }}'s Profile</h1>
-        <p class="text-sm text-gray-600"><strong>Member Since:</strong> {{ user.created_at }}</p>
+                <h1 class="text-3xl font-bold text-green-700 mb-1">{{ user.username }}'s Profile</h1>
+                <p class="text-sm text-gray-600"><strong>Member Since:</strong> {{ user.created_at }}</p>
             </div>
-
-          
         </div>
 
         <section class="referral-section p-6 border-b border-gray-200 text-center">
-        <h3 class="text-xl font-semibold text-green-700 mb-2">Your Referral Link</h3>
-        <p class="text-sm text-gray-600 mb-2">
-            You have successfully referred **<span class="font-bold text-green-700">{{ referral_count }}</span>** users!
-        </p>
-        <div class="referral-container flex max-w-xl mx-auto rounded-xl overflow-hidden border border-gray-300">
-            <input type="text" id="referralLink" value="{{ referral_link }}" readonly class="flex-grow border-none p-3 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500">
-            <button onclick="copyReferral()" class="copy-btn bg-green-700 hover:bg-green-800 text-white font-medium py-3 px-4 transition-colors duration-200">
-                <i class="fas fa-copy"></i> Copy
-            </button>
-        </div>
+            <h3 class="text-xl font-semibold text-green-700 mb-2">Your Referral Link</h3>
+            <p class="text-sm text-gray-600 mb-2">
+                You have successfully referred **<span class="font-bold text-green-700">{{ referral_count }}</span>** users!
+            </p>
+            <div class="referral-container flex max-w-xl mx-auto rounded-xl overflow-hidden border border-gray-300">
+                <input type="text" id="referralLink" value="{{ referral_link }}" readonly class="flex-grow border-none p-3 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <button onclick="copyReferral()" class="copy-btn bg-green-700 hover:bg-green-800 text-white font-medium py-3 px-4 transition-colors duration-200">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
         </section>
-
-          
 
         <main class="sections-container grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
             <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
@@ -223,7 +160,7 @@
                 {% if user.working_days %}
                     <ul class="list-none p-0 mb-4">
                         {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
-                             <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
+                            <li class="mb-1 text-sm">{{ day }}: {{ (user.working_times.get(day, {}).get('open') or 'N/A') }} - {{ (user.working_times.get(day, {}).get('close') or 'N/A') }}</li>
                         {% endfor %}
                     </ul>
                 {% else %}
@@ -232,28 +169,21 @@
 
                 <p class="mt-4 text-sm"><a href="{{ url_for('personal_details') }}" class="text-green-700 hover:underline transition-colors duration-200"><i class="fas fa-briefcase mr-2"></i> Edit Business & Social</a></p>
             </div>
-            
-            <div class="section-box bg-gray-50 rounded-xl p-4 shadow-sm border border-gray-200">
-                <h3 class="text-lg font-semibold text-green-700 border-b border-gray-300 pb-2 mb-4">Notification Settings</h3>
-                <div class="flex items-center justify-between">
-                    <p class="text-sm font-bold">Enable Push Notifications</p>
-                    <label class="switch">
-                        <input type="checkbox" id="notification-toggle">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <p class="text-xs text-gray-500 mt-2" id="notification-status">Loading...</p>
-            </div>
         </main>
-          
+            
         <section class="sections-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-100">
+            <a href="{{ url_for('notifications_page') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
+                <i class="fas fa-bell text-4xl text-green-700 mb-2"></i>
+                <span class="text-sm font-semibold">Notifications</span>
+            </a>
+
             <a href="{{ url_for('list_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-bullhorn text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">My Adverts</span>
             </a>
             <a href="{{ url_for('progress_chart_page') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-        <i class="fas fa-chart-line text-4xl text-green-700 mb-2"></i>
-        <span class="text-sm font-semibold">My Progress</span>
+                <i class="fas fa-chart-line text-4xl text-green-700 mb-2"></i>
+                <span class="text-sm font-semibold">My Progress</span>
             </a>
             <a href="{{ url_for('sell') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200" title="Sell an item or service">
                 <i class="fas fa-tag text-4xl text-green-700 mb-2"></i>
@@ -263,7 +193,7 @@
                 <i class="fas fa-question-circle text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">FAQs</span>
             </a>
-          {% if user and user.is_admin %}
+            {% if user and user.is_admin %}
                 <a href="{{ url_for('admin_post_airtime') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border-2 border-dashed border-green-600">
                     <i class="fas fa-mobile-alt text-4xl text-green-700 mb-2"></i>
                     <span class="text-sm font-semibold">Post Airtime</span>
@@ -286,7 +216,7 @@
                     <i class="fas fa-newspaper text-4xl text-green-700 mb-2"></i>
                     <span class="text-sm font-semibold">Create School News</span>
                 </a>
-              {% endif %}
+            {% endif %}
 
             <a href="{{ url_for('logout') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-sign-out-alt text-4xl text-red-500 mb-2"></i>
@@ -304,26 +234,24 @@
     </div>
 
     <div class="fixed bottom-5 right-5 z-[500] group">
-    <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
-        <i class="fas fa-question-circle"></i>
-    </button>
+        <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
+            <i class="fas fa-question-circle"></i>
+        </button>
 
-    <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
-        <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
-            <i class="fab fa-whatsapp"></i>
-        </a>
-        <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
-            <i class="fab fa-whatsapp"></i>
-        </a>
-        <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
-            <i class="fab fa-whatsapp"></i>
-        </a>
+        <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
+            <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+            <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
+                <i class="fab fa-whatsapp"></i>
+            </a>
+        </div>
     </div>
-</div>
 
-    <script type="module">
-        import { requestNotificationPermission } from "{{ url_for('static', filename='js/fcm-setup.js') }}";
-        
+    <script>
         function showImageModal(imageUrl) {
             const modal = document.getElementById('imageViewerModal');
             const fullSizeImage = document.getElementById('fullSizeImage');
@@ -394,88 +322,6 @@
             {% endfor %}
             {% endif %}
             {% endwith %}
-        });
-
-        // Main logic for the notification toggle
-        document.addEventListener('DOMContentLoaded', async () => {
-            const toggle = document.getElementById('notification-toggle');
-            const statusText = document.getElementById('notification-status');
-
-            if (!("Notification" in window)) {
-                statusText.textContent = "Notifications are not supported by your browser.";
-                if (toggle) toggle.disabled = true;
-                return;
-            }
-
-            async function checkTokenStatus() {
-                try {
-                    const response = await fetch('/api/check-fcm-token');
-                    const data = await response.json();
-                    if (response.ok) {
-                        if (data.has_token) {
-                            toggle.checked = true;
-                            statusText.textContent = "Notifications are currently enabled.";
-                        } else {
-                            toggle.checked = false;
-                            statusText.textContent = "Notifications are currently disabled.";
-                        }
-                    } else {
-                        console.error("Failed to check token status:", data.error);
-                        statusText.textContent = "Error loading status. Please refresh.";
-                        if (toggle) toggle.disabled = true;
-                    }
-                } catch (error) {
-                    console.error("Network error while checking token status:", error);
-                    statusText.textContent = "Network error. Please try again later.";
-                    if (toggle) toggle.disabled = true;
-                }
-            }
-
-            await checkTokenStatus();
-
-            if (toggle) {
-                toggle.addEventListener('change', async () => {
-                    if (toggle.checked) {
-                        statusText.textContent = "Requesting permission...";
-                        try {
-                            const token = await requestNotificationPermission();
-
-                            if (token) {
-                                statusText.textContent = "Notifications are enabled!";
-                                showToast("Notifications enabled successfully!", "success");
-                            } else {
-                                toggle.checked = false;
-                                statusText.textContent = "Notifications disabled. Permission denied.";
-                                showToast("Notifications blocked. Please enable them in browser settings.", "error");
-                            }
-                        } catch (error) {
-                            console.error("Error during notification setup:", error);
-                            toggle.checked = false;
-                            statusText.textContent = "Failed to enable notifications. Try again.";
-                            showToast("Failed to enable notifications. Please refresh and try again.", "error");
-                        }
-                    } else {
-                        statusText.textContent = "Disabling notifications...";
-                        try {
-                            const response = await fetch('/api/remove-fcm-token', { method: 'POST' });
-                            const data = await response.json();
-                            if (response.ok) {
-                                statusText.textContent = "Notifications are now disabled.";
-                                showToast("Notifications disabled successfully.", "success");
-                            } else {
-                                statusText.textContent = "Failed to disable notifications. Try again.";
-                                showToast("Failed to disable notifications. Please try again.", "error");
-                                toggle.checked = true;
-                            }
-                        } catch (error) {
-                            console.error("Error removing token:", error);
-                            statusText.textContent = "Network error. Failed to disable.";
-                            showToast("Network error. Please try again later.", "error");
-                            toggle.checked = true;
-                        }
-                    }
-                });
-            }
         });
     </script>
 </body>
