@@ -278,8 +278,11 @@ def update_online_status(user_id, is_online):
 
 
 
+# ... (all your existing imports) ...
+from collections import defaultdict
+import logging
 
-
+# ... (the rest of your app setup) ...
 
 def send_daily_advert_report():
     """
@@ -332,7 +335,6 @@ def send_daily_advert_report():
             """
             
             msg = Message(
-                # Use date.today() directly as it's imported
                 subject=f"Daily Advert Report - {date.today()}",
                 recipients=["agwujamie@gmail.com", "jamesnwoke880@gmail.com"],
                 html=html_content
@@ -343,6 +345,8 @@ def send_daily_advert_report():
 
         except Exception as e:
             logger.error(f"Failed to generate or send daily advert report: {e}")
+
+
 
 
 
@@ -5115,6 +5119,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
