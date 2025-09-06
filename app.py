@@ -87,7 +87,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com' # Use your email provider's SMTP se
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'SCHOMART'
+app.config['MAIL_USERNAME'] = 'schomartcustomercare@gmail.com'
 app.config['MAIL_PASSWORD'] = 'gfxv ljqv hgxm qtjg'
 app.config['MAIL_DEFAULT_SENDER'] = 'schomartcustomercare@gmail.com'
 
@@ -4864,6 +4864,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
