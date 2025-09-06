@@ -4669,7 +4669,7 @@ def download_material(material_id):
         app.logger.error(f"An error occurred during file download: {str(e)}", exc_info=True)
         return "An internal error occurred.", 500
 
-
+# app.py
 
 @app.route('/admin/post_material', methods=['POST'])
 @login_required
@@ -4677,13 +4677,13 @@ def download_material(material_id):
 def post_material():
     # ... (existing form data retrieval) ...
     title = request.form.get('title')
-    category = request.form.get('category')
-    content = request.form.get('content')
+    content = request.form.get('content', '') # Set a default empty string for optional field
     state = request.form.get('state')
     school = request.form.get('school')
     file = request.files.get('file')
 
-    if not all([title, category, content, state, school, file]):
+    # Now, only 'title', 'state', 'school', and 'file' are required
+    if not all([title, state, school, file]):
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     try:
@@ -4696,8 +4696,7 @@ def post_material():
         new_material_ref = db.collection('study_materials').document()
         new_material_ref.set({
             'title': title,
-            'category': category,
-            'content': content,
+            'content': content, # The content field is now optional
             'state': state,
             'school': school,
             'file_url': file_data['download_url'],  # Store the public URL for direct linking
@@ -4709,6 +4708,7 @@ def post_material():
     except Exception as e:
         flash(f'An error occurred: {str(e)}', 'error')
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 
 
@@ -5119,6 +5119,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
