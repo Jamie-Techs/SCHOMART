@@ -3718,37 +3718,6 @@ def api_user_progress():
         'adverts_info': adverts_info
     })
 
-@app.route('/api/user_progress')
-@login_required
-def api_user_progress():
-    user_id = g.current_user.id
-    period = request.args.get('period', 'daily')
-
-    performance_data = get_advert_performance_data(user_id)
-    
-    views_data = aggregate_data_by_period(performance_data['views'], period)
-    saves_data = aggregate_data_by_period(performance_data['saves'], period)
-    
-    # Calculate saves per advert for the table
-    advert_saves_count = defaultdict(int)
-    for save in performance_data['saves']:
-        advert_saves_count[save['advert_id']] += 1
-
-    adverts_info = []
-    for advert_id, advert_details in performance_data['adverts'].items():
-        adverts_info.append({
-            'title': advert_details.get('title', 'N/A'),
-            'view_count': advert_details.get('views', 0),  # Use the stored view count
-            'saves_count': advert_saves_count[advert_id]
-        })
-
-    return jsonify({
-        'views': views_data,
-        'saves': saves_data,
-        'adverts_info': adverts_info
-    })
-
-
 
 
 
@@ -4961,6 +4930,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
