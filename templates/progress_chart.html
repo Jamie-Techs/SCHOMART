@@ -51,17 +51,11 @@
             <div class="card">
                 <h2 class="text-xl font-bold mb-4">Views over time</h2>
                 <canvas id="viewsChart"></canvas>
-                <div id="views-no-data" class="hidden text-center text-gray-500 mt-4">
-                    No view data available for this period.
                 </div>
-            </div>
             <div class="card">
                 <h2 class="text-xl font-bold mb-4">Saved Adverts over time</h2>
                 <canvas id="savesChart"></canvas>
-                <div id="saves-no-data" class="hidden text-center text-gray-500 mt-4">
-                    No saves data available for this period.
                 </div>
-            </div>
         </div>
 
         <div class="card mt-8">
@@ -86,8 +80,6 @@
 <script>
     const viewsCtx = document.getElementById('viewsChart').getContext('2d');
     const savesCtx = document.getElementById('savesChart').getContext('2d');
-    const viewsNoData = document.getElementById('views-no-data');
-    const savesNoData = document.getElementById('saves-no-data');
     const advertsTableBody = document.getElementById('adverts-table-body');
     const periodButtons = document.querySelectorAll('.btn-period');
 
@@ -103,64 +95,46 @@
             const savesValues = data.saves_values;
             const advertsInfo = data.adverts_info;
             
-            // Check if there's any data for the views chart
-            const hasViewsData = viewsValues.some(value => value > 0);
-            if (hasViewsData) {
-                viewsNoData.classList.add('hidden');
-                viewsCtx.style.display = 'block';
-                if (viewsChart) viewsChart.destroy();
-                viewsChart = new Chart(viewsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: allLabels,
-                        datasets: [{
-                            label: 'Total Views',
-                            data: viewsValues,
-                            backgroundColor: 'rgba(0, 107, 60, 0.7)',
-                            borderColor: 'rgba(0, 107, 60, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            } else {
-                if (viewsChart) viewsChart.destroy();
-                viewsCtx.style.display = 'none';
-                viewsNoData.classList.remove('hidden');
-            }
+            // Views Chart: Always create the chart, even with zero data
+            if (viewsChart) viewsChart.destroy();
+            viewsChart = new Chart(viewsCtx, {
+                type: 'bar',
+                data: {
+                    labels: allLabels,
+                    datasets: [{
+                        label: 'Total Views',
+                        data: viewsValues,
+                        backgroundColor: 'rgba(0, 107, 60, 0.7)',
+                        borderColor: 'rgba(0, 107, 60, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
             
-            // Check if there's any data for the saves chart
-            const hasSavesData = savesValues.some(value => value > 0);
-            if (hasSavesData) {
-                savesNoData.classList.add('hidden');
-                savesCtx.style.display = 'block';
-                if (savesChart) savesChart.destroy();
-                savesChart = new Chart(savesCtx, {
-                    type: 'line',
-                    data: {
-                        labels: allLabels,
-                        datasets: [{
-                            label: 'Advert Saves',
-                            data: savesValues,
-                            backgroundColor: 'rgba(253, 184, 19, 0.7)',
-                            borderColor: 'rgba(253, 184, 19, 1)',
-                            borderWidth: 2,
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            } else {
-                if (savesChart) savesChart.destroy();
-                savesCtx.style.display = 'none';
-                savesNoData.classList.remove('hidden');
-            }
+            // Saves Chart: Always create the chart, even with zero data
+            if (savesChart) savesChart.destroy();
+            savesChart = new Chart(savesCtx, {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [{
+                        label: 'Advert Saves',
+                        data: savesValues,
+                        backgroundColor: 'rgba(253, 184, 19, 0.7)',
+                        borderColor: 'rgba(253, 184, 19, 1)',
+                        borderWidth: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
 
             // Adverts Table (remains unchanged)
             advertsTableBody.innerHTML = '';
@@ -180,14 +154,12 @@
 
         } catch (error) {
             console.error('Error fetching user progress data:', error);
+            // This error handling is still important if the backend completely fails
             if (viewsChart) viewsChart.destroy();
             if (savesChart) savesChart.destroy();
             viewsCtx.style.display = 'none';
             savesCtx.style.display = 'none';
-            viewsNoData.classList.remove('hidden');
-            viewsNoData.textContent = 'An error occurred while loading chart data.';
-            savesNoData.classList.remove('hidden');
-            savesNoData.textContent = 'An error occurred while loading chart data.';
+            // You can add a single, general error message here if needed.
         }
     }
 
