@@ -14,6 +14,9 @@ import tempfile
 from io import BytesIO
 from urllib.parse import urlparse, quote
 from functools import wraps
+
+import calendar
+from collections import defaultdict
 from datetime import datetime, timedelta, date, timezone, UTC
 
 import flask
@@ -3587,6 +3590,142 @@ def advert_detail(advert_id):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ... other imports and functions
+
+# A helper function to generate a complete set of labels for the given period
+def generate_labels_for_period(period):
+    now = datetime.now(timezone.utc)
+    labels = []
+    if period == 'hourly':
+        # Last 24 hours
+        for i in range(24):
+            dt = now - timedelta(hours=23 - i)
+            labels.append(dt.strftime('%H:00'))
+    elif period == 'daily':
+        # Last 30 days
+        for i in range(30):
+            dt = now - timedelta(days=29 - i)
+            labels.append(dt.strftime('%Y-%m-%d'))
+    elif period == 'monthly':
+        # Last 12 months
+        for i in range(12):
+            dt = now.replace(day=1) - timedelta(days=30 * (11 - i))
+            labels.append(dt.strftime('%Y-%m'))
+    elif period == 'yearly':
+        # Last 5 years
+        for i in range(5):
+            labels.append(str(now.year - (4 - i)))
+    return labels
+
+@app.route('/api/user_progress')
+@login_required
+def api_user_progress():
+    user_id = g.current_user.id
+    period = request.args.get('period', 'daily')
+
+    performance_data = get_advert_performance_data(user_id)
+    views_raw = performance_data['views']
+    saves_raw = performance_data['saves']
+    
+    # Get a complete list of labels for the chart
+    labels = generate_labels_for_period(period)
+    
+    # Initialize dictionaries with zero values for all labels
+    views_map = {label: 0 for label in labels}
+    saves_map = {label: 0 for label in labels}
+    
+    # Populate the dictionaries with actual data
+    for item in views_raw:
+        timestamp = item.get('viewed_at')
+        if not timestamp: continue
+        try:
+            dt_object = timestamp.to_datetime()
+        except AttributeError:
+            dt_object = datetime.fromtimestamp(timestamp.timestamp(), tz=timezone.utc)
+        
+        if period == 'hourly':
+            key = dt_object.strftime('%H:00')
+        elif period == 'daily':
+            key = dt_object.strftime('%Y-%m-%d')
+        elif period == 'monthly':
+            key = dt_object.strftime('%Y-%m')
+        elif period == 'yearly':
+            key = dt_object.strftime('%Y')
+        
+        if key in views_map:
+            views_map[key] += 1
+
+    for item in saves_raw:
+        timestamp = item.get('saved_at')
+        if not timestamp: continue
+        try:
+            dt_object = timestamp.to_datetime()
+        except AttributeError:
+            dt_object = datetime.fromtimestamp(timestamp.timestamp(), tz=timezone.utc)
+            
+        if period == 'hourly':
+            key = dt_object.strftime('%H:00')
+        elif period == 'daily':
+            key = dt_object.strftime('%Y-%m-%d')
+        elif period == 'monthly':
+            key = dt_object.strftime('%Y-%m')
+        elif period == 'yearly':
+            key = dt_object.strftime('%Y')
+        
+        if key in saves_map:
+            saves_map[key] += 1
+    
+    # Convert dictionaries to ordered lists of values
+    views_values = [views_map[label] for label in labels]
+    saves_values = [saves_map[label] for label in labels]
+
+    # Calculate advert saves for the table
+    advert_saves_count = defaultdict(int)
+    for save in performance_data['saves']:
+        advert_saves_count[save['advert_id']] += 1
+
+    adverts_info = []
+    for advert_id, advert_details in performance_data['adverts'].items():
+        adverts_info.append({
+            'title': advert_details.get('title', 'N/A'),
+            'view_count': advert_details.get('views', 0),
+            'saves_count': advert_saves_count[advert_id]
+        })
+
+    return jsonify({
+        'labels': labels,
+        'views_values': views_values,
+        'saves_values': saves_values,
+        'adverts_info': adverts_info
+    })
+
+
+
+
+
+
 def aggregate_data_by_period(data_list, period):
     """Aggregates data based on the specified time period."""
     if not data_list:
@@ -3663,60 +3802,6 @@ def progress_chart_page():
     return render_template('progress_chart.html')
 
 
-
-
-
-@app.route('/api/user_progress')
-@login_required
-def api_user_progress():
-    user_id = g.current_user.id
-    period = request.args.get('period', 'daily')
-
-    performance_data = get_advert_performance_data(user_id)
-    
-    views_raw = performance_data['views']
-    saves_raw = performance_data['saves']
-    
-    # Aggregate data to get the counts per period
-    views_aggregated = aggregate_data_by_period(views_raw, period)
-    saves_aggregated = aggregate_data_by_period(saves_raw, period)
-    
-    # Create a unified list of labels for all data points
-    all_labels_set = set()
-    for key, _ in views_aggregated:
-        all_labels_set.add(key)
-    for key, _ in saves_aggregated:
-        all_labels_set.add(key)
-
-    all_labels = sorted(list(all_labels_set))
-
-    # Format the data into a structure Chart.js expects,
-    # ensuring that every label has a value (even if it's 0)
-    views_map = dict(views_aggregated)
-    views_final = [[label, views_map.get(label, 0)] for label in all_labels]
-
-    saves_map = dict(saves_aggregated)
-    saves_final = [[label, saves_map.get(label, 0)] for label in all_labels]
-
-    # Calculate saves per advert for the table
-    advert_saves_count = defaultdict(int)
-    for save in performance_data['saves']:
-        advert_saves_count[save['advert_id']] += 1
-
-    adverts_info = []
-    for advert_id, advert_details in performance_data['adverts'].items():
-        adverts_info.append({
-            'title': advert_details.get('title', 'N/A'),
-            'view_count': advert_details.get('views', 0),
-            'saves_count': advert_saves_count[advert_id]
-        })
-
-    return jsonify({
-        'labels': all_labels, # Send the labels separately
-        'views': views_final,
-        'saves': saves_final,
-        'adverts_info': adverts_info
-    })
 
 
 
@@ -4930,6 +5015,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
