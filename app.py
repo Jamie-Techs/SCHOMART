@@ -3587,7 +3587,50 @@ def advert_detail(advert_id):
 
 
 
+def aggregate_data_by_period(data_list, period):
+    """Aggregates data based on the specified time period."""
+    if not data_list:
+        return []
 
+    data_map = defaultdict(int)
+    now = datetime.now(timezone.utc) # Use timezone-aware datetime
+
+    for item in data_list:
+        timestamp = item.get('viewed_at') or item.get('saved_at')
+        if not timestamp:
+            continue
+
+        # Correctly convert the DatetimeWithNanoseconds object to a datetime object
+        # Access the microseconds and replace them
+        try:
+            # This is the correct way to handle DatetimeWithNanoseconds
+            dt_object = datetime.fromtimestamp(timestamp.timestamp(), tz=timezone.utc)
+        except AttributeError:
+            # Fallback for other timestamp types if they exist
+            dt_object = timestamp
+            
+        # Define time window based on period
+        if period == 'hourly':
+            if dt_object > now - timedelta(hours=24):
+                key = dt_object.strftime('%H:00')
+                data_map[key] += 1
+        elif period == 'daily':
+            if dt_object > now - timedelta(days=30):
+                key = dt_object.strftime('%Y-%m-%d')
+                data_map[key] += 1
+        elif period == 'monthly':
+            if dt_object > now - timedelta(days=365):
+                key = dt_object.strftime('%Y-%m')
+                data_map[key] += 1
+        elif period == 'yearly':
+            key = dt_object.strftime('%Y')
+            data_map[key] += 1
+            
+    sorted_data = sorted(data_map.items())
+    return sorted_data
+
+# The rest of your functions and routes remain the same
+# ...
 
 def get_advert_performance_data(user_id):
     """Fetches all performance data for a user's adverts."""
@@ -3612,40 +3655,7 @@ def get_advert_performance_data(user_id):
         'adverts': adverts_data
     }
 
-def aggregate_data_by_period(data_list, period):
-    """Aggregates data based on the specified time period."""
-    if not data_list:
-        return []
 
-    data_map = defaultdict(int)
-    now = datetime.now(timezone.utc) # Use timezone-aware datetime
-
-    for item in data_list:
-        timestamp = item.get('viewed_at') or item.get('saved_at')
-        if not timestamp:
-            continue
-
-        dt_object = timestamp.to_datetime()
-
-        # Define time window based on period
-        if period == 'hourly':
-            if dt_object > now - timedelta(hours=24):
-                key = dt_object.strftime('%H:00')
-                data_map[key] += 1
-        elif period == 'daily':
-            if dt_object > now - timedelta(days=30):
-                key = dt_object.strftime('%Y-%m-%d')
-                data_map[key] += 1
-        elif period == 'monthly':
-            if dt_object > now - timedelta(days=365):
-                key = dt_object.strftime('%Y-%m')
-                data_map[key] += 1
-        elif period == 'yearly':
-            key = dt_object.strftime('%Y')
-            data_map[key] += 1
-            
-    sorted_data = sorted(data_map.items())
-    return sorted_data
 
 @app.route('/progress_chart')
 @login_required
@@ -4895,6 +4905,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
