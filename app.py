@@ -328,8 +328,7 @@ def send_daily_advert_report():
             # Ensure the sender is correctly specified in your app's config
             msg = Message(
                 subject=f"Daily Advert Report - {datetime.date.today()}",
-                recipients=["agwujamie@gmail.com"],
-                recipients=["jamesnwoke880@gmail.com"],
+                recipients=["agwujamie@gmail.com", "jamesnwoke880@gmail.com"],
                 html=html_content
             )
             mail.send(msg)
@@ -5096,6 +5095,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
