@@ -2675,16 +2675,12 @@ def admin_advert_review():
 
 
 
-
-
-
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
 def admin_advert_approve():
     """
-    Handles the approval of an advert.
-    Decrements the user's referral count only if the advert plan is 'referral_benefits'.
+    Handles the approval of an advert and notifies the advert owner.
     """
     advert_id = request.form.get('advert_id')
     if not advert_id:
@@ -2700,8 +2696,6 @@ def admin_advert_approve():
 
     advert_data = advert_doc.to_dict()
     user_id = advert_data.get('user_id')
-    
-    # Get the plan_name from the advert data
     plan_name = advert_data.get('plan_name')
 
     if not user_id:
@@ -2712,37 +2706,34 @@ def admin_advert_approve():
     user_doc = user_ref.get()
 
     if user_doc.exists:
-        # Update the advert's status and publication date regardless of the plan
         advert_ref.update({
             'status': 'published',
             'published_at': firestore.SERVER_TIMESTAMP,
             'is_published': True
         })
 
-        # Check if the advert was submitted using referral benefits
+        # --- NEW: Create a notification for the advert owner ---
+        advert_title = advert_data.get('title', 'Your advert')
+        message = f"Your advert, '{advert_title}', has been approved and is now published! 🚀"
+        related_link = url_for('advert_detail', advert_id=advert_id)
+        create_notification(user_id, message, 'advert_status', related_link)
+        # --- END NEW ---
+
         if plan_name == 'referral_benefits':
             user_data = user_doc.to_dict()
             current_referral_count = user_data.get('referral_count', 0)
 
-            # Check if the user has a positive referral count
             if current_referral_count > 0:
-                # Atomically decrement the referral count
                 user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
                 flash("Advert approved and published successfully. Referral count decremented.", 'success')
             else:
-                # This case should ideally not happen if client-side validation is correct, but it's a good fallback
                 flash("User does not have enough referral points. Advert published but referral count not decremented.", 'warning')
         else:
-            # For paid or one-time free plans, just publish without decrementing the referral count
             flash("Advert approved and published successfully.", 'success')
-
     else:
         flash("User not found.", 'error')
 
     return redirect(url_for('admin_advert_review'))
-
-
-
 
 
 
@@ -2752,8 +2743,7 @@ def admin_advert_approve():
 @admin_required
 def admin_advert_reject():
     """
-    Handles the rejection of an advert, deletes its associated files (main image, videos,
-    and additional images), and updates the advert's status.
+    Handles the rejection of an advert, deletes its associated files, and notifies the advert owner.
     """
     advert_id = request.form.get('advert_id')
     rejection_reason = request.form.get('rejection_reason', 'No reason provided.')
@@ -2766,29 +2756,33 @@ def admin_advert_reject():
 
     if advert_doc.exists:
         advert_data = advert_doc.to_dict()
+        user_id = advert_data.get('user_id')
         main_image_url = advert_data.get('image_url')
         video_url = advert_data.get('video_url')
         additional_images = advert_data.get('additional_images', [])
 
-        # Delete the main image
         if main_image_url:
             delete_file_from_storage(main_image_url)
 
-        # Delete the video
         if video_url:
             delete_file_from_storage(video_url)
         
-        # Delete any additional images in the list
         for img_url in additional_images:
             delete_file_from_storage(img_url)
 
-        # Update the advert's status in Firestore
         advert_ref.update({
             'status': 'rejected',
             'rejection_reason': rejection_reason,
             'is_published': False
         })
         
+        # --- NEW: Create a notification for the advert owner ---
+        if user_id:
+            advert_title = advert_data.get('title', 'Your advert')
+            message = f"Your advert, '{advert_title}', has been rejected. Reason: '{rejection_reason}'"
+            create_notification(user_id, message, 'advert_status')
+        # --- END NEW ---
+
     return redirect(url_for('admin_advert_review'))
 
 
@@ -2828,11 +2822,41 @@ def mark_report_resolved(report_id):
         logging.error(f"Error marking report {report_id} as resolved: {e}", exc_info=True)
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
+
+
+@app.route('/admin/action/enable_user/<user_id>', methods=['POST'])
+@login_required
+@admin_required
+def enable_user_account(user_id):
+    """Admin action to enable a user's account and notifies the user."""
+    user_ref = db.collection('users').document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return jsonify({"message": "User not found."}), 404
+        
+    try:
+        user_ref.update({
+            'is_active': True,
+            'account_status': 'active'
+        })
+        
+        # --- NEW: Create a notification for the user ---
+        message = "Your account has been re-enabled by an administrator."
+        create_notification(user_id, message, 'account_status')
+        # --- END NEW ---
+        
+        return jsonify({"message": "User account enabled successfully!"}), 200
+    except Exception as e:
+        logging.error(f"Error enabling user {user_id}: {e}", exc_info=True)
+        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+
 @app.route('/admin/action/suspend_user/<user_id>', methods=['POST'])
 @login_required
 @admin_required
 def suspend_user_account(user_id):
-    """Admin action to suspend a user's account."""
+    """Admin action to suspend a user's account and notifies the user."""
     user_ref = db.collection('users').document(user_id)
     user_doc = user_ref.get()
 
@@ -2844,16 +2868,27 @@ def suspend_user_account(user_id):
             'is_active': False,
             'account_status': 'suspended'
         })
+        
+        # --- NEW: Create a notification for the user ---
+        message = "Your account has been suspended by an administrator."
+        create_notification(user_id, message, 'account_status')
+        # --- END NEW ---
+        
         return jsonify({"message": "User account suspended successfully!"}), 200
     except Exception as e:
         logging.error(f"Error suspending user {user_id}: {e}", exc_info=True)
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
+
+
+
+
+
 @app.route('/admin/action/take_down_advert/<advert_id>', methods=['POST'])
 @login_required
 @admin_required
 def take_down_advert(advert_id):
-    """Admin action to take down an advert."""
+    """Admin action to take down an advert and notifies the advert owner."""
     advert_ref = db.collection('adverts').document(advert_id)
     advert_doc = advert_ref.get()
 
@@ -2861,14 +2896,28 @@ def take_down_advert(advert_id):
         return jsonify({"message": "Advert not found."}), 404
 
     try:
+        advert_data = advert_doc.to_dict()
+        user_id = advert_data.get('user_id')
+        
         advert_ref.update({
             'status': 'taken_down',
             'taken_down_at': firestore.SERVER_TIMESTAMP
         })
+        
+        # --- NEW: Create a notification for the advert owner ---
+        if user_id:
+            advert_title = advert_data.get('title', 'Your advert')
+            message = f"Your advert, '{advert_title}', has been taken down by an administrator. Please contact support for more information."
+            create_notification(user_id, message, 'advert_status')
+        # --- END NEW ---
+        
         return jsonify({"message": "Advert taken down successfully!"}), 200
     except Exception as e:
         logging.error(f"Error taking down advert {advert_id}: {e}", exc_info=True)
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
+
+
+
 
 
 
@@ -2892,29 +2941,6 @@ def dismiss_report(advert_id):
         return jsonify({"message": "Advert reports dismissed successfully!"}), 200
     except Exception as e:
         logging.error(f"Error dismissing report for advert {advert_id}: {e}", exc_info=True)
-        return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
-
-
-
-@app.route('/admin/action/enable_user/<user_id>', methods=['POST'])
-@login_required
-@admin_required
-def enable_user_account(user_id):
-    """Admin action to enable a user's account."""
-    user_ref = db.collection('users').document(user_id)
-    user_doc = user_ref.get()
-
-    if not user_doc.exists:
-        return jsonify({"message": "User not found."}), 404
-        
-    try:
-        user_ref.update({
-            'is_active': True,
-            'account_status': 'active'
-        })
-        return jsonify({"message": "User account enabled successfully!"}), 200
-    except Exception as e:
-        logging.error(f"Error enabling user {user_id}: {e}", exc_info=True)
         return jsonify({"message": f"An unexpected error occurred: {str(e)}"}), 500
 
 
@@ -3010,21 +3036,18 @@ def report_advert(advert_id):
 @login_required
 def submit_review():
     """
-    Handles the submission of a new review for an advert.
+    Handles the submission of a new review for an advert and notifies the advert owner.
     """
     try:
-        # Get data from the form
         advert_id = request.form.get('advert_id')
         rating_str = request.form.get('rating')
         comment = request.form.get('comment')
         reviewee_id = request.form.get('reviewee_id')
 
-        # This check is crucial to prevent the BuildError
         if not advert_id:
             flash('Advert ID is missing. Cannot submit review.', 'error')
-            return redirect(url_for('some_default_page')) # Redirect to a safe page
+            return redirect(url_for('some_default_page'))
 
-        # Basic input validation
         if not all([rating_str, comment, reviewee_id]):
             flash('All fields are required to submit a review.', 'error')
             return redirect(url_for('advert_detail', advert_id=advert_id))
@@ -3040,19 +3063,16 @@ def submit_review():
 
         current_user_id = g.current_user.id
         
-        # Prevent users from reviewing their own ads
         if current_user_id == reviewee_id:
             flash('You cannot review your own advert.', 'error')
             return redirect(url_for('advert_detail', advert_id=advert_id))
 
-        # Check if the user has already submitted a review for this advert
         existing_review_query = db.collection('reviews').where('user_id', '==', current_user_id).where('advert_id', '==', advert_id).limit(1).stream()
         existing_review = next(existing_review_query, None)
         if existing_review:
             flash('You have already submitted a review for this advert.', 'error')
             return redirect(url_for('advert_detail', advert_id=advert_id))
 
-        # Data for the new review document
         new_review_data = {
             'advert_id': advert_id,
             'user_id': current_user_id,
@@ -3062,8 +3082,17 @@ def submit_review():
             'created_at': datetime.now()
         }
 
-        # Add the new review document to the 'reviews' collection
         db.collection('reviews').add(new_review_data)
+
+        # --- NEW: Create a notification for the advert owner (the reviewee) ---
+        advert_doc = db.collection('adverts').document(advert_id).get()
+        if advert_doc.exists:
+            advert_title = advert_doc.to_dict().get('title', 'Your advert')
+            
+            message = f"Someone just rated and commented on your advert: '{advert_title}'"
+            related_link = url_for('advert_detail', advert_id=advert_id)
+            create_notification(reviewee_id, message, 'new_review', related_link)
+        # --- END NEW ---
 
         flash('Your review has been submitted successfully!', 'success')
         
@@ -3072,6 +3101,7 @@ def submit_review():
         flash('An unexpected error occurred. Please try again.', 'error')
         
     return redirect(url_for('advert_detail', advert_id=advert_id))
+
 
 
 
@@ -4645,8 +4675,28 @@ def leaderboard():
 
 
 
+def create_notification(recipient_id, message, notification_type, related_link=None):
+    """
+    Creates a new notification document in the Firestore database.
 
-
+    Args:
+        recipient_id (str): The ID of the user to be notified.
+        message (str): The content of the notification.
+        notification_type (str): A category for the notification (e.g., 'review', 'account_status', 'advert_status').
+        related_link (str, optional): A URL for the user to click to view the related item.
+    """
+    try:
+        notifications_ref.add({
+            'user_id': recipient_id,
+            'message': message,
+            'type': notification_type,
+            'related_link': related_link,
+            'is_read': False,
+            'timestamp': datetime.now()
+        })
+        print(f"Notification created for user {recipient_id}: {message}")
+    except Exception as e:
+        print(f"Error creating notification: {e}")
 
 
 
@@ -4773,6 +4823,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
