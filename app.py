@@ -87,9 +87,9 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com' # Use your email provider's SMTP se
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_email_password'
-app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com'
+app.config['MAIL_USERNAME'] = 'SCHOMART'
+app.config['MAIL_PASSWORD'] = 'gfxv ljqv hgxm qtjg'
+app.config['MAIL_DEFAULT_SENDER'] = 'schomartcustomercare@gmail.com'
 
 mail = Mail(app)
 
@@ -4711,7 +4711,7 @@ def create_notification(recipient_id, message, notification_type, related_link=N
             
             # Create a message for the email
             email_subject = "New Notification from Your App"
-            email_body = f"Hi {user_data.get('first_name', '')},\n\nYou have a new notification: {message}"
+            email_body = f"Hi {user_data.get('username', '')},\n\nYou have a new notification: {message}"
             if related_link:
                 email_body += f"\n\nYou can view it here: {request.url_root.strip('/')}{related_link}"
             
@@ -4864,6 +4864,7 @@ def support():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gives you the port in $PORT
     app.run(host="0.0.0.0", port=port)
+
 
 
 
