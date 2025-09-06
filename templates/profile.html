@@ -60,15 +60,9 @@
     </div>
 
     <div class="profile-wrapper max-w-4xl mx-auto my-5 bg-white rounded-xl shadow-lg overflow-hidden">
-        <header class="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
-            <button onclick="history.back()" class="nav-button bg-green-700 hover:bg-green-800">
-                <i class="fas fa-arrow-left"></i> Back
-            </button>
-            <a href="{{ url_for('home') }}" class="nav-button bg-green-700 hover:bg-green-800">
-                <i class="fas fa-home"></i> Home
-            </a>
-        </header>
-
+        
+        {% include 'header.html' %}
+        
         <div class="cover-photo w-full h-56 overflow-hidden bg-gray-200 relative">
             <a href="#" onclick="showImageModal('{{ cover_photo_url }}')" title="View Full Cover Photo">
                 <img src="{{ cover_photo_url }}" alt="Cover Photo" class="w-full h-full object-cover block" onerror="this.onerror=null;this.src='https://placehold.co/1000x220/e0e0e0/777777?text=No+Cover+Photo';"/>
@@ -172,11 +166,6 @@
         </main>
             
         <section class="sections-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-100">
-            <a href="{{ url_for('notifications_page') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
-                <i class="fas fa-bell text-4xl text-green-700 mb-2"></i>
-                <span class="text-sm font-semibold">Notifications</span>
-            </a>
-
             <a href="{{ url_for('list_adverts') }}" class="option-box bg-white p-4 rounded-xl shadow-md transition-transform hover:scale-105 duration-200 border border-gray-200">
                 <i class="fas fa-bullhorn text-4xl text-green-700 mb-2"></i>
                 <span class="text-sm font-semibold">My Adverts</span>
@@ -234,22 +223,22 @@
     </div>
 
     <div class="fixed bottom-5 right-5 z-[500] group">
-        <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
-            <i class="fas fa-question-circle"></i>
-        </button>
+    <button class="floating-help bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800 focus:outline-none">
+        <i class="fas fa-question-circle"></i>
+    </button>
 
-        <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
-            <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
-                <i class="fab fa-whatsapp"></i>
-            </a>
-            <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
-                <i class="fab fa-whatsapp"></i>
-            </a>
-            <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
-                <i class="fab fa-whatsapp"></i>
-            </a>
-        </div>
+    <div class="absolute bottom-16 right-0 flex flex-col items-center space-y-2 opacity-0 scale-0 origin-bottom-right transition-all duration-300 group-hover:opacity-100 group-hover:scale-100">
+        <a href="https://wa.me/23481244567" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact General Support">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+        <a href="https://wa.me/23490512345" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Sales Team">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+        <a href="https://wa.me/23470678901" target="_blank" class="bg-green-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 hover:scale-110 hover:bg-green-800" title="Contact Technical Support">
+            <i class="fab fa-whatsapp"></i>
+        </a>
     </div>
+</div>
 
     <script>
         function showImageModal(imageUrl) {
