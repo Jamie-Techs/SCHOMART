@@ -68,6 +68,7 @@
 
         .form-group {
             margin-bottom: 1.5rem;
+            position: relative;
         }
 
         .form-group label {
@@ -120,6 +121,33 @@
             cursor: not-allowed;
             transform: none;
         }
+        
+        /* Autocomplete styles */
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .autocomplete-list.hidden {
+            display: none;
+        }
+        .autocomplete-list-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .autocomplete-list-item:hover {
+            background-color: #f0f0f0;
+        }
 
         #response-message {
             margin-top: 1.5rem;
@@ -165,7 +193,7 @@
         .flash-messages .error { background-color: #f8d7da; color: #721c24; }
         .flash-messages .warning { background-color: #fff3cd; color: #856404; }
         .flash-messages .info { background-color: #d1ecf1; color: #0c5460; }
-
+        
     </style>
 </head>
 <body>
@@ -200,18 +228,28 @@
                 <label for="content">Description/Content</label>
                 <textarea id="content" name="content" rows="4"></textarea>
             </div>
+            
             <div class="form-group">
-                <label for="state">State</label>
-                <input type="text" id="state" name="state" required>
+                <label for="state_input">State</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="state_input" name="state" placeholder="e.g., Lagos" required>
+                    <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="school">School</label>
-                <input type="text" id="school" name="school" required>
+                <label for="school_input">School</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="school_input" name="school" placeholder="Select a state first..." disabled required>
+                    <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
+                </div>
             </div>
+
             <div class="form-group">
                 <label for="file">Upload File (PDF, DOC, PPT, etc.)</label>
                 <input type="file" id="file" name="file" required>
             </div>
+            
             <button type="submit" class="btn-submit">
                 <i class="fas fa-upload"></i> Post Material
             </button>
@@ -219,9 +257,82 @@
     </div>
 
     <script>
+        // Use a global variable to store the data, which will be passed from the backend
+        const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
+        const NIGERIAN_STATES = Object.keys(NIGERIAN_SCHOOLS);
+
         const form = document.getElementById('materialForm');
         const submitBtn = document.querySelector('.btn-submit');
+        const stateInput = document.getElementById('state_input');
+        const schoolInput = document.getElementById('school_input');
+        const stateDropdown = document.getElementById('state-dropdown');
+        const schoolDropdown = document.getElementById('school-dropdown');
+
+        // Autocomplete function from your other page
+        function setupAutocomplete(inputElement, dataList, dropdownElement, onSelectCallback = null) {
+            function filterAndDisplay() {
+                const query = inputElement.value.toLowerCase();
+                dropdownElement.innerHTML = '';
+                if (!query) {
+                    dropdownElement.classList.add('hidden');
+                    return;
+                }
+                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+                if (filteredData.length > 0) {
+                    filteredData.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item;
+                        li.className = 'autocomplete-list-item';
+                        li.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            inputElement.value = item;
+                            dropdownElement.classList.add('hidden');
+                            if (onSelectCallback) {
+                                onSelectCallback(item);
+                            }
+                        });
+                        dropdownElement.appendChild(li);
+                    });
+                    dropdownElement.classList.remove('hidden');
+                } else {
+                    dropdownElement.classList.add('hidden');
+                }
+            }
+            
+            inputElement.addEventListener('input', filterAndDisplay);
+            inputElement.addEventListener('focus', filterAndDisplay);
+            inputElement.addEventListener('blur', () => {
+                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+            });
+        }
+
+        // Function to populate and enable the schools dropdown
+        function populateSchools() {
+            const stateValue = stateInput.value.trim();
+            const schools = NIGERIAN_SCHOOLS[stateValue] ? NIGERIAN_SCHOOLS[stateValue].map(s => s.name) : [];
+
+            if (schools.length > 0) {
+                schoolInput.disabled = false;
+                schoolInput.placeholder = 'Select from the list or type...';
+                setupAutocomplete(schoolInput, schools, schoolDropdown);
+            } else {
+                schoolInput.disabled = true;
+                schoolInput.placeholder = 'No universities for this state.';
+                schoolInput.value = '';
+                schoolDropdown.innerHTML = '';
+            }
+        }
         
+        // Initialize autocomplete on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setupAutocomplete(stateInput, NIGERIAN_STATES, stateDropdown, (selectedState) => {
+                // When a state is selected, populate and enable the school field
+                populateSchools();
+                schoolInput.value = ''; // Clear school field
+            });
+        });
+        
+        // Form submission logic
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -239,11 +350,9 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Display success message and clear form
                     alert('Material posted successfully!');
                     form.reset();
                 } else {
-                    // Display error message
                     alert('Error: ' + result.error);
                 }
             } catch (error) {
