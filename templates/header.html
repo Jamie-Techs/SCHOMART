@@ -1,0 +1,45 @@
+<header class="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+    <button onclick="history.back()" class="nav-button bg-green-700 hover:bg-green-800">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    
+    <a href="{{ url_for('home') }}" class="nav-button bg-green-700 hover:bg-green-800">
+        <i class="fas fa-home"></i> Home
+    </a>
+    
+    <a href="{{ url_for('notifications_page') }}" id="notifications-link" class="relative nav-button bg-green-700 hover:bg-green-800">
+        <i class="fas fa-bell"></i> Notifications
+        <span id="unread-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+    </a>
+</header>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const unreadCountBadge = document.getElementById('unread-count');
+        
+        async function fetchUnreadCount() {
+            try {
+                const response = await fetch('/api/notifications');
+                const notifications = await response.json();
+                
+                const unreadCount = notifications.filter(notif => !notif.is_read).length;
+                unreadCountBadge.textContent = unreadCount;
+                
+                if (unreadCount > 0) {
+                    unreadCountBadge.style.display = 'flex';
+                } else {
+                    unreadCountBadge.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error fetching notification count:', error);
+                unreadCountBadge.style.display = 'none';
+            }
+        }
+        
+        // Fetch the count immediately on page load
+        fetchUnreadCount();
+        
+        // Then, poll for new notifications every 30 seconds
+        setInterval(fetchUnreadCount, 30000); 
+    });
+</script>
