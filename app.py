@@ -349,7 +349,7 @@ def send_daily_advert_report():
 # Add the job to the scheduler.
 # This will run every day at 9:00 PM (21:00).
 scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigger='cron', hour=22, minute=00)
-Explanation of the Fixes
+
 
 
 
@@ -5117,6 +5117,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
