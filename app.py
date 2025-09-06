@@ -273,9 +273,15 @@ def update_online_status(user_id, is_online):
 
 
 
+
+
+
+
+
 def send_daily_advert_report():
     """
     Generates a daily report of approved adverts and sends it via email.
+    This function runs as a scheduled background task.
     """
     with app.app_context():
         try:
@@ -283,19 +289,19 @@ def send_daily_advert_report():
 
             # 1. Fetch data from Firestore
             approved_adverts_ref = db.collection('adverts').where('status', '==', 'published')
-            approved_adverts = approved_adverts_ref.stream()
-
-            # Convert stream to a list to check if it's empty
-            adverts_list = list(approved_adverts)
-            if not adverts_list:
-                logger.warning("No 'published' adverts found in the database. Sending an empty report.")
+            approved_adverts_stream = approved_adverts_ref.stream()
 
             # 2. Calculate totals
             total_published_adverts = 0
             total_amount = 0.0
             adverts_by_type = defaultdict(lambda: {'count': 0, 'amount': 0.0})
 
-            # Iterate through the list instead of the stream
+            # Convert stream to a list to check if it's empty and to iterate over
+            adverts_list = list(approved_adverts_stream)
+
+            if not adverts_list:
+                logger.warning("No 'published' adverts found in the database. The report will show zeros.")
+
             for advert in adverts_list:
                 advert_data = advert.to_dict()
                 total_published_adverts += 1
@@ -308,12 +314,26 @@ def send_daily_advert_report():
                 adverts_by_type[advert_type]['count'] += 1
                 adverts_by_type[advert_type]['amount'] += amount
 
-            # 3. Format the email content (rest of the code is the same)
-            # ... (your existing HTML content generation code) ...
-
+            # 3. Format the email content
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h3 style="color: #006B3C;">Daily Advert Report: {date.today()}</h3>
+                <p><strong>Total Published Adverts:</strong> {total_published_adverts}</p>
+                <p><strong>Overall Total Amount:</strong> ₦{total_amount:,.2f}</p>
+                <h4>Summary by Advert Type:</h4>
+                <ul style="list-style-type: none; padding: 0;">
+                    {"".join([f"<li style='margin-bottom: 8px;'><strong>{ad_type}:</strong> {data['count']} adverts, totaling ₦{data['amount']:,.2f}</li>" for ad_type, data in adverts_by_type.items()])}
+                </ul>
+                <p>This is an automated report from your Schomart application.</p>
+                <p style="font-size: 0.8em; color: #888;">Report generated at: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}</p>
+            </body>
+            </html>
+            """
+            
             # 4. Create and send the email
             msg = Message(
-                subject=f"Daily Advert Report - {datetime.date.today()}",
+                subject=f"Daily Advert Report - {date.today()}",
                 recipients=["agwujamie@gmail.com", "jamesnwoke880@gmail.com"],
                 html=html_content
             )
@@ -323,13 +343,6 @@ def send_daily_advert_report():
 
         except Exception as e:
             logger.error(f"Failed to generate or send daily advert report: {e}")
-
-
-
-
-
-
-
 
 
 
@@ -5099,6 +5112,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
