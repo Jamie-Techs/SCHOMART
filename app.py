@@ -2344,24 +2344,29 @@ def delete_advert_and_data(advert_id):
         return False, f"Error deleting advert from Firestore: {e}"
 
 
+
 def get_user_advert_options(user_id):
     options = []
     
-    # Add dynamic paid advert options for each visibility level
+    # Add paid advert options for each visibility level
     for visibility_level, multiplier in VISIBILITY_MULTIPLIERS.items():
-        label_text = f"Paid Advert ({visibility_level})"
-        cost_description = "Dynamic Pricing"
+        label_text = f"Paid Plan ({visibility_level})"
+        
+        # Use a unique plan name that includes the visibility level
+        plan_name = f"paid_advert_{visibility_level.lower()}"
+        
+        cost_description = "Cost is based on product value and advert duration."
         if visibility_level == "Standard":
-            cost_description = "Dynamic Pricing (Standard)"
+            cost_description = "Standard Visibility"
         elif visibility_level == "Featured":
-            cost_description = "Dynamic Pricing (Featured)"
+            cost_description = "Featured Visibility"
         elif visibility_level == "Premium":
-            cost_description = "Dynamic Pricing (Premium)"
+            cost_description = "Premium Visibility"
             
         options.append({
-            "type": "paid_advert",
+            "type": "paid_plan",
             "label": label_text,
-            "plan_name": "paid_advert",
+            "plan_name": plan_name,
             "cost_naira": None,
             "advert_duration_days": None,
             "visibility_level": visibility_level,
@@ -2397,11 +2402,20 @@ def get_user_advert_options(user_id):
     return options
 
 
+
+
+
+
+
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
 def sell(advert_id=None):
-    # ... (all existing code before the if request.method == 'POST' block remains the same)
+    """
+    Handles the creation and editing of adverts.
+    """
     advert = None
     if advert_id:
         advert_doc_ref = db.collection("adverts").document(advert_id)
@@ -2433,7 +2447,6 @@ def sell(advert_id=None):
         
         errors = []
         
-        # ... (all existing form validation remains the same, e.g., for category, state, etc.)
         submitted_category = form_data.get('category')
         all_categories = get_all_categories()
         category_names = [cat.get('name') for cat in all_categories]
@@ -2457,11 +2470,13 @@ def sell(advert_id=None):
         advert_duration_days = None
         
         # --- Handle the paid advert option (now with variable visibility)
-        if selected_option_key == "paid_advert":
+        if selected_option_key and selected_option_key.startswith("paid_advert_"):
             try:
                 product_price = float(form_data.get("price"))
                 advert_duration_days = int(form_data.get("advert_duration_days"))
-                selected_visibility = form_data.get("visibility_level")
+                
+                # Extract visibility level from the unique plan name
+                selected_visibility = selected_option_key.replace("paid_advert_", "").title()
 
                 # Validate duration and visibility level
                 if not (0 < advert_duration_days <= 180):
@@ -2477,7 +2492,7 @@ def sell(advert_id=None):
                 
                 # Create a temporary plan for the payload
                 selected_option = {
-                    "plan_name": "paid_advert",
+                    "plan_name": selected_option_key,
                     "advert_duration_days": advert_duration_days,
                     "visibility_level": selected_visibility,
                     "cost_naira": cost_naira
@@ -2503,7 +2518,6 @@ def sell(advert_id=None):
         if not selected_option:
             errors.append("Invalid advert plan selected or you are not eligible for this plan.")
         
-        # ... (all existing file validation remains the same)
         if not files.get('main_image') and not form_data.get('existing_main_image'):
             errors.append("A main image is required.")
         
@@ -2556,7 +2570,7 @@ def sell(advert_id=None):
                 "created_at": firestore.SERVER_TIMESTAMP,
             }
             
-            if selected_option_key == "paid_advert":
+            if selected_option_key.startswith("paid_advert_"):
                 advert_payload["cost_naira"] = cost_naira
                 advert_payload["status"] = "pending_payment"
                 new_advert_ref = db.collection("adverts").document()
@@ -2616,6 +2630,8 @@ def sell(advert_id=None):
 
 
 
+
+
 # Your existing function to safely fetch an advert.
 def get_advert_details(advert_id, user_id):
     """Fetches details of a specific advert, ensuring it belongs to the user."""
@@ -2633,18 +2649,17 @@ def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name.
     """
-    # CORRECTED: Add an initial check for None to prevent the error
     if not plan_name:
         return None
         
     # Check for a regular paid advert
-    if plan_name == "paid_advert":
+    if plan_name.startswith("paid_advert_"):
+        visibility_level = plan_name.replace("paid_advert_", "").title()
         return {
-            "plan_name": "paid_advert",
-            "label": "Paid Advert (Custom)",
-            "visibility_level": "Dynamic", # Use a generic term here
-            # Since duration and visibility are dynamic, we'll need to check the advert document for it
-            "advert_duration_days": None
+            "plan_name": plan_name,
+            "label": f"Paid Plan ({visibility_level})",
+            "visibility_level": visibility_level, 
+            "advert_duration_days": None # Duration is defined by the user
         }
 
     # Check for the single free advert plan
@@ -2665,6 +2680,7 @@ def get_plan_details(plan_name):
             return None
 
     return None
+
 
 
 
@@ -5314,6 +5330,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
