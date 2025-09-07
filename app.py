@@ -2345,14 +2345,15 @@ def delete_advert_and_data(advert_id):
 
 
 
+
+
+
 def get_user_advert_options(user_id):
     options = []
     
     # Add paid advert options for each visibility level
     for visibility_level, multiplier in VISIBILITY_MULTIPLIERS.items():
         label_text = f"Paid Plan ({visibility_level})"
-        
-        # Use a unique plan name that includes the visibility level
         plan_name = f"paid_advert_{visibility_level.lower()}"
         
         cost_description = "Cost is based on product value and advert duration."
@@ -2364,7 +2365,7 @@ def get_user_advert_options(user_id):
             cost_description = "Premium Visibility"
             
         options.append({
-            "type": "paid_plan",
+            "type": plan_name,  # Corrected: Use the unique plan name as the type
             "label": label_text,
             "plan_name": plan_name,
             "cost_naira": None,
@@ -2379,10 +2380,11 @@ def get_user_advert_options(user_id):
     # Add referral-based options if user is eligible
     for cost, plan_details in REFERRAL_PLANS.items():
         if user_referral_count >= cost:
+            plan_name = f"referral_{cost}"
             options.append({
-                "type": f"referral_{cost}",
+                "type": plan_name,
                 "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
-                "plan_name": f"referral_{cost}",
+                "plan_name": plan_name,
                 "advert_duration_days": plan_details['advert_duration_days'],
                 "visibility_level": plan_details['visibility_level'],
                 "cost_description": f"{cost} Referrals"
@@ -5330,6 +5332,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
