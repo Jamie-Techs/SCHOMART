@@ -696,11 +696,19 @@ NIGERIAN_STATES = [
     'Sokoto', 'Taraba', 'Yobe', 'Zamfara'
 ]
 
+
+
+
 NIGERIAN_SCHOOLS = {
     'Abia': [
         {'name': 'Abia State University', 'acronym': 'ABSU'},
         {'name': 'Michael Okpara University of Agriculture', 'acronym': 'MOUAU'},
-        {'name': 'Abia State Polytechnic', 'acronym': 'ABIAPOLY'}
+        {'name': 'Abia State Polytechnic', 'acronym': 'ABIAPOLY'},
+        {'name': 'Clifford University Owerrinta', 'acronym': 'CLIFFORDUNI'},
+        {'name': 'Gregory University Uturu', 'acronym': 'GREGORYUNIVERSITY'},
+        {'name': 'Lux Mundi University Umuahia', 'acronym': 'LUXMUNDI'},
+        {'name': 'Nigerian British University', 'acronym': 'NBU'},
+        {'name': 'Spiritan University Nneochi', 'acronym': 'SPIRITANUNIVERSITY'}
     ],
     'Adamawa': [
         {'name': 'Adamawa State University', 'acronym': 'ADSU'},
@@ -710,179 +718,287 @@ NIGERIAN_SCHOOLS = {
     'Akwa Ibom': [
         {'name': 'Akwa Ibom State University', 'acronym': 'AKSU'},
         {'name': 'University of Uyo', 'acronym': 'UNIUYO'},
-        {'name': 'Akwa Ibom State Polytechnic', 'acronym': 'AKWAPOLY'}
+        {'name': 'Akwa Ibom State Polytechnic', 'acronym': 'AKWAPOLY'},
+        {'name': 'Federal University of Technology, Ikot Abasi', 'acronym': 'FUTIA'},
+        {'name': 'Ritman University Ikot Ekpene', 'acronym': 'RITMAN'},
+        {'name': 'Topfaith University Mkpatak', 'acronym': 'TOPFAITH'},
+        {'name': 'Obong University', 'acronym': 'OBONG'}
     ],
     'Anambra': [
         {'name': 'Nnamdi Azikiwe University', 'acronym': 'UNIZIK'},
         {'name': 'Chukwuemeka Odumegwu Ojukwu University', 'acronym': 'COOU'},
-        {'name': 'Federal Polytechnic, Oko', 'acronym': 'OKOPOLY'}
+        {'name': 'Federal Polytechnic, Oko', 'acronym': 'OKOPOLY'},
+        {'name': 'Legacy University Okija', 'acronym': 'LEGACY'},
+        {'name': 'Madonna University Okija', 'acronym': 'MADONNA'},
+        {'name': 'Paul University Awka', 'acronym': 'PAUL'},
+        {'name': 'Peter University Achina-Onneh', 'acronym': 'PETER'},
+        {'name': 'Shanahan University Onitsha', 'acronym': 'SHANAHAN'},
+        {'name': 'Tansian University Umunya', 'acronym': 'TANSIAN'}
     ],
     'Bauchi': [
         {'name': 'Abubakar Tafawa Balewa University', 'acronym': 'ATBU'},
         {'name': 'Bauchi State University', 'acronym': 'BASUG'},
-        {'name': 'Federal Polytechnic, Bauchi', 'acronym': 'FPTB'}
+        {'name': 'Federal Polytechnic, Bauchi', 'acronym': 'FPTB'},
+        {'name': 'Federal University of Health Sciences, Azare', 'acronym': 'FUHSA'},
+        {'name': 'Gombe State Polytechnic, Bajoga', 'acronym': 'GSPB'}
     ],
     'Bayelsa': [
         {'name': 'Niger Delta University', 'acronym': 'NDU'},
         {'name': 'Bayelsa Medical University', 'acronym': 'BMU'},
-        {'name': 'Federal Polytechnic of Oil and Gas, Ekowe', 'acronym': 'FEPOGA'}
+        {'name': 'Federal Polytechnic of Oil and Gas, Ekowe', 'acronym': 'FEPOGA'},
+        {'name': 'Federal University, Otuoke', 'acronym': 'FUOTUOKE'},
+        {'name': 'Hensard University Sagbama', 'acronym': 'HENSARD'},
+        {'name': 'University of Africa Toru Orua', 'acronym': 'UAT'}
     ],
     'Benue': [
         {'name': 'Benue State University', 'acronym': 'BSU'},
-        {'name': 'Federal University of Agriculture, Makurdi', 'acronym': 'FUAM'},
-        {'name': 'Akperan Orshi College of Agriculture', 'acronym': 'AOCOA'}
+        {'name': 'Joseph Sarwuan Tarka University, Makurdi', 'acronym': 'UAM'},
+        {'name': 'Akperan Orshi College of Agriculture', 'acronym': 'AOCOA'},
+        {'name': 'Federal University of Health Sciences, Otukpo', 'acronym': 'FUHSO'}
     ],
     'Borno': [
         {'name': 'University of Maiduguri', 'acronym': 'UNIMAID'},
         {'name': 'Borno State University', 'acronym': 'BOSU'},
-        {'name': 'Ramsey Nouah University, Borno', 'acronym': 'RNUB'}
+        {'name': 'Ramsey Nouah University, Borno', 'acronym': 'RNUB'},
+        {'name': 'Nigerian Army University, Biu', 'acronym': 'NAUB'}
     ],
     'Cross River': [
         {'name': 'University of Calabar', 'acronym': 'UNICAL'},
-        {'name': 'Cross River University of Technology', 'acronym': 'CRUTECH'},
-        {'name': 'Federal Polytechnic, Calabar', 'acronym': 'CALABARPOLY'}
+        {'name': 'Cross River State University of Technology', 'acronym': 'CRUTECH'},
+        {'name': 'Federal Polytechnic, Calabar', 'acronym': 'CALABARPOLY'},
+        {'name': 'Arthur Jarvis University Akpoyubo', 'acronym': 'AJU'},
+        {'name': 'Havilla University Nde-Ikom', 'acronym': 'HAVILLA'}
     ],
     'Delta': [
         {'name': 'Delta State University', 'acronym': 'DELSU'},
         {'name': 'Federal University of Petroleum Resources Effurun', 'acronym': 'FUPRE'},
-        {'name': 'Delta State Polytechnic, Otefe-Oghara', 'acronym': 'DESPO'}
+        {'name': 'Delta State Polytechnic, Otefe-Oghara', 'acronym': 'DESPO'},
+        {'name': 'Admiralty University, Ibusa', 'acronym': 'ADUN'},
+        {'name': 'Nigerian Maritime University, Okerenkoko', 'acronym': 'NMU'},
+        {'name': 'Delta University of Science and Technology Ozoro', 'acronym': 'DSUST'},
+        {'name': 'Dennis Osadebe University Asaba', 'acronym': 'DOU'},
+        {'name': 'Margaret Lawrence University Umunede', 'acronym': 'MLU'},
+        {'name': 'Sports University Idumuje Ugboko', 'acronym': 'SPORTSUNI'},
+        {'name': 'University of Delta Agbor', 'acronym': 'UNIDEL'},
+        {'name': 'Western Delta University Oghara', 'acronym': 'WDU'}
     ],
     'Ebonyi': [
         {'name': 'Ebonyi State University', 'acronym': 'EBSU'},
-        {'name': 'Federal University, Ndufu-Alike Ikwo', 'acronym': 'FUNAI'},
-        {'name': 'Ebonyi State College of Health Sciences', 'acronym': 'EBSCHS'}
+        {'name': 'Alex Ekwueme University', 'acronym': 'FUNAI'},
+        {'name': 'Ebonyi State College of Health Sciences', 'acronym': 'EBSCHS'},
+        {'name': 'David Nweze Umahi Federal University of Medical Sciences Uburu', 'acronym': 'KDUMS'}
     ],
     'Edo': [
         {'name': 'University of Benin', 'acronym': 'UNIBEN'},
         {'name': 'Ambrose Alli University', 'acronym': 'AAU'},
-        {'name': 'Auchi Polytechnic', 'acronym': 'AUCHIPOLY'}
+        {'name': 'Auchi Polytechnic', 'acronym': 'AUCHIPOLY'},
+        {'name': 'Edo State University lyamho', 'acronym': 'EDOUNI'}
     ],
     'Ekiti': [
         {'name': 'Federal University, Oye-Ekiti', 'acronym': 'FUOYE'},
         {'name': 'Ekiti State University', 'acronym': 'EKSU'},
-        {'name': 'Afe Babalola University', 'acronym': 'ABUAD'}
+        {'name': 'Afe Babalola University', 'acronym': 'ABUAD'},
+        {'name': 'Bamidele Olumilua University of Science and Technology', 'acronym': 'BOUSTI'}
     ],
     'Enugu': [
         {'name': 'University of Nigeria, Nsukka', 'acronym': 'UNN'},
         {'name': 'Enugu State University of Science and Technology', 'acronym': 'ESUT'},
-        {'name': 'Institute of Management and Technology', 'acronym': 'IMT'}
+        {'name': 'Institute of Management and Technology', 'acronym': 'IMT'},
+        {'name': 'Caritas University', 'acronym': 'CARITASUNI'},
+        {'name': 'Coal City University Enugu', 'acronym': 'CCU'},
+        {'name': 'Godfrey Okoye University Ugwuomu-Nike', 'acronym': 'GOUNI'},
+        {'name': 'Maduka University Ekwegbe', 'acronym': 'MADUKAUNI'},
+        {'name': 'PeaceLand University Enugu', 'acronym': 'PEACELAND'}
     ],
     'Gombe': [
         {'name': 'Gombe State University', 'acronym': 'GSU'},
         {'name': 'Federal University of Gombe', 'acronym': 'FUGOM'},
-        {'name': 'Gombe State Polytechnic, Bajoga', 'acronym': 'GSPB'}
+        {'name': 'Gombe State Polytechnic, Bajoga', 'acronym': 'GSPB'},
+        {'name': 'Federal University, Kashere', 'acronym': 'FUKASHERE'},
+        {'name': 'Gombe State University of Science and Technology', 'acronym': 'GSUST'},
+        {'name': 'PEN Resource University Gombe', 'acronym': 'PRU'}
     ],
     'Imo': [
         {'name': 'Federal University of Technology, Owerri', 'acronym': 'FUTO'},
         {'name': 'Imo State University', 'acronym': 'IMSU'},
-        {'name': 'Alvan Ikoku Federal College of Education', 'acronym': 'AIFCE'}
+        {'name': 'Alvan Ikoku Federal College of Education', 'acronym': 'AIFCE'},
+        {'name': 'Claretian University of Nigeria Nekede', 'acronym': 'CLARETIAN'},
+        {'name': 'Hezekiah University Umudi', 'acronym': 'HEZEKIAH'},
+        {'name': 'Kingsley Ozumba Mbadiwe University Ideato', 'acronym': 'KOMU'},
+        {'name': 'Maranathan University Mgbidi', 'acronym': 'MARANATHAN'},
+        {'name': 'University of Agriculture and Environmental Sciences Umuagwo', 'acronym': 'UAES'}
     ],
     'Jigawa': [
         {'name': 'Jigawa State University', 'acronym': 'JSU'},
         {'name': 'Federal University Dutse', 'acronym': 'FUD'},
-        {'name': 'Jigawa State Polytechnic', 'acronym': 'JIGPOLY'}
+        {'name': 'Jigawa State Polytechnic', 'acronym': 'JIGPOLY'},
+        {'name': 'Federal University of Technology, Babura', 'acronym': 'FUTB'},
+        {'name': 'Khadija University Majia', 'acronym': 'KHADIJA'},
+        {'name': 'Sule Lamido University Kafin Hausa', 'acronym': 'SLU'}
     ],
     'Kaduna': [
         {'name': 'Ahmadu Bello University', 'acronym': 'ABU'},
         {'name': 'Kaduna State University', 'acronym': 'KASU'},
-        {'name': 'Federal Polytechnic, Kaduna', 'acronym': 'FPTK'}
+        {'name': 'Federal Polytechnic, Kaduna', 'acronym': 'FPTK'},
+        {'name': 'Air Force Institute of Technology', 'acronym': 'AFIT'},
+        {'name': 'Nigerian Defence Academy', 'acronym': 'NDA'},
+        {'name': 'College of Petroleum and Energy Studies Kaduna', 'acronym': 'CPESKADUNA'},
+        {'name': 'Franco British International University Kaduna', 'acronym': 'FBIU'},
+        {'name': 'Greenfield University Kaduna', 'acronym': 'GFU'},
+        {'name': 'NOK University Kachia', 'acronym': 'NOKUNI'}
     ],
     'Kano': [
         {'name': 'Bayero University, Kano', 'acronym': 'BUK'},
         {'name': 'Kano University of Science and Technology', 'acronym': 'KUST'},
-        {'name': 'Federal College of Education, Kano', 'acronym': 'FCEKANO'}
+        {'name': 'Federal College of Education, Kano', 'acronym': 'FCEKANO'},
+        {'name': 'Nigeria Police Academy Wudil', 'acronym': 'POLAC'},
+        {'name': 'Maryam Abacha American University of Nigeria', 'acronym': 'MAAUN'},
+        {'name': 'Azman University', 'acronym': 'AZMANUNI'},
+        {'name': 'Baba Ahmed University', 'acronym': 'BABA AHMED UNI'},
+        {'name': 'Capital City University', 'acronym': 'CCUK'},
+        {'name': 'Elrazi Medical University Yargaya University', 'acronym': 'ELRAZI'},
+        {'name': 'Khalifa Isiyaku Rabiu University', 'acronym': 'KIRU'},
+        {'name': 'Sa\'adatu Rimi University of Education Kano', 'acronym': 'SRUE'},
+        {'name': 'Skyline University Kano', 'acronym': 'SUN'},
+        {'name': 'Yusuf Maitama Sule University Kano', 'acronym': 'YUMSUK'}
     ],
     'Katsina': [
-        {'name': 'Umaru Musa Yar\'adua University', 'acronym': 'UMYU'},
-        {'name': 'Federal University, Dutsin-Ma', 'acronym': 'FUDMA'},
-        {'name': 'Hassan Usman Katsina Polytechnic', 'acronym': 'HUKPOLY'}
+        {'name': 'Federal University, Dutsin-Ma', 'acronym': 'FUDUTSINMA'},
+        {'name': 'Al-Qalam University Katsina', 'acronym': 'AUK'},
+        {'name': 'Umaru Musa Yar\'Adua University Katsina', 'acronym': 'UMYU'}
     ],
     'Kebbi': [
-        {'name': 'Kebbi State University of Science and Technology', 'acronym': 'KSUSTA'},
-        {'name': 'Federal University Birnin-Kebbi', 'acronym': 'FUBK'},
-        {'name': 'Waziri Umaru Federal Polytechnic Birnin Kebbi', 'acronym': 'WUFPBK'}
+        {'name': 'Federal University of Agriculture, Zuru', 'acronym': 'FUAZ'},
+        {'name': 'Federal University, Birnin Kebbi', 'acronym': 'FUBK'},
+        {'name': 'Kebbi State University of Science and Technology', 'acronym': 'KSUSTA'}
     ],
     'Kogi': [
-        {'name': 'Kogi State University', 'acronym': 'KSU'},
         {'name': 'Federal University, Lokoja', 'acronym': 'FULOKOJA'},
-        {'name': 'Kogi State Polytechnic', 'acronym': 'KOGIPOLY'}
+        {'name': 'Confluence University of Science and Technology', 'acronym': 'CUSTECH'},
+        {'name': 'Prince Abubakar Audu University', 'acronym': 'PAAU'},
+        {'name': 'Salem University Lokoja', 'acronym': 'SALEMUNI'}
     ],
     'Kwara': [
         {'name': 'University of Ilorin', 'acronym': 'UNILORIN'},
-        {'name': 'Kwara State University', 'acronym': 'KWASU'},
-        {'name': 'Kwara State Polytechnic', 'acronym': 'KWARAPOLY'}
+        {'name': 'Kwara State University Malete', 'acronym': 'KWASU'},
+        {'name': 'Landmark University Omu-Aran', 'acronym': 'LMU'},
+        {'name': 'Summit University Offa', 'acronym': 'SUMMITUNI'},
+        {'name': 'Thomas Adewumi University Oko-Irese', 'acronym': 'TAU'}
     ],
     'Lagos': [
+        {'name': 'National Open University of Nigeria', 'acronym': 'NOUN'},
         {'name': 'University of Lagos', 'acronym': 'UNILAG'},
+        {'name': 'Anchor University Ayobo', 'acronym': 'AUL'},
+        {'name': 'Augustine University Ilara Epe', 'acronym': 'AUGUSTINEUNI'},
+        {'name': 'Caleb University', 'acronym': 'CALEBUNI'},
         {'name': 'Lagos State University', 'acronym': 'LASU'},
-        {'name': 'Yaba College of Technology', 'acronym': 'YABATECH'}
+        {'name': 'Lagos State University of Education', 'acronym': 'LASUED'},
+        {'name': 'Lagos State University of Science and Technology', 'acronym': 'LASUSTECH'},
+        {'name': 'Nigerian University of Technology and Management', 'acronym': 'NUTM'},
+        {'name': 'Pan-Atlantic University', 'acronym': 'PAU'}
     ],
     'Nasarawa': [
-        {'name': 'Nasarawa State University', 'acronym': 'NSUK'},
-        {'name': 'Federal University of Lafia', 'acronym': 'FULAFIA'},
-        {'name': 'Federal Polytechnic, Nasarawa', 'acronym': 'FPN'}
+        {'name': 'Federal University, Lafia', 'acronym': 'FULAFIA'},
+        {'name': 'Nasarawa State University Keffi', 'acronym': 'NSUK'},
+        {'name': 'Ave Maria University Piyanko', 'acronym': 'AVEUNI'},
+        {'name': 'City College of Education, Mararaba Gurku', 'acronym': 'CCEMG'}
     ],
     'Niger': [
         {'name': 'Federal University of Technology, Minna', 'acronym': 'FUTMINNA'},
-        {'name': 'Ibrahim Badamasi Babangida University', 'acronym': 'IBBU'},
-        {'name': 'Niger State Polytechnic', 'acronym': 'NIGPOLY'}
+        {'name': 'Ibrahim Badamasi Babangida University Lapai', 'acronym': 'IBBU'},
+        {'name': 'El-Amin University Minna', 'acronym': 'EL-AMIN'},
+        {'name': 'Newgate University Minna', 'acronym': 'NEWGATEUNI'}
     ],
     'Ogun': [
         {'name': 'Federal University of Agriculture, Abeokuta', 'acronym': 'FUNAAB'},
-        {'name': 'Olabisi Onabanjo University', 'acronym': 'OOU'},
+        {'name': 'Aletheia University Ago-Iwoye', 'acronym': 'ALETHEIAUNI'},
+        {'name': 'Chrisland University', 'acronym': 'CHRISLAND'},
+        {'name': 'Christopher University Mowe', 'acronym': 'CHRISTOPHERUNI'},
+        {'name': 'Covenant University Ota', 'acronym': 'COVENANTUNI'},
+        {'name': 'Crawford University Igbesa', 'acronym': 'CRAWFORDUNI'},
+        {'name': 'Gerar University of Medical Science Imope Ijebu', 'acronym': 'GERARUNI'},
+        {'name': 'Hallmark University, Ijebi Itele', 'acronym': 'HALLMARK'},
+        {'name': 'Mcpherson University Seriki Sotayo', 'acronym': 'MCU'},
+        {'name': 'Moshood Abiola University of Science and Technology Abeokuta', 'acronym': 'MAUSTECH'},
+        {'name': 'Olabisi Onabanjo University Agi-lwoye', 'acronym': 'OOU'},
+        {'name': 'Southwestern University Oku Owa', 'acronym': 'SWUNI'},
         {'name': 'Tai Solarin University of Education', 'acronym': 'TASUED'}
     ],
     'Ondo': [
         {'name': 'Federal University of Technology, Akure', 'acronym': 'FUTA'},
-        {'name': 'Adekunle Ajasin University', 'acronym': 'AAUA'},
-        {'name': 'Ondo State University of Science and Technology', 'acronym': 'OSUSTECH'}
+        {'name': 'Adekunle Ajasin University', 'acronym': 'AAU'},
+        {'name': 'Achievers University Owo', 'acronym': 'ACHIEVERSUNI'},
+        {'name': 'Elizade University Ilara-Mokin', 'acronym': 'ELIZADEUNI'},
+        {'name': 'Olusegun Agagu University of Science and Technology Okitipupa', 'acronym': 'OAUSTECH'},
+        {'name': 'Ondo State University of Medical Sciences', 'acronym': 'UNIMED'},
+        {'name': 'Sam Maris University', 'acronym': 'SAMMARIS'},
+        {'name': 'Wesley University', 'acronym': 'WESLEYUNI'}
     ],
     'Osun': [
-        {'name': 'Obafemi Awolowo University', 'acronym': 'OAU'},
-        {'name': 'Osun State University', 'acronym': 'UNIOSUN'},
-        {'name': 'Osun State Polytechnic', 'acronym': 'OSUNPOLY'}
+        {'name': 'Obafemi Awolowo University, Ile-Ife', 'acronym': 'OAU'},
+        {'name': 'Federal University of Health Sciences, Ila Orangun', 'acronym': 'FUHSI'},
+        {'name': 'Adeleke University Ede', 'acronym': 'ADELEKEUNI'},
+        {'name': 'Fountain University Oshogbo', 'acronym': 'FUO'},
+        {'name': 'Kings University Ode Omu', 'acronym': 'KINGSUNI'},
+        {'name': 'Oduduwa University Ipetumodu', 'acronym': 'ODUDUWAUNI'},
+        {'name': 'Osun State University Osogbo', 'acronym': 'UNIOSUN'},
+        {'name': 'University of Ilesa', 'acronym': 'UNILES'}
     ],
     'Oyo': [
         {'name': 'University of Ibadan', 'acronym': 'UI'},
+        {'name': 'Emmanuel Alayande University of Education', 'acronym': 'EACOED'},
+        {'name': 'First Technical University', 'acronym': 'TECH-U'},
         {'name': 'Ladoke Akintola University of Technology', 'acronym': 'LAUTECH'},
-        {'name': 'The Polytechnic, Ibadan', 'acronym': 'IBADANPOLY'}
+        {'name': 'Atiba University', 'acronym': 'ATIBA'},
+        {'name': 'Kola Daisi University', 'acronym': 'KDU'},
+        {'name': 'Lead City University', 'acronym': 'LCU'}
     ],
     'Plateau': [
         {'name': 'University of Jos', 'acronym': 'UNIJOS'},
-        {'name': 'Plateau State University', 'acronym': 'PLASU'},
-        {'name': 'Plateau State Polytechnic', 'acronym': 'PLAPOLY'}
+        {'name': 'Anan University Kwall', 'acronym': 'ANAN'},
+        {'name': 'ECWA College of Education Jos', 'acronym': 'JETS'},
+        {'name': 'Plateau State University Bokkos', 'acronym': 'PLASU'}
     ],
     'Rivers': [
-        {'name': 'University of Port Harcourt', 'acronym': 'UNIPORT'},
-        {'name': 'Rivers State University', 'acronym': 'RSU'},
-        {'name': 'Port Harcourt Polytechnic', 'acronym': 'PHPOLY'}
+        {'name': 'University of Port-Harcourt', 'acronym': 'UNIPORT'},
+        {'name': 'Ignatius Ajuru University of Education Port Harcourt', 'acronym': 'IAUE'},
+        {'name': 'PAMO University of Medical Sciences Port Harcourt', 'acronym': 'PUMS'},
+        {'name': 'Rivers State University Port Harcourt', 'acronym': 'RSU'}
     ],
     'Sokoto': [
-        {'name': 'Usmanu Danfodiyo University', 'acronym': 'UDUS'},
+        {'name': 'Usmanu Danfodiyo University, Sokoto', 'acronym': 'UDUSOK'},
+        {'name': 'Shehu Shagari University of Education Sokoto', 'acronym': 'SSUES'},
         {'name': 'Sokoto State University', 'acronym': 'SSU'},
-        {'name': 'Umaru Ali Shinkafi Polytechnic', 'acronym': 'UASPOLY'}
+        {'name': 'Saisa University of Medical Sciences and Technology Sokoto', 'acronym': 'SAISA'},
+        {'name': 'NorthWest University Sokoto', 'acronym': 'NWU'}
     ],
     'Taraba': [
-        {'name': 'Taraba State University', 'acronym': 'TSU'},
-        {'name': 'Federal University Wukari', 'acronym': 'FUWUKARI'},
-        {'name': 'Taraba State Polytechnic', 'acronym': 'TARAPOLY'}
+        {'name': 'Federal University, Wukari', 'acronym': 'FUWUKARI'},
+        {'name': 'Taraba State University Jalingo', 'acronym': 'TSU'},
+        {'name': 'Kwararafa University Wukari', 'acronym': 'KWARARAFA'}
     ],
     'Yobe': [
-        {'name': 'Yobe State University', 'acronym': 'YSU'},
-        {'name': 'Federal Polytechnic, Damaturu', 'acronym': 'FPD'},
-        {'name': 'College of Agriculture, Gujba', 'acronym': 'COAG'}
+        {'name': 'Federal University, Gashua', 'acronym': 'FUGASHUA'},
+        {'name': 'Yobe State University Damaturu', 'acronym': 'YSU'}
     ],
     'Zamfara': [
-        {'name': 'Federal University, Gusau', 'acronym': 'FUGUS'},
-        {'name': 'Zamfara State University', 'acronym': 'ZAMSU'},
-        {'name': 'Abdu Gusau Polytechnic', 'acronym': 'AGPOLY'}
+        {'name': 'Federal University, Gusau', 'acronym': 'FUGUSAU'},
+        {'name': 'Zamfara State University Talata Mafara', 'acronym': 'ZAMSUT'}
     ],
-    'F.C.T.': [
+    'Abuja': [
         {'name': 'University of Abuja', 'acronym': 'UNIABUJA'},
-        {'name': 'Nigerian Turkish Nile University', 'acronym': 'NTNU'},
-        {'name': 'Baze University', 'acronym': 'BAZEU'}
+        {'name': 'African University of Science & Technology', 'acronym': 'AUST'},
+        {'name': 'Al-Muhibbah Open University', 'acronym': 'AOU'},
+        {'name': 'Amaj University Kwali', 'acronym': 'AMJU'},
+        {'name': 'Canadian University of Nigeria', 'acronym': 'CANU'},
+        {'name': 'Cosmopolitan University', 'acronym': 'COSMOU'},
+        {'name': 'Nile University of Nigeria', 'acronym': 'NILE'},
+        {'name': 'Philomath University Kuje', 'acronym': 'PHILOMATH'}
     ]
 }
+
+
+
 
 
 
@@ -5122,6 +5238,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
