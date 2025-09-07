@@ -1668,39 +1668,25 @@ def followers():
 
 
 
-
-
-
-SUBSCRIPTION_PLANS = {
-    "starter": {"plan_name": "starter", "cost_naira": 200, "advert_duration_days": 7, "visibility_level": "Standard"},
-    "basic": {"plan_name": "basic", "cost_naira": 400, "advert_duration_days": 14, "visibility_level": "Standard"},
-    "premium": {"plan_name": "premium", "cost_naira": 1500, "advert_duration_days": 30, "visibility_level": "Featured"},
-    "small_business": {"plan_name": "small_business", "cost_naira": 3000, "advert_duration_days": 30, "visibility_level": "Featured"},
-    "medium_business": {"plan_name": "medium_business", "cost_naira": 5000, "advert_duration_days": 60, "visibility_level": "Featured"},
-    "large_business": {"plan_name": "large_business", "cost_naira": 8000, "advert_duration_days": 90, "visibility_level": "Premium"},
-    "enterprise": {"plan_name": "enterprise", "cost_naira": 10000, "advert_duration_days": 180, "visibility_level": "Premium"},
-        }
-
-
-
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
     "plan_name": "free", "cost_naira": None, "advert_duration_days": 7, "visibility_level": "Standard"
 }
 
-# Referral plans
+# Referral plans with varied visibility levels
 REFERRAL_PLANS = {
-    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Standard"},
     10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
     15: {"plan_name": "referral 15", "cost_naira": None, "advert_duration_days": 90, "visibility_level": "Featured"},
     20: {"plan_name": "referral 20", "cost_naira": None, "advert_duration_days": 120, "visibility_level": "Featured"},
-    25: {"plan_name": "referral 25", "cost_naira": None, "advert_duration_days": 150, "visibility_level": "Featured"},
-    30: {"plan_name": "referral 30", "cost_naira": None, "advert_duration_days": 180, "visibility_level": "Featured"},
-    35: {"plan_name": "referral 35", "cost_naira": None, "advert_duration_days": 210, "visibility_level": "Featured"},
-    40: {"plan_name": "referral 40", "cost_naira": None, "advert_duration_days": 240, "visibility_level": "Featured"},
-    45: {"plan_name": "referral 45", "cost_naira": None, "advert_duration_days": 270, "visibility_level": "Featured"},
-    50: {"plan_name": "referral 50", "cost_naira": None, "advert_duration_days": 300, "visibility_level": "Featured"},
+    25: {"plan_name": "referral 25", "cost_naira": None, "advert_duration_days": 150, "visibility_level": "Premium"},
+    30: {"plan_name": "referral 30", "cost_naira": None, "advert_duration_days": 180, "visibility_level": "Premium"},
+    35: {"plan_name": "referral 35", "cost_naira": None, "advert_duration_days": 210, "visibility_level": "Premium"},
+    40: {"plan_name": "referral 40", "cost_naira": None, "advert_duration_days": 240, "visibility_level": "Premium"},
+    45: {"plan_name": "referral 45", "cost_naira": None, "advert_duration_days": 270, "visibility_level": "Premium"},
+    50: {"plan_name": "referral 50", "cost_naira": None, "advert_duration_days": 300, "visibility_level": "Premium"},
 }
+
 
 
 
@@ -2356,14 +2342,10 @@ def delete_advert_and_data(advert_id):
 
 
 
-
-
-
-
 def get_user_advert_options(user_id):
     options = []
     
-    # Add the new dynamic paid advert option first, with a consistent plan_name
+    # Add the dynamic paid advert option first
     options.append({
         "type": "paid_advert",
         "label": "Paid Advert (Price based on product value & duration)",
@@ -2383,7 +2365,7 @@ def get_user_advert_options(user_id):
             options.append({
                 "type": f"referral_{cost}",
                 "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
-                "plan_name": f"referral_{cost}", # Corrected this line for consistency
+                "plan_name": f"referral_{cost}",
                 "advert_duration_days": plan_details['advert_duration_days'],
                 "visibility_level": plan_details['visibility_level'],
                 "cost_description": f"{cost} Referrals"
@@ -2394,7 +2376,7 @@ def get_user_advert_options(user_id):
         options.append({
             "type": "free_advert",
             "label": "Free Advert",
-            "plan_name": "free_advert", # Corrected this line for consistency
+            "plan_name": "free_advert",
             "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
             "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
             "cost_description": "One-time Free"
@@ -2406,7 +2388,6 @@ def get_user_advert_options(user_id):
 
 
 
-# Updated sell function with new validation and pricing logic
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2465,7 +2446,7 @@ def sell(advert_id=None):
         selected_option = None
         cost_naira = None
         advert_duration_days = None
-
+        
         if selected_option_key == "paid_advert":
             try:
                 product_price = float(form_data.get("price"))
@@ -2494,7 +2475,7 @@ def sell(advert_id=None):
             selected_option = FREE_ADVERT_PLAN
             cost_naira = 0
             advert_duration_days = selected_option['advert_duration_days']
-
+        
         elif selected_option_key and selected_option_key.startswith("referral_"):
             try:
                 referral_cost_to_deduct = int(selected_option_key.split('_')[1])
@@ -2580,15 +2561,8 @@ def sell(advert_id=None):
                     new_advert_ref.set(advert_payload)
                     flash("Your advert has been submitted for review.", "success")
                     
-                # Deduct points for referral-based posts
-                if selected_option_key.startswith("referral_"):
-                    cost = int(selected_option_key.split('_')[1])
-                    user_ref = db.collection("users").document(user_id)
-                    user_ref.update({
-                        "referral_count": firestore.Increment(-cost)
-                    })
                 # Flag one-time free advert as used
-                elif selected_option_key == "free_advert":
+                if selected_option_key == "free_advert":
                     db.collection("users").document(user_id).update({"has_posted_free_ad": True})
 
                 return redirect(url_for('list_adverts'))
@@ -2626,7 +2600,6 @@ def sell(advert_id=None):
 
 
 
-
 # Your existing function to safely fetch an advert.
 def get_advert_details(advert_id, user_id):
     """Fetches details of a specific advert, ensuring it belongs to the user."""
@@ -2638,10 +2611,10 @@ def get_advert_details(advert_id, user_id):
         logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
     return None
 
+
 def get_plan_details(plan_name):
     """
-    Finds and returns the details for a given plan name from all available sources.
-    This includes paid subscriptions, free plans, referral plans, and paid adverts.
+    Finds and returns the details for a given plan name.
     """
     # Check for a regular paid advert
     if plan_name == "paid_advert":
@@ -2650,12 +2623,6 @@ def get_plan_details(plan_name):
             "label": "Paid Advert (Custom)",
             "visibility_level": "Featured"
         }
-
-    # Check for a paid subscription plan
-    plan = SUBSCRIPTION_PLANS.get(plan_name)
-    if plan:
-        plan['label'] = plan.get('label', plan.get('plan_name'))
-        return plan
 
     # Check for the single free advert plan
     if plan_name == "free_advert":
@@ -2669,7 +2636,7 @@ def get_plan_details(plan_name):
             referral_amount = int(plan_name.split('_')[1])
             referral_plan = REFERRAL_PLANS.get(referral_amount)
             if referral_plan:
-                referral_plan['label'] = f"Referral Benefit: {referral_amount} Referrals"
+                referral_plan['label'] = f"Referral Benefit: {referral_plan['plan_name']} ({referral_amount} Referrals)"
                 return referral_plan
         except (ValueError, IndexError):
             return None
@@ -2678,7 +2645,6 @@ def get_plan_details(plan_name):
 
 
 
-# The updated payment route
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -2723,8 +2689,6 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
-
-
 
 
 
@@ -5321,6 +5285,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
