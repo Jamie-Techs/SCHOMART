@@ -2640,14 +2640,30 @@ def sell(advert_id=None):
 
 
 
+# A helper function to find the plan details from any source
+def get_plan_details(plan_name):
+    """
+    Finds and returns the details for a given plan name from all available sources.
+    """
+    # Check if the plan is a paid subscription
+    plan = SUBSCRIPTION_PLANS.get(plan_name)
 
+    if plan:
+        return plan
 
+    # Check for the free advert plan
+    if plan_name == "free_advert":
+        return FREE_ADVERT_PLAN
 
+    # Check if the plan is a referral advert
+    if plan_name.startswith("referral_"):
+        try:
+            cost = int(plan_name.split('_')[1])
+            return REFERRAL_PLANS.get(cost)
+        except (ValueError, IndexError):
+            return None
 
-
-
-
-
+    return None
 
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
@@ -2658,17 +2674,20 @@ def payment(advert_id):
         return redirect(url_for('list_adverts'))
 
     plan_name = advert.get('plan_name')
-    plan = next((p for p in SUBSCRIPTION_PLANS.values() if p['plan_name'] == plan_name), None)
+    # Use the new helper function to get plan details
+    plan = get_plan_details(plan_name)
+
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
         
+    # The rest of the logic is correct, just updated the plan lookup
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
     
     db.collection("adverts").document(advert_id).update({
         "payment_reference": payment_reference,
         "payment_status": "awaiting_confirmation",
-        "plan_cost": plan['cost_naira']
+        "plan_cost": plan.get('cost_naira', 0)
     })
     
     account_details = {
@@ -2680,15 +2699,14 @@ def payment(advert_id):
 
     return render_template(
         "payment.html",
-        plan_name=plan_name,
-        amount=plan['cost_naira'],
+        plan_name=plan.get('label', 'N/A'),
+        amount=plan.get('cost_naira', 0),
         payment_reference=payment_reference,
         account_details=account_details,
         advert_id=advert_id
     )
 
 
-# Updated /submit-advert/<advert_id> route
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
 @login_required
 def submit_advert(advert_id):
@@ -2702,28 +2720,14 @@ def submit_advert(advert_id):
         flash("Advert is not in a valid state for submission.", "error")
         return redirect(url_for('list_adverts'))
 
-    # Get the plan_type from the advert
     plan_type = advert.get('plan_name')
-    plan_details = None
-
-    # Correctly check all three dictionaries for the selected plan
-    if plan_type in SUBSCRIPTION_PLANS:
-        plan_details = SUBSCRIPTION_PLANS.get(plan_type)
-    elif plan_type == "free_advert":
-        plan_details = FREE_ADVERT_PLAN
-    elif plan_type.startswith("referral_"):
-        try:
-            cost = int(plan_type.split('_')[1])
-            plan_details = REFERRAL_PLANS.get(cost)
-        except (ValueError, IndexError):
-            pass
+    # Use the new helper function to get the correct plan details
+    plan_details = get_plan_details(plan_type)
 
     if not plan_details:
         flash("Invalid subscription plan details.", "error")
         return redirect(url_for('list_adverts'))
 
-    duration_days = plan_details.get("advert_duration_days", 0)
-    
     # It's better to calculate the expiry date at the time of admin publishing.
     # We will remove 'expires_at' and 'published_at' from here.
     # The admin review route will set these values once the advert is manually approved.
@@ -2735,6 +2739,9 @@ def submit_advert(advert_id):
     
     flash("Your advert has been submitted for review. Thank you for your payment!", "success")
     return redirect(url_for('list_adverts'))
+
+
+
 
 
 
@@ -5295,6 +5302,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
