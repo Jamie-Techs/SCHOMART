@@ -4747,7 +4747,10 @@ def api_get_materials():
 @login_required
 @admin_required
 def admin():
-    return render_template('admin.html')
+    return render_template('admin.html',
+                          NIGERIAN_SCHOOLS=constants.NIGERIAN_SCHOOLS
+                          )
+
 
 
 @app.route('/materials')
@@ -5119,6 +5122,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
