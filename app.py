@@ -2302,9 +2302,6 @@ def delete_file_from_storage(file_url):
 
 
 
-
-
-
 def delete_advert_and_data(advert_id):
     """
     Deletes an advert document from Firestore and all associated media files
@@ -2317,8 +2314,9 @@ def delete_advert_and_data(advert_id):
         return False, "Advert not found."
 
     advert_data = advert_doc.to_dict()
-    main_image_url = advert_data.get('image_url')
-    video_url = advert_data.get('video_url')
+    # CORRECTED: Use 'main_image' and 'video' as the keys
+    main_image_url = advert_data.get('main_image')
+    video_url = advert_data.get('video')
     additional_images = advert_data.get('additional_images', [])
 
     # Delete the main image
@@ -2339,6 +2337,7 @@ def delete_advert_and_data(advert_id):
         return True, "Advert and associated data deleted successfully!"
     except Exception as e:
         return False, f"Error deleting advert from Firestore: {e}"
+
 
 
 
@@ -2728,15 +2727,6 @@ def submit_advert(advert_id):
 
 
 
-
-
-
-
-
-
-
-
-# Updated list_adverts function
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -2760,7 +2750,8 @@ def list_adverts():
         # Check for expiration if the advert is published
         if status == 'published' and advert_data.get('published_at'):
             plan_name = advert_data.get('plan_name')
-            plan_details = SUBSCRIPTION_PLANS.get(plan_name)
+            # CORRECTED: Use the get_plan_details function to find the advert's duration
+            plan_details = get_plan_details(plan_name)
             
             if plan_details:
                 duration_days = plan_details.get('advert_duration_days', 0)
@@ -2778,7 +2769,7 @@ def list_adverts():
                     # Update status to 'expired' in Firestore
                     doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
                     status = 'expired'
-        
+            
         # Check if the advert is expired and passed the 2-day grace period
         if status == 'expired' and advert_data.get('expired_at'):
             expired_at = advert_data['expired_at']
@@ -2800,10 +2791,6 @@ def list_adverts():
         
         # Enrich advert data for display
         advert_data['category_name'] = get_category_name(advert_data.get('category_id'))
-        
-        # NOTE: We remove the manual location combination. The template will now
-        # access advert_data.get('state'), advert_data.get('school'), and
-        # advert_data.get('specific_location') directly.
         
         # Format 'created_at' for display
         created_at = advert_data.get('created_at')
@@ -2834,6 +2821,10 @@ def list_adverts():
     adverts.sort(key=sort_key)
     
     return render_template("list_adverts.html", adverts=adverts)
+
+
+
+
 
 
 
@@ -2962,6 +2953,8 @@ def admin_advert_review():
 
 
 
+
+
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
@@ -2993,34 +2986,43 @@ def admin_advert_approve():
     user_doc = user_ref.get()
 
     if user_doc.exists:
+        # Update advert status to published
         advert_ref.update({
             'status': 'published',
             'published_at': firestore.SERVER_TIMESTAMP,
             'is_published': True
         })
 
-        # --- NEW: Create a notification for the advert owner ---
+        # --- Check and apply referral count deduction ---
+        # Checks if the plan_name starts with 'referral_'
+        if plan_name and plan_name.startswith('referral_'):
+            try:
+                # Extracts the number from the plan name (e.g., 'referral_10' -> 10)
+                cost = int(plan_name.split('_')[1])
+                user_ref.update({"referral_count": firestore.Increment(-cost)})
+                
+                flash("Advert approved and published successfully. Referral count decremented.", 'success')
+
+            except (ValueError, IndexError):
+                # This handles cases where the plan name is malformed
+                flash("Advert approved but could not deduct referral points due to an invalid plan name.", 'warning')
+
+        else:
+            # Handles all other plans (paid, free, etc.)
+            flash("Advert approved and published successfully.", 'success')
+            
+        # --- Create a notification for the advert owner ---
         advert_title = advert_data.get('title', 'Your advert')
         message = f"Your advert, '{advert_title}', has been approved and is now published! 🚀"
         related_link = url_for('advert_detail', advert_id=advert_id)
         create_notification(user_id, message, 'advert_status', related_link)
-        # --- END NEW ---
 
-        if plan_name == 'referral_benefits':
-            user_data = user_doc.to_dict()
-            current_referral_count = user_data.get('referral_count', 0)
-
-            if current_referral_count > 0:
-                user_ref.update({'referral_count': firestore.firestore.Increment(-1)})
-                flash("Advert approved and published successfully. Referral count decremented.", 'success')
-            else:
-                flash("User does not have enough referral points. Advert published but referral count not decremented.", 'warning')
-        else:
-            flash("Advert approved and published successfully.", 'success')
     else:
         flash("User not found.", 'error')
 
     return redirect(url_for('admin_advert_review'))
+
+
 
 
 
@@ -3044,8 +3046,10 @@ def admin_advert_reject():
     if advert_doc.exists:
         advert_data = advert_doc.to_dict()
         user_id = advert_data.get('user_id')
-        main_image_url = advert_data.get('image_url')
-        video_url = advert_data.get('video_url')
+        
+        # CORRECTED: Use 'main_image' instead of 'image_url'
+        main_image_url = advert_data.get('main_image') 
+        video_url = advert_data.get('video') # Use 'video' instead of 'video_url'
         additional_images = advert_data.get('additional_images', [])
 
         if main_image_url:
@@ -3063,16 +3067,15 @@ def admin_advert_reject():
             'is_published': False
         })
         
-        # --- NEW: Create a notification for the advert owner ---
+        # --- Create a notification for the advert owner ---
         if user_id:
             advert_title = advert_data.get('title', 'Your advert')
             message = f"Your advert, '{advert_title}', has been rejected. Reason: '{rejection_reason}'"
             related_link = url_for('list_adverts')
             create_notification(user_id, message, 'advert_status', related_link)
             
-        # --- END NEW ---
-
     return redirect(url_for('admin_advert_review'))
+
 
 
 
@@ -5285,6 +5288,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
