@@ -1821,16 +1821,6 @@ def get_referral_benefit_plan(referral_count):
     return None
 
 
-def get_advert_details(advert_id, user_id):
-    """Fetches details of a specific advert, ensuring it belongs to the user."""
-    try:
-        advert = get_document("adverts", advert_id)
-        if advert and advert.get("user_id") == user_id:
-            return advert
-    except Exception as e:
-        logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
-    return None
-
 
 def get_state_name(state_id):
     """Fetches the name of a state from its ID."""
@@ -2640,12 +2630,28 @@ def sell(advert_id=None):
 
 
 
-# A helper function to find the plan details from any source
+
+
+
+
+# Your existing function to safely fetch an advert.
+def get_advert_details(advert_id, user_id):
+    """Fetches details of a specific advert, ensuring it belongs to the user."""
+    try:
+        advert = get_document("adverts", advert_id)
+        if advert and advert.get("user_id") == user_id:
+            return advert
+    except Exception as e:
+        logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
+    return None
+
+# The new, comprehensive function to get details for ANY plan type.
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name from all available sources.
+    This includes paid subscriptions, free plans, and referral plans.
     """
-    # Check if the plan is a paid subscription
+    # Check for a paid subscription plan
     plan = SUBSCRIPTION_PLANS.get(plan_name)
 
     if plan:
@@ -2655,7 +2661,7 @@ def get_plan_details(plan_name):
     if plan_name == "free_advert":
         return FREE_ADVERT_PLAN
 
-    # Check if the plan is a referral advert
+    # Check for a referral advert plan
     if plan_name.startswith("referral_"):
         try:
             cost = int(plan_name.split('_')[1])
@@ -2668,20 +2674,18 @@ def get_plan_details(plan_name):
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
-    advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != g.current_user.id or advert.get('status') != 'pending_payment':
+    advert = get_advert_details(advert_id, g.current_user.id)
+    if not advert or advert.get('status') != 'pending_payment':
         flash("Invalid payment request.", "error")
         return redirect(url_for('list_adverts'))
 
     plan_name = advert.get('plan_name')
-    # Use the new helper function to get plan details
-    plan = get_plan_details(plan_name)
+    plan = get_plan_details(plan_name) # Uses the comprehensive function
 
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
         
-    # The rest of the logic is correct, just updated the plan lookup
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
     
     db.collection("adverts").document(advert_id).update({
@@ -2706,12 +2710,13 @@ def payment(advert_id):
         advert_id=advert_id
     )
 
+---
 
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
 @login_required
 def submit_advert(advert_id):
-    advert = get_document("adverts", advert_id)
-    if not advert or advert.get('user_id') != g.current_user.id:
+    advert = get_advert_details(advert_id, g.current_user.id)
+    if not advert:
         flash("Invalid submission.", "error")
         return redirect(url_for('list_adverts'))
     
@@ -2721,25 +2726,18 @@ def submit_advert(advert_id):
         return redirect(url_for('list_adverts'))
 
     plan_type = advert.get('plan_name')
-    # Use the new helper function to get the correct plan details
-    plan_details = get_plan_details(plan_type)
+    plan_details = get_plan_details(plan_type) # Uses the comprehensive function
 
     if not plan_details:
         flash("Invalid subscription plan details.", "error")
         return redirect(url_for('list_adverts'))
 
-    # It's better to calculate the expiry date at the time of admin publishing.
-    # We will remove 'expires_at' and 'published_at' from here.
-    # The admin review route will set these values once the advert is manually approved.
-
     db.collection("adverts").document(advert_id).update({
-        # Only update the status to 'pending_review'
         "status": "pending_review",
     })
     
     flash("Your advert has been submitted for review. Thank you for your payment!", "success")
     return redirect(url_for('list_adverts'))
-
 
 
 
@@ -5302,6 +5300,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
