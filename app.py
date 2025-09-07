@@ -2360,11 +2360,6 @@ def delete_advert_and_data(advert_id):
 
 
 
-
-
-
-
-# Updated get_user_advert_options function
 def get_user_advert_options(user_id):
     options = []
     
@@ -2388,7 +2383,7 @@ def get_user_advert_options(user_id):
             options.append({
                 "type": f"referral_{cost}",
                 "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
-                "plan_name": plan_details['plan_name'],
+                "plan_name": f"referral_{cost}", # Corrected this line for consistency
                 "advert_duration_days": plan_details['advert_duration_days'],
                 "visibility_level": plan_details['visibility_level'],
                 "cost_description": f"{cost} Referrals"
@@ -2399,13 +2394,16 @@ def get_user_advert_options(user_id):
         options.append({
             "type": "free_advert",
             "label": "Free Advert",
-            "plan_name": FREE_ADVERT_PLAN["plan_name"],
+            "plan_name": "free_advert", # Corrected this line for consistency
             "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
             "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
             "cost_description": "One-time Free"
         })
 
     return options
+
+
+
 
 
 # Updated sell function with new validation and pricing logic
@@ -2640,10 +2638,6 @@ def get_advert_details(advert_id, user_id):
         logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
     return None
 
-
-
-
-# The updated get_plan_details function
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name from all available sources.
@@ -2660,24 +2654,29 @@ def get_plan_details(plan_name):
     # Check for a paid subscription plan
     plan = SUBSCRIPTION_PLANS.get(plan_name)
     if plan:
+        plan['label'] = plan.get('label', plan.get('plan_name'))
         return plan
 
     # Check for the single free advert plan
     if plan_name == "free_advert":
-        return FREE_ADVERT_PLAN
+        free_plan = FREE_ADVERT_PLAN.copy()
+        free_plan['label'] = "Free Advert"
+        return free_plan
 
     # Check for a referral advert plan by parsing the number
     if plan_name.startswith("referral_"):
         try:
-            # Extracts the number from a string like "referral_500"
             referral_amount = int(plan_name.split('_')[1])
             referral_plan = REFERRAL_PLANS.get(referral_amount)
             if referral_plan:
+                referral_plan['label'] = f"Referral Benefit: {referral_amount} Referrals"
                 return referral_plan
         except (ValueError, IndexError):
             return None
 
     return None
+
+
 
 # The updated payment route
 @app.route('/payment/<advert_id>', methods=['GET'])
@@ -5322,6 +5321,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
