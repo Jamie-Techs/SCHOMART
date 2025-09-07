@@ -2710,7 +2710,6 @@ def payment(advert_id):
         advert_id=advert_id
     )
 
----
 
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
 @login_required
@@ -5300,6 +5299,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
