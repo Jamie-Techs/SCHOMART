@@ -2648,12 +2648,23 @@ def get_advert_details(advert_id, user_id):
 
 
 
-# The updated get_plan_details function
+
+
+
+
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name from all available sources.
-    This includes paid subscriptions, free plans, and referral plans.
+    This includes paid subscriptions, free plans, referral plans, and dynamic paid adverts.
     """
+    # Check for a dynamic paid advert
+    if plan_name == "Dynamic":
+        return {
+            "plan_name": "Dynamic",
+            "label": "Paid Advert (Custom)",
+            "visibility_level": "Featured"
+        }
+
     # Check for a paid subscription plan
     plan = SUBSCRIPTION_PLANS.get(plan_name)
     if plan:
@@ -2668,7 +2679,6 @@ def get_plan_details(plan_name):
         try:
             # Extracts the number from a string like "referral_500"
             referral_amount = int(plan_name.split('_')[1])
-            # The 'REFERRAL_PLANS' keys are the referral amounts (e.g., 5, 10)
             referral_plan = REFERRAL_PLANS.get(referral_amount)
             if referral_plan:
                 return referral_plan
@@ -2676,6 +2686,9 @@ def get_plan_details(plan_name):
             return None
 
     return None
+
+
+
 
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
@@ -2691,13 +2704,19 @@ def payment(advert_id):
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
+
+    # Determine the amount to display for payment
+    if plan_name == "Dynamic":
+        amount = advert.get('cost_naira', 0)
+    else:
+        amount = plan.get('cost_naira', 0)
         
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
     
     db.collection("adverts").document(advert_id).update({
         "payment_reference": payment_reference,
         "payment_status": "awaiting_confirmation",
-        "plan_cost": plan.get('cost_naira', 0)
+        "plan_cost": amount
     })
     
     account_details = {
@@ -2710,11 +2729,15 @@ def payment(advert_id):
     return render_template(
         "payment.html",
         plan_name=plan.get('label', 'N/A'),
-        amount=plan.get('cost_naira', 0),
+        amount=amount,
         payment_reference=payment_reference,
         account_details=account_details,
         advert_id=advert_id
     )
+
+
+
+
 
 
 
@@ -5309,6 +5332,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
