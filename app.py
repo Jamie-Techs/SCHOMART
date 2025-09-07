@@ -2645,7 +2645,10 @@ def get_advert_details(advert_id, user_id):
         logger.error(f"Error fetching advert {advert_id} for user {user_id}: {e}")
     return None
 
-# The new, comprehensive function to get details for ANY plan type.
+
+
+
+# The updated get_plan_details function
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name from all available sources.
@@ -2653,19 +2656,22 @@ def get_plan_details(plan_name):
     """
     # Check for a paid subscription plan
     plan = SUBSCRIPTION_PLANS.get(plan_name)
-
     if plan:
         return plan
 
-    # Check for the free advert plan
+    # Check for the single free advert plan
     if plan_name == "free_advert":
         return FREE_ADVERT_PLAN
 
-    # Check for a referral advert plan
+    # Check for a referral advert plan by parsing the number
     if plan_name.startswith("referral_"):
         try:
-            cost = int(plan_name.split('_')[1])
-            return REFERRAL_PLANS.get(cost)
+            # Extracts the number from a string like "referral_500"
+            referral_amount = int(plan_name.split('_')[1])
+            # The 'REFERRAL_PLANS' keys are the referral amounts (e.g., 5, 10)
+            referral_plan = REFERRAL_PLANS.get(referral_amount)
+            if referral_plan:
+                return referral_plan
         except (ValueError, IndexError):
             return None
 
@@ -2680,7 +2686,7 @@ def payment(advert_id):
         return redirect(url_for('list_adverts'))
 
     plan_name = advert.get('plan_name')
-    plan = get_plan_details(plan_name) # Uses the comprehensive function
+    plan = get_plan_details(plan_name)
 
     if not plan:
         flash("Invalid subscription plan.", "error")
@@ -2709,6 +2715,10 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
+
+
+
+
 
 
 @app.route('/submit-advert/<advert_id>', methods=['POST'])
@@ -5299,6 +5309,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
