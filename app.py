@@ -1691,7 +1691,12 @@ REFERRAL_PLANS = {
 
 
 
-
+# Visibility multipliers for dynamic pricing
+VISIBILITY_MULTIPLIERS = {
+    "Standard": 1.0,
+    "Featured": 1.5,
+    "Premium": 2.0
+}
 
 
 
@@ -2339,21 +2344,29 @@ def delete_advert_and_data(advert_id):
         return False, f"Error deleting advert from Firestore: {e}"
 
 
-
-
 def get_user_advert_options(user_id):
     options = []
     
-    # Add the dynamic paid advert option first
-    options.append({
-        "type": "paid_advert",
-        "label": "Paid Advert (Price based on product value & duration)",
-        "plan_name": "paid_advert",
-        "cost_naira": None,
-        "advert_duration_days": None,
-        "visibility_level": "Featured",
-        "cost_description": "Dynamic Pricing"
-    })
+    # Add dynamic paid advert options for each visibility level
+    for visibility_level, multiplier in VISIBILITY_MULTIPLIERS.items():
+        label_text = f"Paid Advert ({visibility_level})"
+        cost_description = "Dynamic Pricing"
+        if visibility_level == "Standard":
+            cost_description = "Dynamic Pricing (Standard)"
+        elif visibility_level == "Featured":
+            cost_description = "Dynamic Pricing (Featured)"
+        elif visibility_level == "Premium":
+            cost_description = "Dynamic Pricing (Premium)"
+            
+        options.append({
+            "type": "paid_advert",
+            "label": label_text,
+            "plan_name": "paid_advert",
+            "cost_naira": None,
+            "advert_duration_days": None,
+            "visibility_level": visibility_level,
+            "cost_description": cost_description
+        })
     
     user_info = get_user_info(user_id)
     user_referral_count = user_info.get("referral_count", 0)
@@ -2382,9 +2395,6 @@ def get_user_advert_options(user_id):
         })
 
     return options
-
-
-
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -2446,24 +2456,30 @@ def sell(advert_id=None):
         cost_naira = None
         advert_duration_days = None
         
+        # --- Handle the paid advert option (now with variable visibility)
         if selected_option_key == "paid_advert":
             try:
                 product_price = float(form_data.get("price"))
                 advert_duration_days = int(form_data.get("advert_duration_days"))
+                selected_visibility = form_data.get("visibility_level")
 
-                # Validate duration
+                # Validate duration and visibility level
                 if not (0 < advert_duration_days <= 180):
                     errors.append("Advert duration must be between 1 and 180 days.")
+                
+                if selected_visibility not in VISIBILITY_MULTIPLIERS:
+                    errors.append("Invalid visibility level selected.")
 
-                # Calculate cost with ₦100 minimum
-                calculated_cost = 0.02 * product_price * advert_duration_days
+                # Calculate cost with ₦100 minimum and a multiplier for visibility
+                multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
+                calculated_cost = 0.02 * product_price * advert_duration_days * multiplier
                 cost_naira = max(calculated_cost, 100)
                 
-                # Create a temporary plan for the payload with the correct name
+                # Create a temporary plan for the payload
                 selected_option = {
                     "plan_name": "paid_advert",
                     "advert_duration_days": advert_duration_days,
-                    "visibility_level": "Featured",
+                    "visibility_level": selected_visibility,
                     "cost_naira": cost_naira
                 }
                 
@@ -2599,6 +2615,7 @@ def sell(advert_id=None):
 
 
 
+
 # Your existing function to safely fetch an advert.
 def get_advert_details(advert_id, user_id):
     """Fetches details of a specific advert, ensuring it belongs to the user."""
@@ -2611,16 +2628,23 @@ def get_advert_details(advert_id, user_id):
     return None
 
 
+
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name.
     """
+    # CORRECTED: Add an initial check for None to prevent the error
+    if not plan_name:
+        return None
+        
     # Check for a regular paid advert
     if plan_name == "paid_advert":
         return {
             "plan_name": "paid_advert",
             "label": "Paid Advert (Custom)",
-            "visibility_level": "Featured"
+            "visibility_level": "Dynamic", # Use a generic term here
+            # Since duration and visibility are dynamic, we'll need to check the advert document for it
+            "advert_duration_days": None
         }
 
     # Check for the single free advert plan
@@ -2641,6 +2665,8 @@ def get_plan_details(plan_name):
             return None
 
     return None
+
+
 
 
 
@@ -5288,6 +5314,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
