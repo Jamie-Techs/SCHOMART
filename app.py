@@ -1672,8 +1672,8 @@ def followers():
 
 
 SUBSCRIPTION_PLANS = {
-    "starter": {"plan_name": "starter", "cost_naira": 500, "advert_duration_days": 7, "visibility_level": "Standard"},
-    "basic": {"plan_name": "basic", "cost_naira": 1000, "advert_duration_days": 14, "visibility_level": "Standard"},
+    "starter": {"plan_name": "starter", "cost_naira": 200, "advert_duration_days": 7, "visibility_level": "Standard"},
+    "basic": {"plan_name": "basic", "cost_naira": 400, "advert_duration_days": 14, "visibility_level": "Standard"},
     "premium": {"plan_name": "premium", "cost_naira": 1500, "advert_duration_days": 30, "visibility_level": "Featured"},
     "small_business": {"plan_name": "small_business", "cost_naira": 3000, "advert_duration_days": 30, "visibility_level": "Featured"},
     "medium_business": {"plan_name": "medium_business", "cost_naira": 5000, "advert_duration_days": 60, "visibility_level": "Featured"},
@@ -1683,20 +1683,25 @@ SUBSCRIPTION_PLANS = {
 
 
 
-
-
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
-    "plan_name": "free", "cost_naira": None, "advert_duration_days": 7, "max_adverts": 1, "visibility_level": "Standard"
+    "plan_name": "free", "cost_naira": None, "advert_duration_days": 7, "visibility_level": "Standard"
 }
-
-
 
 # Referral plans
 REFERRAL_PLANS = {
     5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
     10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
+    15: {"plan_name": "referral 15", "cost_naira": None, "advert_duration_days": 90, "visibility_level": "Featured"},
+    20: {"plan_name": "referral 20", "cost_naira": None, "advert_duration_days": 120, "visibility_level": "Featured"},
+    25: {"plan_name": "referral 25", "cost_naira": None, "advert_duration_days": 150, "visibility_level": "Featured"},
+    30: {"plan_name": "referral 30", "cost_naira": None, "advert_duration_days": 180, "visibility_level": "Featured"},
+    35: {"plan_name": "referral 35", "cost_naira": None, "advert_duration_days": 210, "visibility_level": "Featured"},
+    40: {"plan_name": "referral 40", "cost_naira": None, "advert_duration_days": 240, "visibility_level": "Featured"},
+    45: {"plan_name": "referral 45", "cost_naira": None, "advert_duration_days": 270, "visibility_level": "Featured"},
+    50: {"plan_name": "referral 50", "cost_naira": None, "advert_duration_days": 300, "visibility_level": "Featured"},
 }
+
 
 
 
@@ -5238,6 +5243,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
