@@ -2364,21 +2364,15 @@ def delete_advert_and_data(advert_id):
 
 
 
-
-
-
-
-
-
 # Updated get_user_advert_options function
 def get_user_advert_options(user_id):
     options = []
     
-    # Add the new dynamic paid advert option first
+    # Add the new dynamic paid advert option first, with a consistent plan_name
     options.append({
         "type": "paid_advert",
         "label": "Paid Advert (Price based on product value & duration)",
-        "plan_name": "Dynamic",
+        "plan_name": "paid_advert",
         "cost_naira": None,
         "advert_duration_days": None,
         "visibility_level": "Featured",
@@ -2410,8 +2404,9 @@ def get_user_advert_options(user_id):
             "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
             "cost_description": "One-time Free"
         })
-            
+
     return options
+
 
 # Updated sell function with new validation and pricing logic
 @app.route('/sell', methods=['GET', 'POST'])
@@ -2486,9 +2481,9 @@ def sell(advert_id=None):
                 calculated_cost = 0.02 * product_price * advert_duration_days
                 cost_naira = max(calculated_cost, 100)
                 
-                # Create a temporary plan for the payload
+                # Create a temporary plan for the payload with the correct name
                 selected_option = {
-                    "plan_name": "Dynamic",
+                    "plan_name": "paid_advert",
                     "advert_duration_days": advert_duration_days,
                     "visibility_level": "Featured",
                     "cost_naira": cost_naira
@@ -2537,7 +2532,7 @@ def sell(advert_id=None):
                 is_repost=is_repost,
                 errors=errors
             )
-        
+
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
@@ -2648,19 +2643,16 @@ def get_advert_details(advert_id, user_id):
 
 
 
-
-
-
-
+# The updated get_plan_details function
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name from all available sources.
-    This includes paid subscriptions, free plans, referral plans, and dynamic paid adverts.
+    This includes paid subscriptions, free plans, referral plans, and paid adverts.
     """
-    # Check for a dynamic paid advert
-    if plan_name == "Dynamic":
+    # Check for a regular paid advert
+    if plan_name == "paid_advert":
         return {
-            "plan_name": "Dynamic",
+            "plan_name": "paid_advert",
             "label": "Paid Advert (Custom)",
             "visibility_level": "Featured"
         }
@@ -2687,9 +2679,7 @@ def get_plan_details(plan_name):
 
     return None
 
-
-
-
+# The updated payment route
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -2706,7 +2696,7 @@ def payment(advert_id):
         return redirect(url_for('list_adverts'))
 
     # Determine the amount to display for payment
-    if plan_name == "Dynamic":
+    if plan_name == "paid_advert":
         amount = advert.get('cost_naira', 0)
     else:
         amount = plan.get('cost_naira', 0)
@@ -5332,6 +5322,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
