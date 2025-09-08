@@ -277,59 +277,78 @@ def update_online_status(user_id, is_online):
 
 
 
-
-# ... (all your existing imports) ...
-from collections import defaultdict
-import logging
-
-# ... (the rest of your app setup) ...
-
 def send_daily_advert_report():
     """
-    Generates a daily report of approved adverts and sends it via email.
+    Generates a daily report of approved adverts, categorized by plan, and sends it via email.
     """
     with app.app_context():
         try:
-            logger.info("Generating a more detailed daily advert report...")
+            logger.info("Generating a detailed daily advert report...")
 
-            approved_adverts_ref = db.collection('adverts').where('status', '==', 'published')
-            approved_adverts_stream = approved_adverts_ref.stream()
+            # Fetch all published adverts
+            published_adverts_ref = db.collection('adverts').where('status', '==', 'published')
+            published_adverts_stream = published_adverts_ref.stream()
 
+            # Initialize counters for each category
             total_published_adverts = 0
-            total_amount = 0.0
-            adverts_by_plan = defaultdict(lambda: {'count': 0, 'amount': 0.0})
+            total_revenue = 0.0
+            
+            paid_adverts = {'count': 0, 'revenue': 0.0}
+            referral_adverts = {'count': 0, 'revenue': 0.0}
+            free_adverts = {'count': 0, 'revenue': 0.0}
 
-            adverts_list = list(approved_adverts_stream)
+            adverts_list = list(published_adverts_stream)
 
             if not adverts_list:
-                logger.warning("No 'published' adverts found in the database. The report will show zeros.")
+                logger.warning("No 'published' adverts found. The report will show zeros.")
 
             for advert in adverts_list:
                 advert_data = advert.to_dict()
                 total_published_adverts += 1
                 
-                amount = advert_data.get('price', 0)
-                total_amount += amount
+                plan_name = advert_data.get('plan_name', 'Unknown')
+                # Use 'cost_naira' for paid plans and 'price' for free/referral
+                # This ensures accurate revenue tracking
+                try:
+                    advert_cost = float(advert_data.get('cost_naira', 0))
+                except (ValueError, TypeError):
+                    advert_cost = 0.0
 
-                plan_name = advert_data.get('plan_name', 'Unknown Plan')
-                
-                adverts_by_plan[plan_name]['count'] += 1
-                adverts_by_plan[plan_name]['amount'] += amount
-
-            # Use date.today() and datetime.now() as imported
+                # Categorize and update counters
+                if plan_name.startswith('paid_advert'):
+                    paid_adverts['count'] += 1
+                    paid_adverts['revenue'] += advert_cost
+                    total_revenue += advert_cost
+                elif plan_name.startswith('referral_'):
+                    referral_adverts['count'] += 1
+                    # Referral adverts have no direct revenue
+                elif plan_name == 'free_advert':
+                    free_adverts['count'] += 1
+                    # Free adverts have no direct revenue
+                else:
+                    logger.warning(f"Advert with unknown plan '{plan_name}' found. Skipping revenue calculation.")
+            
+            # Use UTC for consistent timestamping
+            report_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
+            
             html_content = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6;">
                 <h3 style="color: #006B3C;">Daily Advert Report: {date.today()}</h3>
                 <p><strong>Total Published Adverts:</strong> {total_published_adverts}</p>
-                <p><strong>Overall Total Revenue from Published Adverts:</strong> ₦{total_amount:,.2f}</p>
+                <p><strong>Overall Total Revenue:</strong> ₦{total_revenue:,.2f}</p>
                 
-                <h4>Summary by Advert Plan:</h4>
-                <ul style="list-style-type: none; padding: 0;">
-                    {"".join([f"<li style='margin-bottom: 8px;'><strong>{data['count']} {plan_name}</strong> - Total Revenue: ₦{data['amount']:,.2f}</li>" for plan_name, data in adverts_by_plan.items()])}
-                </ul>
+                <hr>
+                
+                <h4>Summary by Plan Type:</h4>
+                <p><strong>Total Paid Adverts:</strong> {paid_adverts['count']} (Revenue: ₦{paid_adverts['revenue']:,.2f})</p>
+                <p><strong>Total Referral Adverts:</strong> {referral_adverts['count']}</p>
+                <p><strong>Total Free Adverts:</strong> {free_adverts['count']}</p>
+
+                <hr>
+                
                 <p>This is an automated report from your Schomart application.</p>
-                <p style="font-size: 0.8em; color: #888;">Report generated at: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}</p>
+                <p style="font-size: 0.8em; color: #888;">Report generated at: {report_time}</p>
             </body>
             </html>
             """
@@ -345,7 +364,6 @@ def send_daily_advert_report():
 
         except Exception as e:
             logger.error(f"Failed to generate or send daily advert report: {e}")
-
 
 
 
@@ -5345,6 +5363,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
