@@ -2703,11 +2703,12 @@ def payment(advert_id):
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
 
-    # Determine the amount to display for payment
     if plan_name == "paid_advert":
-        amount = advert.get('cost_naira', 0)
-    else:
-        amount = plan.get('cost_naira', 0)
+        amount = float(advert.get('cost_naira', 0))
+    else:
+        amount = float(plan.get('cost_naira', 0))
+
+    
         
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
     
@@ -5332,6 +5333,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
