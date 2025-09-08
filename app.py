@@ -2407,10 +2407,6 @@ def get_user_advert_options(user_id):
 
 
 
-
-
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2542,7 +2538,7 @@ def sell(advert_id=None):
                 is_repost=is_repost,
                 errors=errors
             )
-
+        
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
@@ -2551,6 +2547,7 @@ def sell(advert_id=None):
 
             delivery_option = form_data.get("delivery_option")
             
+            # --- Move advert_payload creation here after all values are determined ---
             advert_payload = {
                 "user_id": user_id,
                 "category_id": category_id,
@@ -2570,10 +2567,10 @@ def sell(advert_id=None):
                 "advert_duration_days": advert_duration_days,
                 "visibility_level": selected_option.get("visibility_level"),
                 "created_at": firestore.SERVER_TIMESTAMP,
+                "cost_naira": cost_naira,
             }
             
             if selected_option_key.startswith("paid_advert_"):
-                advert_payload["cost_naira"] = cost_naira
                 advert_payload["status"] = "pending_payment"
                 new_advert_ref = db.collection("adverts").document()
                 new_advert_ref.set(advert_payload)
@@ -2615,6 +2612,7 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
 
 
 
@@ -5338,6 +5336,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
