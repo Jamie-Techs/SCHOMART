@@ -2703,7 +2703,6 @@ def get_plan_details(plan_name):
 
 
 
-
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -2745,14 +2744,38 @@ def payment(advert_id):
     })
     
     print(f"5. Final amount for template: {amount}") # For debugging
+    
+    # --- New Logic for Random Account Details ---
+    account_options = [
+        {
+            "account_name": "James Nwoke",
+            "account_number": "2266701415",
+            "bank_name": "ZENITH",
+            "currency": "NGN"
+        },
+        {
+            "account_name": "James Nwoke",
+            "account_number": "0162038205",
+            "bank_name": "UNION BANK",
+            "currency": "NGN"
+        },
+        {
+            "account_name": "James Nwoke",
+            "account_number": "8129284013",
+            "bank_name": "opay",
+            "currency": "NGN"
+        },
+        {
+            "account_name": "James Nwoke",
+            "account_number": "9035678154",
+            "bank_name": "opay",
+            "currency": "NGN"
+        }
+    ]
 
-    account_details = {
-        "account_name": "James Nwoke",
-        "account_number": "2266701415",
-        "bank_name": "ZENITH",
-        "currency": "NGN"
-    }
-
+    # Randomly select one account from the list
+    account_details = random.choice(account_options)
+    
     return render_template(
         "payment.html",
         plan_name=plan.get('label', 'N/A'),
@@ -2761,7 +2784,6 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
-
 
 
 
@@ -5363,6 +5385,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
