@@ -243,14 +243,14 @@
                             <small class="form-text text-muted">Enter duration between 1 and 180 days.</small>
                         </div>
                         <div class="form-group">
-                            <label for="price"><i class="fas fa-dollar-sign"></i> Price (₦) <span class="required">*</span>:</label>
+                            <label for="price"><i class="fas fa-dollar-sign"></i> Your product Price (₦) <span class="required">*</span>:</label>
                             <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert_data.price or '' }}">
                         </div>
                     </div>
                     <div class="subscription-info">
                         <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name">Not Selected</span></p>
                         <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
-                        <p>Cost: <strong><span id="info-cost">Not Applicable</span></strong></p>
+                        <p>Advert Cost to be Paid: <strong><span id="info-cost">Not Applicable</span></strong></p>
                     </div>
                 </div>
 
