@@ -4,727 +4,558 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ advert.title }} - Advert Details</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/advert_detail.css') }}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
             margin: 0;
             padding: 0;
             color: #333;
         }
+
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 20px auto;
-            background: #fff;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
         }
+
         .top-navigation {
             display: flex;
             justify-content: flex-start;
-            flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 20px;
         }
 
-        @media (max-width: 600px) {
-            .top-navigation {
-                justify-content: center;
-            }
-        }
         .nav-button {
-            background-color: #006B3C;
-            color: #FDB813;
+            background-color: #007bff;
+            color: #fff;
             border: none;
             padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+            border-radius: 8px;
             text-decoration: none;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s;
+            cursor: pointer;
         }
+
         .nav-button:hover {
-            background-color: #FDB813;
-            color: #000;
+            background-color: #0056b3;
+            transform: translateY(-2px);
         }
 
-        .contact-actions .nav-button,
-        .report-btn,
-        .follow-btn,
-        .save-btn {
-            background-color: #006B3C;
-            color: #FDB813;;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
+        .nav-button i {
             font-size: 16px;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
         }
 
-        .contact-actions .nav-button:hover,
-        .report-btn:hover,
-        .follow-btn:hover,
-        .save-btn:hover {
-            background-color: #FDB813;
-            color: #000;
+        .flashes {
+            list-style: none;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .flashes li.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flashes li.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .seller-info {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 15px;
-            justify-content: space-between;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #eee;
         }
+
         .profile-pic {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             object-fit: cover;
             margin-right: 15px;
-        }
-
-        .seller-details {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        .seller-info .follow-btn {
-            margin-left: auto;
-        }
-        .seller-info form {
-            margin-left: auto;
+            border: 2px solid #ddd;
         }
 
         .seller-details h3 {
             margin: 0;
-            color: #006B3C;
-        }
-        .seller-details p {
-            margin: 4px 0;
-            font-size: 14px;
+            font-size: 1.2em;
+            color: #007bff;
         }
 
-        /* --- MEDIA GALLERY STYLES --- */
-        .media-gallery {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
+        .seller-details p {
+            margin: 5px 0 0;
+            font-size: 0.9em;
+            color: #555;
         }
+
+        .review-stars {
+            color: #ffc107;
+            letter-spacing: 2px;
+        }
+
+        .media-gallery {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
         .image-slider {
             position: relative;
             width: 100%;
-            max-width: 700px;
-            margin: 0 auto;
+            height: auto;
+            max-height: 500px;
             overflow: hidden;
-            background-color: #eee;
+            border-radius: 12px;
+            margin-bottom: 10px;
         }
+
         .image-slider .slide {
             width: 100%;
+            height: auto;
+            max-height: 500px;
             display: none;
-            max-height: 450px;
             object-fit: contain;
-            cursor: pointer;
+            cursor: zoom-in;
         }
+
         .image-slider .slide.active {
             display: block;
         }
-        .image-slider .slide video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
+
         .arrow {
+            cursor: pointer;
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 2.5rem;
-            color: #FDB813;
-            background: rgba(0,0,0,0.4);
-            padding: 5px 15px;
-            cursor: pointer;
-            z-index: 10;
-            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 12px 18px;
+            transition: 0.6s ease;
+            border-radius: 0 3px 3px 0;
             user-select: none;
-        }
-        .arrow.left {
-            left: 10px;
-        }
-        .arrow.right {
-            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
-        /* Thumbnail Gallery */
+        .arrow.left {
+            left: 0;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .arrow.right {
+            right: 0;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .arrow:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
         .thumbnail-gallery {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .thumbnail-item {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .thumbnail-item.active-thumb {
+            border-color: #007bff;
+        }
+
+        .views-count {
+            text-align: right;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            color: #1a1a1a;
+            margin: 10px 0;
+        }
+
+        .product-description {
+            margin-top: 20px;
+        }
+
+        .product-description h3 {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .contact-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .thumbnail-item {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 5px;
-            cursor: pointer;
-            border: 2px solid #ccc;
-            transition: border-color 0.2s, transform 0.2s;
-        }
-        .thumbnail-item.active-thumb {
-            border-color: #006B3C;
-            transform: scale(1.05);
-        }
-        .thumbnail-item.video-thumb {
-            position: relative;
-        }
-        .thumbnail-item.video-thumb::after {
-            content: "\f04b";
-            font-family: "Font Awesome 5 Free";
-            font-weight: 900;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #fff;
-            font-size: 24px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            padding: 8px 12px;
-        }
-
-        /* --- END MEDIA GALLERY STYLES --- */
-
-        .product-description {
-            margin: 20px 0;
-        }
-        h2, h3 {
-            color: #006B3C;
-        }
-        
-        .similar-adverts .advert-card {
-            display: inline-block;
-            width: 200px;
-            margin-right: 10px;
-            vertical-align: top;
-        }
-        .advert-card img {
-            width: 100%;
-            height: 130px;
-            object-fit: cover;
-            border-radius: 5px;
-        }
-        .advert-card h4 {
-            font-size: 16px;
-            margin: 5px 0;
-        }
-        .safety-tips {
-            background-color: #fff8e1;
-            border-left: 5px solid #FDB813;
-            padding: 15px 20px;
             margin-top: 20px;
-            border-radius: 6px;
-            font-size: 15px;
-            color: #555;
-            line-height: 1.5;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 1000;
-            overflow: auto;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: white;
-            max-width: 500px;
-            margin: 10% auto;
-            padding: 20px;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        /* Styles for the new ImageViewModal */
-        #advertImageViewModal .modal-content {
-            max-width: 90%;
-            max-height: 90%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            background-color: #333;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        }
-        #advertModalImage {
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-            display: block;
-            margin-bottom: 20px;
-        }
-        #advertImageViewModal .close-modal-btn {
-            background-color: #FDB813;
-            color: #333;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-            margin-top: 10px;
-        }
-        #advertImageViewModal .close-modal-btn:hover {
-            background-color: #e6a700;
-        }
-        /* End ImageViewModal styles */
-
-        .modal-content textarea {
-            width: 100%;
-            height: 100px;
-            padding: 8px;
-        }
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .info {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .follow-btn {
-            background: #006B3C;
-            color: white;
-            border: none;
-            padding: 10px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .follow-btn:hover {
-            background-color: #FDB813;
-            color: #000;
-        }
-        .report-btn {
-            background: #006B3C;
-            color: #FDB813;
-            border: none;
-            padding: 10px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .report-btn:hover {
-            background-color: #ff4d4d;
-            color: white;
-        }
-        .save-btn {
-            background: #006B3C;
-            color: white;
-            border: none;
-            padding: 10px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .save-btn:hover {
-            background-color: #FDB813;
-            color: #000;
-        }
-
-        .similar-adverts a {
-            text-decoration: none;
-            outline: none;
-            color: inherit;
-        }
-        .product-description p strong {
-            color: #333;
-            font-weight: 600;
-        }
-        .product-description .badge {
-            background-color: #28a745;
-            color: #fff;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
-        }
-        .product-description .rating-summary {
-            font-size: 14px;
-            color: #555;
-            margin: 8px 0;
-        }
-        .product-description .rating-summary span {
-            font-weight: bold;
-            color: #f39c12;
-        }
-        .review-box {
-            border: 1px solid #ddd;
             padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
             background-color: #f9f9f9;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
+            border-radius: 8px;
         }
-        .review-box .reviewer-info {
+
+        .contact-actions .nav-button {
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .contact-actions .unsaved {
+            background-color: #6c757d;
+        }
+
+        .contact-actions .unsaved:hover {
+            background-color: #5a6268;
+        }
+
+        .contact-actions .saved {
+            background-color: #28a745;
+        }
+
+        .contact-actions .saved:hover {
+            background-color: #218838;
+        }
+
+        .safety-tips {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+
+        .safety-tips h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .safety-tips ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .reviews-section, .review-form, .similar-adverts {
+            margin-top: 30px;
+        }
+
+        .review-box {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin-bottom: 15px;
+        }
+
+        .reviewer-info {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            margin-bottom: 10px;
         }
-        .review-box .reviewer-profile-pic {
+
+        .reviewer-profile-pic {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .reviewer-name {
+            font-weight: bold;
+        }
+
+        .review-content .review-stars {
+            color: #ffc107;
+            font-size: 1.2em;
             margin-bottom: 5px;
         }
-        .review-box .reviewer-name {
-            font-weight: bold;
-            color: #006B3C;
-            font-size: 14px;
-            text-align: center;
+
+        .review-comment {
+            margin: 0;
         }
-        .review-box .review-content {
-            flex-grow: 1;
-        }
-        .review-box .review-stars {
-            color: #FDB813;
-            font-size: 18px;
+
+        .review-date {
+            font-size: 0.8em;
+            color: #888;
             margin-top: 5px;
-            display: inline-block;
         }
-        .review-box .review-comment {
-            margin: 8px 0;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .review-box .review-date {
-            font-size: 12px;
-            color: #777;
-        }
+
         .review-form {
-            margin-top: 20px;
-            background-color: #fff;
+            background-color: #f0f2f5;
             padding: 20px;
             border-radius: 8px;
-            border: 1px solid #ccc;
         }
+
         .review-form label {
             display: block;
-            font-weight: bold;
             margin-bottom: 8px;
-            color: #333;
-        }
-        .review-form textarea {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            margin-bottom: 15px;
-            font-size: 15px;
-            resize: vertical;
-        }
-        .review-submit-btn {
-            background-color: #006B3C;
-            color: #FDB813;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        .review-submit-btn:hover {
-            background-color: #FDB813;
-            color: #000;
+            font-weight: 500;
         }
 
         .star-rating {
-            unicode-bidi: bidi-override;
-            direction: rtl;
-            font-size: 30px;
-            text-align: left;
-            margin-bottom: 15px;
-            display: inline-flex;
-            align-items: center;
+            display: inline-block;
+            font-size: 0;
+            margin-bottom: 10px;
         }
-        .star-rating > input {
+
+        .star-rating input {
             display: none;
         }
-        .star-rating > label {
-            display: inline-block;
-            padding: 0 4px;
+
+        .star-rating label {
+            font-size: 2.5rem;
+            color: #ccc;
             cursor: pointer;
-            color: #ddd;
-            transition: color 0.2s ease;
-        }
-        .star-rating > label:before {
-            content: '★';
-        }
-        .star-rating > input:checked ~ label:before,
-        .star-rating > input:checked ~ label,
-        .star-rating > label:hover:before,
-        .star-rating > label:hover ~ label:before {
-            color: #FDB813;
+            margin-right: 5px;
         }
 
-        .review-stars {
-            color: #FDB813;
-            font-size: 18px;
-            display: inline-block;
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #ffc107;
         }
 
-        .contact-options-modal-content {
-            max-width: 300px;
-            text-align: center;
-        }
-        .contact-options-modal-content button,
-        .contact-options-modal-content a.contact-option-btn {
-            display: block;
-            width: 90%;
-            margin: 10px auto;
-            padding: 12px 0;
-            font-size: 16px;
-            background-color: #006B3C;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .contact-options-modal-content button:hover,
-        .contact-options-modal-content a.contact-option-btn:hover {
-            background-color: #FDB813;
-            color: #000;
+        .star-rating input:checked ~ label {
+            color: #ffc107;
         }
 
-        .status-icon {
-            margin-left: 5px;
-            font-size: 1.1em;
-            vertical-align: middle;
-        }
-        .status-icon.verified {
-            color: #28a745;
-        }
-        .status-icon.unverified {
-            color: #dc3545;
-        }
-
-        .report-modal .modal-content {
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-        .report-modal h3 {
-            color: #D32F2F;
-            margin-bottom: 20px;
-        }
-        .report-modal label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-            text-align: left;
-        }
-        .report-modal textarea {
-            width: calc(100% - 20px);
+        .review-form textarea {
+            width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
+            border-radius: 8px;
             border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1rem;
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
         }
-        .report-modal .submit-report-btn {
-            background-color: #D32F2F;
-            color: white;
-            padding: 12px 25px;
+
+        .review-submit-btn {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1.1rem;
-            transition: background-color 0.3s ease;
+            font-size: 1em;
+            margin-top: 10px;
+            transition: background-color 0.3s;
         }
-        .report-modal .submit-report-btn:hover {
-            background-color: #B71C1C;
+
+        .review-submit-btn:hover {
+            background-color: #0056b3;
         }
-        .report-modal .close {
-            color: #aaa;
-            float: right;
-            font-size: 30px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 20px;
+
+        .similar-adverts {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
         }
-        .report-modal .close:hover,
-        .report-modal .close:focus {
-            color: black;
+
+        .advert-card {
+            display: block;
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             text-decoration: none;
-            cursor: pointer;
-        }
-        .views-count {
-            text-align: right;
-            margin-right: 20px;
-        }
-        
-        .unsaved {
-            background-color: var(--secondary-color);
-            color: white;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .saved {
-            background-color: #004d26;
-            color: white;
+        .advert-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
 
-        .alert-modal-overlay {
+        .advert-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .advert-card h4, .advert-card p {
+            margin: 10px 10px 0;
+        }
+
+        .advert-card h4 {
+            font-size: 1.1em;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .advert-card p {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .modal {
             display: none;
             position: fixed;
-            z-index: 1001;
+            z-index: 100;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.8);
             justify-content: center;
             align-items: center;
+        }
+
+        .modal-content, .modal-content-zoom {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-content-zoom {
+            background-color: transparent;
+            padding: 0;
+            max-width: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .zoom-content-container {
+            width: 100%;
+            text-align: center;
+        }
+
+        .zoom-content-container img,
+        .zoom-content-container video {
+            max-width: 100%;
+            max-height: 90vh;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 35px;
+            font-weight: bold;
+            transition: color 0.3s;
+            cursor: pointer;
+            z-index: 101;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #333;
+        }
+
+        .report-btn {
+            background-color: #dc3545;
+        }
+
+        .report-btn:hover {
+            background-color: #c82333;
+        }
+
+        .submit-report-btn {
+            width: 100%;
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .submit-report-btn:hover {
+            background-color: #c82333;
+        }
+
+        .alert-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
 
         .alert-modal-content {
             background-color: #fff;
             padding: 25px;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            max-width: 400px;
             text-align: center;
+            width: 300px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
         .alert-modal-content h3 {
-            color: var(--primary-color);
             margin-top: 0;
+            font-size: 1.5em;
+        }
+
+        .alert-modal-content p {
+            font-size: 1em;
+            color: #555;
+            margin: 15px 0;
         }
 
         .alert-modal-content .close-btn {
-            background-color: var(--primary-color);
-            color: red;
-            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
             border: none;
+            padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
         }
-
-        /* Zoom Modal */
-        .modal-content-zoom {
-            position: relative;
-            margin: auto;
-            width: 100%;
-            max-width: 900px;
-            background-color: transparent;
-            box-shadow: none;
-            border-radius: 0;
-            padding: 20px;
-            z-index: 1002;
-            overflow: hidden;
-            height: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content-zoom .close {
-            position: absolute;
-            top: 10px;
-            right: 25px;
-            color: #fff;
-            font-size: 50px;
-            font-weight: bold;
-            z-index: 1003;
-        }
-
-        .modal-content-zoom .close:hover,
-        .modal-content-zoom .close:focus {
-            color: #999;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .zoom-content-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #zoomedImage, #zoomedVideo {
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-        }
-
         .location-details {
             margin-top: 20px;
             border-top: 1px solid #eee;
             padding-top: 20px;
         }
-
         .location-details p {
             margin: 5px 0;
         }
     </style>
-</head>
-<body>
-<div class="container">
 
+</head>
+
+<body>
+
+<div class="container">
     {# Flash Messages #}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -736,7 +567,6 @@
     {% endif %}
     {% endwith %}
     {# End Flash Messages #}
-
     <div class="top-navigation">
         <button onclick="history.back()" class="nav-button" title="Go back to the previous page">
             <i class="fas fa-arrow-left"></i> Back
@@ -767,7 +597,6 @@
             </a>
         </div>
     </div> 
-
     <div class="media-gallery">
         <div class="image-slider">
             <span class="arrow left" onclick="prevSlide()">‹</span>
@@ -892,7 +721,6 @@
             <p>No reviews yet for this advert. Be the first to leave a review!</p>
         {% endif %}
     </div>
-
     <div class="review-form">
         <h3>Submit Your Review</h3>
         <form action="{{ url_for('submit_review') }}" method="POST">
@@ -927,11 +755,8 @@
             <p>No similar adverts found.</p>
         {% endif %}
     </div>
-
 </div>
-
 {# Modals #}
-
 {# Report Advert Modal #}
 <div id="reportModal" class="modal">
     <div class="modal-content">
@@ -944,7 +769,6 @@
         </form>
     </div>
 </div>
-
 {# Alert Modal for success/error messages #}
 <div id="alertModal" class="alert-modal-overlay">
     <div class="alert-modal-content">
@@ -953,7 +777,6 @@
         <button class="close-btn" onclick="closeAlertModal()">OK</button>
     </div>
 </div>
-
 {# Zoom Modal #}
 <div id="zoomModal" class="modal">
     <div class="modal-content-zoom">
@@ -967,7 +790,6 @@
         </div>
     </div>
 </div>
-
 <script>
     let slideIndex = 0;
     const slides = document.querySelectorAll('.image-slider .slide');
@@ -1052,10 +874,10 @@
             closeZoomModal();
         }
     });
-
+    
     // Initial display
     showSlide(0);
-
+    
     function showAlertModal(title, message, isSuccess) {
         alertModalTitle.innerHTML = `<i class="fas fa-info-circle"></i> ${title}`;
         alertModalTitle.style.color = isSuccess ? 'green' : 'red';
@@ -1115,7 +937,5 @@
         }
     }
 </script>
-
 </body>
 </html>
-
