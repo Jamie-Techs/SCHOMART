@@ -1,656 +1,660 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Home - SCHOMART</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
-    <style>
-        :root {
-            --primary-green: #006B3C;
-            --mid-bg: #FFFFFF;
-            --border-color: #E0E0E0;
-            --shadow-light: rgba(0,0,0,0.08);
-            --secondary-yellow: #FDB813;
-            --text-dark: #333333;
-            --text-medium: #666666;
-            --error-color: #dc3545;
-            --success-color: #28a745;
-            --info-color: #17a2b8;
-        }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Home - SCHOMART</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        :root {
+            --primary-green: #006B3C;
+            --mid-bg: #FFFFFF;
+            --border-color: #E0E0E0;
+            --shadow-light: rgba(0,0,0,0.08);
+            --secondary-yellow: #FDB813;
+            --text-dark: #333333;
+            --text-medium: #666666;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --info-color: #17a2b8;
+        }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding-top: 80px;
-        }
-        .container {
-            width: 90%;
-            margin: auto;
-            max-width: 1200px;
-        }
-        .main-header {
-            background-color: #006B3C;
-            padding: 15px;
-            color: #fff;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            text-align: center;
-        }
-        .main-header h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        .main-nav ul {
-            list-style: none;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            width: 100%;
-        }
-        .main-nav ul li a {
-            color: #f5f5f5;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .green-search {
-            background-color: #006B3C;
-            padding: 30px 10px;
-            text-align: center;
-            color: white;
-        }
-        .green-search h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-        .search-row {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .search-input {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            width: 100%;
-            max-width: 280px;
-        }
-        .search-form {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-        .search-form > div {
-            width: 100%;
-            max-width: 280px;
-        }
-        .admin-ads, .products-section {
-            background-color: #fff;
-            padding: 20px 0;
-            overflow: hidden;
-        }
-        .admin-ads h3, .products-section h3 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #006B3C;
-        }
-        .product-card {
-            background-color: #f9f9f9;
-            width: 100%;
-            max-width: 220px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #E0E0E0;
-            flex-shrink: 0;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .product-card h4, .product-card .product-price, .product-card p {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 5px;
-        }
-        .product-img {
-            width: 100%;
-            height: 230px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        .product-price {
-            color: #FDB813;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-        .category-grid {
-            background: #fff;
-            padding: 30px 10px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 20px;
-        }
-        .category-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-        .category-box {
-            background-color: #EFF7EF;
-            border: 2px solid #006B3C;
-            border-radius: 10px;
-            padding: 10px;
-            transition: transform 0.3s ease;
-            text-align: center;
-        }
-        .category-box:hover {
-            transform: scale(1.05);
-            background-color: #FDB81320;
-        }
-        .category-box img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-        .category-box span {
-            display: block;
-            margin-top: 8px;
-            font-weight: bold;
-            color: #006B3C;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            justify-content: center;
-        }
-        .main-footer {
-            background-color: #00391F;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        .scrolling-container {
-            overflow: hidden;
-            width: 100%;
-        }
-        .scrolling-wrapper {
-            display: flex;
-            animation: scroll-right-to-left var(--scroll-duration, 10s) linear infinite;
-            white-space: nowrap;
-            padding: 10px 0;
-        }
-        .scrolling-wrapper .product-card {
-            margin: 0 10px;
-        }
-        @keyframes scroll-right-to-left {
-            0% { transform: translateX(0%); }
-            100% { transform: translateX(-50%); }
-        }
-        .scrolling-wrapper:hover {
-            animation-play-state: paused;
-        }
-        .flashes {
-            list-style: none;
-            padding: 15px;
-            margin: 10px auto;
-            width: 90%;
-            max-width: 600px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .flashes li {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        .flashes .error {
-            background-color: var(--error-color);
-            color: white;
-        }
-        .flashes .success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        .flashes .info, .flashes .warning {
-            background-color: #ffc107;
-            color: #333;
-        }
-        #airtime-posts-section {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 30px auto;
-            background-color: var(--mid-bg);
-            border-radius: 12px;
-            box-shadow: 0 8px 20px var(--shadow-light);
-            display: none;
-        }
-        #airtime-posts-section h2 {
-            text-align: center;
-            color: var(--primary-green);
-            font-size: 2em;
-            margin-bottom: 25px;
-            font-weight: 700;
-        }
-        #airtime-posts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .airtime-card {
-            background-color: var(--mid-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-        }
-        .airtime-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-        .airtime-card .network-badge {
-            background-color: var(--primary-green);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .airtime-card .amount {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: var(--primary-green);
-            margin-bottom: 10px;
-        }
-        .airtime-card .airtime-digits {
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 1.4em;
-            font-weight: bold;
-            color: var(--text-dark);
-            background-color: var(--secondary-yellow);
-            padding: 12px 18px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
-            display: block;
-            word-break: break-all;
-        }
-        .airtime-card .instructions {
-            font-size: 0.95em;
-            color: var(--text-medium);
-            margin-bottom: 15px;
-        }
-        .airtime-card .post-time {
-            font-size: 0.85em;
-            color: var(--text-medium);
-            margin-bottom: 10px;
-        }
-        .airtime-card .airtime-image {
-            max-width: 100%;
-            max-height: 150px;
-            object-fit: contain;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-        }
-        
-        
-        #no-airtime-message {
-            text-align: center;
-            color: var(--text-medium);
-            font-size: 1.1em;
-            padding: 30px;
-            display: none;
-        }
-        @media (max-width: 768px) {
-            .main-header {
-                flex-direction: column;
-                align-items: center;
-                padding: 10px;
-            }
-            .main-header h1 {
-                margin-bottom: 10px;
-            }
-            .main-nav ul {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
-            .main-nav ul li {
-                flex-basis: auto;
-            }
-            .main-nav ul li a {
-                font-size: 16px;
-                padding: 5px 0;
-            }
-            .green-search {
-                padding: 20px 10px;
-            }
-            .green-search h2 {
-                font-size: 20px;
-            }
-            .search-row {
-                flex-direction: column;
-                align-items: center;
-            }
-            .search-input, .search-form > div {
-                max-width: 90%;
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 15px;
-            }
-            .product-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-            .scrolling-wrapper {
-                animation-duration: 25s !important;
-            }
-            #airtime-posts-section {
-                padding: 15px;
-                margin: 20px auto;
-                border-radius: 8px;
-            }
-            #airtime-posts-section h2 {
-                font-size: 1.6em;
-                margin-bottom: 20px;
-            }
-            #airtime-posts-container {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
-            }
-            .airtime-card {
-                padding: 15px;
-            }
-            .airtime-card .network-badge {
-                font-size: 0.8em;
-                padding: 6px 12px;
-            }
-            .airtime-card .amount {
-                font-size: 1.1em;
-            }
-            .airtime-card .airtime-digits {
-                font-size: 1.2em;
-                padding: 10px 15px;
-            }
-            .airtime-card .instructions, .airtime-card .post-time {
-                font-size: 0.85em;
-            }
-        }
-        @media (max-width: 480px) {
-            body {
-                padding-top: 100px;
-            }
-            .main-header h1 {
-                font-size: 22px;
-            }
-            .main-nav ul {
-                flex-direction: column;
-                align-items: center;
-            }
-            .main-nav ul li a {
-                font-size: 14px;
-                padding: 5px 0;
-            }
-            .green-search h2 {
-                font-size: 18px;
-            }
-            .search-input, .search-form > div {
-                max-width: 100%;
-                margin-bottom: 10px;
-            }
-            .category-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 10px;
-            }
-            .product-grid {
-                grid-template-columns: 1fr;
-            }
-            .product-card {
-                max-width: 90%;
-                margin: auto;
-            }
-            .flashes {
-                width: 95%;
-            }
-            #airtime-posts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding-top: 80px;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            max-width: 1200px;
+        }
+        .main-header {
+            background-color: #006B3C;
+            padding: 15px;
+            color: #fff;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .main-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .main-nav ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+        .main-nav ul li a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .green-search {
+            background-color: #006B3C;
+            padding: 30px 10px;
+            text-align: center;
+            color: white;
+        }
+        .green-search h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 280px;
+        }
+        .search-form {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .search-form > div {
+            width: 100%;
+            max-width: 280px;
+        }
+        .admin-ads, .products-section {
+            background-color: #fff;
+            padding: 20px 0;
+            overflow: hidden;
+        }
+        .admin-ads h3, .products-section h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #006B3C;
+        }
+        .product-card {
+            background-color: #f9f9f9;
+            width: 100%;
+            max-width: 220px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #E0E0E0;
+            flex-shrink: 0;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Added for three-per-row grid */
+            width: auto !important;
+            max-width: none !important;
+        }
+        .product-card h4, .product-card .product-price, .product-card p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+        .product-img {
+            width: 100%;
+            height: 230px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .product-price {
+            color: #FDB813;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .category-grid {
+            background: #fff;
+            padding: 30px 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        .category-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .category-box {
+            background-color: #EFF7EF;
+            border: 2px solid #006B3C;
+            border-radius: 10px;
+            padding: 10px;
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .category-box:hover {
+            transform: scale(1.05);
+            background-color: #FDB81320;
+        }
+        .category-box img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .category-box span {
+            display: block;
+            margin-top: 8px;
+            font-weight: bold;
+            color: #006B3C;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .product-grid {
+            display: grid;
+            /* Updated to show 3 columns on larger screens */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            justify-content: center;
+        }
+        .main-footer {
+            background-color: #00391F;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .scrolling-container {
+            overflow: hidden;
+            width: 100%;
+        }
+        .scrolling-wrapper {
+            display: flex;
+            animation: scroll-right-to-left var(--scroll-duration, 5s) linear infinite; /* Adjusted default duration for faster scroll */
+            white-space: nowrap;
+            padding: 10px 0;
+        }
+        .scrolling-wrapper .product-card {
+            margin: 0 10px;
+            width: 300px; /* Adjusted width for scrolling adverts */
+        }
+        .scrolling-wrapper .product-img {
+            height: 300px; /* Increased height for bigger images */
+        }
+        @keyframes scroll-right-to-left {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .scrolling-wrapper:hover {
+            animation-play-state: paused;
+        }
+        .flashes {
+            list-style: none;
+            padding: 15px;
+            margin: 10px auto;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .flashes li {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .flashes .error {
+            background-color: var(--error-color);
+            color: white;
+        }
+        .flashes .success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .flashes .info, .flashes .warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+        #airtime-posts-section {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 30px auto;
+            background-color: var(--mid-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px var(--shadow-light);
+            display: none;
+        }
+        #airtime-posts-section h2 {
+            text-align: center;
+            color: var(--primary-green);
+            font-size: 2em;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+        #airtime-posts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .airtime-card {
+            background-color: var(--mid-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .airtime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .airtime-card .network-badge {
+            background-color: var(--primary-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .airtime-card .amount {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--primary-green);
+            margin-bottom: 10px;
+        }
+        .airtime-card .airtime-digits {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--text-dark);
+            background-color: var(--secondary-yellow);
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            display: block;
+            word-break: break-all;
+        }
+        .airtime-card .instructions {
+            font-size: 0.95em;
+            color: var(--text-medium);
+            margin-bottom: 15px;
+        }
+        .airtime-card .post-time {
+            font-size: 0.85em;
+            color: var(--text-medium);
+            margin-bottom: 10px;
+        }
+        .airtime-card .airtime-image {
+            max-width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        
+        #no-airtime-message {
+            text-align: center;
+            color: var(--text-medium);
+            font-size: 1.1em;
+            padding: 30px;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                align-items: center;
+                padding: 10px;
+            }
+            .main-header h1 {
+                margin-bottom: 10px;
+            }
+            .main-nav ul {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            .main-nav ul li {
+                flex-basis: auto;
+            }
+            .main-nav ul li a {
+                font-size: 16px;
+                padding: 5px 0;
+            }
+            .green-search {
+                padding: 20px 10px;
+            }
+            .green-search h2 {
+                font-size: 20px;
+            }
+            .search-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            .search-input, .search-form > div {
+                max-width: 90%;
+                margin-bottom: 10px;
+            }
+            .category-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 15px;
+            }
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            .scrolling-wrapper {
+                animation-duration: 10s !important; /* Faster scrolling on smaller screens */
+            }
+            #airtime-posts-section {
+                padding: 15px;
+                margin: 20px auto;
+                border-radius: 8px;
+            }
+            #airtime-posts-section h2 {
+                font-size: 1.6em;
+                margin-bottom: 20px;
+            }
+            #airtime-posts-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            .airtime-card {
+                padding: 15px;
+            }
+            .airtime-card .network-badge {
+                font-size: 0.8em;
+                padding: 6px 12px;
+            }
+            .airtime-card .amount {
+                font-size: 1.1em;
+            }
+            .airtime-card .airtime-digits {
+                font-size: 1.2em;
+                padding: 10px 15px;
+            }
+            .airtime-card .instructions, .airtime-card .post-time {
+                font-size: 0.85em;
+            }
+        }
+        @media (max-width: 480px) {
+            body {
+                padding-top: 100px;
+            }
+            .main-header h1 {
+                font-size: 22px;
+            }
+            .main-nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            .main-nav ul li a {
+                font-size: 14px;
+                padding: 5px 0;
+            }
+            .green-search h2 {
+                font-size: 18px;
+            }
+            .search-input, .search-form > div {
+                max-width: 100%;
+                margin-bottom: 10px;
+            }
+            .category-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 10px;
+            }
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            .product-card {
+                max-width: 90%;
+                margin: auto;
+            }
+            .flashes {
+                width: 95%;
+            }
+            #airtime-posts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
 <header class="main-header">
-    <h1>SCHOMART</h1>
-    <nav class="main-nav">
-        <ul>
-            <li>
-                <a href="/" class="nav-button" title="Go to Home Page">
-                    <i class="fas fa-home"></i> Home
-                </a>
-            </li>
-            <li>
-                <a href="/profile" class="nav-button" title="View your Profile">
-                    <i class="fas fa-user"></i> Profile
-                </a>
-            </li>
-            <li>
-                <a href="/sell" class="nav-button" title="Sell an item or service">
-                    <i class="fas fa-tag"></i> Sell
-                </a>
-            </li>
-            <li>
-                <a href="/materials" class="nav-button" title="Check out Study Materials">
-                    <i class="fas fa-book"></i> School hub
-                </a>
-            </li>
-            <li>
-                <a href="/leaderboard" class="nav-button" title="View the Leaderboard">
-                    <i class="fas fa-trophy"></i> Leaderboard
-                </a>
-            </li>
-        </ul>
-    </nav>
+    <h1>SCHOMART</h1>
+    <nav class="main-nav">
+        <ul>
+            <li>
+                <a href="/" class="nav-button" title="Go to Home Page">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </li>
+            <li>
+                <a href="/profile" class="nav-button" title="View your Profile">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </li>
+            <li>
+                <a href="/sell" class="nav-button" title="Sell an item or service">
+                    <i class="fas fa-tag"></i> Sell
+                </a>
+            </li>
+            <li>
+                <a href="/materials" class="nav-button" title="Check out Study Materials">
+                    <i class="fas fa-book"></i> School hub
+                </a>
+            </li>
+            <li>
+                <a href="/leaderboard" class="nav-button" title="View the Leaderboard">
+                    <i class="fas fa-trophy"></i> Leaderboard
+                </a>
+            </li>
+        </ul>
+    </nav>
 </header>
 {# Flash Messages - Moved outside header but still prominently visible #}
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
-    <ul class="flashes container">
-        {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-    </ul>
+    <ul class="flashes container">
+        {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
 {% endif %}
 {% endwith %}
 
 <section id="airtime-posts-section">
-    <h2>
-        <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
-    </h2>
-    <div id="airtime-posts-container">
-    </div>
-    <p id="no-airtime-message">
-        No airtime giveaways currently active. Check back later!
-    </p>
+    <h2>
+        <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
+    </h2>
+    <div id="airtime-posts-container">
+    </div>
+    <p id="no-airtime-message">
+        No airtime giveaways currently active. Check back later!
+    </p>
 </section>
 <section class="green-search">
-    <h2>What are you looking for?</h2>
-    <div class="search-row">
-        <div class="search-form" onclick="window.location.href='/search'" style="cursor: pointer;">
-            <div style="position: relative; width: 100%;">
-                <input type="text" class="search-input" placeholder="I'm looking for..." readonly>
-                <i class="fas fa-search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: black;"></i>
-            </div>
-        </div>
-    </div>
+    <h2>What are you looking for?</h2>
+    <div class="search-row">
+        <div class="search-form" onclick="window.location.href='/search'" style="cursor: pointer;">
+            <div style="position: relative; width: 100%;">
+                <input type="text" class="search-input" placeholder="I'm looking for..." readonly>
+                <i class="fas fa-search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: black;"></i>
+            </div>
+        </div>
+    </div>
 </section>
 <section class="admin-ads container">
-    <h3>Featured Adverts</h3>
-    <div class="scrolling-container">
-        <div class="scrolling-wrapper" style="--scroll-duration: {{ adverts|length * 5 }}s;">
-            {% for advert in adverts %}
-            <a href="/advert/{{ advert['id'] }}" class="product-card">
-                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-                <h4>{{ advert['title'] }}</h4>
-                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>
-                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                    {% if advert['state'] and advert['school'] %}, {% endif %}
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                </p>
-                <p>{{ advert['condition'] }}</p>
-            </a>
-            {% endfor %}
-            {% for advert in adverts %}
-            <a href="/advert/{{ advert['id'] }}" class="product-card">
-                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-                <h4>{{ advert['title'] }}</h4>
-                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-                <p>
-                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                    {% if advert['state'] and advert['school'] %}, {% endif %}
-                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-                </p>
-                <p>{{ advert['condition'] }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
+    <h3>Featured Adverts</h3>
+    <div class="scrolling-container">
+        <div class="scrolling-wrapper" style="--scroll-duration: 5s;">
+            {% for advert in adverts %}
+            <a href="/advert/{{ advert['id'] }}" class="product-card">
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+                <h4>{{ advert['title'] }}</h4>
+                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+                <p>
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
+            </a>
+            {% endfor %}
+            {% for advert in adverts %}
+            <a href="/advert/{{ advert['id'] }}" class="product-card">
+                <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+                <h4>{{ advert['title'] }}</h4>
+                <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+                <p>
+                    {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                    {% if advert['state'] and advert['school'] %}, {% endif %}
+                    {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+                </p>
+                <p>{{ advert['condition'] }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
 </section>
 <section class="category-grid container">
-    {% for category in categories %}
-    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
-        <div class="category-box">
-            <img src="{{ category.image_url }}"
-                 alt="{{ category.name }}"
-                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
-            <span>{{ category.name }}</span>
-        </div>
-    </a>
-    {% endfor %}
+    {% for category in categories %}
+    <a class="category-link" href="{{ url_for('search', category=category.name) }}">
+        <div class="category-box">
+            <img src="{{ category.image_url }}"
+                 alt="{{ category.name }}"
+                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/e0e0e0/777777?text=No+Image';">
+            <span>{{ category.name }}</span>
+        </div>
+    </a>
+    {% endfor %}
 </section>
 <section class="products-section container">
-    <h3>Trending Adverts</h3>
-    <div class="product-grid">
-        {% for advert in adverts %}
-        <a href="/advert/{{ advert['id'] }}" class="product-card">
-            <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
-            <h4>{{ advert['title'] }}</h4>
-            <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
-            <p>
-                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
-                {% if advert['state'] and advert['school'] %}, {% endif %}
-                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
-            </p>
-            <p>{{ advert['condition'] }}</p>
-        </a>
-        {% endfor %}
-    </div>
+    <h3>Trending Adverts</h3>
+    <div class="product-grid">
+        {% for advert in adverts %}
+        <a href="/advert/{{ advert['id'] }}" class="product-card">
+            <img src="{{ advert.display_image }}" class="product-img" alt="{{ advert['title'] }}" onerror="this.onerror=null;this.src='https://placehold.co/180x180/e0e0e0/777777?text=No+Media';">
+            <h4>{{ advert['title'] }}</h4>
+            <p class="product-price">₦{{ "{:,.0f}".format(advert['price']) }}</p>
+            <p>
+                {% if advert['state'] %}{{ advert['state'] }}{% endif %}
+                {% if advert['state'] and advert['school'] %}, {% endif %}
+                {% if advert['school'] %}{{ advert['school'] }}{% endif %}
+            </p>
+            <p>{{ advert['condition'] }}</p>
+        </a>
+        {% endfor %}
+    </div>
 </section>
 <footer class="main-footer">
-    <p>© 2025 SCHOMART. All rights reserved.</p>
+    <p>© 2025 SCHOMART. All rights reserved.</p>
 </footer>
 <script>
-    const currentUserId = "{{ current_user_id | default('') }}";
+    const currentUserId = "{{ current_user_id | default('') }}";
 
-    async function fetchAirtimePosts() {
-        const airtimeSection = document.getElementById('airtime-posts-section');
-        const container = document.getElementById('airtime-posts-container');
-        const noAirtimeMessage = document.getElementById('no-airtime-message');
-        try {
-            const response = await fetch('/api/airtime-posts');
-            if (!response.ok) {
-                console.error('Failed to fetch airtime posts:', response.statusText);
-                airtimeSection.style.display = 'none';
-                return;
-            }
-            const posts = await response.json();
-            container.innerHTML = '';
-            if (posts.length === 0) {
-                airtimeSection.style.display = 'none';
-            } else {
-                airtimeSection.style.display = 'block'
-                posts.forEach(post => {
-                    const card = document.createElement('div');
-                    card.className = 'airtime-card';
-                    let postTime = new Date(post.post_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    const today = new Date();
-                    const postDate = new Date(post.post_time);
-                    const isToday = today.toDateString() === postDate.toDateString();
-                    if (!isToday) {
-                        postTime = postDate.toLocaleDateString();
-                    }
-                    card.innerHTML = `
-                        <span class="network-badge">${post.network}</span>
-                        <div class="amount">₦${post.amount}</div>
-                        <div class="airtime-digits">${post.code}</div>
-                        <p class="instructions">Dial ${post.instructions}</p>
-                        <p class="post-time">Posted: ${postTime}</p>
-                    `;
-                    container.appendChild(card);
-                });
-            }
-        } catch (error) {
-            console.error('An error occurred during fetch:', error);
-            document.getElementById('airtime-posts-section').style.display = 'none';
-        }
-    }
+    async function fetchAirtimePosts() {
+        const airtimeSection = document.getElementById('airtime-posts-section');
+        const container = document.getElementById('airtime-posts-container');
+        const noAirtimeMessage = document.getElementById('no-airtime-message');
+        try {
+            const response = await fetch('/api/airtime-posts');
+            if (!response.ok) {
+                console.error('Failed to fetch airtime posts:', response.statusText);
+                airtimeSection.style.display = 'none';
+                return;
+            }
+            const posts = await response.json();
+            container.innerHTML = '';
+            if (posts.length === 0) {
+                airtimeSection.style.display = 'none';
+            } else {
+                airtimeSection.style.display = 'block'
+                posts.forEach(post => {
+                    const card = document.createElement('div');
+                    card.className = 'airtime-card';
+                    let postTime = new Date(post.post_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const today = new Date();
+                    const postDate = new Date(post.post_time);
+                    const isToday = today.toDateString() === postDate.toDateString();
+                    if (!isToday) {
+                        postTime = postDate.toLocaleDateString();
+                    }
+                    card.innerHTML = `
+                        <span class="network-badge">${post.network}</span>
+                        <div class="amount">₦${post.amount}</div>
+                        <div class="airtime-digits">${post.code}</div>
+                        <p class="instructions">Dial ${post.instructions}</p>
+                        <p class="post-time">Posted: ${postTime}</p>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        } catch (error) {
+            console.error('An error occurred during fetch:', error);
+            document.getElementById('airtime-posts-section').style.display = 'none';
+        }
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchAirtimePosts();
-    });
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchAirtimePosts();
+    });
 </script>
 
 
 
-    
+    
 
 </body>
 </html>
-
-
-
-
