@@ -2503,7 +2503,7 @@ def sell(advert_id=None):
 
                 # Calculate cost with ₦100 minimum and a multiplier for visibility
                 multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
-                calculated_cost = 0.02 * product_price * advert_duration_days * multiplier
+                calculated_cost = 0.015 * product_price * advert_duration_days * multiplier
                 cost_naira = max(calculated_cost, 100)
                 
                 # Create a temporary plan for the payload
@@ -5385,6 +5385,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
