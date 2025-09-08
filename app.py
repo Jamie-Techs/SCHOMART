@@ -277,16 +277,24 @@ def update_online_status(user_id, is_online):
 
 
 
+
 def send_daily_advert_report():
     """
-    Generates a daily report of approved adverts, categorized by plan, and sends it via email.
+    Generates a daily report of approved adverts published today,
+    categorized by plan, and sends it via email.
     """
     with app.app_context():
         try:
             logger.info("Generating a detailed daily advert report...")
 
-            # Fetch all published adverts
-            published_adverts_ref = db.collection('adverts').where('status', '==', 'published')
+            # Define the start and end of "today" in UTC
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+
+            # Fetch published adverts where 'published_at' is within today's date range
+            published_adverts_ref = db.collection('adverts').where('status', '==', 'published')\
+                                                            .where('published_at', '>=', today_start)\
+                                                            .where('published_at', '<', today_end)
             published_adverts_stream = published_adverts_ref.stream()
 
             # Initialize counters for each category
@@ -300,7 +308,7 @@ def send_daily_advert_report():
             adverts_list = list(published_adverts_stream)
 
             if not adverts_list:
-                logger.warning("No 'published' adverts found. The report will show zeros.")
+                logger.warning("No 'published' adverts found for today. The report will show zeros.")
 
             for advert in adverts_list:
                 advert_data = advert.to_dict()
@@ -308,7 +316,6 @@ def send_daily_advert_report():
                 
                 plan_name = advert_data.get('plan_name', 'Unknown')
                 # Use 'cost_naira' for paid plans and 'price' for free/referral
-                # This ensures accurate revenue tracking
                 try:
                     advert_cost = float(advert_data.get('cost_naira', 0))
                 except (ValueError, TypeError):
@@ -321,10 +328,8 @@ def send_daily_advert_report():
                     total_revenue += advert_cost
                 elif plan_name.startswith('referral_'):
                     referral_adverts['count'] += 1
-                    # Referral adverts have no direct revenue
                 elif plan_name == 'free_advert':
                     free_adverts['count'] += 1
-                    # Free adverts have no direct revenue
                 else:
                     logger.warning(f"Advert with unknown plan '{plan_name}' found. Skipping revenue calculation.")
             
@@ -1693,16 +1698,13 @@ FREE_ADVERT_PLAN = {
 
 # Referral plans with varied visibility levels
 REFERRAL_PLANS = {
-    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Standard"},
-    10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
-    15: {"plan_name": "referral 15", "cost_naira": None, "advert_duration_days": 90, "visibility_level": "Featured"},
-    20: {"plan_name": "referral 20", "cost_naira": None, "advert_duration_days": 120, "visibility_level": "Featured"},
-    25: {"plan_name": "referral 25", "cost_naira": None, "advert_duration_days": 150, "visibility_level": "Premium"},
-    30: {"plan_name": "referral 30", "cost_naira": None, "advert_duration_days": 180, "visibility_level": "Premium"},
-    35: {"plan_name": "referral 35", "cost_naira": None, "advert_duration_days": 210, "visibility_level": "Premium"},
-    40: {"plan_name": "referral 40", "cost_naira": None, "advert_duration_days": 240, "visibility_level": "Premium"},
-    45: {"plan_name": "referral 45", "cost_naira": None, "advert_duration_days": 270, "visibility_level": "Premium"},
-    50: {"plan_name": "referral 50", "cost_naira": None, "advert_duration_days": 300, "visibility_level": "Premium"},
+    5: {"plan_name": "referral 5", "cost_naira": None, "advert_duration_days": 7, "visibility_level": "Standard"},
+    10: {"plan_name": "referral 10", "cost_naira": None, "advert_duration_days": 14, "visibility_level": "Featured"},
+    15: {"plan_name": "referral 15", "cost_naira": None, "advert_duration_days": 30, "visibility_level": "Featured"},
+    20: {"plan_name": "referral 20", "cost_naira": None, "advert_duration_days": 60, "visibility_level": "Featured"},
+    25: {"plan_name": "referral 25", "cost_naira": None, "advert_duration_days": 90, "visibility_level": "Premium"},
+    30: {"plan_name": "referral 30", "cost_naira": None, "advert_duration_days": 120, "visibility_level": "Premium"},
+ 
 }
 
 
@@ -5385,6 +5387,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
