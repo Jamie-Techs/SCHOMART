@@ -2682,35 +2682,36 @@ def get_plan_details(plan_name):
     return None
 
 
-
-
-
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
     advert = get_advert_details(advert_id, g.current_user.id)
+    print(f"1. Fetched advert: {advert}") # STEP 1
+    
     if not advert or advert.get('status') != 'pending_payment':
         flash("Invalid payment request.", "error")
         return redirect(url_for('list_adverts'))
 
     plan_name = advert.get('plan_name')
     plan = get_plan_details(plan_name)
-
+    print(f"2. Fetched plan: {plan}") # STEP 2
+    
     if not plan:
         flash("Invalid subscription plan.", "error")
         return redirect(url_for('list_adverts'))
-
-    try:
-        if plan_name == "paid_advert":
-            # Attempt to convert the advert's cost to a float
-            amount = float(advert.get('cost_naira', 0))
-        else:
-            # Attempt to convert the plan's cost to a float
-            amount = float(plan.get('cost_naira', 0))
-    except (ValueError, TypeError):
-        # If conversion fails, set a default amount and flash a warning.
-        amount = 0.0
-        flash("Could not retrieve payment amount. Please contact support.", "error")
+    
+    # Get cost from either the advert or the plan
+    if plan_name == "paid_advert":
+        cost_from_db = advert.get('cost_naira', 0)
+        print(f"3. Cost from database (raw): {cost_from_db}") # STEP 3
+        try:
+            amount = float(cost_from_db)
+        except (ValueError, TypeError) as e:
+            print(f"4. Conversion error: {e}") # STEP 4
+            amount = 0.0
+            flash("Could not retrieve payment amount. Please contact support.", "error")
+    else:
+        amount = float(plan.get('cost_naira', 0))
 
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -2719,6 +2720,8 @@ def payment(advert_id):
         "payment_status": "awaiting_confirmation",
         "plan_cost": amount
     })
+    
+    print(f"5. Final amount for template: {amount}") # STEP 5
 
     account_details = {
         "account_name": "James Nwoke",
@@ -5336,6 +5339,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
