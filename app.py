@@ -2684,10 +2684,6 @@ def get_plan_details(plan_name):
     return None
 
 
-
-
-
-
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -2704,20 +2700,18 @@ def payment(advert_id):
         return redirect(url_for('list_adverts'))
 
     if plan_name == "paid_advert":
-        amount = float(advert.get('cost_naira', 0))
-    else:
-        amount = float(plan.get('cost_naira', 0))
+        amount = float(advert.get('cost_naira', 0))
+    else:
+        amount = float(plan.get('cost_naira', 0))
 
-    
-        
     payment_reference = f"ADVERT-{advert_id}-{uuid.uuid4().hex[:6].upper()}"
-    
+
     db.collection("adverts").document(advert_id).update({
         "payment_reference": payment_reference,
         "payment_status": "awaiting_confirmation",
         "plan_cost": amount
     })
-    
+
     account_details = {
         "account_name": "James Nwoke",
         "account_number": "2266701415",
@@ -5333,6 +5327,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
