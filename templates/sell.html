@@ -212,8 +212,8 @@
         <div class="advert-options-info">
             <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
             <p>Looking for more advert slots, longer durations, or increased visibility?</p>
-            <a href="{{ url_for('subscribe') }}"><i class="fas fa-crown"></i> Explore Subscription Plans</a>
-            <a href="{{ url_for('referral_benefit') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
+            
+            <a href="{{ url_for('leaderboard') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
         
         {% if available_options %}
@@ -250,6 +250,11 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                            <label for="price"><i class="fas fa-dollar-sign"></i> Price (₦) <span class="required">*</span>:</label>
+                            <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert_data.price or '' }}">
+                </div>
+
                 <div class="form-section">
                     <h3>Product Information</h3>
                     {% if advert and is_repost %}
@@ -273,10 +278,7 @@
                     </div>
 
                     <div class="form-group-row">
-                        <div class="form-group">
-                            <label for="price"><i class="fas fa-dollar-sign"></i> Price (₦) <span class="required">*</span>:</label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" required value="{{ form_data.price or advert_data.price or '' }}">
-                        </div>
+                        
                         <div class="form-group">
                             <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable?</label>
                             <select id="negotiable" name="negotiable">
