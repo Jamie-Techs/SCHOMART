@@ -2684,6 +2684,9 @@ def get_plan_details(plan_name):
     return None
 
 
+
+
+
 @app.route('/payment/<advert_id>', methods=['GET'])
 @login_required
 def payment(advert_id):
@@ -2701,13 +2704,13 @@ def payment(advert_id):
 
     try:
         if plan_name == "paid_advert":
-            # Attempt to get and convert the advert's cost to a float
+            # Attempt to convert the advert's cost to a float
             amount = float(advert.get('cost_naira', 0))
         else:
-            # Attempt to get and convert the plan's cost to a float
+            # Attempt to convert the plan's cost to a float
             amount = float(plan.get('cost_naira', 0))
     except (ValueError, TypeError):
-        # If conversion fails for any reason, set a default amount and flash a warning.
+        # If conversion fails, set a default amount and flash a warning.
         amount = 0.0
         flash("Could not retrieve payment amount. Please contact support.", "error")
 
@@ -2734,6 +2737,9 @@ def payment(advert_id):
         account_details=account_details,
         advert_id=advert_id
     )
+
+
+
 
 
 
@@ -5332,6 +5338,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
