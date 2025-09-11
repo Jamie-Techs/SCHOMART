@@ -77,7 +77,7 @@ const urlsToCache = [
   '/static/css/main.css',
   '/static/js/app.js',
   '/static/images/default_profile.png',
-  '/static/images/icon-192x192.png',
+  '/static/images/schomart_logo.png',
   '/static/images/icon-512x512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css'
 ];
