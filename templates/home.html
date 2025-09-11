@@ -558,34 +558,47 @@
     });
 </script>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            console.log('Service Worker registered! Scope:', registration.scope);
-          })
-          .catch(err => {
-            console.log('Service Worker registration failed:', err);
-          });
-      });
-    }
+    <script>
+        // Check for Service Worker support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registration successful:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        } else {
+            console.error('Service Workers are not supported by this browser.');
+        }
 
-    let deferredPrompt;
+        let deferredPrompt;
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevents the default browser prompt from showing up
-      e.preventDefault();
-      // Stores the event
-      deferredPrompt = e;
-      // Immediately show the prompt
-      deferredPrompt.prompt();
-    });
-  </script>
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('`beforeinstallprompt` event fired.');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Check if the prompt is available to be shown
+            if (deferredPrompt) {
+                console.log('Attempting to show the install prompt.');
+                deferredPrompt.prompt();
+            } else {
+                console.error('The `beforeinstallprompt` event was fired, but the prompt object is not available.');
+            }
+        });
 
+        // This event listener can help diagnose issues with manifest parsing
+        window.addEventListener('appinstalled', (e) => {
+            console.log('PWA was installed successfully!');
+        });
+    </script>
 
 </body>
 </html>
+
 
 
 
