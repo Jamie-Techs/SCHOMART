@@ -1,21 +1,27 @@
 {
   "name": "SCHOMART",
   "short_name": "SCHOMART",
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#006B3C",
   "description": "Your campus marketplace for students.",
   "icons": [
     {
-      "src": "/static/images/schomart_logo.png",
+      "src": "/static/images/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/static/images/schomart_logo.png",
+      "src": "/static/images/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/static/images/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
