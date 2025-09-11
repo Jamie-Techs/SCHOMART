@@ -1,0 +1,21 @@
+{
+  "name": "SCHOMART",
+  "short_name": "SCHOMART",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#006B3C",
+  "description": "Your campus marketplace for students.",
+  "icons": [
+    {
+      "src": "/path/to/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/path/to/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
