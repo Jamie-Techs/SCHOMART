@@ -1,11 +1,10 @@
 const CACHE_NAME = 'schomart-cache-v1';
 const urlsToCache = [
   '/',
-  
-  '/search.html',
   '/sell.html',
-  
-  '/visitors_profile_view.html',
+  '/advert_detail.html',
+  '/seller_profile_view.html',
+  '/profile.html',
   '/static/css/main.css',
   '/static/js/app.js',
   '/static/images/default_profile.png',
