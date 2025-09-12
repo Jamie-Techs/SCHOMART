@@ -54,23 +54,23 @@
             transition: opacity 0.5s ease-out;
         }
         .flashes .error {
-            background-color: #fee2e2; /* Light red */
-            color: #cc0000; /* Darker red */
+            background-color: #fee2e2;
+            color: #cc0000;
             border: 1px solid #ffabab;
         }
         .flashes .success {
-            background-color: #d4edda; /* Light green */
-            color: #155724; /* Darker green */
+            background-color: #d4edda;
+            color: #155724;
             border: 1px solid #c3e6cb;
         }
         .flashes .info {
-            background-color: #d1ecf1; /* Light blue */
-            color: #0c5460; /* Darker blue */
+            background-color: #d1ecf1;
+            color: #0c5460;
             border: 1px solid #bee5eb;
         }
         .flashes .warning {
-            background-color: #fff3cd; /* Light yellow */
-            color: #856404; /* Darker yellow */
+            background-color: #fff3cd;
+            color: #856404;
             border: 1px solid #ffeeba;
         }
         .alert-icon {
@@ -79,9 +79,10 @@
         /* Navigation buttons styling */
         .navigation-buttons {
             display: flex;
-            justify-content: flex-start; /* Align to start for consistency */
+            justify-content: flex-start;
             gap: 15px;
             margin-bottom: 20px;
+            flex-wrap: wrap; /* NEW: Allow buttons to wrap to next line */
         }
         .btn-navigation {
             background-color: var(--primary-color);
@@ -93,6 +94,7 @@
             font-weight: bold;
             font-size: 16px;
             transition: background-color 0.3s ease, color 0.3s ease;
+            white-space: nowrap; /* Prevent buttons from breaking onto multiple lines */
         }
         .btn-navigation:hover {
             background-color: var(--secondary-color);
@@ -252,12 +254,14 @@
                 grid-template-columns: 1fr;
             }
             .navigation-buttons {
-                flex-direction: column;
+                /* REVISED: Don't force column layout, let them wrap */
+                justify-content: center;
                 gap: 10px;
             }
             .btn-navigation {
-                width: 100%;
+                width: calc(50% - 5px); /* NEW: Display in two columns on mobile */
                 text-align: center;
+                flex-grow: 1;
             }
             .advert-actions-footer {
                 justify-content: center;
@@ -284,28 +288,24 @@
 <body>
     <div class="container">
 
-
         <div class="navigation-buttons">
-    <a href="javascript:history.back()" class="btn-navigation">
-        <i class="fas fa-arrow-left"></i> Back
-    </a>
-    <a href="{{ url_for('home') }}" class="btn-navigation">
-        <i class="fas fa-home"></i> Home
-    </a>
-    <a href="{{ url_for('profile') }}" class="btn-navigation">
-        <i class="fas fa-user"></i> Profile
-    </a>
-    <a href="{{ url_for('saved_adverts_page') }}" class="btn-navigation">
-        <i class="fas fa-bookmark"></i> Saved Adverts
-    </a>
-    <a href="{{ url_for('sell') }}" class="btn-navigation">
-        <i class="fas fa-dollar-sign"></i> Post Advert
-    </a>
-</div>
+            <a href="javascript:history.back()" class="btn-navigation">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{{ url_for('home') }}" class="btn-navigation">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile') }}" class="btn-navigation">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('saved_adverts_page') }}" class="btn-navigation">
+                <i class="fas fa-bookmark"></i> Saved Adverts
+            </a>
+            <a href="{{ url_for('sell') }}" class="btn-navigation">
+                <i class="fas fa-dollar-sign"></i> Post Advert
+            </a>
+        </div>
 
-
-        
-        
         <h2>Your Adverts</h2>
         {# Display Flash messages #}
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -452,8 +452,8 @@
             alerts.forEach(alert => {
                 setTimeout(() => {
                     alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500); // Remove after fade out
-                }, 5000); // 5 seconds
+                    setTimeout(() => alert.remove(), 500);
+                }, 5000);
             });
 
             // Countdown Timer Logic
@@ -483,8 +483,8 @@
                             countdownElement.innerHTML = `Advert expired. Will be deleted in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
                         };
 
-                        updateCountdown(); // Initial call
-                        const interval = setInterval(updateCountdown, 1000); // Update every second
+                        updateCountdown();
+                        const interval = setInterval(updateCountdown, 1000);
                     }
                 }
             });
@@ -501,40 +501,40 @@
             });
         }
 
-// Function to toggle save/unsave state and send API request
-async function toggleSaveAdvert(button, advertId) {
-    const isSaved = button.classList.contains('saved');
-    const endpoint = isSaved ? '/api/unsave_advert' : '/api/save_advert';
-    const action = isSaved ? 'unsaving' : 'saving';
+    // Function to toggle save/unsave state and send API request
+    async function toggleSaveAdvert(button, advertId) {
+        const isSaved = button.classList.contains('saved');
+        const endpoint = isSaved ? '/api/unsave_advert' : '/api/save_advert';
+        const action = isSaved ? 'unsaving' : 'saving';
 
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ advert_id: advertId })
-        });
-        
-        const data = await response.json();
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ advert_id: advertId })
+            });
+            
+            const data = await response.json();
 
-        if (response.ok && data.success) {
-            if (isSaved) {
-                // Unsaved successfully, change button state
-                button.classList.remove('saved');
-                button.innerHTML = '<i class="far fa-bookmark"></i> Save';
+            if (response.ok && data.success) {
+                if (isSaved) {
+                    // Unsaved successfully, change button state
+                    button.classList.remove('saved');
+                    button.innerHTML = '<i class="far fa-bookmark"></i> Save';
+                } else {
+                    // Saved successfully, change button state
+                    button.classList.add('saved');
+                    button.innerHTML = '<i class="fas fa-bookmark"></i> Saved';
+                }
             } else {
-                // Saved successfully, change button state
-                button.classList.add('saved');
-                button.innerHTML = '<i class="fas fa-bookmark"></i> Saved';
+                alert(`Error ${action} advert: ${data.message}`);
             }
-        } else {
-            alert(`Error ${action} advert: ${data.message}`);
+        } catch (error) {
+            console.error(`Fetch error ${action} advert:`, error);
+            alert('An unexpected error occurred. Please try again.');
         }
-    } catch (error) {
-        console.error(`Fetch error ${action} advert:`, error);
-        alert('An unexpected error occurred. Please try again.');
     }
-}
-                               
+                            
     </script>
 </body>
 </html>
