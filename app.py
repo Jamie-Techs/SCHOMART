@@ -1680,24 +1680,25 @@ def followers():
 
 
 
+
+
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
     "plan_name": "free_advert", 
     "cost_naira": 0, 
-    "min_duration_days": 1, 
-    "max_duration_days": 7, 
+    "advert_duration_days": 7, 
     "visibility_level": "Standard",
     "is_free": True
 }
 
 # Referral plans with varied visibility levels
 REFERRAL_PLANS = {
-    5: {"plan_name": "referral_5", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 7, "visibility_level": "Standard", "is_free": True},
-    10: {"plan_name": "referral_10", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 14, "visibility_level": "Featured", "is_free": True},
-    15: {"plan_name": "referral_15", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 30, "visibility_level": "Featured", "is_free": True},
-    20: {"plan_name": "referral_20", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 60, "visibility_level": "Featured", "is_free": True},
-    25: {"plan_name": "referral_25", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 90, "visibility_level": "Premium", "is_free": True},
-    30: {"plan_name": "referral_30", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 120, "visibility_level": "Premium", "is_free": True},
+    5: {"plan_name": "referral_5", "cost_naira": 0, "advert_duration_days": 7, "visibility_level": "Standard", "is_free": True},
+    10: {"plan_name": "referral_10", "cost_naira": 0, "advert_duration_days": 14, "visibility_level": "Featured", "is_free": True},
+    15: {"plan_name": "referral_15", "cost_naira": 0, "advert_duration_days": 30, "visibility_level": "Featured", "is_free": True},
+    20: {"plan_name": "referral_20", "cost_naira": 0, "advert_duration_days": 60, "visibility_level": "Featured", "is_free": True},
+    25: {"plan_name": "referral_25", "cost_naira": 0, "advert_duration_days": 90, "visibility_level": "Premium", "is_free": True},
+    30: {"plan_name": "referral_30", "cost_naira": 0, "advert_duration_days": 120, "visibility_level": "Premium", "is_free": True},
 }
 
 # Paid plans (now with duration limits)
@@ -1706,6 +1707,9 @@ PAID_PLANS = {
     "featured": {"plan_name": "paid_advert_featured", "min_duration_days": 1, "max_duration_days": 180, "visibility_level": "Featured", "is_free": False},
     "premium": {"plan_name": "paid_advert_premium", "min_duration_days": 1, "max_duration_days": 180, "visibility_level": "Premium", "is_free": False}
 }
+
+
+
 
 
 
@@ -2357,6 +2361,7 @@ def validate_sell_form(form_data, files):
 
 
 
+
 def get_user_advert_options(user_id):
     """
     Retrieves and formats the advert posting options available to a user.
@@ -2365,6 +2370,7 @@ def get_user_advert_options(user_id):
     
     user_info = get_user_info(user_id)
     user_referral_count = user_info.get("referral_count", 0)
+    referral_plans_used = user_info.get('referral_plans_used', [])
 
     # Add paid advert options
     for level, details in PAID_PLANS.items():
@@ -2378,9 +2384,9 @@ def get_user_advert_options(user_id):
             "cost_description": "Customizable duration and price"
         })
     
-    # Add referral-based options if user is eligible
+    # Add referral-based options if user is eligible and hasn't used the benefit
     for referral_cost, plan_details in REFERRAL_PLANS.items():
-        if user_referral_count >= referral_cost and plan_details['plan_name'] not in user_info.get('referral_plans_used', []):
+        if user_referral_count >= referral_cost and plan_details['plan_name'] not in referral_plans_used:
             options.append({
                 "type": plan_details['plan_name'],
                 "label": f"Referral Benefit: {plan_details['plan_name'].replace('_', ' ').title()}",
@@ -2404,6 +2410,9 @@ def get_user_advert_options(user_id):
         })
 
     return options
+
+                      
+
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -5379,6 +5388,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
