@@ -2355,18 +2355,18 @@ def validate_sell_form(form_data, files):
     
     return errors
 
+
+
 def get_user_advert_options(user_id):
     """
     Retrieves and formats the advert posting options available to a user.
     """
     options = []
     
-    # Get user information to check eligibility for free and referral plans
     user_info = get_user_info(user_id)
     user_referral_count = user_info.get("referral_count", 0)
 
     # Add paid advert options
-    # We will get the details directly from the PAID_PLANS constant
     for level, details in PAID_PLANS.items():
         options.append({
             "type": details['plan_name'],
@@ -2404,9 +2404,6 @@ def get_user_advert_options(user_id):
         })
 
     return options
-
-
-
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -5382,6 +5379,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
