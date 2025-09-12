@@ -2356,60 +2356,59 @@ def validate_sell_form(form_data, files):
     return errors
 
 
+
+
 def get_user_advert_options(user_id):
+    """
+    Retrieves and formats the advert posting options available to a user.
+    """
     options = []
     
-    # Add paid advert options for each visibility level
-    for visibility_level, multiplier in VISIBILITY_MULTIPLIERS.items():
-        label_text = f"Paid Plan ({visibility_level})"
-        plan_name = f"paid_advert_{visibility_level.lower()}"
-        
-        cost_description = "Cost is based on product value and advert duration."
-        if visibility_level == "Standard":
-            cost_description = "Standard Visibility"
-        elif visibility_level == "Featured":
-            cost_description = "Featured Visibility"
-        elif visibility_level == "Premium":
-            cost_description = "Premium Visibility"
-            
-        options.append({
-            "type": plan_name,  # Corrected: Use the unique plan name as the type
-            "label": label_text,
-            "plan_name": plan_name,
-            "cost_naira": None,
-            "advert_duration_days": None,
-            "visibility_level": visibility_level,
-            "cost_description": cost_description
-        })
-    
+    # Get user information to check eligibility for free and referral plans
     user_info = get_user_info(user_id)
     user_referral_count = user_info.get("referral_count", 0)
 
+    # Add paid advert options
+    # We will get the details directly from the PAID_PLANS constant
+    for level, details in PAID_PLANS.items():
+        options.append({
+            "type": details['plan_name'],
+            "label": f"Paid Plan ({level.title()})",
+            "plan_name": details['plan_name'],
+            "is_free": False,
+            "min_duration_days": details['min_duration_days'],
+            "max_duration_days": details['max_duration_days'],
+            "cost_description": "Customizable duration and price"
+        })
+    
     # Add referral-based options if user is eligible
-    for cost, plan_details in REFERRAL_PLANS.items():
-        if user_referral_count >= cost:
-            plan_name = f"referral_{cost}"
+    for referral_cost, plan_details in REFERRAL_PLANS.items():
+        if user_referral_count >= referral_cost and plan_details['plan_name'] not in user_info.get('referral_plans_used', []):
             options.append({
-                "type": plan_name,
-                "label": f"Referral Benefit: {plan_details['plan_name']} ({cost} referrals)",
-                "plan_name": plan_name,
+                "type": plan_details['plan_name'],
+                "label": f"Referral Benefit: {plan_details['plan_name'].replace('_', ' ').title()}",
+                "plan_name": plan_details['plan_name'],
+                "is_free": True,
                 "advert_duration_days": plan_details['advert_duration_days'],
                 "visibility_level": plan_details['visibility_level'],
-                "cost_description": f"{cost} Referrals"
+                "cost_description": f"Paid with {referral_cost} Referrals"
             })
-
-    # Add one-time free advert option last, if not yet used
+    
+    # Add one-time free advert option if not yet used
     if not user_info.get("has_posted_free_ad", False):
         options.append({
-            "type": "free_advert",
+            "type": FREE_ADVERT_PLAN['plan_name'],
             "label": "Free Advert",
-            "plan_name": "free_advert",
-            "advert_duration_days": FREE_ADVERT_PLAN["advert_duration_days"],
-            "visibility_level": FREE_ADVERT_PLAN["visibility_level"],
+            "plan_name": FREE_ADVERT_PLAN['plan_name'],
+            "is_free": True,
+            "advert_duration_days": FREE_ADVERT_PLAN['advert_duration_days'],
+            "visibility_level": FREE_ADVERT_PLAN['visibility_level'],
             "cost_description": "One-time Free"
         })
 
     return options
+
+
 
 
 
@@ -5388,6 +5387,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
