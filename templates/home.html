@@ -204,10 +204,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         /* --- Scrolling Section --- */
         .scrolling-container {
-            overflow: hidden;
+            overflow-x: auto; /* Allow manual horizontal scrolling */
             width: 100%;
         }
         .scrolling-wrapper {
@@ -215,6 +214,7 @@
             animation: scroll-left var(--scroll-duration, 25s) linear infinite;
             white-space: nowrap;
             padding: 10px 0;
+            cursor: grab; /* Change cursor to indicate it's draggable */
         }
         .scrolling-wrapper .product-card {
             margin-right: 20px;
@@ -228,6 +228,16 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
+        /* Add a CSS rule for the scrollbar to make it more subtle or hidden */
+        .scrolling-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .scrolling-container::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        
 
         /* --- Footer --- */
         .main-footer {
@@ -598,6 +608,7 @@
 
 </body>
 </html>
+
 
 
 
