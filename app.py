@@ -2332,6 +2332,8 @@ def delete_advert_and_data(advert_id):
 
 
 
+
+
 def validate_sell_form(form_data, files):
     errors = []
     if not form_data.get('title'):
@@ -2341,26 +2343,36 @@ def validate_sell_form(form_data, files):
     if not category_name:
         errors.append("Category is required.")
     else:
-        # This checks if the submitted category name exists in your CATEGORIES data
         category_id = get_category_id_from_name(category_name)
         if not category_id:
             errors.append("Invalid category selected. Please choose from the list.")
 
     if not form_data.get('description'):
         errors.append("Description is required.")
-    if not form_data.get('price'):
-        errors.append("Price is required.")
+    
+    # Check for plan-specific fields
+    posting_option = form_data.get('posting_option')
+    if posting_option and posting_option.startswith('paid_advert_'):
+        if not form_data.get('price'):
+            errors.append("Price is required for paid plans.")
+        if not form_data.get('advert_duration_days'):
+            errors.append("Advert duration is required for paid plans.")
+        else:
+            try:
+                duration = int(form_data.get('advert_duration_days'))
+                if not (1 <= duration <= 180):
+                    errors.append("Advert duration must be between 1 and 180 days.")
+            except (ValueError, TypeError):
+                errors.append("Invalid advert duration.")
+    
     if not form_data.get('state'):
         errors.append("State is required.")
     if not form_data.get('school'):
         errors.append("School is required.")
     if not files.get('main_image') and not form_data.get('existing_main_image'):
         errors.append("A main image is required.")
-    
+        
     return errors
-
-
-
 
 def get_user_advert_options(user_id):
     """
@@ -5388,6 +5400,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
