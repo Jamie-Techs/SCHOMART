@@ -5140,37 +5140,65 @@ def api_calculate_cgpa():
 
 
 
+
 @app.route('/leaderboard')
 def leaderboard():
     """
     Fetches user data from Firestore to display a leaderboard,
-    including dynamic profile pictures.
+    including the current user's specific position.
     """
+    current_user_id = session.get('user_id')  # Assuming you store user ID in session
     leaderboard_users = []
+    current_user_data = None
+    current_user_position = None
 
     try:
         # Fetch the top 50 users from Firestore, ordered by referral count.
         users_ref = db.collection('users').order_by('referral_count', direction=firestore.Query.DESCENDING).limit(50).stream()
 
-        for doc in users_ref:
+        for index, doc in enumerate(users_ref, 1):
             user_data = doc.to_dict()
             profile_pic_url = get_profile_picture_url(doc.id)
-
-            leaderboard_users.append({
+            
+            user_info = {
                 'id': doc.id,
                 'username': user_data.get('username', 'N/A'),
                 'profile_picture': profile_pic_url,
                 'referral_count': user_data.get('referral_count', 0)
-            })
+            }
+            
+            leaderboard_users.append(user_info)
+            
+            # Check if this is the current logged-in user
+            if doc.id == current_user_id:
+                current_user_data = user_info
+                current_user_position = index
+
+        # If the current user is not in the top 50, fetch their data and position separately
+        if current_user_id and not current_user_data:
+            # Find the user's rank by counting users with more referrals
+            user_doc = db.collection('users').document(current_user_id).get()
+            if user_doc.exists:
+                user_referral_count = user_doc.to_dict().get('referral_count', 0)
+                rank_query = db.collection('users').where('referral_count', '>', user_referral_count).stream()
+                current_user_position = len(list(rank_query)) + 1
+                
+                profile_pic_url = get_profile_picture_url(current_user_id)
+                current_user_data = {
+                    'id': current_user_id,
+                    'username': user_doc.to_dict().get('username', 'N/A'),
+                    'profile_picture': profile_pic_url,
+                    'referral_count': user_referral_count
+                }
 
     except Exception as e:
         logging.error(f"Error fetching leaderboard data: {e}", exc_info=True)
         flash('An error occurred while fetching the leaderboard.', 'error')
 
-    return render_template('leaderboard.html', leaderboard=leaderboard_users)
-
-
-
+    return render_template('leaderboard.html', 
+                           leaderboard=leaderboard_users,
+                           current_user=current_user_data,
+                           current_user_position=current_user_position)
 
 
 
@@ -5393,6 +5421,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
