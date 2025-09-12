@@ -1680,20 +1680,31 @@ def followers():
 
 
 
-
 # One-time free advert plan
 FREE_ADVERT_PLAN = {
-    "plan_name": "free_advert", "cost_naira": 0, "advert_duration_days": 7, "visibility_level": "Standard"
+    "plan_name": "free_advert", 
+    "cost_naira": 0, 
+    "min_duration_days": 1, 
+    "max_duration_days": 7, 
+    "visibility_level": "Standard",
+    "is_free": True
 }
 
-# Referral plans with varied visibility levels - CORRECTED NAMES
+# Referral plans with varied visibility levels
 REFERRAL_PLANS = {
-    5: {"plan_name": "referral_5", "cost_naira": 0, "advert_duration_days": 7, "visibility_level": "Standard"},
-    10: {"plan_name": "referral_10", "cost_naira": 0, "advert_duration_days": 14, "visibility_level": "Featured"},
-    15: {"plan_name": "referral_15", "cost_naira": 0, "advert_duration_days": 30, "visibility_level": "Featured"},
-    20: {"plan_name": "referral_20", "cost_naira": 0, "advert_duration_days": 60, "visibility_level": "Featured"},
-    25: {"plan_name": "referral_25", "cost_naira": 0, "advert_duration_days": 90, "visibility_level": "Premium"},
-    30: {"plan_name": "referral_30", "cost_naira": 0, "advert_duration_days": 120, "visibility_level": "Premium"},
+    5: {"plan_name": "referral_5", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 7, "visibility_level": "Standard", "is_free": True},
+    10: {"plan_name": "referral_10", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 14, "visibility_level": "Featured", "is_free": True},
+    15: {"plan_name": "referral_15", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 30, "visibility_level": "Featured", "is_free": True},
+    20: {"plan_name": "referral_20", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 60, "visibility_level": "Featured", "is_free": True},
+    25: {"plan_name": "referral_25", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 90, "visibility_level": "Premium", "is_free": True},
+    30: {"plan_name": "referral_30", "cost_naira": 0, "min_duration_days": 1, "max_duration_days": 120, "visibility_level": "Premium", "is_free": True},
+}
+
+# Paid plans (now with duration limits)
+PAID_PLANS = {
+    "standard": {"plan_name": "paid_advert_standard", "min_duration_days": 1, "max_duration_days": 180, "visibility_level": "Standard", "is_free": False},
+    "featured": {"plan_name": "paid_advert_featured", "min_duration_days": 1, "max_duration_days": 180, "visibility_level": "Featured", "is_free": False},
+    "premium": {"plan_name": "paid_advert_premium", "min_duration_days": 1, "max_duration_days": 180, "visibility_level": "Premium", "is_free": False}
 }
 
 
@@ -2402,9 +2413,6 @@ def get_user_advert_options(user_id):
 
 
 
-
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2462,15 +2470,36 @@ def sell(advert_id=None):
         selected_option_key = form_data.get("posting_option")
         plan_details = get_plan_details(selected_option_key)
         
-        if not plan_details or plan_details.get("plan_name") == "unknown_plan":
+        if plan_details["plan_name"] == "unknown_plan":
             errors.append("Invalid advert plan selected.")
         
         advert_duration_days = None
-        cost_naira = None
-        is_free = plan_details.get("is_free", True)
+        cost_naira = 0
+        is_free = plan_details.get("is_free")
 
-        # Handle eligibility for free plans first
-        if is_free and plan_details.get("plan_name") != "unknown_plan":
+        # Handle duration and cost based on plan type
+        try:
+            advert_duration_days = int(form_data.get("advert_duration_days"))
+        except (ValueError, TypeError):
+            errors.append("Please enter a valid number for advert duration.")
+        
+        # Validate duration against plan limits
+        if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
+            errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
+
+        # Recalculate cost for paid plans
+        if not is_free:
+            try:
+                product_price = float(form_data.get("price"))
+                selected_visibility = plan_details.get("visibility_level")
+                multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
+                calculated_cost = 0.01 * product_price * advert_duration_days * multiplier
+                cost_naira = max(calculated_cost, 100)
+            except (ValueError, TypeError):
+                errors.append("Invalid price. Please enter a valid number.")
+        
+        # Check eligibility for free plans
+        if is_free:
             user_doc = get_user_info(user_id)
             if plan_details["plan_name"] == "free_advert":
                 if user_doc.get("has_posted_free_ad"):
@@ -2479,28 +2508,9 @@ def sell(advert_id=None):
                 referral_amount = int(plan_details["plan_name"].split('_')[1])
                 if user_doc.get("referrals_count", 0) < referral_amount:
                     errors.append(f"You do not have enough referrals to use this benefit.")
-                
                 if plan_details["plan_name"] in user_doc.get("referral_plans_used", []):
                     errors.append(f"You have already used the {plan_details['plan_name']} referral benefit.")
-
-            advert_duration_days = plan_details.get("advert_duration_days")
-            cost_naira = 0
-            
-        elif plan_details["plan_name"].startswith("paid_advert_"):
-            try:
-                product_price = float(form_data.get("price"))
-                advert_duration_days = int(form_data.get("advert_duration_days"))
-                
-                if not (0 < advert_duration_days <= 180):
-                    errors.append("Advert duration must be between 1 and 180 days.")
-                
-                selected_visibility = plan_details.get("visibility_level")
-                multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
-                calculated_cost = 0.01 * product_price * advert_duration_days * multiplier
-                cost_naira = max(calculated_cost, 100)
-            except (ValueError, TypeError):
-                errors.append("Invalid price or advert duration. Please enter valid numbers.")
-
+        
         if not files.get('main_image') and not form_data.get('existing_main_image'):
             errors.append("A main image is required.")
         
@@ -2601,6 +2611,10 @@ def sell(advert_id=None):
 
 
 
+
+
+
+
 # Your existing function to safely fetch an advert.
 def get_advert_details(advert_id, user_id):
     """Fetches details of a specific advert, ensuring it belongs to the user."""
@@ -2614,57 +2628,44 @@ def get_advert_details(advert_id, user_id):
 
 
 
+
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name.
     """
-    # Define a safe, default plan to prevent crashes
     default_plan = {
-        "plan_name": "unknown_plan",
-        "label": "Unknown Plan",
-        "advert_duration_days": 0,
-        "cost_naira": 0,
-        "visibility_level": "Standard",
-        "is_free": True
+        "plan_name": "unknown_plan", "label": "Unknown Plan", 
+        "min_duration_days": 0, "max_duration_days": 0, 
+        "cost_naira": 0, "visibility_level": "Standard", "is_free": True
     }
 
     if not plan_name:
         return default_plan
+    
+    plan_name = plan_name.lower().strip().replace(" ", "_")
 
-    plan_name = plan_name.lower().strip().replace(" ", "_") # Normalize input
-
-    # Check for the single free advert plan
     if plan_name == "free_advert":
         free_plan = FREE_ADVERT_PLAN.copy()
         free_plan['label'] = "Free Advert"
-        free_plan['is_free'] = True
         return free_plan
 
-    # Check for a referral advert plan by parsing the number
     if plan_name.startswith("referral_"):
         try:
-            # We now parse the name correctly
             referral_amount = int(plan_name.split('_')[1])
             referral_plan = REFERRAL_PLANS.get(referral_amount)
             if referral_plan:
                 referral_plan['label'] = f"Referral Benefit: {referral_plan['plan_name'].replace('_', ' ').title()}"
-                referral_plan['is_free'] = True
                 return referral_plan
         except (ValueError, IndexError):
-            pass # Fall through to the default plan
+            pass
 
-    # Check for a regular paid advert - this is now a placeholder
     if plan_name.startswith("paid_advert_"):
-        visibility_level = plan_name.replace("paid_advert_", "").title()
-        return {
-            "plan_name": plan_name,
-            "label": f"Paid Plan ({visibility_level})",
-            "visibility_level": visibility_level,
-            "advert_duration_days": None, # Duration is set at submission
-            "cost_naira": None, # Cost is set at submission
-            "is_free": False
-        }
-
+        visibility_level = plan_name.replace("paid_advert_", "")
+        paid_plan = PAID_PLANS.get(visibility_level)
+        if paid_plan:
+            paid_plan['label'] = f"Paid Plan ({visibility_level.title()})"
+            return paid_plan
+        
     return default_plan
 
 
@@ -5387,6 +5388,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
