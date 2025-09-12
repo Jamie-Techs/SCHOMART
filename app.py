@@ -376,13 +376,15 @@ def send_daily_advert_report():
 scheduler.add_job(id='daily_advert_report', func=send_daily_advert_report, trigger='cron', hour=22, minute=10)
 
 
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('.', 'manifest.json', mimetype='application/json')
 
+# Route to serve the service-worker.js file from the project root
+@app.route('/service-worker.js')
+def serve_service_worker():
+    return send_from_directory('.', 'service-worker.js', mimetype='application/javascript')
 
-
-
-# app.py
-
-# ... (all your existing code, including the send_daily_advert_report function) ...
 
 @app.route('/send-report-now')
 def trigger_report():
@@ -396,11 +398,10 @@ def trigger_report():
     except Exception as e:
         return f"An error occurred while trying to send the report: {e}", 500
 
-# ... (the rest of your routes and the __main__ block) ...
 
 
 
-# --- Routes for Authentication ---
+
 
 @app.route('/login', methods=['GET'])
 def login_page():
@@ -5387,6 +5388,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
