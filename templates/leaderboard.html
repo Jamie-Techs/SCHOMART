@@ -395,6 +395,56 @@
             font-size: 1.5em;
         }
 
+        /* ------------------------------------- */
+        /* NEW STYLES FOR STICKY USER POSITION */
+        /* ------------------------------------- */
+
+        .leaderboard-tab-container {
+            max-height: 70vh; /* Set a max height for the container */
+            overflow-y: auto; /* Enable vertical scrolling */
+            position: relative; /* Important for sticky positioning */
+            padding-top: 15px; /* Add some padding at the top */
+        }
+
+        .user-position-card {
+            position: sticky;
+            top: 0; /* Makes the card stick to the top of its container */
+            z-index: 10;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background-color: var(--primary-color);
+            color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .user-position-card .serial-number,
+        .user-position-card .username,
+        .user-position-card .profile-link {
+            color: var(--card-background);
+        }
+        .user-position-card .profile-picture {
+            border-color: var(--card-background);
+        }
+
+        .user-position-card .referral-count {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+        
+        /* The main leaderboard list, with a little top padding to avoid overlap */
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-top: 5px; 
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .container {
@@ -438,7 +488,7 @@
             .tab-content {
                 padding: 20px;
             }
-            .user-card {
+            .user-card, .user-position-card {
                 flex-wrap: wrap;
                 justify-content: space-between;
             }
@@ -535,17 +585,30 @@
     </div>
     
     <div id="leaderboard-tab" class="tab-content">
-        <div class="leaderboard">
-            {% for user in leaderboard %}
-            <div class="user-card">
-                <div class="serial-number">{{ loop.index }}</div>
-                <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
-                    <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
-                    <span class="username">{{ user.username }}</span>
-                </a>
-                <div class="referral-count">{{ user.referral_count }} Referrals <i class="fas fa-users"></i></div>
+        {% if current_user and current_user_position %}
+        <div class="user-position-card">
+            <div class="serial-number">{{ current_user_position }}</div>
+            <a href="{{ url_for('seller_profile_view', seller_id=current_user.id) }}" class="profile-link">
+                <img src="{{ current_user.profile_picture }}" alt="{{ current_user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                <span class="username">{{ current_user.username }}</span>
+            </a>
+            <div class="referral-count">{{ current_user.referral_count }} Referrals <i class="fas fa-users"></i></div>
+        </div>
+        {% endif %}
+        
+        <div class="leaderboard-tab-container">
+             <div class="leaderboard-list">
+                {% for user in leaderboard %}
+                <div class="user-card">
+                    <div class="serial-number">{{ loop.index }}</div>
+                    <a href="{{ url_for('seller_profile_view', seller_id=user.id) }}" class="profile-link">
+                        <img src="{{ user.profile_picture }}" alt="{{ user.username }}" class="profile-picture" onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/default_profile.png') }}';">
+                        <span class="username">{{ user.username }}</span>
+                    </a>
+                    <div class="referral-count">{{ user.referral_count }} Referrals <i class="fas fa-users"></i></div>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
     </div>
 
@@ -556,18 +619,17 @@
                 The more you refer, the more exciting your rewards! Grow your network and earn **free advert plans** on our platform.
             </div>
         </div>
-
+        
         <h3><i class="fas fa-star"></i> Unlock These Amazing Rewards!</h3>
-<ul class="benefits-list">
-    <li><i class="fas fa-check-circle"></i> **5 referrals**: Get a **Standard** visibility advert for **7 days**.</li>
-    <li><i class="fas fa-check-circle"></i> **10 referrals**: Get a **Featured** visibility advert for **14 days**.</li>
-    <li><i class="fas fa-check-circle"></i> **15 referrals**: Get a **Featured** visibility advert for **30 days**.</li>
-    <li><i class="fas fa-check-circle"></i> **20 referrals**: Get a **Featured** visibility advert for **60 days**.</li>
-    <li><i class="fas fa-check-circle"></i> **25 referrals**: Get a **Premium** visibility advert for **90 days**.</li>
-    <li><i class="fas fa-check-circle"></i> **30 referrals**: Get a **Premium** visibility advert for **120 days**.</li>
-</ul>
-        
-        
+        <ul class="benefits-list">
+            <li><i class="fas fa-check-circle"></i> **5 referrals**: Get the **Starter** plan (7-day advert duration, ₦500 value)</li>
+            <li><i class="fas fa-check-circle"></i> **10 referrals**: Get the **Basic** plan (14-day advert duration, ₦1,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **15 referrals**: Get the **Premium** plan (30-day advert duration, ₦1,500 value)</li>
+            <li><i class="fas fa-check-circle"></i> **30 referrals**: Get the **Small Business** plan (30-day advert duration, ₦3,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **40 referrals**: Get the **Medium Business** plan (60-day advert duration, ₦5,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **50 referrals**: Get the **Large Business** plan (90-day advert duration, ₦8,000 value)</li>
+            <li><i class="fas fa-check-circle"></i> **60 referrals**: Get the **Enterprise** plan (180-day advert duration, ₦10,000 value)</li>
+        </ul>
     </div>
 </div>
 
@@ -640,4 +702,3 @@
 
 </body>
 </html>
-
