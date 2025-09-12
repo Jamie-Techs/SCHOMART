@@ -2826,7 +2826,6 @@ def submit_advert(advert_id):
 
 
 
-
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -2850,9 +2849,10 @@ def list_adverts():
         # Check for expiration if the advert is published
         if status == 'published' and advert_data.get('published_at'):
             plan_name = advert_data.get('plan_name')
-            # CORRECTED: Use the get_plan_details function to find the advert's duration
+            # Fetch the plan details
             plan_details = get_plan_details(plan_name)
             
+            # CORRECTED: Check if plan_details is not None before accessing keys
             if plan_details:
                 duration_days = plan_details.get('advert_duration_days', 0)
                 published_at = advert_data['published_at']
@@ -2869,7 +2869,12 @@ def list_adverts():
                     # Update status to 'expired' in Firestore
                     doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
                     status = 'expired'
-            
+            else:
+                # OPTIONAL: Handle case where plan_name is not found. 
+                # This could be a data consistency issue. You might want to log it or flash a message.
+                print(f"Warning: No plan details found for advert {doc.id} with plan name '{plan_name}'")
+                flash(f"Warning: Advert {advert_data.get('title', doc.id)} has an unknown plan and cannot be managed correctly. Please contact support.", 'warning')
+        
         # Check if the advert is expired and passed the 2-day grace period
         if status == 'expired' and advert_data.get('expired_at'):
             expired_at = advert_data['expired_at']
@@ -5388,6 +5393,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
