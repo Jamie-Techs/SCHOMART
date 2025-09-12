@@ -2355,9 +2355,6 @@ def validate_sell_form(form_data, files):
     
     return errors
 
-
-
-
 def get_user_advert_options(user_id):
     """
     Retrieves and formats the advert posting options available to a user.
@@ -2627,7 +2624,6 @@ def get_advert_details(advert_id, user_id):
 
 
 
-
 def get_plan_details(plan_name):
     """
     Finds and returns the details for a given plan name.
@@ -2666,7 +2662,6 @@ def get_plan_details(plan_name):
             return paid_plan
         
     return default_plan
-
 
 
 
@@ -5387,6 +5382,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
