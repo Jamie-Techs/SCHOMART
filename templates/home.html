@@ -4,12 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     
-  
-  <link rel="manifest" href="/manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SCHOMART">
-  
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SCHOMART">
+    
     <title>Home - SCHOMART</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
     <style>
@@ -373,6 +372,65 @@
             .product-grid { grid-template-columns: 1fr; }
             .product-card { max-width: 100%; }
         }
+        
+        /* --- Custom Pop-up Styles --- */
+        .pwa-modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        .pwa-modal-content {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            position: relative;
+            max-width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
+        }
+        .pwa-modal-content h2 {
+            color: var(--primary-green);
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        .pwa-modal-content p {
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+        .pwa-modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2rem;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .pwa-modal-close-btn:hover {
+            color: var(--text-medium);
+        }
+        .pwa-modal-instructions {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .pwa-modal-instructions ol {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -568,49 +626,67 @@
     });
 </script>
 
-    <script>
-        // Check for Service Worker support
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registration successful:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
-            });
-        } else {
-            console.error('Service Workers are not supported by this browser.');
+<script>
+    // PWA functionality (service worker registration)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registration successful:', registration.scope);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        });
+    } else {
+        console.error('Service Workers are not supported by this browser.');
+    }
+
+    // PWA Install Pop-up HTML
+    document.write(`
+        <div id="pwa-install-modal" class="pwa-modal-container" style="display:none;">
+            <div class="pwa-modal-content">
+                <span class="pwa-modal-close-btn">&times;</span>
+                <h2>Install SCHOMART 🚀</h2>
+                <p>For a better experience, install SCHOMART to your home screen. It's fast, free, and works offline!</p>
+                <div class="pwa-modal-instructions">
+                    <p><strong>To install manually:</strong></p>
+                    <ol>
+                        <li>Tap the browser's menu button (<i class="fas fa-ellipsis-v"></i> or <i class="fas fa-ellipsis-h"></i>).</li>
+                        <li>Select **'Add to Home screen'**.</li>
+                        <li>Confirm and enjoy the app.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    `);
+
+    // Custom PWA Install Pop-up Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('pwa-install-modal');
+        const closeBtn = document.querySelector('.pwa-modal-close-btn');
+        
+        const hasDismissedModal = localStorage.getItem('pwa-modal-dismissed');
+        
+        if (!hasDismissedModal) {
+            setTimeout(() => {
+                modal.style.display = 'flex';
+            }, 3000); // Shows after 3 seconds
         }
 
-        let deferredPrompt;
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            localStorage.setItem('pwa-modal-dismissed', 'true');
+        });
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('`beforeinstallprompt` event fired.');
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Check if the prompt is available to be shown
-            if (deferredPrompt) {
-                console.log('Attempting to show the install prompt.');
-                deferredPrompt.prompt();
-            } else {
-                console.error('The `beforeinstallprompt` event was fired, but the prompt object is not available.');
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'pwa-install-modal') {
+                modal.style.display = 'none';
+                localStorage.setItem('pwa-modal-dismissed', 'true');
             }
         });
-
-        // This event listener can help diagnose issues with manifest parsing
-        window.addEventListener('appinstalled', (e) => {
-            console.log('PWA was installed successfully!');
-        });
-    </script>
+    });
+</script>
 
 </body>
 </html>
-
-
-
-
-
-
