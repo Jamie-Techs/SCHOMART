@@ -2424,6 +2424,8 @@ def get_user_advert_options(user_id):
     return options
 
 
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2489,24 +2491,19 @@ def sell(advert_id=None):
         is_free = plan_details.get("is_free")
 
         # Handle duration and cost based on plan type
-        try:
-            advert_duration_days = int(form_data.get("advert_duration_days"))
-        except (ValueError, TypeError):
-            errors.append("Please enter a valid number for advert duration.")
-        
-        # Validate duration against plan limits based on the plan type
         if plan_details["plan_name"].startswith("paid_advert_"):
-            # For paid plans, check against min/max duration
-            if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
-                errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
-        else:
-            # For free and referral plans, check against a fixed duration
-            fixed_duration = plan_details.get("advert_duration_days")
-            if advert_duration_days != fixed_duration:
-                errors.append(f"Advert duration must be exactly {fixed_duration} days for this plan.")
-
-        # Recalculate cost for paid plans
-        if not is_free:
+            # For paid plans, duration is customizable and must be validated
+            try:
+                advert_duration_days = int(form_data.get("advert_duration_days"))
+            except (ValueError, TypeError):
+                errors.append("Please enter a valid number for advert duration.")
+                advert_duration_days = None # Set to None to prevent a subsequent error
+                
+            if advert_duration_days is not None:
+                if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
+                    errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
+            
+            # Recalculate cost for paid plans
             try:
                 product_price = float(form_data.get("price"))
                 selected_visibility = plan_details.get("visibility_level")
@@ -2515,7 +2512,12 @@ def sell(advert_id=None):
                 cost_naira = max(calculated_cost, 100)
             except (ValueError, TypeError):
                 errors.append("Invalid price. Please enter a valid number.")
-        
+                
+        else:
+            # For free and referral plans, use the fixed duration from the plan details
+            advert_duration_days = plan_details.get("advert_duration_days")
+            cost_naira = 0
+    
         # Check eligibility for free plans
         if is_free:
             user_doc = get_user_info(user_id)
@@ -2611,6 +2613,8 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
 
 
 
@@ -5411,6 +5415,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
