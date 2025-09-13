@@ -2424,9 +2424,6 @@ def get_user_advert_options(user_id):
     return options
 
 
-
-
-
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2497,9 +2494,16 @@ def sell(advert_id=None):
         except (ValueError, TypeError):
             errors.append("Please enter a valid number for advert duration.")
         
-        # Validate duration against plan limits
-        if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
-            errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
+        # Validate duration against plan limits based on the plan type
+        if plan_details["plan_name"].startswith("paid_advert_"):
+            # For paid plans, check against min/max duration
+            if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
+                errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
+        else:
+            # For free and referral plans, check against a fixed duration
+            fixed_duration = plan_details.get("advert_duration_days")
+            if advert_duration_days != fixed_duration:
+                errors.append(f"Advert duration must be exactly {fixed_duration} days for this plan.")
 
         # Recalculate cost for paid plans
         if not is_free:
@@ -2518,8 +2522,6 @@ def sell(advert_id=None):
             if plan_details["plan_name"] == "free_advert":
                 if user_doc.get("has_posted_free_ad"):
                     errors.append("You have already used your one-time free advert.")
-            # The referral check and deduction logic has been completely removed from here
-            # to prevent the flashing error and ensure it only happens on admin approval.
         
         if not files.get('main_image') and not form_data.get('existing_main_image'):
             errors.append("A main image is required.")
@@ -5409,6 +5411,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
