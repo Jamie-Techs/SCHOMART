@@ -2423,7 +2423,10 @@ def get_user_advert_options(user_id):
 
     return options
 
-                      
+
+
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2461,7 +2464,6 @@ def sell(advert_id=None):
         files = request.files
         errors = []
         
-        # --- (Existing form validation logic remains unchanged) ---
         submitted_category = form_data.get('category')
         all_categories = get_all_categories()
         category_names = [cat.get('name') for cat in all_categories]
@@ -2489,14 +2491,20 @@ def sell(advert_id=None):
         cost_naira = 0
         is_free = plan_details.get("is_free")
 
-        if not is_free:
+        # Handle duration and cost based on plan type
+        if plan_details["plan_name"].startswith("paid_advert_"):
+            # For paid plans, duration is customizable and must be validated
             try:
                 advert_duration_days = int(form_data.get("advert_duration_days"))
-                if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
-                    errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
             except (ValueError, TypeError):
                 errors.append("Please enter a valid number for advert duration.")
+                advert_duration_days = None # Set to None to prevent a subsequent error
+                
+            if advert_duration_days is not None:
+                if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
+                    errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
             
+            # Recalculate cost for paid plans
             try:
                 product_price = float(form_data.get("price"))
                 selected_visibility = plan_details.get("visibility_level")
@@ -2505,31 +2513,26 @@ def sell(advert_id=None):
                 cost_naira = max(calculated_cost, 100)
             except (ValueError, TypeError):
                 errors.append("Invalid price. Please enter a valid number.")
+                
         else:
-            # For free plans, use the predefined duration
-            advert_duration_days = plan_details.get('advert_duration_days', 0)
+            # For free and referral plans, use the fixed duration from the plan details
+            advert_duration_days = plan_details.get("advert_duration_days")
             cost_naira = 0
-            
-            # Check eligibility for free plans
+    
+        # Check eligibility for free plans
+        if is_free:
             user_doc = get_user_info(user_id)
             if plan_details["plan_name"] == "free_advert":
                 if user_doc.get("has_posted_free_ad"):
                     errors.append("You have already used your one-time free advert.")
-            elif plan_details["plan_name"].startswith("referral_"):
-                referral_amount = int(plan_details["plan_name"].split('_')[1])
-                if user_doc.get("referrals_count", 0) < referral_amount:
-                    errors.append(f"You do not have enough referrals to use this benefit.")
-                if plan_details["plan_name"] in user_doc.get("referral_plans_used", []):
-                    errors.append(f"You have already used the {plan_details['plan_name']} referral benefit.")
-
+        
         if not files.get('main_image') and not form_data.get('existing_main_image'):
             errors.append("A main image is required.")
-
+        
         if errors:
             for error_msg in errors:
                 flash(error_msg, 'error')
             
-            # Re-pass the form data to the template to preserve user input
             form_data['cost_naira'] = cost_naira
             form_data['advert_duration_days'] = advert_duration_days
             return render_template(
@@ -2544,7 +2547,6 @@ def sell(advert_id=None):
                 is_repost=is_repost,
                 errors=errors
             )
-
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
@@ -2558,7 +2560,7 @@ def sell(advert_id=None):
                 "category_id": category_id,
                 "title": form_data.get('title'),
                 "description": form_data.get("description"),
-                "price": float(form_data.get('price')),
+                "price": float(form_data.get('price')) if not is_free else 0.0,
                 "negotiable": form_data.get("negotiable") == "Yes",
                 "condition": form_data.get("condition"),
                 "delivery_option": delivery_option,
@@ -2577,35 +2579,22 @@ def sell(advert_id=None):
             }
             
             if not is_free:
-                # The existing logic for paid plans is correct.
-                # It sets status to 'pending_payment' and redirects to payment.
                 advert_payload["status"] = "pending_payment"
                 new_advert_ref = db.collection("adverts").document()
                 new_advert_ref.set(advert_payload)
                 flash("Your advert has been created. Please complete the payment.", "info")
                 return redirect(url_for('payment', advert_id=new_advert_ref.id))
             else:
-                # This is the corrected block for free and referral plans.
-                # It sets status to 'pending_review' and updates the user's free benefit usage.
                 if advert_id:
-                    # Logic for updating an existing free/referral advert
                     db.collection("adverts").document(advert_id).update(advert_payload)
                     flash("Your advert has been successfully updated and submitted for review.", "success")
                 else:
-                    # Logic for creating a new free/referral advert
                     new_advert_ref = db.collection("adverts").document()
                     new_advert_ref.set(advert_payload)
+                    flash("Your advert has been submitted for review.", "success")
                     
-                    # Update user's benefit usage
                     if plan_details["plan_name"] == "free_advert":
                         db.collection("users").document(user_id).update({"has_posted_free_ad": True})
-                    elif plan_details["plan_name"].startswith("referral_"):
-                        db.collection("users").document(user_id).update({
-                            "referral_plans_used": firestore.ArrayUnion([plan_details["plan_name"]])
-                        })
-                    
-                    flash("Your advert has been submitted for review.", "success")
-                
                 return redirect(url_for('list_adverts'))
         
         except Exception as e:
@@ -2613,6 +2602,7 @@ def sell(advert_id=None):
             flash("An unexpected error occurred. Please try again.", "error")
             return redirect(url_for('sell'))
 
+    # ... (all existing code for GET request rendering remains the same)
     return render_template(
         "sell.html",
         user_data=user_data,
@@ -2624,6 +2614,13 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
+
+
+
+
+
 
 
 
@@ -5405,6 +5402,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
