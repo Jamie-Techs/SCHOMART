@@ -232,8 +232,7 @@
                                     ({{ option.cost_description }})
                                 {% endif %}
                             </option>
-                            {% endfor %}
-                        </select>
+                            {% endfor %} </select>
                         <small class="form-text text-muted">Select an advert plan to define its duration and visibility.</small>
                     </div>
                     <div id="dynamic-fields" style="display: none;">
@@ -281,7 +280,6 @@
                     <div class="form-group-row">
                         
 
-                        
                         <div class="form-group">
                             <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable?</label>
                             <select id="negotiable" name="negotiable">
@@ -376,268 +374,297 @@
             </div>
         {% endif %}
     </div>
+<script>
+    const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
+    const CATEGORIES = [
+        {% for cat in categories %}"{{ cat.name }}",{% endfor %}
+    ];
+    const NIGERIAN_STATES = [
+        {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
+    ];
+    const availableOptions = {{ available_options | tojson | safe }};
+    const form = document.getElementById('post-advert-form');
+    const postingOptionSelect = document.getElementById('posting_option');
+    const dynamicFields = document.getElementById('dynamic-fields');
+    const priceInput = document.getElementById('price');
+    const durationInput = document.getElementById('advert_duration_days');
+    const categoryInput = document.getElementById('category_input');
+    const stateInput = document.getElementById('state_input');
+    const schoolInput = document.getElementById('school_input');
+    const locationInput = document.getElementById('location_input');
+    const schoolError = document.getElementById('school_error');
+    const mainImageInput = document.getElementById('mainImage');
+    const mainImageError = document.getElementById('main-image-error');
+    const additionalImagesInput = document.getElementById('additionalImages');
+    const additionalImagesError = document.getElementById('additional-images-error');
+    const videoInput = document.getElementById('video');
+    const videoError = document.getElementById('video-error');
+    const MAX_IMAGE_SIZE_MB = 10;
+    const MAX_VIDEO_SIZE_MB = 15;
+    const MAX_ADDITIONAL_IMAGES = 2; // This value has been changed to 2
 
-    <script>
-        const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
-        const CATEGORIES = [
-            {% for cat in categories %}"{{ cat.name }}",{% endfor %}
-        ];
-        const NIGERIAN_STATES = [
-            {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
-        ];
-        const availableOptions = {{ available_options | tojson | safe }};
-        const form = document.getElementById('post-advert-form');
-        const postingOptionSelect = document.getElementById('posting_option');
-        const dynamicFields = document.getElementById('dynamic-fields');
-        const priceInput = document.getElementById('price');
-        const durationInput = document.getElementById('advert_duration_days');
-        const categoryInput = document.getElementById('category_input');
-        const stateInput = document.getElementById('state_input');
-        const schoolInput = document.getElementById('school_input');
-        const locationInput = document.getElementById('location_input');
-        const schoolError = document.getElementById('school_error');
-        const mainImageInput = document.getElementById('mainImage');
-        const mainImageError = document.getElementById('main-image-error');
-        const additionalImagesInput = document.getElementById('additionalImages');
-        const additionalImagesError = document.getElementById('additional-images-error');
-        const videoInput = document.getElementById('video');
-        const videoError = document.getElementById('video-error');
-        const MAX_IMAGE_SIZE_MB = 10;
-        const MAX_VIDEO_SIZE_MB = 15;
-        const MAX_ADDITIONAL_IMAGES = 2; // This value has been changed to 2
-
-        function setupAutocomplete(inputElement, dataList, dropdownElement) {
-            function filterAndDisplay() {
-                const query = inputElement.value.toLowerCase();
-                dropdownElement.innerHTML = '';
-                if (!query) {
-                    dropdownElement.classList.add('hidden');
-                    return;
-                }
-                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
-                if (filteredData.length > 0) {
-                    filteredData.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = item;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            inputElement.value = item;
-                            dropdownElement.classList.add('hidden');
-                            inputElement.focus();
-                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
-                        dropdownElement.appendChild(li);
-                    });
-                    dropdownElement.classList.remove('hidden');
-                } else {
-                    dropdownElement.classList.add('hidden');
-                }
+    function setupAutocomplete(inputElement, dataList, dropdownElement) {
+        function filterAndDisplay() {
+            const query = inputElement.value.toLowerCase();
+            dropdownElement.innerHTML = '';
+            if (!query) {
+                dropdownElement.classList.add('hidden');
+                return;
             }
-            inputElement.addEventListener('input', filterAndDisplay);
-            inputElement.addEventListener('focus', filterAndDisplay);
-            inputElement.addEventListener('blur', () => {
-                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
-            });
-        }
-
-        setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
-        setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
-        const schoolDropdown = document.getElementById('school-dropdown');
-
-        function populateSchoolsDropdown(state) {
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDropdown.innerHTML = '';
-            schools.forEach(school => {
-                const li = document.createElement('li');
-                li.textContent = school.name;
-                li.className = 'autocomplete-list-item';
-                li.addEventListener('click', () => {
-                    schoolInput.value = school.name;
-                    schoolDropdown.classList.add('hidden');
-                    locationInput.disabled = false;
-                    locationInput.placeholder = 'e.g., Faculty of Engineering';
-                    schoolInput.focus();
-                });
-                schoolDropdown.appendChild(li);
-            });
-            schoolInput.disabled = false;
-            schoolInput.placeholder = 'Select from the list or type...';
-        }
-
-        stateInput.addEventListener('change', function() {
-            const state = this.value;
-            schoolInput.value = '';
-            locationInput.value = '';
-            locationInput.disabled = true;
-            populateSchoolsDropdown(state);
-        });
-
-        schoolInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const state = stateInput.value;
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDropdown.innerHTML = '';
-            if (query && schools.length > 0) {
-                const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
-                if (filteredSchools.length > 0) {
-                    filteredSchools.forEach(school => {
-                        const li = document.createElement('li');
-                        li.textContent = school.name;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            schoolInput.value = school.name;
-                            schoolDropdown.classList.add('hidden');
-                            locationInput.disabled = false;
-                            locationInput.placeholder = 'e.g., Faculty of Engineering';
-                            schoolInput.focus();
-                        });
-                        schoolDropdown.appendChild(li);
+            const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
+            if (filteredData.length > 0) {
+                filteredData.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    li.className = 'autocomplete-list-item';
+                    li.addEventListener('click', () => {
+                        inputElement.value = item;
+                        dropdownElement.classList.add('hidden');
+                        inputElement.focus();
+                        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
                     });
-                    schoolDropdown.classList.remove('hidden');
-                } else {
-                    schoolDropdown.classList.add('hidden');
-                }
+                    dropdownElement.appendChild(li);
+                });
+                dropdownElement.classList.remove('hidden');
+            } else {
+                dropdownElement.classList.add('hidden');
+            }
+        }
+        inputElement.addEventListener('input', filterAndDisplay);
+        inputElement.addEventListener('focus', filterAndDisplay);
+        inputElement.addEventListener('blur', () => {
+            setTimeout(() => dropdownElement.classList.add('hidden'), 200);
+        });
+    }
+
+    setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
+    setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
+    const schoolDropdown = document.getElementById('school-dropdown');
+
+    function populateSchoolsDropdown(state) {
+        const schools = NIGERIAN_SCHOOLS[state] || [];
+        schoolDropdown.innerHTML = '';
+        schools.forEach(school => {
+            const li = document.createElement('li');
+            li.textContent = school.name;
+            li.className = 'autocomplete-list-item';
+            li.addEventListener('click', () => {
+                schoolInput.value = school.name;
+                schoolDropdown.classList.add('hidden');
+                locationInput.disabled = false;
+                locationInput.placeholder = 'e.g., Faculty of Engineering';
+                schoolInput.focus();
+            });
+            schoolDropdown.appendChild(li);
+        });
+        schoolInput.disabled = false;
+        schoolInput.placeholder = 'Select from the list or type...';
+    }
+
+    stateInput.addEventListener('change', function() {
+        const state = this.value;
+        schoolInput.value = '';
+        locationInput.value = '';
+        locationInput.disabled = true;
+        populateSchoolsDropdown(state);
+    });
+
+    schoolInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const state = stateInput.value;
+        const schools = NIGERIAN_SCHOOLS[state] || [];
+        schoolDropdown.innerHTML = '';
+        if (query && schools.length > 0) {
+            const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
+            if (filteredSchools.length > 0) {
+                filteredSchools.forEach(school => {
+                    const li = document.createElement('li');
+                    li.textContent = school.name;
+                    li.className = 'autocomplete-list-item';
+                    li.addEventListener('click', () => {
+                        schoolInput.value = school.name;
+                        schoolDropdown.classList.add('hidden');
+                        locationInput.disabled = false;
+                        locationInput.placeholder = 'e.g., Faculty of Engineering';
+                        schoolInput.focus();
+                    });
+                    schoolDropdown.appendChild(li);
+                });
+                schoolDropdown.classList.remove('hidden');
             } else {
                 schoolDropdown.classList.add('hidden');
             }
-        });
+        } else {
+            schoolDropdown.classList.add('hidden');
+        }
+    });
 
-        schoolInput.addEventListener('focus', function() {
-            const state = stateInput.value;
-            if (state) {
-                populateSchoolsDropdown(state);
-                schoolDropdown.classList.remove('hidden');
-            }
-        });
+    schoolInput.addEventListener('focus', function() {
+        const state = stateInput.value;
+        if (state) {
+            populateSchoolsDropdown(state);
+            schoolDropdown.classList.remove('hidden');
+        }
+    });
 
-        schoolInput.addEventListener('blur', () => {
-            setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
-        });
+    schoolInput.addEventListener('blur', () => {
+        setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
+    });
 
-        function updateSubscriptionInfo(selectedPlanName) {
-            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
-            const infoPlanName = document.getElementById('info-plan-name');
-            const infoDuration = document.getElementById('info-duration');
-            const infoVisibilityLevel = document.getElementById('info-visibility-level');
-            const infoCost = document.getElementById('info-cost');
-            
-            if (selectedOption) {
-                infoPlanName.textContent = selectedOption.label;
-                infoDuration.textContent = selectedOption.advert_duration_days || 'Variable';
-                infoVisibilityLevel.textContent = selectedOption.visibility_level;
-                infoCost.textContent = selectedOption.cost_description || 'Calculated below';
-                if (selectedPlanName.startsWith('paid_advert_')) {
-                    dynamicFields.style.display = 'block';
-                    durationInput.required = true;
-                } else {
-                    dynamicFields.style.display = 'none';
-                    durationInput.required = false;
-                }
+    function updateSubscriptionInfo(selectedPlanName) {
+        const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
+        const infoPlanName = document.getElementById('info-plan-name');
+        const infoDuration = document.getElementById('info-duration');
+        const infoVisibilityLevel = document.getElementById('info-visibility-level');
+        const infoCost = document.getElementById('info-cost');
+        
+        if (selectedOption) {
+            infoPlanName.textContent = selectedOption.label;
+            // Use optional chaining or check for existence
+            infoDuration.textContent = selectedOption.advert_duration_days || 'Variable';
+            infoVisibilityLevel.textContent = selectedOption.visibility_level;
+            infoCost.textContent = selectedOption.cost_description || 'Calculated below';
+            if (selectedPlanName.startsWith('paid_advert_')) {
+                dynamicFields.style.display = 'block';
+                durationInput.required = true;
             } else {
-                infoPlanName.textContent = 'Not Selected';
-                infoDuration.textContent = '0';
-                infoVisibilityLevel.textContent = 'Standard';
-                infoCost.textContent = 'Not Applicable';
                 dynamicFields.style.display = 'none';
                 durationInput.required = false;
             }
-            calculateAndDisplayCost();
+        } else {
+            infoPlanName.textContent = 'Not Selected';
+            infoDuration.textContent = '0';
+            infoVisibilityLevel.textContent = 'Standard';
+            infoCost.textContent = 'Not Applicable';
+            dynamicFields.style.display = 'none';
+            durationInput.required = false;
         }
+        calculateAndDisplayCost();
+    }
 
-        function calculateAndDisplayCost() {
-            const selectedOptionPlan = postingOptionSelect.value;
-            const infoCost = document.getElementById('info-cost');
-            if (selectedOptionPlan.startsWith('paid_advert_')) {
-                const productPrice = parseFloat(priceInput.value);
-                const duration = parseInt(durationInput.value);
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (productPrice > 0 && duration > 0 && duration <= 180) {
-                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
-                    let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
-                    if (calculatedCost < 100) {
-                        calculatedCost = 100;
-                    }
-                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
-                } else {
-                    infoCost.textContent = 'Please enter a valid price and duration.';
+    function calculateAndDisplayCost() {
+        const selectedOptionPlan = postingOptionSelect.value;
+        const infoCost = document.getElementById('info-cost');
+        if (selectedOptionPlan.startsWith('paid_advert_')) {
+            const productPrice = parseFloat(priceInput.value);
+            const duration = parseInt(durationInput.value);
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
+            if (productPrice > 0 && duration > 0 && duration <= 180) {
+                const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
+                let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+                if (calculatedCost < 100) {
+                    calculatedCost = 100;
                 }
+                infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
             } else {
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (selectedOption) {
-                    infoCost.textContent = selectedOption.cost_description;
-                } else {
-                    infoCost.textContent = 'Not Applicable';
-                }
+                infoCost.textContent = 'Please enter a valid price and duration.';
+            }
+        } else {
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
+            if (selectedOption) {
+                infoCost.textContent = selectedOption.cost_description;
+            } else {
+                infoCost.textContent = 'Not Applicable';
             }
         }
-        
-        function updateCharCount() {
-            const desc = document.getElementById('description');
-            document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
-        }
+    }
+    
+    function updateCharCount() {
+        const desc = document.getElementById('description');
+        document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
+    }
 
-        function validateFile(file, maxSizeBytes, errorElement) {
-            if (!file) {
-                if (errorElement) errorElement.textContent = '';
-                return true;
-            }
-            const sizeInBytes = file.size;
-            const sizeInMB = sizeInBytes / (1024 * 1024);
-            if (sizeInMB > maxSizeBytes) {
-                if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
-                return false;
-            }
+    function validateFile(file, maxSizeBytes, errorElement) {
+        if (!file) {
+            if (errorElement) errorElement.textContent = '';
             return true;
         }
+        const sizeInBytes = file.size;
+        const sizeInMB = sizeInBytes / (1024 * 1024);
+        if (sizeInMB > maxSizeBytes) {
+            if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
+            return false;
+        }
+        return true;
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const initialPlan = postingOptionSelect.value;
-            if (initialPlan) {
-                updateSubscriptionInfo(initialPlan);
-            }
-            if (stateInput.value) {
-                populateSchoolsDropdown(stateInput.value);
-            }
-            updateCharCount();
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialPlan = postingOptionSelect.value;
+        if (initialPlan) {
+            updateSubscriptionInfo(initialPlan);
+        }
+        if (stateInput.value) {
+            populateSchoolsDropdown(stateInput.value);
+        }
+        updateCharCount();
+    });
 
-        postingOptionSelect.addEventListener('change', function() {
-            updateSubscriptionInfo(this.value);
-        });
+    postingOptionSelect.addEventListener('change', function() {
+        updateSubscriptionInfo(this.value);
+    });
 
-        priceInput.addEventListener('input', calculateAndDisplayCost);
-        durationInput.addEventListener('input', calculateAndDisplayCost);
+    priceInput.addEventListener('input', calculateAndDisplayCost);
+    durationInput.addEventListener('input', calculateAndDisplayCost);
 
-        // This is the code for file size validation
-        mainImageInput.addEventListener('change', function() {
-            const files = this.files;
-            if (files.length > 0) {
-                validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError);
-            }
-        });
+    // This is the code for file size validation
+    mainImageInput.addEventListener('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError);
+        }
+    });
 
-        additionalImagesInput.addEventListener('change', function() {
-            const files = this.files;
-            additionalImagesError.textContent = '';
-            if (files.length > MAX_ADDITIONAL_IMAGES) {
-                additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
+    additionalImagesInput.addEventListener('change', function() {
+        const files = this.files;
+        additionalImagesError.textContent = '';
+        if (files.length > MAX_ADDITIONAL_IMAGES) {
+            additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
+            this.value = ''; // Clear the selected files
+            return;
+        }
+        for (let i = 0; i < files.length; i++) {
+            if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
                 this.value = ''; // Clear the selected files
-                return;
+                break;
             }
-            for (let i = 0; i < files.length; i++) {
-                if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
-                    this.value = ''; // Clear the selected files
-                    break;
-                }
-            }
-        });
+        }
+    });
 
-        videoInput.addEventListener('change', function() {
-            const files = this.files;
-            if (files.length > 0) {
-                validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError);
+    videoInput.addEventListener('change', function() {
+        const files = this.files;
+        if (files.length > 0) {
+            validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError);
+        }
+    });
+
+    // Add a listener to your form for submission
+    form.addEventListener('submit', function(event) {
+        const selectedPlanName = postingOptionSelect.value;
+        
+        // If a paid plan is selected, check for the required fields
+        if (selectedPlanName.startsWith('paid_advert_')) {
+            let hasError = false;
+            
+            // Check if price is filled out
+            if (priceInput.value === '' || parseFloat(priceInput.value) <= 0) {
+                alert('Please enter a valid price for this paid plan.');
+                priceInput.focus();
+                hasError = true;
             }
-        });
-    </script>
+
+            // Check if duration is filled out
+            if (durationInput.value === '' || parseInt(durationInput.value) < 1) {
+                alert('Please enter a valid duration (1-180 days) for this paid plan.');
+                durationInput.focus();
+                hasError = true;
+            }
+            
+            if (hasError) {
+                event.preventDefault(); // Stop form submission
+                return false;
+            }
+        }
+    });
+</script>
 </body>
 </html>
