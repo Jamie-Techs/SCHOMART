@@ -2423,7 +2423,10 @@ def get_user_advert_options(user_id):
 
     return options
 
-                      
+
+
+
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2461,7 +2464,6 @@ def sell(advert_id=None):
         files = request.files
         errors = []
         
-        # --- (Existing form validation logic remains unchanged) ---
         submitted_category = form_data.get('category')
         all_categories = get_all_categories()
         category_names = [cat.get('name') for cat in all_categories]
@@ -2489,14 +2491,18 @@ def sell(advert_id=None):
         cost_naira = 0
         is_free = plan_details.get("is_free")
 
+        # Handle duration and cost based on plan type
+        try:
+            advert_duration_days = int(form_data.get("advert_duration_days"))
+        except (ValueError, TypeError):
+            errors.append("Please enter a valid number for advert duration.")
+        
+        # Validate duration against plan limits
+        if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
+            errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
+
+        # Recalculate cost for paid plans
         if not is_free:
-            try:
-                advert_duration_days = int(form_data.get("advert_duration_days"))
-                if not (plan_details.get("min_duration_days") <= advert_duration_days <= plan_details.get("max_duration_days")):
-                    errors.append(f"Advert duration must be between {plan_details.get('min_duration_days')} and {plan_details.get('max_duration_days')} days for this plan.")
-            except (ValueError, TypeError):
-                errors.append("Please enter a valid number for advert duration.")
-            
             try:
                 product_price = float(form_data.get("price"))
                 selected_visibility = plan_details.get("visibility_level")
@@ -2505,31 +2511,23 @@ def sell(advert_id=None):
                 cost_naira = max(calculated_cost, 100)
             except (ValueError, TypeError):
                 errors.append("Invalid price. Please enter a valid number.")
-        else:
-            # For free plans, use the predefined duration
-            advert_duration_days = plan_details.get('advert_duration_days', 0)
-            cost_naira = 0
-            
-            # Check eligibility for free plans
+        
+        # Check eligibility for free plans
+        if is_free:
             user_doc = get_user_info(user_id)
             if plan_details["plan_name"] == "free_advert":
                 if user_doc.get("has_posted_free_ad"):
                     errors.append("You have already used your one-time free advert.")
-            elif plan_details["plan_name"].startswith("referral_"):
-                referral_amount = int(plan_details["plan_name"].split('_')[1])
-                if user_doc.get("referrals_count", 0) < referral_amount:
-                    errors.append(f"You do not have enough referrals to use this benefit.")
-                if plan_details["plan_name"] in user_doc.get("referral_plans_used", []):
-                    errors.append(f"You have already used the {plan_details['plan_name']} referral benefit.")
-
+            # The referral check and deduction logic has been completely removed from here
+            # to prevent the flashing error and ensure it only happens on admin approval.
+        
         if not files.get('main_image') and not form_data.get('existing_main_image'):
             errors.append("A main image is required.")
-
+        
         if errors:
             for error_msg in errors:
                 flash(error_msg, 'error')
             
-            # Re-pass the form data to the template to preserve user input
             form_data['cost_naira'] = cost_naira
             form_data['advert_duration_days'] = advert_duration_days
             return render_template(
@@ -2544,7 +2542,6 @@ def sell(advert_id=None):
                 is_repost=is_repost,
                 errors=errors
             )
-
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
             
@@ -2577,35 +2574,22 @@ def sell(advert_id=None):
             }
             
             if not is_free:
-                # The existing logic for paid plans is correct.
-                # It sets status to 'pending_payment' and redirects to payment.
                 advert_payload["status"] = "pending_payment"
                 new_advert_ref = db.collection("adverts").document()
                 new_advert_ref.set(advert_payload)
                 flash("Your advert has been created. Please complete the payment.", "info")
                 return redirect(url_for('payment', advert_id=new_advert_ref.id))
             else:
-                # This is the corrected block for free and referral plans.
-                # It sets status to 'pending_review' and updates the user's free benefit usage.
                 if advert_id:
-                    # Logic for updating an existing free/referral advert
                     db.collection("adverts").document(advert_id).update(advert_payload)
                     flash("Your advert has been successfully updated and submitted for review.", "success")
                 else:
-                    # Logic for creating a new free/referral advert
                     new_advert_ref = db.collection("adverts").document()
                     new_advert_ref.set(advert_payload)
+                    flash("Your advert has been submitted for review.", "success")
                     
-                    # Update user's benefit usage
                     if plan_details["plan_name"] == "free_advert":
                         db.collection("users").document(user_id).update({"has_posted_free_ad": True})
-                    elif plan_details["plan_name"].startswith("referral_"):
-                        db.collection("users").document(user_id).update({
-                            "referral_plans_used": firestore.ArrayUnion([plan_details["plan_name"]])
-                        })
-                    
-                    flash("Your advert has been submitted for review.", "success")
-                
                 return redirect(url_for('list_adverts'))
         
         except Exception as e:
@@ -2613,6 +2597,7 @@ def sell(advert_id=None):
             flash("An unexpected error occurred. Please try again.", "error")
             return redirect(url_for('sell'))
 
+    # ... (all existing code for GET request rendering remains the same)
     return render_template(
         "sell.html",
         user_data=user_data,
@@ -2624,6 +2609,8 @@ def sell(advert_id=None):
         advert_data=advert_data,
         is_repost=is_repost
     )
+
+
 
 
 
@@ -3042,14 +3029,13 @@ def admin_advert_review():
 
 
 
-
-
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
 def admin_advert_approve():
     """
     Handles the approval of an advert and notifies the advert owner.
+    This is now the exclusive place where referral count is deducted.
     """
     advert_id = request.form.get('advert_id')
     if not advert_id:
@@ -3066,7 +3052,8 @@ def admin_advert_approve():
     advert_data = advert_doc.to_dict()
     user_id = advert_data.get('user_id')
     plan_name = advert_data.get('plan_name')
-
+    is_free = get_plan_details(plan_name).get("is_free") # Get plan type
+    
     if not user_id:
         flash("User ID not found for this advert.", 'error')
         return redirect(url_for('admin_advert_review'))
@@ -3075,44 +3062,61 @@ def admin_advert_approve():
     user_doc = user_ref.get()
 
     if user_doc.exists:
-        # Update advert status to published
-        advert_ref.update({
-            'status': 'published',
-            'published_at': firestore.SERVER_TIMESTAMP,
-            'is_published': True
-        })
-
-        # --- Check and apply referral count deduction ---
-        # Checks if the plan_name starts with 'referral_'
-        if plan_name and plan_name.startswith('referral_'):
-            try:
-                # Extracts the number from the plan name (e.g., 'referral_10' -> 10)
-                cost = int(plan_name.split('_')[1])
-                user_ref.update({"referral_count": firestore.Increment(-cost)})
+        try:
+            # Use a Firestore Transaction for atomic updates
+            @firestore.transactional
+            def update_user_and_advert(transaction, user_ref, advert_ref):
+                user_doc_in_txn = user_ref.get(transaction=transaction)
+                advert_doc_in_txn = advert_ref.get(transaction=transaction)
                 
-                flash("Advert approved and published successfully. Referral count decremented.", 'success')
+                # Check for referral deduction first
+                if plan_name and plan_name.startswith('referral_'):
+                    referral_cost = int(plan_name.split('_')[1])
+                    current_referrals = user_doc_in_txn.get("referrals_count", 0)
+                    
+                    # --- ADDED: Final check to ensure the user has enough referrals ---
+                    if current_referrals < referral_cost:
+                        # This should not happen if the front-end is working, but it's a critical server-side check.
+                        raise ValueError("User does not have enough referrals to be deducted on approval.")
+                    
+                    # Deduct the referral count and mark the plan as used
+                    new_referral_count = current_referrals - referral_cost
+                    transaction.update(user_ref, {
+                        "referrals_count": new_referral_count,
+                        "referral_plans_used": firestore.ArrayUnion([plan_name])
+                    })
 
-            except (ValueError, IndexError):
-                # This handles cases where the plan name is malformed
-                flash("Advert approved but could not deduct referral points due to an invalid plan name.", 'warning')
-
-        else:
-            # Handles all other plans (paid, free, etc.)
-            flash("Advert approved and published successfully.", 'success')
+                # Update advert status to published
+                transaction.update(advert_ref, {
+                    'status': 'published',
+                    'published_at': firestore.SERVER_TIMESTAMP,
+                    'is_published': True
+                })
             
-        # --- Create a notification for the advert owner ---
-        advert_title = advert_data.get('title', 'Your advert')
-        message = f"Your advert, '{advert_title}', has been approved and is now published! 🚀"
-        related_link = url_for('advert_detail', advert_id=advert_id)
-        create_notification(user_id, message, 'advert_status', related_link)
+            update_user_and_advert(db.transaction(), user_ref, advert_ref)
+
+            flash("Advert approved and published successfully. Referral count decremented.", 'success')
+            
+        except ValueError as e:
+            flash(f"Approval failed: {e}", 'error')
+            return redirect(url_for('admin_advert_review'))
+            
+        except Exception as e:
+            flash(f"An unexpected error occurred during approval: {e}", 'error')
+            return redirect(url_for('admin_advert_review'))
 
     else:
         flash("User not found.", 'error')
-
+    
+    # --- Create a notification for the advert owner ---
+    advert_title = advert_data.get('title', 'Your advert')
+    message = f"Your advert, '{advert_title}', has been approved and is now published! 🚀"
+    related_link = url_for('advert_detail', advert_id=advert_id)
+    create_notification(user_id, message, 'advert_status', related_link)
+    
     return redirect(url_for('admin_advert_review'))
 
-
-
+    
 
 
 
@@ -5405,6 +5409,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
