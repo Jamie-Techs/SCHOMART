@@ -2432,6 +2432,7 @@ def get_user_advert_options(user_id):
 
 
 
+
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
 @login_required
@@ -2445,7 +2446,7 @@ def sell(advert_id=None):
         advert_doc = advert_doc_ref.get()
         if advert_doc.exists:
             advert = advert_doc.to_dict()
-    
+            
     user_id = g.current_user.id
     user_data = get_user_info(user_id)
     available_options = get_user_advert_options(user_id)
@@ -2457,7 +2458,7 @@ def sell(advert_id=None):
         if not advert or advert.get('user_id') != user_id:
             flash("Advert not found or you don't have permission to edit.", "error")
             return redirect(url_for('list_adverts'))
-        
+            
         advert_data = advert
         form_data = advert
         is_repost = True
@@ -2468,7 +2469,6 @@ def sell(advert_id=None):
         form_data = request.form.to_dict()
         files = request.files
         errors = []
-        
         submitted_category = form_data.get('category')
         all_categories = get_all_categories()
         category_names = [cat.get('name') for cat in all_categories]
@@ -2550,7 +2550,8 @@ def sell(advert_id=None):
                 form_data=form_data,
                 advert_data=advert_data,
                 is_repost=is_repost,
-                errors=errors
+                errors=errors,
+                VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS  # <<-- ADD THIS
             )
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
@@ -2601,12 +2602,13 @@ def sell(advert_id=None):
                     if plan_details["plan_name"] == "free_advert":
                         db.collection("users").document(user_id).update({"has_posted_free_ad": True})
                 return redirect(url_for('list_adverts'))
-        
+            
         except Exception as e:
             logger.error(f"Error during advert submission for user {user_id}: {e}", exc_info=True)
             flash("An unexpected error occurred. Please try again.", "error")
             return redirect(url_for('sell'))
 
+    # The GET request render_template call needs this variable too
     return render_template(
         "sell.html",
         user_data=user_data,
@@ -2616,9 +2618,9 @@ def sell(advert_id=None):
         available_options=available_options,
         form_data=form_data,
         advert_data=advert_data,
-        is_repost=is_repost
+        is_repost=is_repost,
+        VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS  # <<-- ADD THIS
     )
-
 
 
 
@@ -5403,6 +5405,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
