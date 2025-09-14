@@ -597,7 +597,32 @@ durationInput.addEventListener('input', calculateAndDisplayCost);
 
 // Trigger the calculation once on page load to set the initial value
 document.addEventListener('DOMContentLoaded', calculateAndDisplayCost);
-
+   function calculateAndDisplayCost() {
+            const selectedOptionPlan = postingOptionSelect.value;
+            const infoCost = document.getElementById('info-cost');
+            if (selectedOptionPlan.startsWith('paid_advert_')) {
+                const productPrice = parseFloat(priceInput.value);
+                const duration = parseInt(durationInput.value);
+                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
+                if (productPrice > 0 && duration > 0 && duration <= 180) {
+                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
+                    let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+                    if (calculatedCost < 100) {
+                        calculatedCost = 100;
+                    }
+                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
+                } else {
+                    infoCost.textContent = 'Please enter a valid price and duration.';
+                }
+            } else {
+                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
+                if (selectedOption) {
+                    infoCost.textContent = selectedOption.cost_description;
+                } else {
+                    infoCost.textContent = 'Not Applicable';
+                }
+            }
+   }
      
         
         function updateCharCount() {
