@@ -334,7 +334,7 @@
                             <ul>
                                 <li>Product Price: <span id="calc-price"></span></li>
                                 <li>Duration: <span id="calc-duration"></span> days</li>
-                                
+                                <li>Visibility Multiplier: <span id="calc-multiplier"></span></li>
                                 <li><strong>Total Cost: <span id="final-cost"></span></strong></li>
                             </ul>
                         </div>
@@ -360,7 +360,7 @@
                         <input type="text" id="title" name="title" required value="{{ form_data.title or advert_data.title or '' }}">
                     </div>
                     <div class="form-group">
-                        <label for="description"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
+                        <label for="description"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span></label>
                         <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
                         <span id="charCount" class="char-count">0/2000</span>
                     </div>
