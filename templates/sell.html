@@ -225,8 +225,16 @@
             const VISIBILITY_MULTIPLIERS = {{ VISIBILITY_MULTIPLIERS|tojson }};
 
             function updateCost() {
-                const selectedOption = advertOptionsList.querySelector('li.selected');
+                // Find the currently selected radio button and its parent list item
+                const selectedRadioButton = advertOptionsList.querySelector('input[name="posting_option"]:checked');
+                let selectedOption;
+
+                if (selectedRadioButton) {
+                    selectedOption = selectedRadioButton.closest('li');
+                }
+                
                 if (!selectedOption) {
+                    // Handle the case where no option is selected
                     visibilityMultiplierDisplay.textContent = '1.0';
                     calculatedCostDisplay.textContent = '₦0.00';
                     selectedPlanNameDisplay.textContent = 'None';
@@ -234,6 +242,7 @@
                     return;
                 }
                 
+                // Read data attributes from the selected li element
                 const isFree = selectedOption.dataset.isFree === 'True';
                 const planName = selectedOption.dataset.planName;
                 const visibilityLevel = selectedOption.dataset.visibilityLevel;
@@ -242,7 +251,7 @@
                 selectedPlanNameDisplay.textContent = selectedOption.querySelector('h4').textContent;
                 visibilityMultiplierDisplay.textContent = multiplier.toFixed(1);
 
-                if (isFree === true || planName.startsWith('referral')) {
+                if (isFree || planName.startsWith('referral')) {
                     // Fixed duration and free cost for these plans
                     durationInput.value = selectedOption.dataset.fixedDuration;
                     durationSection.style.display = 'block';
