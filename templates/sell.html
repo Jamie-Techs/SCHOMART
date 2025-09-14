@@ -3,829 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ 'Edit Advert' if advert else 'Sell an Item' }} | CampusConnect</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Create Advert</title>
     <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --error-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #17a2b8;
-            --bg-light: #f8f9fa;
-            --bg-white: #ffffff;
-            --text-dark: #343a40;
-            --text-muted: #6c757d;
-            --border-color: #ced4da;
-            --input-focus: #80bdff;
-            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 20px auto;
             padding: 20px;
-            background-color: var(--bg-white);
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
             border-radius: 8px;
-            box-shadow: var(--box-shadow);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
-        .top-nav {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+        h1 {
+            color: #006B3C;
+            text-align: center;
         }
-
-        .top-nav a {
-            color: var(--secondary-color);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-            transition: color 0.2s ease-in-out;
-        }
-
-        .top-nav a:hover {
-            color: var(--primary-color);
-        }
-
-        .top-nav a i {
-            margin-right: 5px;
-        }
-
-        .back-button-top-left {
-            display: inline-flex;
-            align-items: center;
-            text-decoration: none;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .back-button-top-left:hover {
-            color: var(--primary-color);
-        }
-
-        h2, h3 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 10px;
-            margin-top: 25px;
-            margin-bottom: 20px;
-        }
-
-        .advert-options-info {
-            background-color: #e9f5ff;
-            border: 1px solid #cce5ff;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 25px;
-        }
-
-        .advert-options-info h3 {
-            color: var(--primary-color);
-            margin-top: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-            font-size: 1.25rem;
-        }
-
-        .advert-options-info a {
-            display: inline-block;
-            margin-top: 10px;
-            color: var(--info-color);
-            text-decoration: underline;
-        }
-
-        .flashes {
-            list-style: none;
-            padding: 0;
-        }
-
-        .alert {
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert i {
-            font-size: 1.25em;
-        }
-
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .warning-message {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-
         .form-section {
-            margin-bottom: 30px;
-        }
-
-        .form-group {
+            border: 1px solid #ddd;
+            padding: 15px;
             margin-bottom: 20px;
+            border-radius: 6px;
         }
-
-        .form-label {
+        .form-section h3 {
+            margin-top: 0;
+            color: #FDB813;
+        }
+        label {
             display: block;
-            margin-bottom: 8px;
+            margin-top: 10px;
+            color: #333;
             font-weight: bold;
-            color: var(--text-dark);
         }
-
-        .required {
-            color: var(--error-color);
-        }
-
-        .form-control {
-            display: block;
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
             width: 100%;
-            padding: 10px 12px;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: var(--text-dark);
-            background-color: var(--bg-white);
-            background-clip: padding-box;
-            border: 1px solid var(--border-color);
-            border-radius: 0.25rem;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-            box-sizing: border-box;
-        }
-
-        .form-control:focus {
-            color: var(--text-dark);
-            background-color: var(--bg-white);
-            border-color: var(--input-focus);
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-
-        textarea.form-control {
-            height: auto;
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .form-text {
-            display: block;
-            margin-top: 0.25rem;
-            font-size: 0.875em;
-            color: var(--text-muted);
-        }
-        
-        .invalid-feedback {
-            color: var(--error-color);
-            font-size: 0.875em;
+            padding: 8px;
             margin-top: 5px;
-            display: block;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
-
-        .form-group-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
+        .file-upload {
+            border: 1px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 10px;
         }
-
-        .form-group-row .form-group {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .btn-primary {
+        .button {
             display: block;
             width: 100%;
-            padding: 15px;
-            font-size: 1.15rem;
-            font-weight: bold;
-            color: #fff;
-            background-color: var(--success-color);
-            border: none;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background-color: #218838;
-        }
-        
-        .subscription-info {
-            background-color: #eaf6ee;
-            border: 1px solid #d4edda;
-            padding: 15px;
-            border-radius: 4px;
+            padding: 10px;
             margin-top: 20px;
-        }
-        
-        .subscription-info p {
-            margin: 0 0 8px 0;
-        }
-        
-        .subscription-info strong {
-            color: var(--success-color);
-        }
-
-        .autocomplete-container {
-            position: relative;
-        }
-
-        .autocomplete-list {
-            position: absolute;
-            z-index: 1000;
-            background: var(--bg-white);
-            border: 1px solid var(--border-color);
-            border-top: none;
-            max-height: 200px;
-            overflow-y: auto;
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            list-style: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .autocomplete-list.hidden {
-            display: none;
-        }
-
-        .autocomplete-list-item {
-            padding: 10px 12px;
+            background-color: #006B3C;
+            color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
         }
-
-        .autocomplete-list-item:hover {
-            background-color: var(--bg-light);
+        .button:hover {
+            background-color: #00522a;
         }
-
-        .image-preview, video {
-            max-width: 150px;
-            height: auto;
-            margin-top: 10px;
-            border-radius: 4px;
+        .advert-options {
+            list-style: none;
+            padding: 0;
         }
-        
-        .image-preview-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
+        .advert-options li {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-
-        .char-count {
-            float: right;
-            font-size: 0.8em;
-            color: var(--text-muted);
+        .advert-options li.selected {
+            border-color: #FDB813;
+            background-color: #fff8e1;
         }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                padding: 15px;
-            }
-            .form-group-row {
-                flex-direction: column;
-                gap: 0;
-            }
+        .advert-options h4 {
+            margin: 0 0 5px 0;
+            color: #006B3C;
+        }
+        .advert-options p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #555;
+        }
+        #cost_summary {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        #cost_summary p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <nav class="top-nav">
-            <a href="{{ url_for('profile') }}" title="My Profile">
-                <i class="fas fa-user-circle"></i>
-                <span>Profile</span>
-            </a>
-            <a href="{{ url_for('home') }}" title="Go to Home">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-            <a href="{{ url_for('list_adverts') }}" title="My Adverts">
-                <i class="fas fa-list"></i>
-                <span>My Adverts</span>
-            </a>
-        </nav>
-        <a onclick="history.back()" class="back-button-top-left" title="Go back to previous page">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <h2><i class="fas fa-bullhorn"></i> {{ 'Update Your Advert' if advert else 'Post a New Advert' }}</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}-message alert">
-                            {% if category == 'error' %}<i class="fas fa-times-circle"></i>
-                            {% elif category == 'success' %}<i class="fas fa-check-circle"></i>
-                            {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
-                            {% elif category == 'info' %}<i class="fas fa-info-circle"></i>
-                            {% endif %}
-                            {{ message | safe }}
+        <h1>Post a New Advert</h1>
+        <form id="advertForm" action="{{ url_for('sell', advert_id=advert_id) }}" method="post" enctype="multipart/form-data">
+
+            <div class="form-section">
+                <h3>Advert Details</h3>
+                <label for="title">Advert Title</label>
+                <input type="text" id="title" name="title" value="{{ form_data.get('title', '') }}" required>
+                
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="">Select Category</option>
+                    {% for category in categories %}
+                        <option value="{{ category.name }}" {% if form_data.get('category') == category.name %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="5" required>{{ form_data.get('description', '') }}</textarea>
+
+                <label for="price">Price (₦)</label>
+                <input type="number" id="price_input" name="price" value="{{ form_data.get('price', '') }}" step="0.01" required>
+
+                <label for="negotiable">Price Negotiable?</label>
+                <select id="negotiable" name="negotiable" required>
+                    <option value="No" {% if form_data.get('negotiable') == 'No' %}selected{% endif %}>No</option>
+                    <option value="Yes" {% if form_data.get('negotiable') == 'Yes' %}selected{% endif %}>Yes</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <h3>Location & Delivery</h3>
+                <label for="state">State</label>
+                <select id="state" name="state" required>
+                    <option value="">Select State</option>
+                    {% for state in NIGERIAN_STATES %}
+                        <option value="{{ state }}" {% if form_data.get('state') == state %}selected{% endif %}>{{ state }}</option>
+                    {% endfor %}
+                </select>
+                <label for="school">School (Optional)</label>
+                <select id="school" name="school">
+                    <option value="">Select School</option>
+                </select>
+                <label for="specific_location">Specific Location (e.g., Hostel name)</label>
+                <input type="text" id="specific_location" name="specific_location" value="{{ form_data.get('specific_location', '') }}">
+            </div>
+
+            <div class="form-section">
+                <h3>Images & Videos</h3>
+                <label for="main_image">Main Image (Required)</label>
+                <input type="file" id="main_image" name="main_image" accept="image/*">
+                {% if advert_data and advert_data.get('main_image') %}
+                    <p>Current Main Image: <a href="{{ advert_data.get('main_image') }}" target="_blank">View Image</a></p>
+                    <input type="hidden" name="existing_main_image" value="{{ advert_data.get('main_image') }}">
+                {% endif %}
+                </div>
+
+            <div class="form-section">
+                <h3>Select Advert Plan</h3>
+                <ul class="advert-options" id="advert-options-list">
+                    {% for option in available_options %}
+                        <li data-plan-name="{{ option.plan_name }}" 
+                            data-is-free="{{ option.is_free }}" 
+                            data-min-duration="{{ option.min_duration_days|default(0) }}"
+                            data-max-duration="{{ option.max_duration_days|default(0) }}"
+                            data-fixed-duration="{{ option.advert_duration_days|default(0) }}"
+                            data-visibility-level="{{ option.visibility_level }}"
+                            class="{% if form_data.get('plan_name') == option.plan_name %}selected{% endif %}">
+                            <input type="radio" name="posting_option" value="{{ option.plan_name }}" style="display:none;" {% if form_data.get('posting_option') == option.plan_name %}checked{% endif %}>
+                            <h4>{{ option.label }}</h4>
+                            <p>{{ option.cost_description }}</p>
+                            <p>Visibility: <b>{{ option.visibility_level }}</b></p>
                         </li>
                     {% endfor %}
                 </ul>
-            {% endif %}
-        {% endwith %}
-        <div class="advert-options-info">
-            <h3><i class="fas fa-rocket"></i> Boost Your Ads or Earn More Options!</h3>
-            <p>Looking for more advert slots, longer durations, or increased visibility?</p>
-            <a href="{{ url_for('leaderboard') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
-        </div>
-        {% if available_options %}
-            <form id="post-advert-form" method="POST" action="{{ url_for('sell', advert_id=advert.id) if advert else url_for('sell') }}" enctype="multipart/form-data">
-                <div class="form-section">
-                    <h3>Advert Plan</h3>
-                    <div class="form-group mb-3">
-                        <label for="posting_option" class="form-label font-weight-bold">Choose your Advert Plan <span class="required">*</span></label>
-                        <select name="posting_option" id="posting_option" class="form-control" required>
-                            {% for option in available_options %}
-                                <option value="{{ option.plan_name }}" 
-                                        data-plan-cost="{{ option.cost_naira | default('Free') }}" 
-                                        data-duration="{{ option.advert_duration_days }}" 
-                                        data-visibility="{{ option.visibility_level }}"
-                                        {% if (advert and advert.plan_name == option.plan_name) or (form_data.posting_option == option.plan_name) %}selected{% elif loop.first %}selected{% endif %}>
-                                    {{ option.label }}
-                                    {% if option.cost_description %}
-                                        ({{ option.cost_description }})
-                                    {% endif %}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted">Select an advert plan to define its duration and visibility.</small>
-                    </div>
-                    <div id="dynamic-fields" style="display: none;">
-                        <div class="form-group">
-                            <label for="advert_duration_days" class="form-label"><i class="fas fa-calendar-alt"></i> Advert Duration (Days) <span class="required">*</span>:</label>
-                            <input type="number" id="advert_duration_days" name="advert_duration_days" min="1" max="180" class="form-control" placeholder="e.g., 30" value="{{ form_data.advert_duration_days or '' }}">
-                            <small class="form-text text-muted">Enter duration between 1 and 180 days.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="price" class="form-label"><i class="fas fa-dollar-sign"></i> Your product Price (₦) <span class="required">*</span>:</label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" class="form-control" value="{{ form_data.price or advert_data.price or '' }}">
-                        </div>
-                    </div>
-                    <div class="subscription-info">
-                        <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name">Not Selected</span></p>
-                        <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
-                        <p>Advert Cost to be Paid: <strong><span id="info-cost">Not Applicable</span></strong></p>
-                    </div>
+
+                <div id="duration-section" style="display:none;">
+                    <label for="advert_duration_days">Advert Duration (Days)</label>
+                    <input type="number" id="advert_duration_days" name="advert_duration_days" value="{{ form_data.get('advert_duration_days', '') }}" min="1">
+                    <p id="duration-info"></p>
                 </div>
-                
-                <div class="form-section">
-                    <h3>Product Information</h3>
-                    {% if advert and is_repost %}
-                        <input type="hidden" name="repost_advert_id" value="{{ advert.id }}">
-                    {% endif %}
-                    <div class="form-group">
-                        <label for="category_input" class="form-label"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" class="form-control" id="category_input" name="category" placeholder="Type or select a category..." value="{{ form_data.category or advert_data.category_name or '' }}" required>
-                            <ul id="category-dropdown" class="autocomplete-list hidden"></ul>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="title" class="form-label"><i class="fas fa-pen-alt"></i> Ad Title <span class="required">*</span>:</label>
-                        <input type="text" id="title" name="title" required class="form-control" value="{{ form_data.title or advert_data.title or '' }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="description" class="form-label"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
-                        <textarea id="description" name="description" maxlength="2000" class="form-control" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
-                        <span id="charCount" class="char-count">0/2000</span>
-                    </div>
-                    <div class="form-group-row">
-                        <div class="form-group">
-                            <label for="negotiable" class="form-label"><i class="fas fa-handshake"></i> Negotiable?</label>
-                            <select id="negotiable" name="negotiable" class="form-control">
-                                <option value="">Select</option>
-                                <option value="Yes" {% if (form_data.negotiable == 'Yes') or (advert and advert_data.negotiable == 'Yes') %}selected{% endif %}>Yes</option>
-                                <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert_data.negotiable == 'No') %}selected{% endif %}>No</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="condition" class="form-label"><i class="fas fa-box-open"></i> Condition:</label>
-                            <select id="condition" name="condition" class="form-control">
-                                <option value="">Select condition</option>
-                                <option value="new" {% if (form_data.condition == 'new') or (advert and advert_data.condition == 'new') %}selected{% endif %}>New</option>
-                                <option value="used" {% if (form_data.condition == 'used') or (advert and advert_data.condition == 'used') %}selected{% endif %}>Used</option>
-                                <option value="fairly used" {% if (form_data.condition == 'fairly used') or (advert and advert_data.condition == 'fairly used') %}selected{% endif %}>Fairly Used</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="delivery_option" class="form-label"><i class="fas fa-shipping-fast"></i> Delivery:</label>
-                            <select id="delivery_option" name="delivery_option" class="form-control">
-                                <option value="">Select an option</option>
-                                <option value="pick-up" {% if (form_data.delivery_option == 'pick-up') or (advert and advert_data.delivery_option == 'pick-up') %}selected{% endif %}>Pick-up</option>
-                                <option value="shipping" {% if (form_data.delivery_option == 'shipping') or (advert and advert_data.delivery_option == 'shipping') %}selected{% endif %}>Shipping</option>
-                                <option value="meet-up" {% if (form_data.delivery_option == 'meet-up') or (advert and advert_data.delivery_option == 'meet-up') %}selected{% endif %}>Meet-up/Delivery</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-section">
-                    <h3>Location Details</h3>
-                    <div class="form-group">
-                        <label for="state_input" class="form-label"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" name="state" id="state_input" class="form-control" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required>
-                            <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="school_input" class="form-label"><i class="fas fa-university"></i> School<span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" name="school" id="school_input" class="form-control" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required>
-                            <span id="school_error" class="invalid-feedback"></span>
-                            <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_input" class="form-label"><i class="fas fa-building"></i> Specific Location in School</label>
-                        <input type="text" name="specific_location" id="location_input" class="form-control" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
-                    </div>
-                </div>
-                <div class="form-section">
-                    <h3>Media</h3>
-                    <div class="form-group">
-                        <label for="mainImage" class="form-label"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
-                        <input type="file" id="mainImage" name="main_image" accept="image/*" class="form-control-file" {% if not advert %}required{% endif %}>
-                        <span id="main-image-error" class="invalid-feedback"></span>
-                        {% if advert and advert.main_image %}
-                            <p class="current-media-label">Current Main Image:</p>
-                            <img src="{{ advert.main_image }}" alt="Current Main Image" class="image-preview">
-                            <input type="hidden" name="existing_main_image" value="{{ advert.main_image }}">
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="additionalImages" class="form-label"><i class="fas fa-images"></i> Additional Images (Max 2, up to 10MB each):</label>
-                        <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple class="form-control-file">
-                        <span id="additional-images-error" class="invalid-feedback"></span>
-                        {% if advert and advert.additional_images %}
-                            <p class="current-media-label">Current Additional Images:</p>
-                            <div class="image-preview-container">
-                                {% for img_url in advert.additional_images %}
-                                    <img src="{{ img_url }}" alt="Additional Image" class="image-preview">
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="video" class="form-label"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
-                        <input type="file" id="video" name="video" accept="video/*" class="form-control-file">
-                        <span id="video-error" class="invalid-feedback"></span>
-                        {% if advert and advert.video %}
-                            <p class="current-media-label">Current Video:</p>
-                            <video src="{{ advert.video }}" controls class="image-preview"></video>
-                        {% endif %}
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Submit Advert for review</button>
-            </form>
-        {% else %}
-            <div class="warning-message alert">
-                <p><i class="fas fa-exclamation-triangle"></i> You currently have no available advert posting options. Please use the links below to subscribe or earn referral benefits to post adverts.</p>
-                <a href="{{ url_for('subscribe') }}"><button type="button" class="btn btn-warning mt-2">Go to Subscriptions</button></a>
             </div>
-        {% endif %}
+
+            <div id="cost_summary">
+                <p>Selected Plan: <b id="selectedPlanName"></b></p>
+                <p>Visibility Multiplier: <b id="visibilityMultiplierDisplay">1.0</b></p>
+                <p>Calculated Cost: <b id="calculatedCostDisplay">₦0.00</b></p>
+            </div>
+
+            <button type="submit" class="button">Post Advert</button>
+        </form>
     </div>
+
     <script>
-        const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
-        const CATEGORIES = [
-            {% for cat in categories %}"{{ cat.name }}",{% endfor %}
-        ];
-        const NIGERIAN_STATES = [
-            {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
-        ];
-        const availableOptions = {{ available_options | tojson | safe }};
-        const form = document.getElementById('post-advert-form');
-        const postingOptionSelect = document.getElementById('posting_option');
-        const dynamicFields = document.getElementById('dynamic-fields');
-        const priceInput = document.getElementById('price');
-        const durationInput = document.getElementById('advert_duration_days');
-        const categoryInput = document.getElementById('category_input');
-        const stateInput = document.getElementById('state_input');
-        const schoolInput = document.getElementById('school_input');
-        const locationInput = document.getElementById('location_input');
-        const schoolError = document.getElementById('school_error');
-        const mainImageInput = document.getElementById('mainImage');
-        const mainImageError = document.getElementById('main-image-error');
-        const additionalImagesInput = document.getElementById('additionalImages');
-        const additionalImagesError = document.getElementById('additional-images-error');
-        const videoInput = document.getElementById('video');
-        const videoError = document.getElementById('video-error');
-        const MAX_IMAGE_SIZE_MB = 10;
-        const MAX_VIDEO_SIZE_MB = 15;
-        const MAX_ADDITIONAL_IMAGES = 2;
-        
-        function setupAutocomplete(inputElement, dataList, dropdownElement) {
-            function filterAndDisplay() {
-                const query = inputElement.value.toLowerCase();
-                dropdownElement.innerHTML = '';
-                if (!query) {
-                    dropdownElement.classList.add('hidden');
+        document.addEventListener('DOMContentLoaded', function() {
+            const advertOptionsList = document.getElementById('advert-options-list');
+            const durationSection = document.getElementById('duration-section');
+            const durationInput = document.getElementById('advert_duration_days');
+            const durationInfo = document.getElementById('duration-info');
+            const priceInput = document.getElementById('price_input');
+            const visibilityMultiplierDisplay = document.getElementById('visibilityMultiplierDisplay');
+            const calculatedCostDisplay = document.getElementById('calculatedCostDisplay');
+            const selectedPlanNameDisplay = document.getElementById('selectedPlanName');
+
+            // Python data passed to JS
+            const VISIBILITY_MULTIPLIERS = {{ VISIBILITY_MULTIPLIERS|tojson }};
+
+            function updateCost() {
+                const selectedOption = advertOptionsList.querySelector('li.selected');
+                if (!selectedOption) {
+                    visibilityMultiplierDisplay.textContent = '1.0';
+                    calculatedCostDisplay.textContent = '₦0.00';
+                    selectedPlanNameDisplay.textContent = 'None';
+                    durationSection.style.display = 'none';
                     return;
                 }
-                const filteredData = dataList.filter(item => item.toLowerCase().includes(query));
-                if (filteredData.length > 0) {
-                    filteredData.forEach(item => {
-                        const li = document.createElement('li');
-                        li.textContent = item;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            inputElement.value = item;
-                            dropdownElement.classList.add('hidden');
-                            inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
-                        dropdownElement.appendChild(li);
-                    });
-                    dropdownElement.classList.remove('hidden');
-                } else {
-                    dropdownElement.classList.add('hidden');
-                }
-            }
-            inputElement.addEventListener('input', filterAndDisplay);
-            inputElement.addEventListener('focus', filterAndDisplay);
-            inputElement.addEventListener('blur', () => {
-                setTimeout(() => dropdownElement.classList.add('hidden'), 200);
-            });
-        }
-
-        setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
-        setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
-        const schoolDropdown = document.getElementById('school-dropdown');
-        
-        function populateSchoolsDropdown(state) {
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDropdown.innerHTML = '';
-            schools.forEach(school => {
-                const li = document.createElement('li');
-                li.textContent = school.name;
-                li.className = 'autocomplete-list-item';
-                li.addEventListener('click', () => {
-                    schoolInput.value = school.name;
-                    schoolDropdown.classList.add('hidden');
-                    locationInput.disabled = false;
-                    locationInput.placeholder = 'e.g., Faculty of Engineering';
-                    schoolInput.focus();
-                });
-                schoolDropdown.appendChild(li);
-            });
-            schoolInput.disabled = false;
-            schoolInput.placeholder = 'Select from the list or type...';
-        }
-
-        stateInput.addEventListener('change', function() {
-            const state = this.value;
-            schoolInput.value = '';
-            locationInput.value = '';
-            locationInput.disabled = true;
-            populateSchoolsDropdown(state);
-        });
-
-        schoolInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const state = stateInput.value;
-            const schools = NIGERIAN_SCHOOLS[state] || [];
-            schoolDropdown.innerHTML = '';
-            if (query && schools.length > 0) {
-                const filteredSchools = schools.filter(s => s.name.toLowerCase().includes(query));
-                if (filteredSchools.length > 0) {
-                    filteredSchools.forEach(school => {
-                        const li = document.createElement('li');
-                        li.textContent = school.name;
-                        li.className = 'autocomplete-list-item';
-                        li.addEventListener('click', () => {
-                            schoolInput.value = school.name;
-                            schoolDropdown.classList.add('hidden');
-                            locationInput.disabled = false;
-                            locationInput.placeholder = 'e.g., Faculty of Engineering';
-                            schoolInput.focus();
-                        });
-                        schoolDropdown.appendChild(li);
-                    });
-                    schoolDropdown.classList.remove('hidden');
-                } else {
-                    schoolDropdown.classList.add('hidden');
-                }
-            } else {
-                schoolDropdown.classList.add('hidden');
-            }
-        });
-
-        schoolInput.addEventListener('focus', function() {
-            const state = stateInput.value;
-            if (state) {
-                populateSchoolsDropdown(state);
-                schoolDropdown.classList.remove('hidden');
-            }
-        });
-
-        schoolInput.addEventListener('blur', () => {
-            setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
-        });
-
-        function updateSubscriptionInfo() {
-            const selectedOptionName = postingOptionSelect.value;
-            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionName);
-            const infoPlanName = document.getElementById('info-plan-name');
-            const infoDuration = document.getElementById('info-duration');
-            const infoVisibilityLevel = document.getElementById('info-visibility-level');
-            const infoCost = document.getElementById('info-cost');
-            
-            if (selectedOption) {
-                infoPlanName.textContent = selectedOption.label;
-                infoDuration.textContent = selectedOption.advert_duration_days || 'Variable';
-                infoVisibilityLevel.textContent = selectedOption.visibility_level;
-                infoCost.textContent = selectedOption.cost_description || 'Calculated below';
                 
-                const isPaidAdvert = selectedOption.plan_name.startsWith('paid_advert_');
-                if (isPaidAdvert) {
-                    dynamicFields.style.display = 'block';
-                    durationInput.required = true;
-                    priceInput.required = true;
-                } else {
-                    dynamicFields.style.display = 'none';
-                    durationInput.required = false;
-                    priceInput.required = false;
-                }
-            } else {
-                infoPlanName.textContent = 'Not Selected';
-                infoDuration.textContent = '0';
-                infoVisibilityLevel.textContent = 'Standard';
-                infoCost.textContent = 'Not Applicable';
-                dynamicFields.style.display = 'none';
-                durationInput.required = false;
-                priceInput.required = false;
-            }
-            calculateAndDisplayCost();
-        }
-
-        function calculateAndDisplayCost() {
-            const selectedOptionName = postingOptionSelect.value;
-            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionName);
-            const infoCost = document.getElementById('info-cost');
-
-            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
-                const productPrice = parseFloat(priceInput.value);
-                const duration = parseInt(durationInput.value);
+                const isFree = selectedOption.dataset.isFree === 'True';
+                const planName = selectedOption.dataset.planName;
+                const visibilityLevel = selectedOption.dataset.visibilityLevel;
+                const multiplier = VISIBILITY_MULTIPLIERS[visibilityLevel] || 1.0;
                 
-                if (productPrice > 0 && duration > 0 && duration <= 180) {
-                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
-                    let calculatedCost = 0.01 * productPrice * duration * visibilityMultiplier;
-                    if (calculatedCost < 100) {
-                        calculatedCost = 100;
+                selectedPlanNameDisplay.textContent = selectedOption.querySelector('h4').textContent;
+                visibilityMultiplierDisplay.textContent = multiplier.toFixed(1);
+
+                if (isFree === true || planName.startsWith('referral')) {
+                    // Fixed duration and free cost for these plans
+                    durationInput.value = selectedOption.dataset.fixedDuration;
+                    durationSection.style.display = 'block';
+                    durationInfo.textContent = `This plan has a fixed duration of ${selectedOption.dataset.fixedDuration} days.`;
+                    calculatedCostDisplay.textContent = '₦0.00';
+                    priceInput.disabled = true;
+                } else {
+                    // Paid plans with customizable duration
+                    durationSection.style.display = 'block';
+                    durationInfo.textContent = `Duration must be between ${selectedOption.dataset.minDuration} and ${selectedOption.dataset.maxDuration} days.`;
+                    priceInput.disabled = false;
+                    
+                    const productPrice = parseFloat(priceInput.value) || 0;
+                    const durationDays = parseInt(durationInput.value) || 0;
+                    
+                    if (productPrice > 0 && durationDays > 0) {
+                        let calculatedCost = 0.01 * productPrice * durationDays * multiplier;
+                        calculatedCost = Math.max(calculatedCost, 100);
+                        calculatedCostDisplay.textContent = `₦${calculatedCost.toFixed(2)}`;
+                    } else {
+                        calculatedCostDisplay.textContent = '₦0.00';
                     }
-                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
-                } else {
-                    infoCost.textContent = 'Please enter valid price and duration';
-                }
-            } else if (selectedOption) {
-                 infoCost.textContent = selectedOption.cost_description || 'Not Applicable';
-            } else {
-                infoCost.textContent = 'Not Applicable';
-            }
-        }
-        
-        function updateCharCount() {
-            const desc = document.getElementById('description');
-            document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
-        }
-
-        function validateFile(file, maxSizeBytes, errorElement) {
-            if (!file) {
-                if (errorElement) errorElement.textContent = '';
-                return true;
-            }
-            const sizeInBytes = file.size;
-            const sizeInMB = sizeInBytes / (1024 * 1024);
-            if (sizeInMB > maxSizeBytes) {
-                if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
-                return false;
-            }
-            return true;
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const initialPlan = postingOptionSelect.value;
-            if (initialPlan) {
-                updateSubscriptionInfo();
-            }
-            if (stateInput.value) {
-                populateSchoolsDropdown(stateInput.value);
-            }
-            updateCharCount();
-        });
-
-        postingOptionSelect.addEventListener('change', updateSubscriptionInfo);
-        priceInput.addEventListener('input', calculateAndDisplayCost);
-        durationInput.addEventListener('input', calculateAndDisplayCost);
-
-        mainImageInput.addEventListener('change', function() {
-            const files = this.files;
-            if (files.length > 0) {
-                if (!validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError)) {
-                    this.value = '';
                 }
             }
-        });
 
-        additionalImagesInput.addEventListener('change', function() {
-            const files = this.files;
-            additionalImagesError.textContent = '';
-            if (files.length > MAX_ADDITIONAL_IMAGES) {
-                additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
-                this.value = '';
-                return;
-            }
-            for (let i = 0; i < files.length; i++) {
-                if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
-                    this.value = '';
-                    break;
-                }
-            }
-        });
+            // Event listeners for selecting an option
+            advertOptionsList.querySelectorAll('li').forEach(item => {
+                item.addEventListener('click', function() {
+                    advertOptionsList.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
+                    this.classList.add('selected');
+                    this.querySelector('input[type="radio"]').checked = true;
+                    updateCost();
+                });
+            });
 
-        videoInput.addEventListener('change', function() {
-            const files = this.files;
-            if (files.length > 0) {
-                if (!validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError)) {
-                    this.value = '';
-                }
-            }
-        });
+            // Event listeners for dynamic calculation
+            priceInput.addEventListener('input', updateCost);
+            durationInput.addEventListener('input', updateCost);
 
-        form.addEventListener('submit', function(event) {
-            const selectedPlanName = postingOptionSelect.value;
-            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
-            const mainImageFile = mainImageInput.files[0];
-            const existingMainImage = document.querySelector('input[name="existing_main_image"]');
+            // Initial update on page load
+            updateCost();
             
-            if (!mainImageFile && !existingMainImage) {
-                mainImageError.textContent = "A main image is required.";
-                event.preventDefault();
-            } else {
-                mainImageError.textContent = "";
-            }
+            // Handle school dropdown based on state selection
+            const stateSelect = document.getElementById('state');
+            const schoolSelect = document.getElementById('school');
+            const nigerianSchools = {{ NIGERIAN_SCHOOLS|tojson }};
 
-            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
-                if (priceInput.value === '' || parseFloat(priceInput.value) <= 0) {
-                    event.preventDefault();
-                    flash("Please enter a valid price for your product.", "error");
-                }
-                const duration = parseInt(durationInput.value);
-                if (durationInput.value === '' || duration <= 0 || duration > 180) {
-                    event.preventDefault();
-                    flash("Please enter a valid duration (1-180 days) for your advert.", "error");
-                }
+            function updateSchools() {
+                const selectedState = stateSelect.value;
+                const schools = nigerianSchools[selectedState] || [];
+                schoolSelect.innerHTML = '<option value="">Select School</option>';
+                schools.forEach(school => {
+                    const option = document.createElement('option');
+                    option.value = school.name;
+                    option.textContent = school.name;
+                    if (school.name === '{{ form_data.get('school', '') }}') {
+                        option.selected = true;
+                    }
+                    schoolSelect.appendChild(option);
+                });
             }
+            stateSelect.addEventListener('change', updateSchools);
+            updateSchools();
         });
-
-        function flash(message, category) {
-            const flashesContainer = document.querySelector('.flashes');
-            if (flashesContainer) {
-                const li = document.createElement('li');
-                li.className = `${category}-message alert`;
-                let iconHtml = '';
-                if (category === 'error') {
-                    iconHtml = '<i class="fas fa-times-circle"></i>';
-                } else if (category === 'success') {
-                    iconHtml = '<i class="fas fa-check-circle"></i>';
-                } else if (category === 'warning') {
-                    iconHtml = '<i class="fas fa-exclamation-triangle"></i>';
-                }
-                li.innerHTML = `${iconHtml} ${message}`;
-                flashesContainer.appendChild(li);
-                setTimeout(() => li.remove(), 5000);
-            }
-        }
     </script>
 </body>
 </html>
