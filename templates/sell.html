@@ -172,6 +172,7 @@
         /* Autocomplete styles... (existing styles are fine) */
         
     </style>
+    
 </head>
 <body>
     <div class="container">
@@ -208,24 +209,25 @@
                 </ul>
             {% endif %}
         {% endwith %}
-
         <div class="advert-options-info">
             <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
             <p>Looking for more advert slots, longer durations, or increased visibility?</p>
-            
             <a href="{{ url_for('leaderboard') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
         
         {% if available_options %}
             <form id="post-advert-form" method="POST" action="{{ url_for('sell', advert_id=advert.id) if advert else url_for('sell') }}" enctype="multipart/form-data">
-                
                 <div class="form-section">
                     <h3>Advert Plan</h3>
                     <div class="form-group mb-3">
                         <label for="posting_option" class="form-label font-weight-bold">Choose your Advert Plan <span class="text-danger">*</span></label>
                         <select name="posting_option" id="posting_option" class="form-control" required>
                             {% for option in available_options %}
-                            <option value="{{ option.plan_name }}" data-plan-cost="{{ option.cost_naira | default('Free') }}" data-duration="{{ option.advert_duration_days }}" data-visibility="{{ option.visibility_level }}"
+                            <option value="{{ option.plan_name }}" 
+                                data-plan-cost="{{ option.cost_naira | default('Free') }}" 
+                                data-duration="{{ option.advert_duration_days }}" 
+                                data-visibility="{{ option.visibility_level }}"
+                                data-multiplier="{{ option.cost_multiplier | default(0) }}"
                                 {% if (advert and advert.plan_name|string == option.plan_name|string) or (form_data.posting_option|string == option.plan_name|string) %}selected{% elif loop.first %}selected{% endif %}>
                                 {{ option.label }}
                                 {% if option.cost_description %}
@@ -253,9 +255,7 @@
                         <p>Advert Cost to be Paid: <strong><span id="info-cost">Not Applicable</span></strong></p>
                     </div>
                 </div>
-
                 
-
                 <div class="form-section">
                     <h3>Product Information</h3>
                     {% if advert and is_repost %}
@@ -277,11 +277,7 @@
                         <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
                         <span id="charCount" class="char-count">0/2000</span>
                     </div>
-
                     <div class="form-group-row">
-                        
-
-                        
                         <div class="form-group">
                             <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable?</label>
                             <select id="negotiable" name="negotiable">
@@ -309,7 +305,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="form-section">
                     <h3>Location Details</h3>
                     <div class="form-group">
@@ -332,7 +327,6 @@
                         <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
                     </div>
                 </div>
-
                 <div class="form-section">
                     <h3>Media</h3>
                     <div class="form-group">
@@ -376,7 +370,6 @@
             </div>
         {% endif %}
     </div>
-
     <script>
         const NIGERIAN_SCHOOLS = {{ NIGERIAN_SCHOOLS | tojson | safe }};
         const CATEGORIES = [
@@ -404,7 +397,7 @@
         const videoError = document.getElementById('video-error');
         const MAX_IMAGE_SIZE_MB = 10;
         const MAX_VIDEO_SIZE_MB = 15;
-        const MAX_ADDITIONAL_IMAGES = 2; // This value has been changed to 2
+        const MAX_ADDITIONAL_IMAGES = 2;
 
         function setupAutocomplete(inputElement, dataList, dropdownElement) {
             function filterAndDisplay() {
@@ -443,7 +436,7 @@
         setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
         setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
         const schoolDropdown = document.getElementById('school-dropdown');
-
+        
         function populateSchoolsDropdown(state) {
             const schools = NIGERIAN_SCHOOLS[state] || [];
             schoolDropdown.innerHTML = '';
@@ -463,7 +456,7 @@
             schoolInput.disabled = false;
             schoolInput.placeholder = 'Select from the list or type...';
         }
-
+        
         stateInput.addEventListener('change', function() {
             const state = this.value;
             schoolInput.value = '';
@@ -471,7 +464,7 @@
             locationInput.disabled = true;
             populateSchoolsDropdown(state);
         });
-
+        
         schoolInput.addEventListener('input', function() {
             const query = this.value.toLowerCase();
             const state = stateInput.value;
@@ -501,7 +494,7 @@
                 schoolDropdown.classList.add('hidden');
             }
         });
-
+        
         schoolInput.addEventListener('focus', function() {
             const state = stateInput.value;
             if (state) {
@@ -509,23 +502,55 @@
                 schoolDropdown.classList.remove('hidden');
             }
         });
-
+        
         schoolInput.addEventListener('blur', () => {
             setTimeout(() => schoolDropdown.classList.add('hidden'), 200);
         });
 
+        // The single, corrected function for cost calculation
+        function calculateAndDisplayCost() {
+            const selectedOptionElement = postingOptionSelect.options[postingOptionSelect.selectedIndex];
+            const selectedPlanName = selectedOptionElement.value;
+            const infoCost = document.getElementById('info-cost');
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
+            
+            if (selectedOption) {
+                if (selectedPlanName.startsWith('paid_advert_')) {
+                    const productPrice = parseFloat(priceInput.value);
+                    const duration = parseInt(durationInput.value);
+                    
+                    if (productPrice > 0 && duration > 0 && duration <= 180) {
+                        const visibilityMultiplier = parseFloat(selectedOptionElement.getAttribute('data-multiplier'));
+                        
+                        let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+                        
+                        if (calculatedCost < 100) {
+                            calculatedCost = 100;
+                        }
+                        
+                        infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
+                    } else {
+                        infoCost.textContent = 'Please enter a valid price and duration.';
+                    }
+                } else {
+                    infoCost.textContent = selectedOption.cost_description || 'Not Applicable';
+                }
+            } else {
+                infoCost.textContent = 'Not Applicable';
+            }
+        }
+        
         function updateSubscriptionInfo(selectedPlanName) {
             const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
             const infoPlanName = document.getElementById('info-plan-name');
             const infoDuration = document.getElementById('info-duration');
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
-            const infoCost = document.getElementById('info-cost');
             
             if (selectedOption) {
                 infoPlanName.textContent = selectedOption.label;
                 infoDuration.textContent = selectedOption.advert_duration_days || 'Variable';
                 infoVisibilityLevel.textContent = selectedOption.visibility_level;
-                infoCost.textContent = selectedOption.cost_description || 'Calculated below';
+                
                 if (selectedPlanName.startsWith('paid_advert_')) {
                     dynamicFields.style.display = 'block';
                     durationInput.required = true;
@@ -537,62 +562,12 @@
                 infoPlanName.textContent = 'Not Selected';
                 infoDuration.textContent = '0';
                 infoVisibilityLevel.textContent = 'Standard';
-                infoCost.textContent = 'Not Applicable';
                 dynamicFields.style.display = 'none';
                 durationInput.required = false;
             }
             calculateAndDisplayCost();
         }
 
-
-        function calculateAndDisplayCost() {
-    const postingOptionSelect = document.getElementById('posting_option');
-    const selectedOptionElement = postingOptionSelect.options[postingOptionSelect.selectedIndex];
-    const infoCost = document.getElementById('info-cost');
-    const selectedPlanName = selectedOptionElement.value;
-
-    if (selectedPlanName.startsWith('paid_advert_')) {
-        const productPrice = parseFloat(document.getElementById('price').value);
-        const duration = parseInt(document.getElementById('advert_duration_days').value);
-        const visibilityLevel = selectedOptionElement.getAttribute('data-visibility');
-
-        if (productPrice > 0 && duration > 0 && duration <= 180) {
-            // Use a lookup or a clearer conditional to get the correct multiplier
-            let visibilityMultiplier;
-            switch (visibilityLevel) {
-                case 'Standard':
-                    visibilityMultiplier = 1.0;
-                    break;
-                case 'Featured':
-                    visibilityMultiplier = 1.5;
-                    break;
-                case 'Premium': // Or whatever your 2.0 level is called
-                    visibilityMultiplier = 2.0;
-                    break;
-                default:
-                    visibilityMultiplier = 1.0; // Default to 1.0 if not found
-            }
-            
-            let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
-            if (calculatedCost < 100) {
-                calculatedCost = 100;
-            }
-            infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
-        } else {
-            infoCost.textContent = 'Please enter a valid price and duration.';
-        }
-    } else {
-        const costDescription = selectedOptionElement.getAttribute('data-plan-cost');
-        if (costDescription) {
-            infoCost.textContent = costDescription;
-        } else {
-            infoCost.textContent = 'Not Applicable';
-        }
-    }
-}
-
-        
-        
         function updateCharCount() {
             const desc = document.getElementById('description');
             document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
@@ -630,7 +605,6 @@
         priceInput.addEventListener('input', calculateAndDisplayCost);
         durationInput.addEventListener('input', calculateAndDisplayCost);
 
-        // This is the code for file size validation
         mainImageInput.addEventListener('change', function() {
             const files = this.files;
             if (files.length > 0) {
@@ -643,12 +617,12 @@
             additionalImagesError.textContent = '';
             if (files.length > MAX_ADDITIONAL_IMAGES) {
                 additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
-                this.value = ''; // Clear the selected files
+                this.value = '';
                 return;
             }
             for (let i = 0; i < files.length; i++) {
                 if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
-                    this.value = ''; // Clear the selected files
+                    this.value = '';
                     break;
                 }
             }
