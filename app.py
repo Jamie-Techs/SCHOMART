@@ -2377,6 +2377,7 @@ def validate_sell_form(form_data, files):
 
 
 
+
 def get_user_advert_options(user_id):
     """
     Retrieves and formats the advert posting options available to a user.
@@ -2397,7 +2398,7 @@ def get_user_advert_options(user_id):
             "min_duration_days": details['min_duration_days'],
             "max_duration_days": details['max_duration_days'],
             "cost_description": "Customizable duration and price",
-            "visibility_level": level # <-- This line was missing
+            "visibility_level": level  # The correct line
         })
     
     # Add referral-based options if user is eligible and hasn't used the benefit
@@ -2426,8 +2427,6 @@ def get_user_advert_options(user_id):
         })
 
     return options
-
-
 
 
 
@@ -5407,6 +5406,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
