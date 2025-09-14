@@ -1,338 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Post Ad - Schomart</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Edit Advert' if advert else 'Sell an Item' }} | CampusConnect</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        /* New Design & Layout */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --text-dark: #343a40;
+            --text-muted: #6c757d;
+            --border-color: #ced4da;
+            --input-focus: #80bdff;
+            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4;
-            color: #333;
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
             line-height: 1.6;
-            padding: 2.5rem 1rem;
         }
 
         .container {
             max-width: 900px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 2.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            position: relative;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--bg-white);
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
         }
 
-        h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #006B3C;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .form-section {
-            border-bottom: 2px solid #FDB813;
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-section h3 {
-            font-size: 1.5rem;
-            color: #006B3C;
-            margin-bottom: 1rem;
-        }
-
-        /* Nav and Back Button */
         .top-nav {
             display: flex;
             justify-content: flex-end;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
         }
 
         .top-nav a {
-            color: #006B3C;
-            font-weight: 600;
+            color: var(--secondary-color);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            transition: color 0.2s;
+            font-size: 14px;
+            transition: color 0.2s ease-in-out;
         }
 
         .top-nav a:hover {
-            color: #025730;
+            color: var(--primary-color);
+        }
+
+        .top-nav a i {
+            margin-right: 5px;
         }
 
         .back-button-top-left {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 1.2em;
-            color: #006B3C;
+            display: inline-flex;
+            align-items: center;
             text-decoration: none;
-            transition: color 0.2s;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            font-size: 14px;
         }
 
         .back-button-top-left:hover {
-            color: #025730;
+            color: var(--primary-color);
         }
 
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1.5rem;
+        h2, h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 25px;
+            margin-bottom: 20px;
         }
 
-        label {
-            font-weight: 600;
+        .advert-options-info {
+            background-color: #e9f5ff;
+            border: 1px solid #cce5ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .advert-options-info h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+            font-size: 1.25rem;
+        }
+
+        .advert-options-info a {
+            display: inline-block;
+            margin-top: 10px;
+            color: var(--info-color);
+            text-decoration: underline;
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: bold;
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 0.5rem;
-            color: #4a5568;
         }
 
-        input, select, textarea {
+        .alert i {
+            font-size: 1.25em;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .warning-message {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--text-dark);
+        }
+
+        .required {
+            color: var(--error-color);
+        }
+
+        .form-control {
+            display: block;
             width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 2px solid #d1d5db;
+            padding: 10px 12px;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-dark);
+            background-color: var(--bg-white);
+            background-clip: padding-box;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
             box-sizing: border-box;
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            font-size: 1em;
-            background-color: #ffffff;
         }
 
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #006B3C;
-            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.2);
-        }
-        
-        /* Grouping for side-by-side fields */
-        .form-group-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            align-items: flex-end;
+        .form-control:focus {
+            color: var(--text-dark);
+            background-color: var(--bg-white);
+            border-color: var(--input-focus);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         }
 
-        .form-group-row .form-group {
-            flex: 1 1 200px;
-            margin-bottom: 0;
-        }
-
-        /* Specific field adjustments */
-        #description {
-            height: 150px;
+        textarea.form-control {
+            height: auto;
+            min-height: 100px;
             resize: vertical;
         }
 
-        /* Button styling */
+        .form-text {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: var(--text-muted);
+        }
+        
+        .invalid-feedback {
+            color: var(--error-color);
+            font-size: 0.875em;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .form-group-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .form-group-row .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
         .btn-primary {
+            display: block;
             width: 100%;
-            padding: 1rem;
-            background-color: #006B3C;
-            color: white;
-            font-size: 1rem;
-            font-weight: 700;
+            padding: 15px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: var(--success-color);
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 0.25rem;
             cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color 0.3s ease;
         }
 
         .btn-primary:hover {
-            background-color: #025730;
+            background-color: #218838;
         }
         
-        .advert-options-info, .subscription-info {
-            border-left: 5px solid #FDB813;
-            background-color: #fff9e6;
+        .subscription-info {
+            background-color: #eaf6ee;
+            border: 1px solid #d4edda;
             padding: 15px;
-            border-radius: 8px;
-            text-align: left;
+            border-radius: 4px;
             margin-top: 20px;
-            margin-bottom: 30px;
         }
         
-        .advert-options-info h3, .subscription-info h3 {
-            color: #006B3C;
+        .subscription-info p {
+            margin: 0 0 8px 0;
+        }
+        
+        .subscription-info strong {
+            color: var(--success-color);
         }
 
-        /* Autocomplete styles */
         .autocomplete-container {
             position: relative;
         }
 
         .autocomplete-list {
             position: absolute;
-            z-index: 10;
-            border: 1px solid #d1d5db;
-            background: #fff;
+            z-index: 1000;
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-top: none;
             max-height: 200px;
             overflow-y: auto;
             width: 100%;
-            list-style: none;
             padding: 0;
             margin: 0;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-        }
-
-        .autocomplete-list-item {
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-        }
-
-        .autocomplete-list-item:hover {
-            background-color: #e5e7eb;
+            list-style: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .autocomplete-list.hidden {
             display: none;
         }
 
-        /* Other utility classes */
-        .invalid-feedback {
-            color: #e53e3e;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-        .warning-message {
-            background-color: #fefcbf;
-            border: 1px solid #f6e05e;
-            color: #92400e;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            text-align: center;
-        }
-        .warning-message button {
-            background-color: #f6e05e;
-            color: #92400e;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            font-weight: 600;
-            margin-top: 1rem;
+        .autocomplete-list-item {
+            padding: 10px 12px;
             cursor: pointer;
-            border: none;
         }
-        .flashes li {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .flashes li.error-message {
-            background-color: #fff5f5;
-            border: 1px solid #fed7d7;
-            color: #c53030;
-        }
-        .flashes li.success-message {
-            background-color: #f0fdf4;
-            border: 1px solid #a7f3d0;
-            color: #065f46;
-        }
-        .flashes li.info-message {
-            background-color: #e0f2fe;
-            border: 1px solid #93c5fd;
-            color: #1e40af;
-        }
-        .required {
-            color: red;
-            font-weight: bold;
-        }
-        .char-count {
-            font-size: 0.8em;
-            color: #718096;
-            display: block;
-            text-align: right;
-            margin-top: 0.25rem;
-        }
-        .image-preview-container {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .image-preview {
-            max-width: 100px;
-            max-height: 100px;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db;
-        }
-    </style>
 
-<style>
-        .form-section {
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .autocomplete-list-item:hover {
+            background-color: var(--bg-light);
         }
-        .form-group-row {
-            display: flex;
-            gap: 20px;
-        }
-        .form-group {
-            flex: 1;
-            margin-bottom: 15px;
-        }
-        .subscription-info {
-            background-color: #f0f8ff;
-            border-left: 5px solid #007bff;
-            padding: 15px;
-            margin-top: 20px;
+
+        .image-preview, video {
+            max-width: 150px;
+            height: auto;
+            margin-top: 10px;
             border-radius: 4px;
         }
-        .subscription-info p {
-            margin: 0;
-            line-height: 1.5;
+        
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
         }
-        .required {
-            color: red;
+
+        .char-count {
+            float: right;
+            font-size: 0.8em;
+            color: var(--text-muted);
         }
-        .autocomplete-container {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-        .autocomplete-list {
-            position: absolute;
-            z-index: 99;
-            width: 100%;
-            border: 1px solid #ccc;
-            background-color: white;
-            max-height: 200px;
-            overflow-y: auto;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .autocomplete-list-item {
-            padding: 10px;
-            cursor: pointer;
-        }
-        .autocomplete-list-item:hover {
-            background-color: #f0f0f0;
-        }
-        .hidden {
-            display: none;
-        }
-        .invalid-feedback {
-            color: #dc3545;
-            display: block;
-            margin-top: 5px;
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            .form-group-row {
+                flex-direction: column;
+                gap: 0;
+            }
         }
     </style>
 </head>
@@ -355,7 +338,7 @@
         <a onclick="history.back()" class="back-button-top-left" title="Go back to previous page">
             <i class="fas fa-arrow-left"></i> Back
         </a>
-        <h2><i class="fas fa-bullhorn"></i> Post Your Advert</h2>
+        <h2><i class="fas fa-bullhorn"></i> {{ 'Update Your Advert' if advert else 'Post a New Advert' }}</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <ul class="flashes">
@@ -373,7 +356,7 @@
             {% endif %}
         {% endwith %}
         <div class="advert-options-info">
-            <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
+            <h3><i class="fas fa-rocket"></i> Boost Your Ads or Earn More Options!</h3>
             <p>Looking for more advert slots, longer durations, or increased visibility?</p>
             <a href="{{ url_for('leaderboard') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
@@ -385,8 +368,11 @@
                         <label for="posting_option" class="form-label font-weight-bold">Choose your Advert Plan <span class="required">*</span></label>
                         <select name="posting_option" id="posting_option" class="form-control" required>
                             {% for option in available_options %}
-                                <option value="{{ option.plan_name }}" data-plan-cost="{{ option.cost_naira | default('Free') }}" data-duration="{{ option.advert_duration_days }}" data-visibility="{{ option.visibility_level }}"
-                                    {% if (advert and advert.plan_name|string == option.plan_name|string) or (form_data.posting_option|string == option.plan_name|string) %}selected{% elif loop.first %}selected{% endif %}>
+                                <option value="{{ option.plan_name }}" 
+                                        data-plan-cost="{{ option.cost_naira | default('Free') }}" 
+                                        data-duration="{{ option.advert_duration_days }}" 
+                                        data-visibility="{{ option.visibility_level }}"
+                                        {% if (advert and advert.plan_name == option.plan_name) or (form_data.posting_option == option.plan_name) %}selected{% elif loop.first %}selected{% endif %}>
                                     {{ option.label }}
                                     {% if option.cost_description %}
                                         ({{ option.cost_description }})
@@ -398,19 +384,19 @@
                     </div>
                     <div id="dynamic-fields" style="display: none;">
                         <div class="form-group">
-                            <label for="advert_duration_days"><i class="fas fa-calendar-alt"></i> Advert Duration (Days) <span class="required">*</span>:</label>
-                            <input type="number" id="advert_duration_days" name="advert_duration_days" min="1" max="180" placeholder="e.g., 30" value="{{ form_data.advert_duration_days or '' }}">
+                            <label for="advert_duration_days" class="form-label"><i class="fas fa-calendar-alt"></i> Advert Duration (Days) <span class="required">*</span>:</label>
+                            <input type="number" id="advert_duration_days" name="advert_duration_days" min="1" max="180" class="form-control" placeholder="e.g., 30" value="{{ form_data.advert_duration_days or '' }}">
                             <small class="form-text text-muted">Enter duration between 1 and 180 days.</small>
                         </div>
                         <div class="form-group">
-                            <label for="price"><i class="fas fa-dollar-sign"></i> Your product Price (₦) <span class="required">*</span>:</label>
-                            <input type="number" id="price" name="price" min="0" step="0.01" value="{{ form_data.price or advert_data.price or '' }}">
+                            <label for="price" class="form-label"><i class="fas fa-dollar-sign"></i> Your product Price (₦) <span class="required">*</span>:</label>
+                            <input type="number" id="price" name="price" min="0" step="0.01" class="form-control" value="{{ form_data.price or advert_data.price or '' }}">
                         </div>
                     </div>
                     <div class="subscription-info">
                         <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name">Not Selected</span></p>
                         <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
-                        <p>Advert Cost to be Paid: <strong><span id="info-cost">{{ cost_message }}</span></strong></p>
+                        <p>Advert Cost to be Paid: <strong><span id="info-cost">Not Applicable</span></strong></p>
                     </div>
                 </div>
                 
@@ -420,41 +406,42 @@
                         <input type="hidden" name="repost_advert_id" value="{{ advert.id }}">
                     {% endif %}
                     <div class="form-group">
-                        <label for="category_input"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
+                        <label for="category_input" class="form-label"><i class="fas fa-tags"></i> Category<span class="required">*</span></label>
                         <div class="autocomplete-container">
                             <input type="text" class="form-control" id="category_input" name="category" placeholder="Type or select a category..." value="{{ form_data.category or advert_data.category_name or '' }}" required>
                             <ul id="category-dropdown" class="autocomplete-list hidden"></ul>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="title"><i class="fas fa-pen-alt"></i> Ad Title <span class="required">*</span>:</label>
-                        <input type="text" id="title" name="title" required value="{{ form_data.title or advert_data.title or '' }}">
+                        <label for="title" class="form-label"><i class="fas fa-pen-alt"></i> Ad Title <span class="required">*</span>:</label>
+                        <input type="text" id="title" name="title" required class="form-control" value="{{ form_data.title or advert_data.title or '' }}">
                     </div>
                     <div class="form-group">
-                        <label for="description"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
-                        <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
+                        <label for="description" class="form-label"><i class="fas fa-file-alt"></i> Ad Description <span class="required">*</span> (Max 2000 characters):</label>
+                        <textarea id="description" name="description" maxlength="2000" class="form-control" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
                         <span id="charCount" class="char-count">0/2000</span>
                     </div>
                     <div class="form-group-row">
                         <div class="form-group">
-                            <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable?</label>
-                            <select id="negotiable" name="negotiable">
+                            <label for="negotiable" class="form-label"><i class="fas fa-handshake"></i> Negotiable?</label>
+                            <select id="negotiable" name="negotiable" class="form-control">
                                 <option value="">Select</option>
                                 <option value="Yes" {% if (form_data.negotiable == 'Yes') or (advert and advert_data.negotiable == 'Yes') %}selected{% endif %}>Yes</option>
                                 <option value="No" {% if (form_data.negotiable == 'No') or (advert and advert_data.negotiable == 'No') %}selected{% endif %}>No</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="condition"><i class="fas fa-box-open"></i> Condition:</label>
-                            <select id="condition" name="condition">
+                            <label for="condition" class="form-label"><i class="fas fa-box-open"></i> Condition:</label>
+                            <select id="condition" name="condition" class="form-control">
                                 <option value="">Select condition</option>
                                 <option value="new" {% if (form_data.condition == 'new') or (advert and advert_data.condition == 'new') %}selected{% endif %}>New</option>
                                 <option value="used" {% if (form_data.condition == 'used') or (advert and advert_data.condition == 'used') %}selected{% endif %}>Used</option>
+                                <option value="fairly used" {% if (form_data.condition == 'fairly used') or (advert and advert_data.condition == 'fairly used') %}selected{% endif %}>Fairly Used</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="delivery_option"><i class="fas fa-shipping-fast"></i> Delivery:</label>
-                            <select id="delivery_option" name="delivery_option">
+                            <label for="delivery_option" class="form-label"><i class="fas fa-shipping-fast"></i> Delivery:</label>
+                            <select id="delivery_option" name="delivery_option" class="form-control">
                                 <option value="">Select an option</option>
                                 <option value="pick-up" {% if (form_data.delivery_option == 'pick-up') or (advert and advert_data.delivery_option == 'pick-up') %}selected{% endif %}>Pick-up</option>
                                 <option value="shipping" {% if (form_data.delivery_option == 'shipping') or (advert and advert_data.delivery_option == 'shipping') %}selected{% endif %}>Shipping</option>
@@ -466,42 +453,43 @@
                 <div class="form-section">
                     <h3>Location Details</h3>
                     <div class="form-group">
-                        <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
+                        <label for="state_input" class="form-label"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
                         <div class="autocomplete-container">
-                            <input type="text" name="state" id="state_input" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required>
+                            <input type="text" name="state" id="state_input" class="form-control" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required>
                             <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="school_input"><i class="fas fa-university"></i> School<span class="required">*</span></label>
+                        <label for="school_input" class="form-label"><i class="fas fa-university"></i> School<span class="required">*</span></label>
                         <div class="autocomplete-container">
-                            <input type="text" name="school" id="school_input" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required>
+                            <input type="text" name="school" id="school_input" class="form-control" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required>
                             <span id="school_error" class="invalid-feedback"></span>
                             <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="location_input"><i class="fas fa-building"></i> Specific Location in School</label>
-                        <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
+                        <label for="location_input" class="form-label"><i class="fas fa-building"></i> Specific Location in School</label>
+                        <input type="text" name="specific_location" id="location_input" class="form-control" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
                     </div>
                 </div>
                 <div class="form-section">
                     <h3>Media</h3>
                     <div class="form-group">
-                        <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
-                        <input type="file" id="mainImage" name="main_image" accept="image/*" {% if not advert %}required{% endif %}>
+                        <label for="mainImage" class="form-label"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
+                        <input type="file" id="mainImage" name="main_image" accept="image/*" class="form-control-file" {% if not advert %}required{% endif %}>
                         <span id="main-image-error" class="invalid-feedback"></span>
                         {% if advert and advert.main_image %}
-                            <p>Current Main Image: <img src="{{ advert.main_image }}" alt="Current Main Image" style="max-width: 100px; max-height: 100px;"></p>
+                            <p class="current-media-label">Current Main Image:</p>
+                            <img src="{{ advert.main_image }}" alt="Current Main Image" class="image-preview">
                             <input type="hidden" name="existing_main_image" value="{{ advert.main_image }}">
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 2, up to 10MB each):</label>
-                        <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple>
+                        <label for="additionalImages" class="form-label"><i class="fas fa-images"></i> Additional Images (Max 2, up to 10MB each):</label>
+                        <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple class="form-control-file">
                         <span id="additional-images-error" class="invalid-feedback"></span>
                         {% if advert and advert.additional_images %}
-                            <p>Current Additional Images:</p>
+                            <p class="current-media-label">Current Additional Images:</p>
                             <div class="image-preview-container">
                                 {% for img_url in advert.additional_images %}
                                     <img src="{{ img_url }}" alt="Additional Image" class="image-preview">
@@ -510,11 +498,12 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="video"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
-                        <input type="file" id="video" name="video" accept="video/*">
+                        <label for="video" class="form-label"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
+                        <input type="file" id="video" name="video" accept="video/*" class="form-control-file">
                         <span id="video-error" class="invalid-feedback"></span>
                         {% if advert and advert.video %}
-                            <p>Current Video: <a href="{{ advert.video }}" target="_blank">View Video <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></p>
+                            <p class="current-media-label">Current Video:</p>
+                            <video src="{{ advert.video }}" controls class="image-preview"></video>
                         {% endif %}
                     </div>
                 </div>
@@ -523,7 +512,7 @@
         {% else %}
             <div class="warning-message alert">
                 <p><i class="fas fa-exclamation-triangle"></i> You currently have no available advert posting options. Please use the links below to subscribe or earn referral benefits to post adverts.</p>
-                <a href="{{ url_for('subscribe') }}"><button type="button">Go to Subscriptions</button></a>
+                <a href="{{ url_for('subscribe') }}"><button type="button" class="btn btn-warning mt-2">Go to Subscriptions</button></a>
             </div>
         {% endif %}
     </div>
@@ -536,6 +525,7 @@
             {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
         ];
         const availableOptions = {{ available_options | tojson | safe }};
+        const form = document.getElementById('post-advert-form');
         const postingOptionSelect = document.getElementById('posting_option');
         const dynamicFields = document.getElementById('dynamic-fields');
         const priceInput = document.getElementById('price');
@@ -572,7 +562,6 @@
                         li.addEventListener('click', () => {
                             inputElement.value = item;
                             dropdownElement.classList.add('hidden');
-                            inputElement.focus();
                             inputElement.dispatchEvent(new Event('change', { bubbles: true }));
                         });
                         dropdownElement.appendChild(li);
@@ -664,8 +653,8 @@
         });
 
         function updateSubscriptionInfo() {
-            const selectedPlanName = postingOptionSelect.value;
-            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
+            const selectedOptionName = postingOptionSelect.value;
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionName);
             const infoPlanName = document.getElementById('info-plan-name');
             const infoDuration = document.getElementById('info-duration');
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
@@ -675,11 +664,9 @@
                 infoPlanName.textContent = selectedOption.label;
                 infoDuration.textContent = selectedOption.advert_duration_days || 'Variable';
                 infoVisibilityLevel.textContent = selectedOption.visibility_level;
+                infoCost.textContent = selectedOption.cost_description || 'Calculated below';
                 
-                // This line is now handled by the backend
-                // infoCost.textContent = selectedOption.cost_description || 'Calculated below'; 
-                
-                const isPaidAdvert = selectedPlanName.startsWith('paid_advert_');
+                const isPaidAdvert = selectedOption.plan_name.startsWith('paid_advert_');
                 if (isPaidAdvert) {
                     dynamicFields.style.display = 'block';
                     durationInput.required = true;
@@ -698,10 +685,35 @@
                 durationInput.required = false;
                 priceInput.required = false;
             }
+            calculateAndDisplayCost();
         }
 
-        // Removed calculateAndDisplayCost() and its event listeners
+        function calculateAndDisplayCost() {
+            const selectedOptionName = postingOptionSelect.value;
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionName);
+            const infoCost = document.getElementById('info-cost');
 
+            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
+                const productPrice = parseFloat(priceInput.value);
+                const duration = parseInt(durationInput.value);
+                
+                if (productPrice > 0 && duration > 0 && duration <= 180) {
+                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
+                    let calculatedCost = 0.01 * productPrice * duration * visibilityMultiplier;
+                    if (calculatedCost < 100) {
+                        calculatedCost = 100;
+                    }
+                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
+                } else {
+                    infoCost.textContent = 'Please enter valid price and duration';
+                }
+            } else if (selectedOption) {
+                 infoCost.textContent = selectedOption.cost_description || 'Not Applicable';
+            } else {
+                infoCost.textContent = 'Not Applicable';
+            }
+        }
+        
         function updateCharCount() {
             const desc = document.getElementById('description');
             document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
@@ -724,7 +736,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const initialPlan = postingOptionSelect.value;
             if (initialPlan) {
-                updateSubscriptionInfo(initialPlan);
+                updateSubscriptionInfo();
             }
             if (stateInput.value) {
                 populateSchoolsDropdown(stateInput.value);
@@ -732,14 +744,16 @@
             updateCharCount();
         });
 
-        postingOptionSelect.addEventListener('change', function() {
-            updateSubscriptionInfo();
-        });
+        postingOptionSelect.addEventListener('change', updateSubscriptionInfo);
+        priceInput.addEventListener('input', calculateAndDisplayCost);
+        durationInput.addEventListener('input', calculateAndDisplayCost);
 
         mainImageInput.addEventListener('change', function() {
             const files = this.files;
             if (files.length > 0) {
-                validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError);
+                if (!validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError)) {
+                    this.value = '';
+                }
             }
         });
 
@@ -762,13 +776,15 @@
         videoInput.addEventListener('change', function() {
             const files = this.files;
             if (files.length > 0) {
-                validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError);
+                if (!validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError)) {
+                    this.value = '';
+                }
             }
         });
 
-        // Simplified form submission handler, as validation is now handled by the backend
-        // This is a minimal client-side check to prevent unnecessary server round trips
-        document.querySelector('#post-advert-form').addEventListener('submit', function(event) {
+        form.addEventListener('submit', function(event) {
+            const selectedPlanName = postingOptionSelect.value;
+            const selectedOption = availableOptions.find(opt => opt.plan_name === selectedPlanName);
             const mainImageFile = mainImageInput.files[0];
             const existingMainImage = document.querySelector('input[name="existing_main_image"]');
             
@@ -778,10 +794,38 @@
             } else {
                 mainImageError.textContent = "";
             }
+
+            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
+                if (priceInput.value === '' || parseFloat(priceInput.value) <= 0) {
+                    event.preventDefault();
+                    flash("Please enter a valid price for your product.", "error");
+                }
+                const duration = parseInt(durationInput.value);
+                if (durationInput.value === '' || duration <= 0 || duration > 180) {
+                    event.preventDefault();
+                    flash("Please enter a valid duration (1-180 days) for your advert.", "error");
+                }
+            }
         });
 
-        // Removed the flash() function as it's no longer needed for client-side errors
-        // Flashed messages will now be handled entirely by the backend and Jinja2
+        function flash(message, category) {
+            const flashesContainer = document.querySelector('.flashes');
+            if (flashesContainer) {
+                const li = document.createElement('li');
+                li.className = `${category}-message alert`;
+                let iconHtml = '';
+                if (category === 'error') {
+                    iconHtml = '<i class="fas fa-times-circle"></i>';
+                } else if (category === 'success') {
+                    iconHtml = '<i class="fas fa-check-circle"></i>';
+                } else if (category === 'warning') {
+                    iconHtml = '<i class="fas fa-exclamation-triangle"></i>';
+                }
+                li.innerHTML = `${iconHtml} ${message}`;
+                flashesContainer.appendChild(li);
+                setTimeout(() => li.remove(), 5000);
+            }
+        }
     </script>
 </body>
 </html>
