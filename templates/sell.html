@@ -544,32 +544,61 @@
             calculateAndDisplayCost();
         }
 
-        function calculateAndDisplayCost() {
-            const selectedOptionPlan = postingOptionSelect.value;
-            const infoCost = document.getElementById('info-cost');
-            if (selectedOptionPlan.startsWith('paid_advert_')) {
-                const productPrice = parseFloat(priceInput.value);
-                const duration = parseInt(durationInput.value);
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (productPrice > 0 && duration > 0 && duration <= 180) {
-                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
-                    let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
-                    if (calculatedCost < 100) {
-                        calculatedCost = 100;
-                    }
-                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
-                } else {
-                    infoCost.textContent = 'Please enter a valid price and duration.';
+        // A simple function to get an element by its ID
+const getElement = (id) => document.getElementById(id);
+
+// Get a reference to the relevant HTML elements
+const postingOptionSelect = getElement('posting_option');
+const priceInput = getElement('price');
+const durationInput = getElement('advert_duration_days');
+
+// This function will handle the cost calculation and display
+function calculateAndDisplayCost() {
+    // Note: availableOptions and infoCost are assumed to be defined globally or passed in.
+    const selectedOptionPlan = postingOptionSelect.value;
+    const infoCost = getElement('info-cost');
+    const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
+
+    // If a plan is found
+    if (selectedOption) {
+        // Check if it's a paid advertisement that requires dynamic calculation
+        if (selectedOptionPlan.startsWith('paid_advert_')) {
+            const productPrice = parseFloat(priceInput.value);
+            const duration = parseInt(durationInput.value);
+            
+            // Validate the inputs
+            if (productPrice > 0 && duration > 0 && duration <= 180) {
+                const visibilityMultiplier = (selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0));
+                
+                let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+                
+                // Enforce the minimum cost
+                if (calculatedCost < 100) {
+                    calculatedCost = 100;
                 }
+                
+                infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
             } else {
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (selectedOption) {
-                    infoCost.textContent = selectedOption.cost_description;
-                } else {
-                    infoCost.textContent = 'Not Applicable';
-                }
+                infoCost.textContent = 'Please enter a valid price and duration.';
             }
+        } else {
+            // For plans with a fixed cost description (e.g., 'Free')
+            infoCost.textContent = selectedOption.cost_description || 'Not Applicable';
         }
+    } else {
+        infoCost.textContent = 'Not Applicable';
+    }
+}
+
+// Attach event listeners to the input fields to trigger the calculation
+postingOptionSelect.addEventListener('change', calculateAndDisplayCost);
+priceInput.addEventListener('input', calculateAndDisplayCost);
+durationInput.addEventListener('input', calculateAndDisplayCost);
+
+// Trigger the calculation once on page load to set the initial value
+document.addEventListener('DOMContentLoaded', calculateAndDisplayCost);
+
+     
         
         function updateCharCount() {
             const desc = document.getElementById('description');
