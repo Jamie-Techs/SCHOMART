@@ -1,13 +1,279 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Post Your Advert</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Post Ad - Schomart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        /* New Design & Layout */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4;
+            color: #333;
+            line-height: 1.6;
+            padding: 2.5rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #006B3C;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-section {
+            border-bottom: 2px solid #FDB813;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-section h3 {
+            font-size: 1.5rem;
+            color: #006B3C;
+            margin-bottom: 1rem;
+        }
+
+        /* Nav and Back Button */
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .top-nav a {
+            color: #006B3C;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .top-nav a:hover {
+            color: #025730;
+        }
+
+        .back-button-top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            color: #006B3C;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .back-button-top-left:hover {
+            color: #025730;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 2px solid #d1d5db;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            font-size: 1em;
+            background-color: #ffffff;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #006B3C;
+            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.2);
+        }
+        
+        /* Grouping for side-by-side fields */
+        .form-group-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: flex-end;
+        }
+
+        .form-group-row .form-group {
+            flex: 1 1 200px;
+            margin-bottom: 0;
+        }
+
+        /* Specific field adjustments */
+        #description {
+            height: 150px;
+            resize: vertical;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background-color: #006B3C;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #025730;
+        }
+        
+        .advert-options-info, .subscription-info {
+            border-left: 5px solid #FDB813;
+            background-color: #fff9e6;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .advert-options-info h3, .subscription-info h3 {
+            color: #006B3C;
+        }
+
+        /* Autocomplete styles */
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            z-index: 10;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+
+        .autocomplete-list-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+        }
+
+        .autocomplete-list-item:hover {
+            background-color: #e5e7eb;
+        }
+
+        .autocomplete-list.hidden {
+            display: none;
+        }
+
+        /* Other utility classes */
+        .invalid-feedback {
+            color: #e53e3e;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .warning-message {
+            background-color: #fefcbf;
+            border: 1px solid #f6e05e;
+            color: #92400e;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        .warning-message button {
+            background-color: #f6e05e;
+            color: #92400e;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            cursor: pointer;
+            border: none;
+        }
+        .flashes li {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .flashes li.error-message {
+            background-color: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+        }
+        .flashes li.success-message {
+            background-color: #f0fdf4;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+        .flashes li.info-message {
+            background-color: #e0f2fe;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+        .required {
+            color: red;
+            font-weight: bold;
+        }
+        .char-count {
+            font-size: 0.8em;
+            color: #718096;
+            display: block;
+            text-align: right;
+            margin-top: 0.25rem;
+        }
+        .image-preview-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+        }
+    </style>
+
+<style>
         .form-section {
             border: 1px solid #ccc;
             padding: 20px;
