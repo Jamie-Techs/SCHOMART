@@ -343,7 +343,7 @@
         }
         .advert-item img {
             width: 100%;
-            height: 200px;
+            height: 350px;
             object-fit: cover;
             display: block;
             border-radius: 10px 10px 0 0;
@@ -581,7 +581,7 @@
                 {% if seller.username and seller.businessname %}
                     <p><strong>Username:</strong> {{ seller.username }}</p>
                 {% endif %}
-                <p><i class="fas fa-chart-line"></i> <strong>Status:</strong> {{ seller.account_status|capitalize }}</p>
+                
                 {% if seller.location %}
                     <p><i class="fas fa-location-dot"></i> <strong>Location:</strong> {{ seller.location }}</p>
                 {% endif %}
