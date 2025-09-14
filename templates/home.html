@@ -210,7 +210,7 @@
         }
         .scrolling-wrapper {
             display: flex;
-            animation: scroll-left var(--scroll-duration, 25s) linear infinite;
+            animation: scroll-left var(--scroll-duration, 40s) linear infinite;
             white-space: nowrap;
             padding: 10px 0;
             cursor: grab; /* Change cursor to indicate it's draggable */
@@ -482,7 +482,8 @@
 <main>
     <section id="airtime-posts-section" class="container">
         <h2>
-            <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> FEATURED
+            <i class="fas fa-mobile-alt" style="margin-right: 10px;"></i> SPONSORED
+            
         </h2>
         <div id="airtime-posts-container">
             </div>
@@ -492,10 +493,10 @@
     </section>
 
     <section class="green-search">
-        <h2>What are you looking for?</h2>
+        <h2>What do you need ?</h2>
         <div class="search-row">
             <a href="/search" class="search-form">
-                <input type="text" class="search-input" placeholder="I'm looking for..." readonly>
+                <input type="text" class="search-input" placeholder="I need..." readonly>
                 <i class="fas fa-search"></i>
             </a>
         </div>
@@ -642,25 +643,7 @@
         console.error('Service Workers are not supported by this browser.');
     }
 
-    // PWA Install Pop-up HTML
-    document.write(`
-        <div id="pwa-install-modal" class="pwa-modal-container" style="display:none;">
-            <div class="pwa-modal-content">
-                <span class="pwa-modal-close-btn">&times;</span>
-                <h2>Install SCHOMART 🚀</h2>
-                <p>For a better experience, install SCHOMART to your home screen. It's fast, free, and works offline!</p>
-                <div class="pwa-modal-instructions">
-                    <p><strong>To install manually:</strong></p>
-                    <ol>
-                        <li>Tap the browser's menu button (<i class="fas fa-ellipsis-v"></i> or <i class="fas fa-ellipsis-h"></i>).</li>
-                        <li>Select **'Add to Home screen'**.</li>
-                        <li>Confirm and enjoy the app.</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    `);
-
+    
     // Custom PWA Install Pop-up Logic
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('pwa-install-modal');
@@ -690,3 +673,4 @@
 
 </body>
 </html>
+
