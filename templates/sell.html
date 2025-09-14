@@ -544,32 +544,54 @@
             calculateAndDisplayCost();
         }
 
+
         function calculateAndDisplayCost() {
-            const selectedOptionPlan = postingOptionSelect.value;
-            const infoCost = document.getElementById('info-cost');
-            if (selectedOptionPlan.startsWith('paid_advert_')) {
-                const productPrice = parseFloat(priceInput.value);
-                const duration = parseInt(durationInput.value);
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (productPrice > 0 && duration > 0 && duration <= 180) {
-                    const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
-                    let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
-                    if (calculatedCost < 100) {
-                        calculatedCost = 100;
-                    }
-                    infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
-                } else {
-                    infoCost.textContent = 'Please enter a valid price and duration.';
-                }
-            } else {
-                const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
-                if (selectedOption) {
-                    infoCost.textContent = selectedOption.cost_description;
-                } else {
-                    infoCost.textContent = 'Not Applicable';
-                }
+    const postingOptionSelect = document.getElementById('posting_option');
+    const selectedOptionElement = postingOptionSelect.options[postingOptionSelect.selectedIndex];
+    const infoCost = document.getElementById('info-cost');
+    const selectedPlanName = selectedOptionElement.value;
+
+    if (selectedPlanName.startsWith('paid_advert_')) {
+        const productPrice = parseFloat(document.getElementById('price').value);
+        const duration = parseInt(document.getElementById('advert_duration_days').value);
+        const visibilityLevel = selectedOptionElement.getAttribute('data-visibility');
+
+        if (productPrice > 0 && duration > 0 && duration <= 180) {
+            // Use a lookup or a clearer conditional to get the correct multiplier
+            let visibilityMultiplier;
+            switch (visibilityLevel) {
+                case 'Standard':
+                    visibilityMultiplier = 1.0;
+                    break;
+                case 'Featured':
+                    visibilityMultiplier = 1.5;
+                    break;
+                case 'Premium': // Or whatever your 2.0 level is called
+                    visibilityMultiplier = 2.0;
+                    break;
+                default:
+                    visibilityMultiplier = 1.0; // Default to 1.0 if not found
             }
+            
+            let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+            if (calculatedCost < 100) {
+                calculatedCost = 100;
+            }
+            infoCost.textContent = `₦${calculatedCost.toFixed(2)}`;
+        } else {
+            infoCost.textContent = 'Please enter a valid price and duration.';
         }
+    } else {
+        const costDescription = selectedOptionElement.getAttribute('data-plan-cost');
+        if (costDescription) {
+            infoCost.textContent = costDescription;
+        } else {
+            infoCost.textContent = 'Not Applicable';
+        }
+    }
+}
+
+        
         
         function updateCharCount() {
             const desc = document.getElementById('description');
