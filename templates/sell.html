@@ -170,7 +170,85 @@
         }
 
         /* Autocomplete styles... (existing styles are fine) */
-        
+        .autocomplete-container {
+            position: relative;
+        }
+        .autocomplete-list {
+            position: absolute;
+            z-index: 100;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+        .autocomplete-list-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0fdf4;
+        }
+        .autocomplete-list-item:hover {
+            background-color: #e6f7ff;
+        }
+        .hidden {
+            display: none;
+        }
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875em;
+            display: block;
+            margin-top: 0.25rem;
+        }
+        .image-preview-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-preview {
+            max-width: 100px;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        .char-count {
+            display: block;
+            text-align: right;
+            font-size: 0.875em;
+            color: #6b7280;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .error-message {
+            background-color: #fcebeb;
+            border: 1px solid #f99;
+            color: #cc0000;
+        }
+        .success-message {
+            background-color: #e8f9ed;
+            border: 1px solid #a8e5b4;
+            color: #006B3C;
+        }
+        .info-message {
+            background-color: #eaf6ff;
+            border: 1px solid #a6d8ff;
+            color: #007bff;
+        }
+        .warning-message {
+            background-color: #fff8e1;
+            border: 1px solid #ffd700;
+            color: #ff9800;
+        }
     </style>
 </head>
 <body>
@@ -251,6 +329,15 @@
                         <p><strong><i class="fas fa-info-circle"></i> Selected Option:</strong> <span id="info-plan-name">Not Selected</span></p>
                         <p>Duration: <strong><span id="info-duration">0</span> days</strong>, Visibility: <strong><span id="info-visibility-level">Standard</span></strong></p>
                         <p>Advert Cost to be Paid: <strong><span id="info-cost">Not Applicable</span></strong></p>
+                        <div id="cost-details" class="mt-4" style="display: none;">
+                            <p><strong>Cost Calculation:</strong></p>
+                            <ul>
+                                <li>Product Price: <span id="calc-price"></span></li>
+                                <li>Duration: <span id="calc-duration"></span> days</li>
+                                <li>Visibility Multiplier: <span id="calc-multiplier"></span></li>
+                                <li><strong>Total Cost: <span id="final-cost"></span></strong></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
@@ -386,6 +473,7 @@
             {% for state in NIGERIAN_STATES %}"{{ state }}",{% endfor %}
         ];
         const availableOptions = {{ available_options | tojson | safe }};
+        const VISIBILITY_MULTIPLIERS = {{ VISIBILITY_MULTIPLIERS | tojson | safe }};
         const form = document.getElementById('post-advert-form');
         const postingOptionSelect = document.getElementById('posting_option');
         const dynamicFields = document.getElementById('dynamic-fields');
@@ -520,6 +608,7 @@
             const infoDuration = document.getElementById('info-duration');
             const infoVisibilityLevel = document.getElementById('info-visibility-level');
             const infoCost = document.getElementById('info-cost');
+            const costDetails = document.getElementById('cost-details');
             
             if (selectedOption) {
                 infoPlanName.textContent = selectedOption.label;
@@ -529,9 +618,11 @@
                 if (selectedPlanName.startsWith('paid_advert_')) {
                     dynamicFields.style.display = 'block';
                     durationInput.required = true;
+                    costDetails.style.display = 'block';
                 } else {
                     dynamicFields.style.display = 'none';
                     durationInput.required = false;
+                    costDetails.style.display = 'none';
                 }
             } else {
                 infoPlanName.textContent = 'Not Selected';
@@ -540,11 +631,42 @@
                 infoCost.textContent = 'Not Applicable';
                 dynamicFields.style.display = 'none';
                 durationInput.required = false;
+                costDetails.style.display = 'none';
             }
             calculateAndDisplayCost();
         }
 
-        
+        function calculateAndDisplayCost() {
+            const selectedOption = availableOptions.find(opt => opt.plan_name === postingOptionSelect.value);
+            const calcPrice = document.getElementById('calc-price');
+            const calcDuration = document.getElementById('calc-duration');
+            const calcMultiplier = document.getElementById('calc-multiplier');
+            const finalCost = document.getElementById('final-cost');
+            const infoCost = document.getElementById('info-cost');
+
+            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
+                let price = parseFloat(priceInput.value) || 0;
+                let duration = parseInt(durationInput.value) || 0;
+                let visibility = selectedOption.visibility_level;
+                let multiplier = VISIBILITY_MULTIPLIERS[visibility] || 1;
+                
+                let calculatedCost = 0.01 * price * duration * multiplier;
+                let finalCalculatedCost = Math.max(calculatedCost, 100);
+
+                calcPrice.textContent = `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                calcDuration.textContent = duration;
+                calcMultiplier.textContent = multiplier;
+                finalCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                
+                infoCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            } else {
+                calcPrice.textContent = 'N/A';
+                calcDuration.textContent = 'N/A';
+                calcMultiplier.textContent = 'N/A';
+                finalCost.textContent = 'Free';
+                infoCost.textContent = 'Free';
+            }
+        }
         
         function updateCharCount() {
             const desc = document.getElementById('description');
