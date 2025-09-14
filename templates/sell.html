@@ -644,7 +644,7 @@
                 const selectedOption = availableOptions.find(opt => opt.plan_name === selectedOptionPlan);
                 if (productPrice > 0 && duration > 0 && duration <= 180) {
                     const visibilityMultiplier = selectedOption.visibility_level === 'Standard' ? 1.0 : (selectedOption.visibility_level === 'Featured' ? 1.5 : 2.0);
-                    let calculatedCost = 0.02 * productPrice * duration * visibilityMultiplier;
+                    let calculatedCost = 0.01 * productPrice * duration * visibilityMultiplier;
                     if (calculatedCost < 100) {
                         calculatedCost = 100;
                     }
