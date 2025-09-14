@@ -7,282 +7,372 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #006B3C;
-            --secondary-color: #FDB813;
-            --light-bg: #f8f8f8;
-            --dark-text: #333;
-            --light-text: #fff;
-            --border-color: #ddd;
-            --shadow-color: rgba(0,0,0,0.1);
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--light-bg);
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            color: var(--dark-text);
-        }
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 30px;
-            background-color: var(--light-text);
-            border-radius: 12px;
-            box-shadow: 0 6px 20px var(--shadow-color);
-        }
-        h2 {
-            color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        /* Flash message styling */
-        .flashes {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 20px 0;
-        }
-        .flashes li {
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: 1;
-            transition: opacity 0.5s ease-out;
-        }
-        .flashes .error {
-            background-color: #fee2e2;
-            color: #cc0000;
-            border: 1px solid #ffabab;
-        }
-        .flashes .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .flashes .info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        .flashes .warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
-        }
-        .alert-icon {
-            font-size: 1.2em;
-        }
-        /* Navigation buttons styling */
-        .navigation-buttons {
-            display: flex;
-            justify-content: flex-start;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap; /* NEW: Allow buttons to wrap to next line */
-        }
-        .btn-navigation {
-            background-color: var(--primary-color);
-            color: var(--light-text);
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            white-space: nowrap; /* Prevent buttons from breaking onto multiple lines */
-        }
-        .btn-navigation:hover {
-            background-color: var(--secondary-color);
-            color: var(--dark-text);
-        }
-        .btn-navigation i {
-            margin-right: 5px;
-        }
-        /* Advert list and item styling */
-        .advert-list {
-            display: grid;
-            gap: 25px;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        }
-        .advert-item-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            height: 100%;
-        }
-        .advert-item {
-            background: var(--light-text);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            height: 100%;
-        }
-        .advert-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-        .advert-status-header {
-            background-color: var(--primary-color);
-            color: var(--light-text);
-            font-weight: bold;
-            padding: 0.8rem 1.2rem;
-            border-bottom: 1px solid rgba(0,0,0,.1);
-            font-size: 0.95rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        /* Specific status header colors */
-        .advert-item.status-rejected .advert-status-header { background-color: #dc3545; }
-        .advert-item.status-pending_review .advert-status-header { background-color: #ffc107; color: var(--dark-text); }
-        .advert-item.status-published .advert-status-header { background-color: #28a745; }
-        .advert-item.status-expired .advert-status-header,
-        .advert-item.status-paused .advert-status-header { background-color: #6c757d; }
-        .advert-item.status-pending_payment .advert-status-header { background-color: #17a2b8; color: var(--light-text); }
-        .advert-content {
-            padding: 1.25rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .advert-content h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.4em;
-            color: var(--primary-color);
-        }
-        .advert-content p {
-            margin: 5px 0;
-            font-size: 0.95em;
-            line-height: 1.4;
-        }
-        .advert-content img {
-            max-width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-        }
-        .advert-details-list {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0;
-            flex-grow: 1;
-        }
-        .advert-details-list li {
-            padding: 4px 0;
-            font-size: 0.9em;
-            color: #555;
-        }
-        .advert-details-list li strong {
-            color: var(--dark-text);
-        }
-        .rejection-reason {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-left: 5px solid #dc3545;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9em;
-        }
-        .rejection-reason strong {
-            color: #721c24;
-        }
-        .advert-actions-footer {
-            padding: 15px;
-            background-color: var(--light-bg);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .advert-actions-footer .btn {
-            background-color: var(--primary-color);
-            color: var(--light-text);
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 0.9em;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            flex-shrink: 0;
-        }
-        .advert-actions-footer .btn:hover {
-            background-color: var(--secondary-color);
-            color: var(--dark-text);
-        }
-        /* Specific button colors */
-        .btn.btn-danger { background-color: #dc3545; }
-        .btn.btn-danger:hover { background-color: #c82333; }
-        .btn.btn-warning { background-color: var(--secondary-color); color: var(--dark-text); }
-        .btn.btn-warning:hover { background-color: #e0a800; }
-        .btn.btn-info { background-color: #17a2b8; }
-        .btn.btn-info:hover { background-color: #138496; }
-        .btn.btn-success { background-color: #28a745; }
-        .btn.btn-success:hover { background-color: #218838; }
-        .no-adverts {
-            text-align: center;
-            color: #555;
-            padding: 30px;
-            border: 1px dashed #ccc;
-            border-radius: 5px;
-            margin-top: 20px;
-            background-color: var(--light-bg);
-        }
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .container {
-                margin: 20px auto;
-                padding: 20px;
-            }
-            h2 {
-                font-size: 2em;
-            }
-            .advert-list {
-                grid-template-columns: 1fr;
-            }
-            .navigation-buttons {
-                /* REVISED: Don't force column layout, let them wrap */
-                justify-content: center;
-                gap: 10px;
-            }
-            .btn-navigation {
-                width: calc(50% - 5px); /* NEW: Display in two columns on mobile */
-                text-align: center;
-                flex-grow: 1;
-            }
-            .advert-actions-footer {
-                justify-content: center;
-            }
-        }
-        .copy-btn {
-            background-color: transparent;
-            border: none;
-            color: #007bff;
-            padding: 0;
-            margin-left: 5px;
-            cursor: pointer;
-            transition: color 0.2s ease-in-out;
-        }
-        .copy-btn:hover {
-            color: #0056b3;
-        }
-        .advert-item-link {
-            text-decoration: none;
-            color: inherit;
-        }
+    --primary-color: #006B3C;
+    --secondary-color: #FDB813;
+    --light-bg: #f8f8f8;
+    --dark-text: #333;
+    --light-text: #fff;
+    --border-color: #ddd;
+    --shadow-color: rgba(0,0,0,0.1);
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--light-bg);
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    color: var(--dark-text);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: var(--light-text);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px var(--shadow-color);
+}
+
+h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* Flash message styling */
+.flashes {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+.flashes li {
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+.flashes .error {
+    background-color: #fee2e2;
+    color: #cc0000;
+    border: 1px solid #ffabab;
+}
+
+.flashes .success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flashes .info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.flashes .warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.alert-icon {
+    font-size: 1.2em;
+}
+
+/* Navigation buttons styling */
+.navigation-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Reduced gap for better spacing */
+    margin-bottom: 20px;
+    flex-wrap: wrap; 
+}
+
+.btn-navigation {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    padding: 8px 12px; /* Reduced padding to make buttons smaller */
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px; /* Reduced font size for a smaller look */
+    transition: background-color 0.3s ease, color 0.3s ease;
+    white-space: nowrap; 
+    flex-grow: 1; /* Allow buttons to grow to fill available space on desktop */
+    min-width: 120px; /* NEW: Ensures buttons have a minimum width */
+}
+
+.btn-navigation:hover {
+    background-color: var(--secondary-color);
+    color: var(--dark-text);
+}
+
+.btn-navigation i {
+    margin-right: 5px;
+}
+
+/* Advert list and item styling */
+.advert-list {
+    display: grid;
+    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.advert-item-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+.advert-item {
+    background: var(--light-text);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.advert-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.advert-status-header {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    font-weight: bold;
+    padding: 0.8rem 1.2rem;
+    border-bottom: 1px solid rgba(0,0,0,.1);
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Specific status header colors */
+.advert-item.status-rejected .advert-status-header {
+    background-color: #dc3545;
+}
+
+.advert-item.status-pending_review .advert-status-header {
+    background-color: #ffc107;
+    color: var(--dark-text);
+}
+
+.advert-item.status-published .advert-status-header {
+    background-color: #28a745;
+}
+
+.advert-item.status-expired .advert-status-header,
+.advert-item.status-paused .advert-status-header {
+    background-color: #6c757d;
+}
+
+.advert-item.status-pending_payment .advert-status-header {
+    background-color: #17a2b8;
+    color: var(--light-text);
+}
+
+.advert-content {
+    padding: 1.25rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.advert-content h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.4em;
+    color: var(--primary-color);
+}
+
+.advert-content p {
+    margin: 5px 0;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+.advert-content img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+.advert-details-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    flex-grow: 1;
+}
+
+.advert-details-list li {
+    padding: 4px 0;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.advert-details-list li strong {
+    color: var(--dark-text);
+}
+
+.rejection-reason {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-left: 5px solid #dc3545;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.rejection-reason strong {
+    color: #721c24;
+}
+
+.advert-actions-footer {
+    padding: 15px;
+    background-color: var(--light-bg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.advert-actions-footer .btn {
+    background-color: var(--primary-color);
+    color: var(--light-text);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.advert-actions-footer .btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--dark-text);
+}
+
+/* Specific button colors */
+.btn.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn.btn-warning {
+    background-color: var(--secondary-color);
+    color: var(--dark-text);
+}
+
+.btn.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn.btn-info {
+    background-color: #17a2b8;
+}
+
+.btn.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn.btn-success {
+    background-color: #28a745;
+}
+
+.btn.btn-success:hover {
+    background-color: #218838;
+}
+
+.no-adverts {
+    text-align: center;
+    color: #555;
+    padding: 30px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    margin-top: 20px;
+    background-color: var(--light-bg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    h2 {
+        font-size: 2em;
+    }
+
+    .advert-list {
+        grid-template-columns: 1fr;
+    }
+
+    .navigation-buttons {
+        justify-content: center;
+        gap: 10px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .btn-navigation {
+        width: 100%;
+        text-align: center;
+        /* Re-adjusted properties for better fit */
+        padding: 8px 10px; 
+        font-size: 13px;
+        min-width: unset; /* Resetting min-width for mobile */
+    }
+
+    .advert-actions-footer {
+        justify-content: center;
+    }
+}
+
+.copy-btn {
+    background-color: transparent;
+    border: none;
+    color: #007bff;
+    padding: 0;
+    margin-left: 5px;
+    cursor: pointer;
+    transition: color 0.2s ease-in-out;
+}
+
+.copy-btn:hover {
+    color: #0056b3;
+}
+
+.advert-item-link {
+    text-decoration: none;
+    color: inherit;
+}
     </style>
 </head>
 <body>
