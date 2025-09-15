@@ -45,19 +45,24 @@
         /* FAQ Section */
         .faq-section {
             padding: 40px 20px;
+            max-width: 900px;
+            margin: auto;
         }
 
         .faq-category {
             display: flex;
             flex-direction: column;
             gap: 15px;
+            margin-bottom: 40px;
         }
 
         .faq-category h2 {
-            font-size: 24px;
+            font-size: 28px;
             color: #006B3C;
             margin-bottom: 10px;
             font-weight: bold;
+            border-bottom: 2px solid #FDB813;
+            padding-bottom: 5px;
         }
 
         .faq-item {
@@ -65,6 +70,11 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .faq-item:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         .faq-item h3 {
@@ -73,17 +83,37 @@
             font-weight: bold;
             cursor: pointer;
             color: #006B3C;
+            position: relative;
+            padding-right: 30px;
+        }
+        
+        .faq-item h3::after {
+            content: '+';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+        
+        .faq-item.active h3::after {
+            content: '-';
+            transform: translateY(-50%) rotate(180deg);
         }
 
         .faq-item p {
             font-size: 16px;
-            margin-top: 10px;
-            display: none;
+            margin-top: 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, margin-top 0.3s ease-out;
             color: #333;
         }
 
         .faq-item.active p {
-            display: block;
+            max-height: 500px; /* Adjust based on content length */
+            margin-top: 15px;
         }
 
         /* Footer */
@@ -93,19 +123,6 @@
             text-align: center;
             padding: 20px;
             margin-top: 40px;
-        }
-
-        /* Media Queries */
-        @media (max-width: 768px) {
-            .search-section input {
-                width: 90%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .search-section input {
-                width: 100%;
-            }
         }
 
         /* Updated Floating Help/Contact Us Styling */
@@ -119,8 +136,8 @@
         .floating-help-button {
             background-color: #006B3C;
             color: white;
-            width: 56px; /* equivalent to w-14 */
-            height: 56px; /* equivalent to h-14 */
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -139,12 +156,12 @@
 
         .help-list {
             position: absolute;
-            bottom: 72px; /* 56px (button height) + 16px (space-y-2) */
+            bottom: 72px;
             right: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px; /* equivalent to space-y-2 */
+            gap: 8px;
             opacity: 0;
             transform: scale(0);
             transform-origin: bottom right;
@@ -174,6 +191,19 @@
             transform: scale(1.1);
             background-color: #004D28;
         }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .search-section input {
+                width: 90%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .search-section input {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -188,60 +218,308 @@
 
     <section class="faq-section">
         <div class="faq-category">
-            <h2>Popular</h2>
-
+            <h2>Getting Started</h2>
             <div class="faq-item">
-                <h3>How do I contact Support Team?</h3>
-                <p>To contact our Support Team, you can use our live chat or email us at support@schomart.ng. Live chat is the fastest way to get a response, and email is ideal for non-urgent cases. For detailed assistance, provide as much information as possible.</p>
+                <h3>What is SCHOMART?</h3>
+                <p>SCHOMART is a student-focused e-commerce platform that allows students and others to buy and sell products and services within university campuses and local communities in Nigeria. It's a convenient, safe, and reliable marketplace for everything from textbooks and electronics to freelance services and housing.</p>
             </div>
-
             <div class="faq-item">
-                <h3>What does "ads limit" mean?</h3>
-                <p>"Ads limit" refers to the maximum number of advertisements you can post at once. It is based on your subscription plan or account status. If you reach this limit, you will need to upgrade your account or wait until some ads expire to post more.</p>
+                <h3>How do I create an account?</h3>
+                <p>To create an account, visit the "Sign Up" page . You can register using your email address. Follow the on-screen instructions to complete your profile.</p>
             </div>
-
             <div class="faq-item">
-                <h3>How can I sell on SCHOMART?</h3>
-                <p>To sell on SCHOMART, you need to create an account, post your products with detailed descriptions, and manage your listings. To increase visibility, consider using premium services and promotions like Boost Packages or Pro Sales campaigns.</p>
+                <h3>Is SCHOMART free to use?</h3>
+                <p>Yes, creating an account, browsing listings, and posting a certain number of basic ads are completely free. We also offer premium services and subscription plans for users who want to increase their visibility and get more features.</p>
             </div>
-
             <div class="faq-item">
-                <h3>How to buy something on SCHOMART?</h3>
-                <p>Buying on SCHOMART is easy. Browse through listings, contact the seller directly through the messaging feature, and arrange payment and delivery. Always ensure the legitimacy of the seller and product before making a purchase.</p>
+                <h3>How do I post an advert?</h3>
+                <p>After logging in, go to the "Sell" or "Post Advert" section. Fill in the details of your item, including title, description, category, price, and photos. You can choose a free or paid plan to publish your ad.</p>
             </div>
-
             <div class="faq-item">
-                <h3>How to report illegal activity on SCHOMART?</h3>
-                <p>If you notice illegal activity on SCHOMART, please report it immediately by using the "Report" feature on the listing or by contacting our support team with detailed information. This helps us maintain a safe marketplace for all users.</p>
+                <h3>How long does it take for my advert to be approved?</h3>
+                <p>Most ads are reviewed and approved within 24 hours. Our moderation team checks each ad to ensure it complies with our posting policies and safety guidelines.</p>
             </div>
+            <div class="faq-item">
+                <h3>What happens if my advert is rejected?</h3>
+                <p>If your advert is rejected, we will send you a notification with the reason for rejection. You can edit your ad to address the issues and resubmit it for review.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I edit or delete my advert?</h3>
+                <p>Yes, you can edit or delete your advert from your "My Adverts" dashboard at any time. Simply log in to your account and navigate to your active listings.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I search for a specific item?</h3>
+                <p>You can use the search bar at the top of the page. You can also filter your search results by category, location, price, and condition to find exactly what you are looking for.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I contact a seller or buyer?</h3>
+                <p>You can contact a seller directly through the messaging system on the advert page. This keeps all communication secure.</p>
+            </div>
+            <div class="faq-item">
+    <h3>Is there a mobile app for SCHOMART?</h3>
+    <p>Yes! While we don't have a traditional app on the App Store or Google Play, you can install our **Progressive Web App (PWA)** directly on your mobile device. The PWA gives you an app-like experience with an icon on your home screen, offline access to certain features, and faster loading times, all without needing to download it from a store.</p>
+            </div>
+            
+        </div>
 
+        <div class="faq-category">
+            <h2>Account and Profile</h2>
+            <div class="faq-item">
+                <h3>How do I reset my password?</h3>
+                <p>On the login page, click "Forgot Password." Enter your registered email address, and we will send you a link to reset your password.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I change my username?</h3>
+                <p>No, once a username is set during registration, it cannot be changed. However, you can update other profile details like your name, phone number, and profile picture in your account settings.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I update my profile information?</h3>
+                <p>Log in to your account and navigate to the "Profile Settings" section. You can update your contact information, location, and other personal details there.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Why should I verify my phone number?</h3>
+                <p>Verifying your phone number adds a layer of trust and security to your profile. It shows other users you are a legitimate person, which can increase your chances of making a successful sale or purchase.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is "ads limit"?</h3>
+                <p>"Ads limit" refers to the maximum number of active advertisements you can have at any given time. This limit is determined by your account type (e.g., Free, Premium, Business). You can view your current limit on your dashboard.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I increase my ads limit?</h3>
+                <p>To increase your ads limit, you can upgrade your account to a Premium or Business plan. These plans offer higher limits and additional features to help you sell more effectively.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is a user rating?</h3>
+                <p>User ratings and reviews are a way for the community to provide feedback on transactions. A high rating indicates that a user is reliable and trustworthy. Always check a user's ratings before making a deal.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I report a fake profile or scammer?</h3>
+                <p>On the user's profile page or within a chat, there is a "Report" button. Click it and provide details about the suspicious activity. Our team will investigate and take appropriate action.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I save my favourite ads?</h3>
+                <p>Yes, you can save ads to your personal "Saved Adverts" list. Simply click the bookmark icon on any advert to add it to your list for later viewing.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I delete my account?</h3>
+                <p>To delete your account, please contact our support team from your registered email address. For security purposes, we require a verification process before permanently deleting an account.</p>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>Buying and Selling</h2>
+            <div class="faq-item">
+                <h3>How to buy an item on SCHOMART?</h3>
+                <p>Buying is simple: find the item you want, click on the ad, and use the built-in messaging system to contact the seller. Discuss the price, meeting location, and payment method. Always follow our safety tips to ensure a secure transaction.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How to sell an item on SCHOMART?</h3>
+                <p>To sell, create an advert with a detailed description and clear photos. Respond promptly to messages from interested buyers, negotiate a fair price, and arrange a safe meeting or delivery for the exchange.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do you handle payments or transactions?</h3>
+                <p>No, SCHOMART does not directly handle payments. We provide the platform for buyers and sellers to connect. You are responsible for arranging the payment method directly with the other party. We recommend using a secure and traceable payment method.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What are the accepted payment methods?</h3>
+                <p>Common payment methods include cash on delivery, bank transfers, or mobile money. Always agree on a payment method with the seller or buyer before the transaction. We advise against paying in advance for items you haven't seen.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I sell services on SCHOMART?</h3>
+                <p>Yes, you can sell a wide range of services, including tutoring, graphic design, photography, event planning, and more. List your service in the appropriate category with a clear description of what you offer.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What if the item is not as described?</h3>
+                <p>If an item is not as described, you should first try to resolve the issue with the seller. If you are unable to reach an agreement, you can report the user and the advert to our support team for investigation.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do you offer a delivery service?</h3>
+                <p>SCHOMART does not have its own delivery service. However, many sellers on our platform offer delivery, or you can use a third-party delivery service. Please discuss and agree on delivery options directly with the seller.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is a "Boosted Ad"?</h3>
+                <p>A "Boosted Ad" is a premium service that gives your advert higher visibility. It places your ad in a prominent position, such as at the top of search results, to attract more views and potential buyers.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I get more views on my advert?</h3>
+                <p>To get more views, use clear and high-quality photos, write a detailed and honest description, and consider using one of our premium services like Ad Boosting or a Pro Sales campaign.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is the recommended pricing for my item?</h3>
+                <p>To determine a fair price, we recommend searching for similar items on SCHOMART and other platforms. Consider the item's condition, age, and market demand when setting your price.</p>
+            </div>
+        </div>
+
+        <div class="faq-category">
+            <h2>Safety and Security</h2>
+            <div class="faq-item">
+                <h3>How can I stay safe when meeting a seller/buyer?</h3>
+                <p>Always meet in a public place, like a campus square or cafe. Tell a friend or family member where you are going and when you expect to return. Never go to a private residence or isolated area alone.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What should I do if I suspect fraud or a scam?</h3>
+                <p>If you suspect a scam, stop all communication immediately and report the user or ad to us using the "Report" function. Do not share any personal or financial information.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Is my personal information safe?</h3>
+                <p>We take your privacy seriously. Your personal information is protected by our privacy policy. We do not share your details with third parties without your consent. We encourage you to only share necessary information to complete a transaction.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Why is it important to keep communication on the platform?</h3>
+                <p>Keeping communication on the SCHOMART platform ensures we have a record of your conversations. This record is vital for our support team to investigate any disputes, fraudulent activity, or safety concerns that may arise.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I report inappropriate content or illegal activity?</h3>
+                <p>You can report any inappropriate content, illegal items, or suspicious activity by clicking the "Report" button on the advert or contacting our support team directly. Please provide as many details as possible to help our investigation.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do you use third-party payment services?</h3>
+                <p>While we don't handle payments ourselves, we may partner with secure third-party payment processors for our premium services. When making a payment on SCHOMART, always ensure you are on a secure and trusted page.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is your policy on prohibited items?</h3>
+                <p>We have a strict policy on prohibited items. This includes illegal drugs, weapons, counterfeit goods, and stolen property. You can find a complete list of prohibited items in our Terms of Service.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I verify a seller's credibility?</h3>
+                <p>You can check a seller's credibility by looking at their profile ratings and reviews from previous transactions. A long-standing account with positive feedback is a good sign of a trustworthy seller.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What if I receive a suspicious link?</h3>
+                <p>Never click on suspicious links sent to you by other users, especially if they are asking for personal information or payment details. Only use the official SCHOMART website and its built-in features for all communications and transactions.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is the "dispute resolution" process?</h3>
+                <p>If a dispute arises, you should first try to resolve it with the other party. If that fails, you can contact our support team with all the details and chat history. We will review the case and provide guidance or take action as per our policies.</p>
+            </div>
+        </div>
+        
+        <div class="faq-category">
+            <h2>Premium Services and Ad Plans</h2>
             <div class="faq-item">
                 <h3>What are Premium Services?</h3>
-                <p>Premium Services include features like boosted ad visibility, priority customer support, and enhanced ad placement. These services help you get more exposure and improve your chances of making a sale faster.</p>
+                <p>Premium Services are paid features designed to enhance your advertising. They include options like "Boosted Ads," "Top Ad," and "Highlighted Ad" to give your listing more visibility and a better chance of selling quickly.</p>
             </div>
-
-            <h2>General Information</h2>
-
             <div class="faq-item">
-                <h3>What is a "marketplace"?</h3>
-                <p>A marketplace is an online platform where buyers and sellers can meet, interact, and trade goods or services. SCHOMART serves as a marketplace, allowing individuals and businesses to list products for sale.</p>
+                <h3>What is the difference between a free and a paid plan?</h3>
+                <p>A free plan allows you to post a limited number of basic ads. Paid plans, like our Premium or Business options, offer higher ad limits, increased visibility, and access to more features for professional sellers.</p>
             </div>
-
             <div class="faq-item">
-                <h3>Do you have any stores?</h3>
-                <p>We do not have physical stores. SCHOMART is an online marketplace where sellers can list their products directly. Sellers range from individuals to businesses, providing a wide range of goods and services.</p>
+                <h3>How do I pay for premium services?</h3>
+                <p>You can pay for premium services using various secure payment methods, including debit cards, bank transfers, and other online payment gateways. Follow the on-screen instructions during the checkout process.</p>
             </div>
-
             <div class="faq-item">
-                <h3>Do you have a delivery?</h3>
-                <p>SCHOMART does not handle deliveries directly, but we provide the platform for sellers and buyers to communicate and arrange deliveries. Many sellers offer delivery services, or you can arrange delivery yourself with the seller.</p>
+                <h3>Are premium services refundable?</h3>
+                <p>In most cases, premium service fees are non-refundable. Please review our Terms of Service for our full refund policy before making a purchase.</p>
             </div>
-
             <div class="faq-item">
-                <h3>Can I unsubscribe from the newsletter?</h3>
-                <p>Yes, you can unsubscribe from our newsletter anytime. Just click on the unsubscribe link provided at the bottom of the email, or you can manage your email preferences through your account settings.</p>
+                <h3>What is the duration of an advert?</h3>
+                <p>A standard advert remains active for a specific period, typically 30 days. You will be notified before it expires and given the option to renew it.</p>
             </div>
+            <div class="faq-item">
+                <h3>What happens when my ad expires?</h3>
+                <p>When your ad expires, it will no longer be visible to the public. You can find it in your "Expired Adverts" section and choose to either renew it or delete it.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I upgrade my ad plan after it's posted?</h3>
+                <p>Yes, you can upgrade an active ad to a premium plan at any time. Simply go to your "My Adverts" dashboard and select the option to promote or boost your listing.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I pause my advert?</h3>
+                <p>Yes, you can pause a live advert from your dashboard. Pausing an ad will temporarily remove it from public view. You can resume it at any time, and the timer will continue from where it left off.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I know if my ad is performing well?</h3>
+                <p>Your dashboard provides statistics on your ads, including the number of views, clicks, and messages received. You can use this data to track your ad's performance and decide if you want to promote it further.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What are "Pro Sales" campaigns?</h3>
+                <p>"Pro Sales" campaigns are tailored premium packages for users with a large number of items to sell. They offer bulk discounts on ad boosting, dedicated support, and other features to maximize sales.</p>
+            </div>
+        </div>
 
+        <div class="faq-category">
+            <h2>Other Questions</h2>
+            <div class="faq-item">
+                <h3>What should I do if I find an advert with a wrong category?</h3>
+                <p>You can report the ad and mention that it is in the wrong category. This helps us ensure our marketplace is well-organized and easy to navigate for all users.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is the SCHOMART community?</h3>
+                <p>The SCHOMART community consists of students and individuals who use our platform to buy, sell, and connect. We encourage a respectful and honest community, and we rely on users to report any violations of our policies.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I provide feedback?</h3>
+                <p>We welcome your feedback! You can use our "Contact Us" page or send an email to support@schomart.ng with your suggestions, comments, or concerns. Your input helps us improve the platform.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do you have an affiliate or referral program?</h3>
+                <p>We do not currently have an official affiliate or referral program, but we may introduce one in the future. Keep an eye on our website or newsletter for announcements.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What are the Terms of Service?</h3>
+                <p>Our Terms of Service outline the rules and guidelines for using the SCHOMART platform. They cover topics like user conduct, prohibited items, intellectual property, and our responsibilities. We encourage all users to read them carefully.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I report a policy violation?</h3>
+                <p>To report a policy violation, click the "Report" button on the advert or profile page. Choose the reason for your report from the options provided, and our moderation team will review the issue.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I use SCHOMART for my business?</h3>
+                <p>Yes, SCHOMART is an excellent platform for businesses to reach a wide audience of students and local customers. We offer Business accounts and professional packages with features tailored for commercial use.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I delete my payment information?</h3>
+                <p>Your payment information is handled by a secure third-party processor. You can manage and delete your stored payment methods through your account's "Billing" or "Payment Information" section.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Do you offer refunds for purchases?</h3>
+                <p>As SCHOMART is a marketplace that does not handle transactions directly, we cannot offer refunds for items purchased from other users. You must work with the seller directly to resolve any issues. We recommend checking the item thoroughly before paying.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What if I can't find the answer to my question?</h3>
+                <p>If you can't find the answer in our FAQ, please feel free to contact our support team directly via email or the floating chat button. We are here to help you.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I stay updated on new features?</h3>
+                <p>Stay updated by subscribing to our newsletter and following us on our social media channels. We regularly announce new features, tips, and promotions through these channels.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I sell products in bulk?</h3>
+                <p>Yes, you can sell products in bulk on SCHOMART. Consider creating a Business account and listing a "bundle" or "wholesale" advert to appeal to buyers interested in larger quantities.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What is your privacy policy?</h3>
+                <p>Our privacy policy explains how we collect, use, and protect your personal data. It is available on our website and is updated periodically to ensure compliance with privacy laws. We encourage you to review it.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I create a custom advert for a specific need?</h3>
+                <p>Yes, you can create a detailed advert for a specific need or a custom product. Make sure to describe it clearly in the title and description, and set the price as negotiable if it's a custom order.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How do I handle a dispute with another user?</h3>
+                <p>For minor disputes, we encourage direct communication. If the issue is not resolved, you can report the user and provide details of the situation. Our support team can mediate and offer guidance based on our policies.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Is there a cost for posting an advert?</h3>
+                <p>We offer a free plan that allows you to post a limited number of adverts without any cost. For more visibility and features, you can purchase one of our paid advert plans.</p>
+            </div>
+            <div class="faq-item">
+                <h3>What if my advert is not getting any views?</h3>
+                <p>If your advert is not getting views, consider improving your photos, updating the title and description to be more specific, or purchasing an advert boost to increase its visibility in search results.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How can I see my transaction history?</h3>
+                <p>You can view a history of your advert-related transactions, including payments for premium services, in your account's "Transaction History" section.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Are there any restrictions on what I can sell?</h3>
+                <p>Yes, there are restrictions on what can be sold on our platform. Prohibited items include illegal goods, counterfeit items, and certain age-restricted products. Please refer to our Terms of Service for a full list.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Can I sell digital products on SCHOMART?</h3>
+                <p>Yes, you can sell digital products and services such as e-books, software, and online courses. Ensure your listing clearly states that the product is digital and how the buyer will receive it.</p>
+            </div>
         </div>
     </section>
 
@@ -272,8 +550,25 @@
         const faqItems = document.querySelectorAll('.faq-item');
 
         faqItems.forEach(item => {
-            item.querySelector('h3').addEventListener('click', () => {
-                item.classList.toggle('active');
+            const questionHeader = item.querySelector('h3');
+            const answer = item.querySelector('p');
+
+            questionHeader.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+
+                // Close all other active items
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('active')) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+
+                // Toggle the clicked item
+                if (!isActive) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
             });
         });
 
@@ -282,9 +577,12 @@
         searchBar.addEventListener('input', function() {
             const query = this.value.toLowerCase();
             const faqItems = document.querySelectorAll('.faq-item');
+            
             faqItems.forEach(item => {
                 const question = item.querySelector('h3').textContent.toLowerCase();
-                if (question.includes(query)) {
+                const answer = item.querySelector('p').textContent.toLowerCase();
+                
+                if (question.includes(query) || answer.includes(query)) {
                     item.style.display = 'block';
                 } else {
                     item.style.display = 'none';
