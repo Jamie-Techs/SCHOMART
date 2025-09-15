@@ -240,7 +240,7 @@
                 });
 
                 await user.sendEmailVerification();
-                showMessage('Signup successful! Please check your email for a verification link before logging in.', false);
+                showMessage('Signup successful! Please check your email for a verification link before logging in. If you do not see the email, please check your spam or junk folder. To ensure you receive future emails from us, please mark it as "Not Spam".', false);
             } catch (error) {
                 console.error("Authentication Error:", error);
                 switch(error.code) {
