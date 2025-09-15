@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCHOMART Policy - Terms and Conditions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        header {
+            background-color: #006B3C;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 36px;
+        }
+
+        .policy-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #006B3C;
+            border-bottom: 2px solid #FDB813;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            font-size: 24px;
+        }
+
+        h3 {
+            color: #004D28;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        p, ul {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        a {
+            color: #006B3C;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .main-footer {
+            background-color: #00391F;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SCHOMART Policy</h1>
+    </header>
+
+    <div class="policy-container">
+        <h2>Terms and Conditions of Use</h2>
+
+        <p>
+            Welcome to SCHOMART. These Terms and Conditions ("Terms") govern your access to and use of the SCHOMART website, its services, and all associated tools and applications (collectively, the "Service"). The Service is an online marketplace that allows users to buy and sell products and services.
+        </p>
+        
+        <p>
+            By accessing or using the Service, you signify that you have read, understood, and agree to be bound by these Terms, our <a href="/privacy-policy">Privacy Policy</a>, and all other operating rules, policies, and procedures that may be published from time to time on the Service. If you do not agree to these Terms, do not use the Service.
+        </p>
+
+        <h3>1. Your Account</h3>
+        <ul>
+            <li>You must be at least 18 years old to use the Service.</li>
+            <li>You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password.</li>
+            <li>You agree not to disclose your password to any third party. SCHOMART cannot and will not be liable for any loss or damage arising from your failure to comply with these security obligations.</li>
+        </ul>
+
+        <h3>2. The SCHOMART Service - Our Role</h3>
+        <ul>
+            <li>SCHOMART is a neutral venue that provides a platform for buyers and sellers to connect. We do not own, sell, or purchase any items listed on the Service.</li>
+            <li>We do not handle payments, shipping, or the fulfillment of transactions between users. All transactions are a private arrangement between the buyer and the seller.</li>
+            <li>We make no representations or warranties about the quality, safety, or legality of any products advertised or the truth or accuracy of any listings.</li>
+        </ul>
+
+        <h3>3. User Responsibilities and Prohibited Activities</h3>
+        <ul>
+            <li>You agree to comply with all applicable local, national, and international laws and regulations.</li>
+            <li>You must not post any content that is illegal, fraudulent, misleading, or involves the sale of prohibited items (e.g., weapons, illegal substances, stolen goods).</li>
+            <li>You are solely responsible for the content you post on the Service, including photos, descriptions, and communications.</li>
+            <li>You must not use the Service to harass, stalk, or otherwise violate the legal rights of others.</li>
+        </ul>
+        
+        <h3>4. Intellectual Property</h3>
+        <ul>
+            <li>The Service and its original content, features, and functionality are and will remain the exclusive property of SCHOMART and its licensors.</li>
+            <li>You grant SCHOMART a non-exclusive, royalty-free, perpetual, and irrevocable license to use, reproduce, modify, and display any content you post on the Service for the purpose of operating and promoting the Service.</li>
+        </ul>
+
+        <h3>5. Sponsored Services and Payments</h3>
+        <ul>
+            <li>SCHOMART offers various sponsored services to enhance your ad visibility. These services are optional and subject to the fees outlined on the Service.</li>
+            <li>All fees for sponsored services are non-refundable, except in cases where a service was not rendered due to a platform error.</li>
+        </ul>
+
+        <h3>6. Disclaimer of Warranties and Limitation of Liability</h3>
+        <ul>
+            <li>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. Your use of the Service is at your own risk.</li>
+            <li>To the fullest extent permitted by law, SCHOMART disclaims all warranties, express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, and non-infringement.</li>
+            <li>SCHOMART shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or other intangible losses, resulting from (a) your access to or use of the Service; (b) any conduct or content of any third party on the Service; or (c) any unauthorized access, use, or alteration of your transmissions or content.</li>
+        </ul>
+
+        <h3>7. Governing Law and Dispute Resolution</h3>
+        <ul>
+            <li>These Terms shall be governed and construed in accordance with the laws of Nigeria, without regard to its conflict of law provisions.</li>
+            <li>Any disputes arising from these Terms will be resolved through good-faith negotiation. If a resolution cannot be reached, the dispute will be submitted to the courts of Nigeria.</li>
+        </ul>
+
+        <h3>8. Changes to These Terms</h3>
+        <ul>
+            <li>We reserve the right, at our sole discretion, to modify or replace these Terms at any time.</li>
+            <li>If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.</li>
+        </ul>
+
+        <h3>9. Contact Information</h3>
+        <p>If you have any questions about these Terms, please contact us at:</p>
+        <ul>
+            <li><strong>Email:</strong> policy@schomart.ng</li>
+            <li><strong>Phone:</strong> +234 800-SCHOMART</li>
+        </ul>
+        
+    </div>
+
+    <footer class="main-footer">
+        <p>&copy; 2025 SCHOMART. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
