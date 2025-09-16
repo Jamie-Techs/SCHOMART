@@ -27,24 +27,34 @@
             background-color: var(--light-background);
             color: var(--text-color);
             line-height: 1.6;
+            padding : 0;
+            margin : 0;
         }
-
         .header {
-            background-color: var(--primary-color);
-            color: var(--white-text);
-            padding: 15px 0;
-            text-align: center;
-            box-shadow: var(--box-shadow);
-            position: relative;
-        }
-        .header h1 {
+    background-color: var(--primary-color);
+    color: var(--white-text);
+    padding: 15px 0;
+    text-align: center;
+    box-shadow: var(--box-shadow);
+    /* Add these two lines to make the header sticky */
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; /* Add this to ensure it stays on top of other elements */
+    margin-left: -1rem; /* Adjust based on your p-4 padding */
+    margin-right: -1rem; /* Adjust based on your p-4 padding */
+    /* ... other styles ... */
+
+}
+
+        
+        .header h3 {
             margin: 0;
-            font-size: 2.8em;
+            font-size: 1.2em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
         .header-buttons {
             position: absolute;
-            left: 20px;
+            left: 5px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
@@ -53,10 +63,10 @@
         .header-button {
             background-color: var(--accent-color);
             color: var(--white-text);
-            padding: 10px 15px;
+            padding: 8px 10px;
             border-radius: var(--border-radius);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
             transition: background-color var(--transition-speed);
         }
         .header-button:hover {
@@ -231,7 +241,7 @@
                 <i class="fas fa-arrow-left"></i> Home
             </a>
         </div>
-        <h1>Search Adverts</h1>
+        <h3>Search Adverts</h3>
     </div>
 
     <div class="container-wrapper">
