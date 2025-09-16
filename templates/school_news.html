@@ -27,40 +27,57 @@
             background-color: var(--light-background);
             color: var(--text-color);
             line-height: 1.6;
+            padding-top: 80px; /* Space for the fixed header */
         }
-
+        
         .header {
             background-color: var(--primary-color);
             color: var(--white-text);
-            padding: 15px 0;
-            text-align: center;
-            box-shadow: var(--box-shadow);
-            position: relative;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 2.8em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .header-buttons {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            
+            /* Modern, responsive layout with Flexbox */
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allows items to wrap on smaller screens */
         }
-        .header-button {
+        
+        .header h1 {
+            font-size: 1.5em; 
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 0; /* Reset margin for larger screens */
+            justify-content: flex-end; /* Align buttons to the right */
+        }
+        
+        .header-link, .header-button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
             background-color: var(--accent-color);
             color: var(--white-text);
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: var(--border-radius);
             text-decoration: none;
             font-weight: 600;
-            transition: background-color var(--transition-speed);
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
         }
-        .header-button:hover {
+        
+        .header-link:hover, .header-button:hover {
             background-color: #004d2b;
+            transform: translateY(-2px);
         }
 
         .container-wrapper {
@@ -69,18 +86,20 @@
             margin: 20px auto;
             padding: 0 15px;
         }
-
+        
         .post-card {
             background-color: var(--card-background);
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
             margin-bottom: 20px;
             overflow: hidden;
-            transition: transform var(--transition-speed);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
             position: relative;
         }
+        
         .post-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
         }
 
         .post-content {
@@ -93,7 +112,7 @@
             color: var(--primary-color);
             margin-bottom: 10px;
         }
-
+        
         .post-meta {
             font-size: 0.875rem;
             color: #666;
@@ -105,15 +124,18 @@
             color: var(--text-color);
             word-wrap: break-word;
         }
+        
         .post-media {
             width: 100%;
             height: auto;
             display: block;
         }
+        
         .post-media video {
             width: 100%;
             height: auto;
         }
+        
         .post-media-container {
             width: 100%;
             display: flex;
@@ -121,6 +143,7 @@
             align-items: center;
             background-color: #000;
         }
+        
         .post-actions {
             border-top: 1px solid var(--border-color);
             padding: 15px 20px;
@@ -128,6 +151,7 @@
             justify-content: space-between;
             align-items: center;
         }
+        
         .post-actions .btn {
             background: none;
             border: none;
@@ -138,45 +162,82 @@
             align-items: center;
             gap: 5px;
         }
+        
         .post-actions .btn:hover {
             text-decoration: underline;
         }
+        
         .delete-btn {
             color: #d9534f;
             cursor: pointer;
         }
+        
         .share-btn {
             color: var(--primary-color);
             cursor: pointer;
             margin-left: auto;
         }
+        
+        /* === MOBILE RESPONSIVENESS === */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 120px; /* Increased padding to accommodate stacked header */
+            }
+            .header {
+                flex-direction: column; /* Stack header items vertically */
+                align-items: flex-start; /* Align all items to the left */
+                padding: 15px 10px;
+            }
+            .header-nav {
+                width: 100%;
+                justify-content: space-around; /* Distributes buttons evenly */
+                margin-top: 10px; /* Add space between title and buttons */
+            }
+            .header h1 {
+                width: 100%; /* Make the title take up full width */
+                text-align: center; /* Center the title on mobile */
+                font-size: 1.2em; /* Smaller font for better fit */
+            }
+            .header-link, .header-button {
+                font-size: 14px;
+                padding: 8px 10px;
+            }
+            .post-content {
+                padding: 15px;
+            }
+            .post-actions {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="header">
-    <div class="header-buttons">
-        <a href="{{ url_for('get_materials_page') }}" class="header-link">
-            <span>Materials</span>
-        </a>
-        <a href="{{ url_for('cgpa_calculator_page') }}" class="header-link">
-            <span>CGPA Calculator</span>
-        </a>
-
-        {% if user and user.is_admin %}
-            <a href="{{ url_for('create_post') }}" class="header-button">
-                <i class="fas fa-plus"></i>
-                <span>New Post</span>
+    <header class="header">
+        <h1>School Hub</h1>
+        <nav class="header-nav">
+            <a href="{{ url_for('get_materials_page') }}" class="header-link">
+                <i class="fas fa-book-open"></i>
+                <span>Materials</span>
             </a>
-            <a href="{{ url_for('admin_post_material') }}" class="header-button">
-                <i class="fas fa-plus"></i>
-                <span>Post Material</span>
+            <a href="{{ url_for('cgpa_calculator_page') }}" class="header-link">
+                <i class="fas fa-calculator"></i>
+                <span>CGPA Calculator</span>
             </a>
-        {% endif %}
-    </div>
-    <h1>School News</h1>
-</div>
-    
+            {% if user and user.is_admin %}
+                <a href="{{ url_for('create_post') }}" class="header-button">
+                    <i class="fas fa-plus"></i>
+                    <span>New Post</span>
+                </a>
+                <a href="{{ url_for('admin_post_material') }}" class="header-button">
+                    <i class="fas fa-plus"></i>
+                    <span>Post Material</span>
+                </a>
+            {% endif %}
+        </nav>
+    </header>
 
     <div class="container-wrapper">
         <div id="flash-messages" class="mb-4">
@@ -217,9 +278,6 @@
                         </div>
                     {% endif %}
 
-
-                    
-                    
                     <div class="post-content">
                         <h2 class="post-title">{{ post.title }}</h2>
                         <div class="post-meta">
@@ -232,7 +290,7 @@
                             {% endif %}
                         </p>
                     </div>
-                    
+
                     <div class="post-actions">
                         {% if is_admin %}
                             <form action="{{ url_for('delete_post', post_id=post.id) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this post? This action cannot be undone.');">
@@ -242,7 +300,7 @@
                             </form>
                         {% endif %}
                         <button class="share-btn" onclick="sharePost('{{ post.title }}', '{{ post.content | truncate(150, True) }}', '{{ url_for('view_post', post_id=post.id, _external=True) }}')">
-                         <i class="fas fa-share-alt"></i> Share
+                            <i class="fas fa-share-alt"></i> Share
                         </button>
                     </div>
                 </div>
@@ -255,30 +313,29 @@
     </div>
 
     <script>
-    // This is the new, modern way to handle sharing.
-    function sharePost(title, text, url) {
-        if (navigator.share) {
-            navigator.share({
-                title: title,
-                text: text,
-                url: url
-            }).then(() => {
-                console.log('Successfully shared!');
-            }).catch((error) => {
-                console.error('Error sharing:', error);
-                alert("Sharing failed. You can copy the link manually.");
-            });
-        } else {
-            // Fallback for browsers that don't support the Web Share API
-            navigator.clipboard.writeText(url).then(() => {
-                alert("Sharing is not supported on this browser. The link has been copied to your clipboard!");
-            }).catch(err => {
-                console.error("Failed to copy link: ", err);
-                alert("Failed to copy link. Please try again or copy manually.");
-            });
+        // This is the new, modern way to handle sharing.
+        function sharePost(title, text, url) {
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    text: text,
+                    url: url
+                }).then(() => {
+                    console.log('Successfully shared!');
+                }).catch((error) => {
+                    console.error('Error sharing:', error);
+                    alert("Sharing failed. You can copy the link manually.");
+                });
+            } else {
+                // Fallback for browsers that don't support the Web Share API
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("Sharing is not supported on this browser. The link has been copied to your clipboard!");
+                }).catch(err => {
+                    console.error("Failed to copy link: ", err);
+                    alert("Failed to copy link. Please try again or copy manually.");
+                });
+            }
         }
-    }
-</script>
-    
+    </script>
 </body>
 </html>
