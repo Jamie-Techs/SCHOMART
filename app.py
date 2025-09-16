@@ -4173,17 +4173,10 @@ def progress_chart_page():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+@app.route('/policy')
+def policy():
+    # Flask will automatically look for templates in a 'templates' folder
+    return render_template('policy.html')
 
 
 
@@ -5416,6 +5409,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
