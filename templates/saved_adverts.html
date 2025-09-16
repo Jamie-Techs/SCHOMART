@@ -48,52 +48,42 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: nowrap; /* Prevents wrapping on small screens */
-            gap: 10px; /* Reduced gap for a more compact look */
-            padding: 15px 25px; /* Added padding to make it stand out */
-            background-color: var(--bg-white); /* White background for the sticky header */
-            box-shadow: 0 4px 12px var(--shadow-light); /* Added a subtle shadow */
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
-            position: sticky; /* Makes the header sticky */
-            top: 0; /* Sticks it to the top */
-            z-index: 100; /* Ensures it stays on top of other content */
-            margin: -30px; /* Counteracts the container's padding */
-            margin-bottom: 0;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
         }
         .header-section h2 {
             color: var(--primary-color);
             margin: 0;
-            font-size: 1.8em; /* Reduced font size for better fit */
+            font-size: 2.2em;
             flex-grow: 1;
-            flex-shrink: 1; /* Allows the title to shrink if needed */
             text-align: left;
             display: flex;
             align-items: center;
-            gap: 10px; /* Reduced gap */
+            gap: 15px;
         }
         .header-section h2 i {
             color: var(--secondary-color);
-            font-size: 1em; /* Adjusted icon size */
+            font-size: 1.1em;
         }
 
         .header-button {
             display: inline-flex;
             align-items: center;
-            gap: 6px; /* Reduced gap */
-            padding: 8px 15px; /* Reduced padding for smaller buttons */
+            gap: 8px;
+            padding: 10px 20px;
             background-color: var(--primary-color);
             color: var(--secondary-color);
             border: 1px solid var(--primary-color);
-            border-radius: 6px; /* Reduced border-radius */
+            border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 0.85em; /* Reduced font size */
+            font-size: 0.95em;
             font-weight: 600;
             transition: all 0.3s ease;
             white-space: nowrap;
-            flex-shrink: 0; /* Prevents buttons from shrinking */
         }
         .header-button:hover {
             background-color: var(--secondary-color);
@@ -102,7 +92,7 @@
             transform: translateY(-1px);
         }
         .header-button i {
-            font-size: 1em; /* Adjusted icon size */
+            font-size: 1.1em;
         }
 
         .advert-list {
@@ -352,13 +342,17 @@
                 gap: 20px;
             }
             .header-section {
-                padding: 15px 15px;
-                margin: -25px;
-                margin-bottom: 0;
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
             }
             .header-section h2 {
-                font-size: 1.6em; /* Slightly smaller for mobile */
-                gap: 8px;
+                font-size: 1.8em;
+                justify-content: center;
+            }
+            .header-button {
+                width: 100%;
+                justify-content: center;
             }
             .advert-list {
                 grid-template-columns: 1fr;
@@ -391,19 +385,13 @@
                 border-radius: 8px;
                 gap: 15px;
             }
-            .header-section {
-                padding: 10px;
-                margin: -15px;
-                margin-bottom: 0;
-            }
             .header-section h2 {
-                font-size: 1.4em; /* Further reduced font size */
-                gap: 6px;
+                font-size: 1.6em;
+                gap: 10px;
             }
             .header-button {
-                padding: 6px 10px;
-                font-size: 0.8em;
-                gap: 4px;
+                padding: 8px 15px;
+                font-size: 0.85em;
             }
             .advert-item img {
                 height: 140px;
