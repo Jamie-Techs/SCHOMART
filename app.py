@@ -1713,14 +1713,6 @@ PAID_PLANS = {
 
 
 
-# Visibility multipliers for dynamic pricing
-VISIBILITY_MULTIPLIERS = {
-    "Standard": 1.0,
-    "Featured": 1.5,
-    "Premium": 2.0
-}
-
-
 
 
 CATEGORIES = {
@@ -2428,18 +2420,12 @@ def get_user_advert_options(user_id):
 
     return options
 
-# Visibility multipliers for dynamic pricing
-VISIBILITY_MULTIPLIERS = {
-    "Standard": 1.0,
-    "Featured": 1.5,
-    "Premium": 2.0
-}
 
 # Visibility multipliers for dynamic pricing
 VISIBILITY_MULTIPLIERS = {
-    "standard": 1.0,
-    "featured": 1.5,
-    "premium": 2.0
+    "standard": 0.25,
+    "featured": 0.5,
+    "premium": 1.0
 }
 
 
@@ -5409,6 +5395,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
