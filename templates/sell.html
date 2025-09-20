@@ -423,7 +423,7 @@
                 <div class="form-section">
                     <h3>Media</h3>
                     <div class="form-group">
-                        <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 10MB) <span class="required">*</span>:</label>
+                        <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 5MB) <span class="required">*</span>:</label>
                         <input type="file" id="mainImage" name="main_image" accept="image/*" {% if not advert %}required{% endif %}>
                         <span id="main-image-error" class="invalid-feedback"></span>
                         {% if advert and advert.main_image %}
@@ -432,7 +432,7 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 2, up to 10MB each):</label>
+                        <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 15, up to 5MB each):</label>
                         <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple>
                         <span id="additional-images-error" class="invalid-feedback"></span>
                         {% if advert and advert.additional_images %}
@@ -445,7 +445,7 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="video"><i class="fas fa-video"></i> Upload Video (Max 15MB, optional):</label>
+                        <label for="video"><i class="fas fa-video"></i> Upload Video (Max 10MB, optional):</label>
                         <input type="file" id="video" name="video" accept="video/*">
                         <span id="video-error" class="invalid-feedback"></span>
                         {% if advert and advert.video %}
@@ -490,9 +490,9 @@
         const additionalImagesError = document.getElementById('additional-images-error');
         const videoInput = document.getElementById('video');
         const videoError = document.getElementById('video-error');
-        const MAX_IMAGE_SIZE_MB = 10;
-        const MAX_VIDEO_SIZE_MB = 15;
-        const MAX_ADDITIONAL_IMAGES = 2; // This value has been changed to 2
+        const MAX_IMAGE_SIZE_MB = 5;
+        const MAX_VIDEO_SIZE_MB = 10;
+        const MAX_ADDITIONAL_IMAGES = 15; // This value has been changed to 15
 
         function setupAutocomplete(inputElement, dataList, dropdownElement) {
             function filterAndDisplay() {
@@ -576,7 +576,7 @@
                             schoolInput.value = school.name;
                             schoolDropdown.classList.add('hidden');
                             locationInput.disabled = false;
-                            locationInput.placeholder = 'e.g., Faculty of Engineering';
+                            locationInput.placeholder = 'e.g., up-gate, hostel A';
                             schoolInput.focus();
                         });
                         schoolDropdown.appendChild(li);
@@ -637,36 +637,38 @@
         }
 
         function calculateAndDisplayCost() {
-            const selectedOption = availableOptions.find(opt => opt.plan_name === postingOptionSelect.value);
-            const calcPrice = document.getElementById('calc-price');
-            const calcDuration = document.getElementById('calc-duration');
-            const calcMultiplier = document.getElementById('calc-multiplier');
-            const finalCost = document.getElementById('final-cost');
-            const infoCost = document.getElementById('info-cost');
+    const selectedOption = availableOptions.find(opt => opt.plan_name === postingOptionSelect.value);
+    const calcPrice = document.getElementById('calc-price');
+    const calcDuration = document.getElementById('calc-duration');
+    const calcMultiplier = document.getElementById('calc-multiplier');
+    const finalCost = document.getElementById('final-cost');
+    const infoCost = document.getElementById('info-cost');
 
-            if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
-                let price = parseFloat(priceInput.value) || 0;
-                let duration = parseInt(durationInput.value) || 0;
-                let visibility = selectedOption.visibility_level;
-                let multiplier = VISIBILITY_MULTIPLIERS[visibility] || 1;
-                
-                let calculatedCost = 0.01 * price * duration * multiplier;
-                let finalCalculatedCost = Math.max(calculatedCost, 100);
+    if (selectedOption && selectedOption.plan_name.startsWith('paid_advert_')) {
+        let price = parseFloat(priceInput.value) || 0;
+        let duration = parseInt(durationInput.value) || 0;
+        let visibility = selectedOption.visibility_level;
+        let multiplier = VISIBILITY_MULTIPLIERS[visibility] || 1;
+        
+        let calculatedCost = 0.001 * price * duration * multiplier;
+        let finalCalculatedCost = Math.min(Math.max(calculatedCost, 500), 3000);
 
-                calcPrice.textContent = `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                calcDuration.textContent = duration;
-                calcMultiplier.textContent = multiplier;
-                finalCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                
-                infoCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            } else {
-                calcPrice.textContent = 'N/A';
-                calcDuration.textContent = 'N/A';
-                calcMultiplier.textContent = 'N/A';
-                finalCost.textContent = 'Free';
-                infoCost.textContent = 'Free';
-            }
-        }
+        calcPrice.textContent = `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        calcDuration.textContent = duration;
+        calcMultiplier.textContent = multiplier;
+        finalCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        
+        infoCost.textContent = `₦${finalCalculatedCost.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    } else {
+        calcPrice.textContent = 'N/A';
+        calcDuration.textContent = 'N/A';
+        calcMultiplier.textContent = 'N/A';
+        finalCost.textContent = 'Free';
+        infoCost.textContent = 'Free';
+    }
+}
+
+        
         
         function updateCharCount() {
             const desc = document.getElementById('description');
