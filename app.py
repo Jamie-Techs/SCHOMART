@@ -2423,9 +2423,9 @@ def get_user_advert_options(user_id):
 
 # Visibility multipliers for dynamic pricing
 VISIBILITY_MULTIPLIERS = {
-    "standard": 0.25,
-    "featured": 0.5,
-    "premium": 1.0
+    "standard": 0.2,
+    "featured": 0.4,
+    "premium": 0.6
 }
 
 
@@ -5395,6 +5395,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
