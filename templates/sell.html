@@ -650,7 +650,7 @@
         let visibility = selectedOption.visibility_level;
         let multiplier = VISIBILITY_MULTIPLIERS[visibility] || 1;
         
-        let calculatedCost = 0.001 * price * duration * multiplier;
+        let calculatedCost = 0.005 * price * duration * multiplier;
         let finalCalculatedCost = Math.min(Math.max(calculatedCost, 500), 3000);
 
         calcPrice.textContent = `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
