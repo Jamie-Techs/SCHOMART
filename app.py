@@ -2511,8 +2511,9 @@ def sell(advert_id=None):
                 product_price = float(form_data.get("price"))
                 selected_visibility = plan_details.get("visibility_level")
                 multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
-                calculated_cost = 0.01 * product_price * advert_duration_days * multiplier
-                cost_naira = max(calculated_cost, 100)
+                calculated_cost = 0.005 * product_price * advert_duration_days * multiplier
+                
+                cost_naira = min(max(calculated_cost, 500), 3000)
             except (ValueError, TypeError):
                 errors.append("Invalid price. Please enter a valid number.")
                 
@@ -5395,6 +5396,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
