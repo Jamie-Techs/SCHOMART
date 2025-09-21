@@ -2420,13 +2420,7 @@ def get_user_advert_options(user_id):
 
     return options
 
-# Visibility multipliers for dynamic pricing
-VISIBILITY_MULTIPLIERS = {
-    "Standard": 0.2,
-    "Featured": 0.3,
-    "Premium": 0.4
-}
-                           
+
 
 # Visibility multipliers for dynamic pricing
 VISIBILITY_MULTIPLIERS = {
@@ -2435,6 +2429,14 @@ VISIBILITY_MULTIPLIERS = {
     "premium": 0.4
 }
 
+
+# Visibility multipliers for dynamic pricing
+VISIBILITY_MULTIPLIERS = {
+    "Standard": 0.2,
+    "Featured": 0.3,
+    "Premium": 0.4
+}
+                           
 
 
 @app.route('/sell', methods=['GET', 'POST'])
@@ -5403,6 +5405,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
