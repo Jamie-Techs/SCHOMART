@@ -1,253 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Post Ad - Schomart</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Your Advert</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        /* New Design & Layout */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #f39c12;
+            --danger-color: #e74c3c;
+            --background-color: #f4f7f6;
+            --card-background-color: #ffffff;
+            --text-color: #333;
+            --light-text-color: #777;
+            --border-color: #ddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4;
-            color: #333;
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
             line-height: 1.6;
-            padding: 2.5rem 1rem;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
             max-width: 900px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 2.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            position: relative;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-background-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
 
-        h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #006B3C;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .form-section {
-            border-bottom: 2px solid #FDB813;
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .form-section h3 {
-            font-size: 1.5rem;
-            color: #006B3C;
-            margin-bottom: 1rem;
-        }
-
-        /* Nav and Back Button */
         .top-nav {
             display: flex;
             justify-content: flex-end;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .top-nav a {
-            color: #006B3C;
-            font-weight: 600;
+            color: var(--primary-color);
             text-decoration: none;
+            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            transition: color 0.2s;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .top-nav a:hover {
-            color: #025730;
+            background-color: var(--primary-color);
+            color: var(--card-background-color);
         }
 
         .back-button-top-left {
             position: absolute;
             top: 20px;
             left: 20px;
-            font-size: 1.2em;
-            color: #006B3C;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--light-text-color);
             text-decoration: none;
-            transition: color 0.2s;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: color 0.3s, background-color 0.3s;
         }
 
         .back-button-top-left:hover {
-            color: #025730;
+            color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2em;
+            margin-top: 50px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h3 {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            border-left: 5px solid;
+        }
+
+        .error-message {
+            background-color: #fdecea;
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        .success-message {
+            background-color: #eaf8f0;
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .warning-message {
+            background-color: #fff8e8;
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .advert-options-info {
+            background-color: #e8f5ff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #b3d9ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .advert-options-info h3 {
+            border-bottom: none;
+            justify-content: center;
+        }
+
+        .advert-options-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .advert-options-info a:hover {
+            text-decoration: underline;
+        }
+
+        .form-section {
+            background-color: #fcfcfc;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
         }
         
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1.5rem;
+        .form-group-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
         }
 
         label {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 0.5rem;
-            color: #4a5568;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 2px solid #d1d5db; /* Lighter border for cleaner look */
-            box-sizing: border-box;
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            font-size: 1em;
-            background-color: #ffffff;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #006B3C;
-            box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.2);
-        }
-
-        /* Grouping for side-by-side fields */
-        .form-group-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-            align-items: flex-end;
-        }
-
-        .form-group-row .form-group {
-            flex: 1 1 200px;
-            margin-bottom: 0;
-        }
-
-        /* Specific field adjustments */
-        #description {
-            height: 150px;
-            resize: vertical;
-        }
-
-        /* Button styling */
-        .btn-primary {
-            width: 100%;
-            padding: 1rem;
-            background-color: #006B3C;
-            color: white;
-            font-size: 1rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-        }
-        
-        .btn-primary:hover {
-            background-color: #025730;
-        }
-
-        .advert-options-info, .subscription-info {
-            border-left: 5px solid #FDB813;
-            background-color: #fff9e6;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
-            margin-top: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .advert-options-info h3, .subscription-info h3 {
-            color: #006B3C;
-        }
-
-        /* Autocomplete styles... (existing styles are fine) */
-        .autocomplete-container {
-            position: relative;
-        }
-        .autocomplete-list {
-            position: absolute;
-            z-index: 100;
-            background: white;
-            border: 1px solid #d1d5db;
-            border-top: none;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            border-radius: 0 0 0.5rem 0.5rem;
-        }
-        .autocomplete-list-item {
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0fdf4;
-        }
-        .autocomplete-list-item:hover {
-            background-color: #e6f7ff;
-        }
-        .hidden {
-            display: none;
-        }
-        .invalid-feedback {
-            color: #dc3545;
-            font-size: 0.875em;
             display: block;
-            margin-top: 0.25rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
         }
-        .image-preview-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+
+        .required {
+            color: var(--danger-color);
         }
-        .image-preview {
-            max-width: 100px;
-            height: auto;
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
         }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="email"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
         .char-count {
             display: block;
             text-align: right;
-            font-size: 0.875em;
-            color: #6b7280;
+            font-size: 12px;
+            color: var(--light-text-color);
+            margin-top: 5px;
         }
-        .alert {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
+
+        .btn-primary {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--card-background-color);
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .subscription-info {
+            background-color: #f9f9f9;
+            border: 1px dashed var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .subscription-info p {
+            margin: 5px 0;
+        }
+
+        .subscription-info strong {
+            color: var(--primary-color);
+        }
+
+        .subscription-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0;
+            font-size: 0.9em;
+            color: var(--light-text-color);
+        }
+
+        .subscription-info li {
+            padding: 3px 0;
+        }
+
+        .invalid-feedback {
+            color: var(--danger-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .autocomplete-container {
+            position: relative;
+        }
+        
+        .autocomplete-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            position: absolute;
+            width: 100%;
+            background-color: var(--card-background-color);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-list-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .autocomplete-list-item:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .autocomplete-list.hidden {
+            display: none;
+        }
+
+        .image-preview-container, .video-preview-container {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
         }
-        .error-message {
-            background-color: #fcebeb;
-            border: 1px solid #f99;
-            color: #cc0000;
+
+        .image-preview {
+            max-width: 150px;
+            max-height: 150px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 2px 5px var(--shadow-color);
         }
-        .success-message {
-            background-color: #e8f9ed;
-            border: 1px solid #a8e5b4;
-            color: #006B3C;
-        }
-        .info-message {
-            background-color: #eaf6ff;
-            border: 1px solid #a6d8ff;
-            color: #007bff;
-        }
-        .warning-message {
-            background-color: #fff8e1;
-            border: 1px solid #ffd700;
-            color: #ff9800;
+
+        .video-preview {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow-color);
         }
     </style>
 </head>
@@ -267,10 +357,13 @@
                 <span>My Adverts</span>
             </a>
         </nav>
+
         <a onclick="history.back()" class="back-button-top-left" title="Go back to previous page">
             <i class="fas fa-arrow-left"></i> Back
         </a>
+
         <h2><i class="fas fa-bullhorn"></i> Post Your Advert</h2>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <ul class="flashes">
@@ -290,7 +383,6 @@
         <div class="advert-options-info">
             <h3><i class="fas fa-rocket"></i> Boost Your Adverts or Earn More Options!</h3>
             <p>Looking for more advert slots, longer durations, or increased visibility?</p>
-            
             <a href="{{ url_for('leaderboard') }}"><i class="fas fa-user-friends"></i> Discover Referral Benefits</a>
         </div>
         
@@ -340,9 +432,7 @@
                         </div>
                     </div>
                 </div>
-
                 
-
                 <div class="form-section">
                     <h3>Product Information</h3>
                     {% if advert and is_repost %}
@@ -364,11 +454,7 @@
                         <textarea id="description" name="description" maxlength="2000" oninput="updateCharCount()" required>{{ form_data.description or advert_data.description or '' }}</textarea>
                         <span id="charCount" class="char-count">0/2000</span>
                     </div>
-
                     <div class="form-group-row">
-                        
-
-                        
                         <div class="form-group">
                             <label for="negotiable"><i class="fas fa-handshake"></i> Negotiable?</label>
                             <select id="negotiable" name="negotiable">
@@ -396,44 +482,25 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="form-section">
-                    <h3>Location Details</h3>
-                    <div class="form-group">
-                        <label for="state_input"><i class="fas fa-map-marker-alt"></i> State<span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" name="state" id="state_input" value="{{ form_data.state or advert_data.state or '' }}" placeholder="e.g., Lagos" required>
-                            <ul id="state-dropdown" class="autocomplete-list hidden"></ul>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="school_input"><i class="fas fa-university"></i> School<span class="required">*</span></label>
-                        <div class="autocomplete-container">
-                            <input type="text" name="school" id="school_input" value="{{ form_data.school or advert_data.school or '' }}" placeholder="Select a state first..." disabled required>
-                            <span id="school_error" class="invalid-feedback"></span>
-                            <ul id="school-dropdown" class="autocomplete-list hidden"></ul>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_input"><i class="fas fa-building"></i> Specific Location in School</label>
-                        <input type="text" name="specific_location" id="location_input" value="{{ form_data.specific_location or advert_data.specific_location or '' }}" placeholder="Select a school first..." disabled/>
-                    </div>
-                </div>
-
                 <div class="form-section">
                     <h3>Media</h3>
                     <div class="form-group">
-                        <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 5MB) <span class="required">*</span>:</label>
-                        <input type="file" id="mainImage" name="main_image" accept="image/*" {% if not advert %}required{% endif %}>
+                        <label for="mainImage"><i class="fas fa-image"></i> Main Image (Max 5MB, JPG/PNG) <span class="required">*</span>:</label>
+                        <input type="file" id="mainImage" name="main_image" accept="image/jpeg, image/png" {% if not advert %}required{% endif %}>
+                        <div id="main-image-preview" class="image-preview-container"></div>
                         <span id="main-image-error" class="invalid-feedback"></span>
                         {% if advert and advert.main_image %}
-                            <p>Current Main Image: <img src="{{ advert.main_image }}" alt="Current Main Image" style="max-width: 100px; max-height: 100px;"></p>
+                            <p>Current Main Image:</p>
+                            <div class="image-preview-container">
+                                <img src="{{ advert.main_image }}" alt="Current Main Image" class="image-preview">
+                            </div>
                             <input type="hidden" name="existing_main_image" value="{{ advert.main_image }}">
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 15, up to 5MB each):</label>
-                        <input type="file" id="additionalImages" name="additional_images" accept="image/*" multiple>
+                        <label for="additionalImages"><i class="fas fa-images"></i> Additional Images (Max 15, up to 5MB each, JPG/PNG):</label>
+                        <input type="file" id="additionalImages" name="additional_images" accept="image/jpeg, image/png" multiple>
+                        <div id="additional-images-preview" class="image-preview-container"></div>
                         <span id="additional-images-error" class="invalid-feedback"></span>
                         {% if advert and advert.additional_images %}
                             <p>Current Additional Images:</p>
@@ -445,11 +512,18 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label for="video"><i class="fas fa-video"></i> Upload Video (Max 10MB, optional):</label>
-                        <input type="file" id="video" name="video" accept="video/*">
+                        <label for="video"><i class="fas fa-video"></i> Upload Video (Max 10MB, MP4, optional):</label>
+                        <input type="file" id="video" name="video" accept="video/mp4">
+                        <div id="video-preview-container" class="video-preview-container"></div>
                         <span id="video-error" class="invalid-feedback"></span>
                         {% if advert and advert.video %}
-                            <p>Current Video: <a href="{{ advert.video }}" target="_blank">View Video <i class="fas fa-external-link-alt" style="font-size: 0.8em;"></i></a></p>
+                            <p>Current Video:</p>
+                            <div class="video-preview-container">
+                                <video controls class="video-preview">
+                                    <source src="{{ advert.video }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
@@ -490,9 +564,13 @@
         const additionalImagesError = document.getElementById('additional-images-error');
         const videoInput = document.getElementById('video');
         const videoError = document.getElementById('video-error');
+        const mainImagePreview = document.getElementById('main-image-preview');
+        const additionalImagesPreview = document.getElementById('additional-images-preview');
+        const videoPreviewContainer = document.getElementById('video-preview-container');
+
         const MAX_IMAGE_SIZE_MB = 5;
         const MAX_VIDEO_SIZE_MB = 10;
-        const MAX_ADDITIONAL_IMAGES = 15; // This value has been changed to 15
+        const MAX_ADDITIONAL_IMAGES = 15;
 
         function setupAutocomplete(inputElement, dataList, dropdownElement) {
             function filterAndDisplay() {
@@ -530,8 +608,8 @@
 
         setupAutocomplete(categoryInput, CATEGORIES, document.getElementById('category-dropdown'));
         setupAutocomplete(stateInput, NIGERIAN_STATES, document.getElementById('state-dropdown'));
-        const schoolDropdown = document.getElementById('school-dropdown');
 
+        const schoolDropdown = document.getElementById('school-dropdown');
         function populateSchoolsDropdown(state) {
             const schools = NIGERIAN_SCHOOLS[state] || [];
             schoolDropdown.innerHTML = '';
@@ -636,6 +714,7 @@
             calculateAndDisplayCost();
         }
 
+
         function calculateAndDisplayCost() {
     const selectedOption = availableOptions.find(opt => opt.plan_name === postingOptionSelect.value);
     const calcPrice = document.getElementById('calc-price');
@@ -650,7 +729,7 @@
         let visibility = selectedOption.visibility_level;
         let multiplier = VISIBILITY_MULTIPLIERS[visibility] || 1;
         
-        let calculatedCost = 0.005 * price * duration * multiplier;
+        let calculatedCost = 0.01 * price * duration * multiplier;
         let finalCalculatedCost = Math.min(Math.max(calculatedCost, 500), 3000);
 
         calcPrice.textContent = `₦${price.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -666,27 +745,69 @@
         finalCost.textContent = 'Free';
         infoCost.textContent = 'Free';
     }
-}
+        }
 
-        
         
         function updateCharCount() {
             const desc = document.getElementById('description');
             document.getElementById('charCount').textContent = `${desc.value.length}/2000`;
         }
 
-        function validateFile(file, maxSizeBytes, errorElement) {
+        function validateFile(file, maxSizeBytes, allowedTypes, errorElement) {
             if (!file) {
                 if (errorElement) errorElement.textContent = '';
                 return true;
             }
             const sizeInBytes = file.size;
             const sizeInMB = sizeInBytes / (1024 * 1024);
+            const fileType = file.type;
+
             if (sizeInMB > maxSizeBytes) {
                 if (errorElement) errorElement.textContent = `File must be less than ${maxSizeBytes}MB.`;
                 return false;
             }
+
+            if (allowedTypes && allowedTypes.length > 0 && !allowedTypes.includes(fileType)) {
+                if (errorElement) errorElement.textContent = `Invalid file type. Please upload a ${allowedTypes.map(t => t.split('/')[1].toUpperCase()).join(' or ')} file.`;
+                return false;
+            }
+
+            if (errorElement) errorElement.textContent = '';
             return true;
+        }
+
+        function previewImages(input, previewContainer) {
+            previewContainer.innerHTML = '';
+            const files = input.files;
+            if (files) {
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'image-preview';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+        
+        function previewVideo(input, previewContainer) {
+            previewContainer.innerHTML = '';
+            const files = input.files;
+            if (files && files[0]) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const video = document.createElement('video');
+                    video.src = e.target.result;
+                    video.controls = true;
+                    video.className = 'video-preview';
+                    previewContainer.appendChild(video);
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -707,11 +828,17 @@
         priceInput.addEventListener('input', calculateAndDisplayCost);
         durationInput.addEventListener('input', calculateAndDisplayCost);
 
-        // This is the code for file size validation
         mainImageInput.addEventListener('change', function() {
             const files = this.files;
             if (files.length > 0) {
-                validateFile(files[0], MAX_IMAGE_SIZE_MB, mainImageError);
+                if (validateFile(files[0], MAX_IMAGE_SIZE_MB, ['image/jpeg', 'image/png'], mainImageError)) {
+                    previewImages(this, mainImagePreview);
+                } else {
+                    this.value = '';
+                    mainImagePreview.innerHTML = '';
+                }
+            } else {
+                mainImagePreview.innerHTML = '';
             }
         });
 
@@ -720,25 +847,37 @@
             additionalImagesError.textContent = '';
             if (files.length > MAX_ADDITIONAL_IMAGES) {
                 additionalImagesError.textContent = `You can only upload a maximum of ${MAX_ADDITIONAL_IMAGES} images.`;
-                this.value = ''; // Clear the selected files
+                this.value = '';
+                additionalImagesPreview.innerHTML = '';
                 return;
             }
+            let allValid = true;
             for (let i = 0; i < files.length; i++) {
-                if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, additionalImagesError)) {
-                    this.value = ''; // Clear the selected files
+                if (!validateFile(files[i], MAX_IMAGE_SIZE_MB, ['image/jpeg', 'image/png'], additionalImagesError)) {
+                    this.value = '';
+                    additionalImagesPreview.innerHTML = '';
+                    allValid = false;
                     break;
                 }
+            }
+            if (allValid) {
+                previewImages(this, additionalImagesPreview);
             }
         });
 
         videoInput.addEventListener('change', function() {
             const files = this.files;
             if (files.length > 0) {
-                validateFile(files[0], MAX_VIDEO_SIZE_MB, videoError);
+                if (validateFile(files[0], MAX_VIDEO_SIZE_MB, ['video/mp4'], videoError)) {
+                    previewVideo(this, videoPreviewContainer);
+                } else {
+                    this.value = '';
+                    videoPreviewContainer.innerHTML = '';
+                }
+            } else {
+                videoPreviewContainer.innerHTML = '';
             }
         });
     </script>
-
-    
 </body>
 </html>
