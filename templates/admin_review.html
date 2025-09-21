@@ -238,6 +238,7 @@
 
         // Function to render a single advert card
         function renderAdvertCard(advert) {
+            // FIX: Access timestamp correctly from the dictionary
             const createdDate = new Date(advert.created_at._seconds * 1000).toLocaleString('en-US');
             const expiryDate = advert.calculated_expiry ? new Date(advert.calculated_expiry._seconds * 1000).toLocaleString('en-US') : 'N/A';
 
@@ -334,7 +335,7 @@
         // Function to display adverts
         function displayAdverts(adverts) {
             advertListContainer.innerHTML = '';
-            document.querySelectorAll('.modal').forEach(modal => modal.remove()); // Remove old modals
+            document.querySelectorAll('.modal').forEach(modal => modal.remove());
             
             if (adverts.length === 0) {
                 noAdvertsMessage.style.display = 'block';
@@ -361,8 +362,9 @@
                 allAdverts = await response.json();
                 displayAdverts(allAdverts);
             } catch (error) {
-                console.error("Failed to fetch adverts:", error);
-                advertListContainer.innerHTML = `<p class="no-adverts">Failed to load adverts. Please try refreshing the page.</p>`;
+                // Pinpoint the exact error for debugging
+                console.error("Failed to fetch or parse adverts:", error);
+                advertListContainer.innerHTML = `<p class="no-adverts">Failed to load adverts. Please check the browser console for details: ${error.message}</p>`;
             } finally {
                 loadingMessage.style.display = 'none';
             }
