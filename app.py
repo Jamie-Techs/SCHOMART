@@ -2422,22 +2422,18 @@ def get_user_advert_options(user_id):
 
 
 
+
+
+
+
+
+
 # Visibility multipliers for dynamic pricing
 VISIBILITY_MULTIPLIERS = {
     "standard": 0.2,
     "featured": 0.3,
     "premium": 0.4
 }
-
-
-# Visibility multipliers for dynamic pricing
-VISIBILITY_MULTIPLIERS = {
-    "Standard": 0.2,
-    "Featured": 0.3,
-    "Premium": 0.4
-}
-                           
-
 
 @app.route('/sell', methods=['GET', 'POST'])
 @app.route('/sell/<advert_id>', methods=['GET', 'POST'])
@@ -2519,6 +2515,11 @@ def sell(advert_id=None):
             try:
                 product_price = float(form_data.get("price"))
                 selected_visibility = plan_details.get("visibility_level")
+                
+                # Convert the visibility level to lowercase for a reliable dictionary lookup
+                if selected_visibility:
+                    selected_visibility = selected_visibility.lower()
+                    
                 multiplier = VISIBILITY_MULTIPLIERS.get(selected_visibility, 1.0)
                 calculated_cost = 0.0005 * product_price * advert_duration_days * multiplier
                 
@@ -2558,7 +2559,7 @@ def sell(advert_id=None):
                 advert_data=advert_data,
                 is_repost=is_repost,
                 errors=errors,
-                VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS  # <<-- ADD THIS
+                VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS
             )
         try:
             main_image_url, additional_images_urls, video_url = handle_file_uploads(files, user_id, advert_data)
@@ -2626,8 +2627,14 @@ def sell(advert_id=None):
         form_data=form_data,
         advert_data=advert_data,
         is_repost=is_repost,
-        VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS  # <<-- ADD THIS
+        VISIBILITY_MULTIPLIERS=VISIBILITY_MULTIPLIERS
     )
+
+
+
+
+
+
 
 
 
@@ -5405,6 +5412,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
