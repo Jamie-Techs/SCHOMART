@@ -236,9 +236,13 @@
         const noAdvertsMessage = document.getElementById('no-adverts-message');
         const searchInput = document.getElementById('advertSearchInput');
 
+        // Custom JavaScript title case function
+        function toTitleCase(str) {
+            return str.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+        }
+
         // Function to render a single advert card
         function renderAdvertCard(advert) {
-            // FIX: Access timestamp correctly from the dictionary
             const createdDate = new Date(advert.created_at._seconds * 1000).toLocaleString('en-US');
             const expiryDate = advert.calculated_expiry ? new Date(advert.calculated_expiry._seconds * 1000).toLocaleString('en-US') : 'N/A';
 
@@ -249,7 +253,7 @@
                         <div>
                             Advert ID: ${advert.id}
                         </div>
-                        <span>Status: ${advert.status.replace('_', ' ').title()}</span>
+                        <span>Status: ${toTitleCase(advert.status.replace('_', ' '))}</span>
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">${advert.title}</h5>
