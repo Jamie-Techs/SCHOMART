@@ -3004,6 +3004,45 @@ def delete_advert(advert_id):
     return redirect(url_for('list_adverts'))
 
 
+@app.route('/api/admin/pending_adverts', methods=['GET'])
+@login_required
+@admin_required
+def get_pending_adverts_api():
+    """
+    API endpoint to fetch all adverts with status 'pending_review' as JSON.
+    This will be called by the JavaScript on the client side.
+    """
+    adverts_ref = db.collection("adverts")
+    query = adverts_ref.where("status", "==", "pending_review").stream()
+    
+    pending_adverts = []
+    for doc in query:
+        advert = doc.to_dict()
+        advert['id'] = doc.id
+
+        # Fetch and add related user, category, and plan info
+        user_info = get_user_info(advert['user_id'])
+        advert['seller_username'] = user_info.get('username', 'N/A')
+        advert['seller_email'] = user_info.get('email', 'N/A')
+        advert['category_name'] = get_category_name(advert.get('category_id'))
+        
+        # Ensure 'cost_naira' and 'payment_reference' are present
+        advert['cost_naira'] = advert.get('cost_naira', 0.0)
+        advert['payment_reference'] = advert.get('payment_reference', '')
+        
+        # Convert Firestore Timestamp objects for JSON serialization
+        if 'created_at' in advert:
+            advert['created_at'] = {'_seconds': advert['created_at'].timestamp()}
+        if 'calculated_expiry' in advert:
+            advert['calculated_expiry'] = {'_seconds': advert['calculated_expiry'].timestamp()}
+
+        pending_adverts.append(advert)
+        
+    return jsonify(pending_adverts)
+
+
+
+
 
 
 
@@ -5412,6 +5451,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
