@@ -3096,13 +3096,13 @@ def admin_advert_review():
 
 
 
-
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
 def admin_advert_approve():
     """
-    Handles the approval of an advert and notifies the advert owner.
+    Handles the approval of an advert. This route now calculates and saves
+    the advert's expiry date to Firestore, ensuring data persistence.
     """
     advert_id = request.form.get('advert_id')
     if not advert_id:
@@ -3119,52 +3119,47 @@ def admin_advert_approve():
     advert_data = advert_doc.to_dict()
     user_id = advert_data.get('user_id')
     plan_name = advert_data.get('plan_name')
+    duration_days = advert_data.get("advert_duration_days", 0)
 
     if not user_id:
         flash("User ID not found for this advert.", 'error')
         return redirect(url_for('admin_advert_review'))
+    
+    # Calculate the expiry date
+    calculated_expiry = datetime.utcnow() + timedelta(days=duration_days)
 
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
-
-    if user_doc.exists:
-        # Update advert status to published
-        advert_ref.update({
-            'status': 'published',
-            'published_at': firestore.SERVER_TIMESTAMP,
-            'is_published': True
-        })
-
+    # Prepare the update dictionary
+    update_data = {
+        'status': 'published',
+        'published_at': firestore.SERVER_TIMESTAMP,
+        'is_published': True,
+        # Save the new calculated expiry to Firestore as a Timestamp
+        'calculated_expiry': calculated_expiry,
+    }
+    
+    try:
+        # Update advert status and expiry
+        advert_ref.update(update_data)
+        
         # --- Check and apply referral count deduction ---
-        # Checks if the plan_name starts with 'referral_'
         if plan_name and plan_name.startswith('referral_'):
-            try:
-                # Extracts the number from the plan name (e.g., 'referral_10' -> 10)
-                cost = int(plan_name.split('_')[1])
-                user_ref.update({"referral_count": firestore.Increment(-cost)})
-                
-                flash("Advert approved and published successfully. Referral count decremented.", 'success')
-
-            except (ValueError, IndexError):
-                # This handles cases where the plan name is malformed
-                flash("Advert approved but could not deduct referral points due to an invalid plan name.", 'warning')
-
+            cost = int(plan_name.split('_')[1])
+            user_ref = db.collection("users").document(user_id)
+            user_ref.update({"referral_count": firestore.Increment(-cost)})
+            flash("Advert approved and published successfully. Referral count decremented.", 'success')
         else:
-            # Handles all other plans (paid, free, etc.)
             flash("Advert approved and published successfully.", 'success')
-            
+
         # --- Create a notification for the advert owner ---
         advert_title = advert_data.get('title', 'Your advert')
         message = f"Your advert, '{advert_title}', has been approved and is now published! 🚀"
         related_link = url_for('advert_detail', advert_id=advert_id)
         create_notification(user_id, message, 'advert_status', related_link)
 
-    else:
-        flash("User not found.", 'error')
+    except Exception as e:
+        flash(f"An error occurred: {e}", 'error')
 
     return redirect(url_for('admin_advert_review'))
-
-
 
 
 
@@ -5451,6 +5446,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
