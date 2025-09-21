@@ -57,86 +57,87 @@
     </div>
 
     <script>
-        const notificationsList = document.getElementById('notifications-list');
-        const loadingMessage = document.getElementById('loading-message');
-        const markAllBtn = document.getElementById('mark-all-read-btn');
-        const deleteAllBtn = document.getElementById('delete-all-btn');
+    const notificationsList = document.getElementById('notifications-list');
+    const loadingMessage = document.getElementById('loading-message');
+    const markAllBtn = document.getElementById('mark-all-read-btn');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
 
-        // This function is no longer needed because the backend sends a formatted string.
-        // You can keep it or remove it, but it is not used in the updated code below.
-        // function formatTimestamp(timestamp) {
-        //     if (!timestamp || typeof timestamp._seconds === 'undefined') {
-        //         return 'Invalid Date';
-        //     }
-        //     const milliseconds = timestamp._seconds * 1000 + timestamp._nanoseconds / 1000000;
-        //     const date = new Date(milliseconds);
-        //     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
-        //     return date.toLocaleString('en-US', options);
-        // }
+    async function fetchNotifications() {
+        try {
+            loadingMessage.style.display = 'block';
+            const response = await fetch('/api/notifications');
+            const notifications = await response.json();
+            
+            loadingMessage.style.display = 'none';
+            notificationsList.innerHTML = '';
 
-        async function fetchNotifications() {
-            try {
-                loadingMessage.style.display = 'block';
-                const response = await fetch('/api/notifications');
-                const notifications = await response.json();
+            if (notifications.length === 0) {
+                notificationsList.innerHTML = '<p class="text-center p-4 text-gray-500">No notifications to display.</p>';
+                return;
+            }
+
+            notifications.forEach(notif => {
+                const item = document.createElement('div');
+                item.className = `notification-item ${notif.is_read ? '' : 'unread'}`;
+                item.dataset.id = notif.id;
+
+                // --- START OF NEW LOGIC ---
+                // Create a container for the notification content
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'flex-grow';
+                contentContainer.innerHTML = `
+                    <h4 class="font-bold">${notif.message}</h4>
+                    <small class="text-gray-500">${notif.timestamp_formatted}</small>
+                `;
                 
-                loadingMessage.style.display = 'none';
-                notificationsList.innerHTML = '';
-
-                if (notifications.length === 0) {
-                    notificationsList.innerHTML = '<p class="text-center p-4 text-gray-500">No notifications to display.</p>';
-                    return;
+                // Determine if the notification should be a clickable link
+                const isClickable = notif.is_redirectable; // Use the new backend flag
+                
+                if (isClickable) {
+                    const link = document.createElement('a');
+                    link.href = notif.related_link;
+                    link.appendChild(contentContainer);
+                    item.appendChild(link);
+                } else {
+                    item.appendChild(contentContainer);
                 }
+                // --- END OF NEW LOGIC ---
 
-                notifications.forEach(notif => {
-                    const item = document.createElement('div');
-                    item.className = `notification-item ${notif.is_read ? '' : 'unread'}`;
-                    item.dataset.id = notif.id;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn ml-4';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to delete this notification?')) {
+                        await fetch(`/api/notifications/delete/${notif.id}`, { method: 'POST' });
+                        fetchNotifications();
+                    }
+                };
+                item.appendChild(deleteBtn);
 
-                    const content = document.createElement('a');
-                    content.href = notif.related_link || '#';
-                    content.className = 'flex-grow';
-                    content.innerHTML = `
-                        <h4 class="font-bold">${notif.message}</h4>
-                        <small class="text-gray-500">${notif.timestamp_formatted}</small>
-                    `;
-                    item.appendChild(content);
+                notificationsList.appendChild(item);
+            });
 
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn ml-4';
-                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    deleteBtn.onclick = async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (confirm('Are you sure you want to delete this notification?')) {
-                            await fetch(`/api/notifications/delete/${notif.id}`, { method: 'POST' });
-                            fetchNotifications();
-                        }
-                    };
-                    item.appendChild(deleteBtn);
-
-                    notificationsList.appendChild(item);
-                });
-
-            } catch (error) {
-                loadingMessage.textContent = 'Failed to load notifications.';
-                console.error('Error fetching notifications:', error);
-            }
+        } catch (error) {
+            loadingMessage.textContent = 'Failed to load notifications.';
+            console.error('Error fetching notifications:', error);
         }
+    }
 
-        markAllBtn.addEventListener('click', async () => {
-            await fetch('/api/notifications/mark_all_as_read', { method: 'POST' });
+    markAllBtn.addEventListener('click', async () => {
+        await fetch('/api/notifications/mark_all_as_read', { method: 'POST' });
+        fetchNotifications();
+    });
+
+    deleteAllBtn.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
+            await fetch('/api/notifications/delete_all', { method: 'POST' });
             fetchNotifications();
-        });
+        }
+    });
 
-        deleteAllBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
-                await fetch('/api/notifications/delete_all', { method: 'POST' });
-                fetchNotifications();
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', fetchNotifications);
-    </script>
+    document.addEventListener('DOMContentLoaded', fetchNotifications);
+</script>
 </body>
 </html>
