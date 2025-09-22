@@ -2824,6 +2824,8 @@ def submit_advert(advert_id):
 
 
 
+
+# CORRECTED list_adverts()
 @app.route('/adverts')
 @login_required
 def list_adverts():
@@ -2844,34 +2846,21 @@ def list_adverts():
         
         status = advert_data.get('status', 'pending_review')
         
-        # Check for expiration if the advert is published
-        if status == 'published' and advert_data.get('published_at'):
-            plan_name = advert_data.get('plan_name')
-            # Fetch the plan details
-            plan_details = get_plan_details(plan_name)
+        # Check for expiration if the advert is published, using the consistent 'expires_at' field
+        if status == 'published' and advert_data.get('expires_at'):
+            expires_at = advert_data['expires_at']
             
-            # CORRECTED: Check if plan_details is not None before accessing keys
-            if plan_details:
-                duration_days = plan_details.get('advert_duration_days', 0)
-                published_at = advert_data['published_at']
-                
-                # Convert to datetime object if it's a Firestore Timestamp
-                if not isinstance(published_at, datetime):
-                    published_at = published_at.to_datetime().astimezone(timezone.utc)
-                
-                # Use timedelta correctly with timezone-aware datetimes
-                expiration_date = published_at + timedelta(days=duration_days)
-                now = datetime.now(timezone.utc)
-                
-                if now > expiration_date:
-                    # Update status to 'expired' in Firestore
-                    doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
-                    status = 'expired'
-            else:
-                # OPTIONAL: Handle case where plan_name is not found. 
-                # This could be a data consistency issue. You might want to log it or flash a message.
-                print(f"Warning: No plan details found for advert {doc.id} with plan name '{plan_name}'")
-                flash(f"Warning: Advert {advert_data.get('title', doc.id)} has an unknown plan and cannot be managed correctly. Please contact support.", 'warning')
+            # Convert to datetime object if it's a Firestore Timestamp
+            if not isinstance(expires_at, datetime):
+                expires_at = expires_at.to_datetime().astimezone(timezone.utc)
+            
+            # Use a timezone-aware current time for comparison
+            now = datetime.now(timezone.utc)
+            
+            if now > expires_at:
+                # Update status to 'expired' in Firestore
+                doc.reference.update({'status': 'expired', 'expired_at': firestore.SERVER_TIMESTAMP})
+                status = 'expired'
         
         # Check if the advert is expired and passed the 2-day grace period
         if status == 'expired' and advert_data.get('expired_at'):
@@ -2924,7 +2913,6 @@ def list_adverts():
     adverts.sort(key=sort_key)
     
     return render_template("list_adverts.html", adverts=adverts)
-
 
 
 
@@ -3096,6 +3084,9 @@ def admin_advert_review():
 
 
 
+
+
+# CORRECTED admin_advert_approve()
 @app.route('/admin/adverts/approve', methods=['POST'])
 @login_required
 @admin_required
@@ -3125,16 +3116,16 @@ def admin_advert_approve():
         flash("User ID not found for this advert.", 'error')
         return redirect(url_for('admin_advert_review'))
     
-    # Calculate the expiry date
-    calculated_expiry = datetime.utcnow() + timedelta(days=duration_days)
+    # Calculate the expiry date explicitly and make it timezone-aware
+    calculated_expiry = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(days=duration_days)
 
     # Prepare the update dictionary
     update_data = {
         'status': 'published',
-        'published_at': firestore.SERVER_TIMESTAMP,
+        'published_at': firestore.SERVER_TIMESTAMP, # Use the server timestamp for publication
         'is_published': True,
-        # Save the new calculated expiry to Firestore as a Timestamp
-        'calculated_expiry': calculated_expiry,
+        # The key correction is here, use a consistent field for the expiry
+        'expires_at': calculated_expiry, 
     }
     
     try:
@@ -3160,6 +3151,7 @@ def admin_advert_approve():
         flash(f"An error occurred: {e}", 'error')
 
     return redirect(url_for('admin_advert_review'))
+
 
 
 
@@ -5446,6 +5438,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
