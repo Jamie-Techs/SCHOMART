@@ -5306,8 +5306,7 @@ def notifications_page():
         
     return render_template('notifications.html', notifications=notifications)
 
-# This is the API route for JavaScript clients.
-# It also needs to correctly format the timestamp.
+
 @app.route('/api/notifications', methods=['GET'])
 @login_required
 def get_notifications():
@@ -5319,6 +5318,22 @@ def get_notifications():
         notification_data = doc.to_dict()
         notification_data['id'] = doc.id
         
+        # Check if the advert associated with the notification still exists.
+        # This is a hypothetical check; you'll need to implement the real logic
+        # based on your advert data model.
+        related_link = notification_data.get('related_link')
+        if related_link:
+            # Assuming the link contains an advert_id like "/advert/<advert_id>"
+            # You would need to parse the ID from the link and check if the advert
+            # exists in your 'adverts' collection and is not expired.
+            # Example:
+            # advert_id = related_link.split('/')[-1]
+            # advert_doc = db.collection('adverts').document(advert_id).get()
+            # is_active = advert_doc.exists and advert_doc.to_dict().get('is_active')
+            notification_data['advert_exists'] = True # Replace with your actual check
+        else:
+            notification_data['advert_exists'] = False
+
         # Apply the same formatting logic for the API response
         timestamp = notification_data.get('timestamp')
         if timestamp:
@@ -5333,6 +5348,7 @@ def get_notifications():
         notifications.append(notification_data)
     
     return jsonify(notifications)
+
 
 
 
@@ -5438,6 +5454,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
