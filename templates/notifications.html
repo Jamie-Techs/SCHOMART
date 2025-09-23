@@ -81,27 +81,26 @@
                 item.className = `notification-item ${notif.is_read ? '' : 'unread'}`;
                 item.dataset.id = notif.id;
 
-                // --- START OF NEW LOGIC ---
-                // Create a container for the notification content
-                const contentContainer = document.createElement('div');
-                contentContainer.className = 'flex-grow';
-                contentContainer.innerHTML = `
-                    <h4 class="font-bold">${notif.message}</h4>
-                    <small class="text-gray-500">${notif.timestamp_formatted}</small>
-                `;
-                
-                // Determine if the notification should be a clickable link
-                const isClickable = notif.is_redirectable; // Use the new backend flag
-                
-                if (isClickable) {
-                    const link = document.createElement('a');
-                    link.href = notif.related_link;
-                    link.appendChild(contentContainer);
-                    item.appendChild(link);
+                let contentHtml = '';
+                // Check if the related advert still exists based on a hypothetical flag from the backend
+                if (notif.advert_exists) { 
+                    contentHtml = `
+                        <a href="${notif.related_link || '#'}" class="flex-grow">
+                            <h4 class="font-bold">${notif.message}</h4>
+                            <small class="text-gray-500">${notif.timestamp_formatted}</small>
+                        </a>
+                    `;
                 } else {
-                    item.appendChild(contentContainer);
+                    // Display non-clickable message for deleted/expired adverts
+                    contentHtml = `
+                        <div class="flex-grow text-gray-400">
+                            <h4 class="font-bold">${notif.message}</h4>
+                            <small class="text-gray-500">${notif.timestamp_formatted} - (Advert no longer available)</small>
+                        </div>
+                    `;
                 }
-                // --- END OF NEW LOGIC ---
+                
+                item.innerHTML = contentHtml;
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn ml-4';
@@ -139,5 +138,7 @@
 
     document.addEventListener('DOMContentLoaded', fetchNotifications);
 </script>
+
+    
 </body>
 </html>
