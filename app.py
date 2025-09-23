@@ -3889,9 +3889,6 @@ def get_school_name_from_dict(school_id):
 
 
 
-
-
-
 # Updated advert_detail function
 @app.route('/advert/<string:advert_id>')
 @login_required
@@ -3907,7 +3904,9 @@ def advert_detail(advert_id):
         advert_doc = advert_ref.get()
 
         if not advert_doc.exists:
-            abort(404)
+            # FIX: Replace abort(404) with a flash message and redirect
+            flash("The advert you are looking for does not exist or has been deleted.", "error")
+            return redirect(url_for('notifications_page'))
         
         advert = advert_doc.to_dict()
         advert['id'] = advert_doc.id
@@ -3915,13 +3914,13 @@ def advert_detail(advert_id):
 
         is_owner = current_user_id == advert_owner_id
         if advert.get('status') != 'published' and not is_owner:
-            abort(404)
-        
-        # New Logic for View Counting
-        # ... (Your existing view counting logic here) ...
-        # Based on our previous discussion, the backend should be handling this correctly now.
+            # FIX: Replace abort(404) with a flash message and redirect for unpublished adverts
+            flash("This advert is not available.", "error")
+            return redirect(url_for('notifications_page'))
 
         # The rest of your code remains the same...
+        # ... (Your existing view counting logic here) ...
+
         seller_doc = db.collection('users').document(advert_owner_id).get()
         seller = seller_doc.to_dict() if seller_doc.exists else {}
         seller['id'] = seller_doc.id
@@ -3961,7 +3960,7 @@ def advert_detail(advert_id):
                 review_data['reviewer_username'] = reviewer_data.get('username', 'Anonymous')
                 review_data['reviewer_profile_picture'] = get_profile_picture_url(review_data['user_id'])
             reviews.append(review_data)
-        
+            
         similar_adverts = get_similar_adverts(
             advert['category_id'], 
             advert['school'],
@@ -3983,7 +3982,9 @@ def advert_detail(advert_id):
 
     except Exception as e:
         logging.error(f"Error fetching advert detail: {e}", exc_info=True)
-        return abort(500)
+        # FIX: Replace abort(500) with a flash message and redirect for internal errors
+        flash("An unexpected error occurred while loading the advert. Please try again later.", "error")
+        return redirect(url_for('notifications_page'))
 
 
 
@@ -5454,6 +5455,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
