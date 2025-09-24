@@ -2751,25 +2751,19 @@ def payment(advert_id):
         {
             "account_name": "James Nwoke",
             "account_number": "2266701415",
-            "bank_name": "ZENITH",
+            "bank_name": "ZENITH BANK",
             "currency": "NGN"
         },
         {
-            "account_name": "James Nwoke",
-            "account_number": "0162038205",
-            "bank_name": "UNION BANK",
+            "account_name": "John Nwoke",
+            "account_number": "2080091181",
+            "bank_name": "KUDA BANK",
             "currency": "NGN"
         },
         {
-            "account_name": "James Nwoke",
-            "account_number": "8129284013",
-            "bank_name": "opay",
-            "currency": "NGN"
-        },
-        {
-            "account_name": "James Nwoke",
-            "account_number": "9035678154",
-            "bank_name": "opay",
+            "account_name": "Chisomaga Ndukwe",
+            "account_number": "8151188743",
+            "bank_name": "Moniepoint",
             "currency": "NGN"
         }
     ]
@@ -5455,6 +5449,7 @@ if __name__ == "__main__":
     scheduler.start()
     
     app.run(host="0.0.0.0", port=port)
+
 
 
 
